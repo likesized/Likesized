@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -78,5 +79,22 @@ export async function unfollowFitTwin(formData: FormData) {
     redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}follow=error`);
   }
 
+  revalidatePath("/twins");
+  revalidatePath("/following");
+  redirect(returnTo);
+}
+
+export async function setFitTwinNotificationMute(formData:FormData){
+  const targetUserId=String(formData.get("target_user_id")??"");
+  const muted=String(formData.get("muted")??"")==="true";
+  const returnTo=safeReturnPath(formData.get("return_to"));
+  const {supabase,userId}=await authenticatedUserId();
+  if(!targetUserId||targetUserId===userId)redirect(returnTo);
+
+  const {error}=await supabase.rpc("set_fit_twin_notification_mute",{p_followed_id:targetUserId,p_muted:muted});
+  if(error)redirect(`${returnTo}${returnTo.includes("?")?"&":"?"}notifications=error`);
+
+  revalidatePath("/twins");
+  revalidatePath("/notifications");
   redirect(returnTo);
 }

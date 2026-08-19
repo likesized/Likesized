@@ -4,6 +4,18 @@ create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions,auth;
 select plan(4);
 
+create function pg_temp.statement_is_rejected(statement text)
+returns boolean
+language plpgsql
+as $$
+begin
+  execute statement;
+  return false;
+exception when others then
+  return true;
+end;
+$$;
+
 insert into auth.users(id,aud,role,email,created_at,updated_at)
 values('c0000000-0000-4000-8000-000000000001'::uuid,'authenticated','authenticated','fit-dimension@likesized.test',now(),now());
 
@@ -24,8 +36,8 @@ select 'c4000000-0000-4000-8000-000000000001'::uuid,'c0000000-0000-4000-8000-000
 from public.fit_profiles where user_id='c0000000-0000-4000-8000-000000000001'::uuid;
 
 select lives_ok($$insert into public.fit_report_dimensions(fit_report_id,dimension_key,response_key) values('c4000000-0000-4000-8000-000000000001','waist','just_right')$$,'jeans accept a mapped waist response');
-select dies_ok($$insert into public.fit_report_dimensions(fit_report_id,dimension_key,response_key) values('c4000000-0000-4000-8000-000000000001','chest','just_right')$$,'jeans reject an unmapped chest dimension');
-select dies_ok($$insert into public.fit_report_dimensions(fit_report_id,dimension_key,response_key) values('c4000000-0000-4000-8000-000000000001','rise','too_tight')$$,'response keys remain controlled per dimension');
+select ok(pg_temp.statement_is_rejected($$insert into public.fit_report_dimensions(fit_report_id,dimension_key,response_key) values('c4000000-0000-4000-8000-000000000001','chest','just_right')$$),'jeans reject an unmapped chest dimension');
+select ok(pg_temp.statement_is_rejected($$insert into public.fit_report_dimensions(fit_report_id,dimension_key,response_key) values('c4000000-0000-4000-8000-000000000001','rise','too_tight')$$),'response keys remain controlled per dimension');
 select is((select count(*) from public.fit_report_dimensions where fit_report_id='c4000000-0000-4000-8000-000000000001'::uuid),1::bigint,'only the valid controlled dimension remains');
 
 select * from finish();

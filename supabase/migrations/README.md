@@ -31,11 +31,12 @@ The connected Supabase project is the deployed instance and execution ledger. **
 23. `20260819191518_validate_product_evidence_variant_target.sql` — Exact Variant ownership validation.
 24. `20260819192804_enforce_product_family_compatibility.sql` — Product Fit Family compatibility.
 25. `20260819194010_controlled_primary_material_and_attribute_category.sql` — controlled material/category attributes.
-26. `20260819202515_following_feed_activity_foundation.sql` — private canonical ledger for Shared-garment, re-try-on and outfit Following Feed activity; current visibility/source checks and auth-bound feed output.
-27. `20260819202851_harden_following_feed_rpc_boundary.sql` — moves privileged Following Feed implementation to a private auth-bound SECURITY DEFINER helper behind a public SECURITY INVOKER wrapper.
-28. `20260819205518_fit_twin_activity_notifications.sql` — private default-on global/per-Fit-Twin notification state plus recipient in-app notifications fanned out from the canonical Following Feed activity ledger through safe auth-bound RPCs; source privacy/deletion cascades corresponding notifications.
-29. `20260819211614_atomic_outfit_post_creation.sql` — authenticated SECURITY INVOKER outfit transaction validating 1–6 unique owned Closet garments with Fit Reports, atomically sharing selected garments and creating the outfit post/tag links so failed post creation cannot leave Private garments Shared.
+26. `20260819202515_following_feed_activity_foundation.sql` — canonical Following Feed activity ledger and safe activity output.
+27. `20260819202851_harden_following_feed_rpc_boundary.sql` — private auth-bound feed helper behind a public SECURITY INVOKER wrapper.
+28. `20260819205518_fit_twin_activity_notifications.sql` — default-on in-app Fit Twin notification preferences/mutes/recipient rows sourced from canonical feed activity.
+29. `20260819211614_atomic_outfit_post_creation.sql` — atomic selected-garment sharing + outfit post/tag creation so failed outfit posts cannot leave Private garments Shared.
+30. `20260819212753_canonical_search_discovery_rpcs.sql` — authenticated SECURITY INVOKER catalog/member discovery over canonical product/brand/alias/style/identifier/retailer/listing identity and member-readable username/display name, with canonical Product deduplication and no raw Fit Profile exposure.
 
-The first seven files were recovered from `supabase_migrations.schema_migrations` during the 2026-08-19 canonical audit and verified byte-for-byte against the deployed migration ledger before being committed. Migrations 16–29 are stored under the exact versions recorded by the deployed Supabase ledger.
+The first seven files were recovered from `supabase_migrations.schema_migrations` during the 2026-08-19 canonical audit and verified byte-for-byte against the deployed migration ledger before being committed. Migrations 16–30 are stored under the exact versions recorded by the deployed Supabase ledger.
 
 Future database changes are new ordered executable migrations in this same directory. Update `docs/V1_PRODUCT_SPEC.md`, `docs/AI_MASTER_LOG.md`, and `supabase/schema_contract.md` when architecture or locked behavior changes.

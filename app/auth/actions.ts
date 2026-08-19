@@ -55,7 +55,7 @@ export async function signup(formData: FormData) {
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/onboarding`,
+      emailRedirectTo: origin,
     },
   });
 

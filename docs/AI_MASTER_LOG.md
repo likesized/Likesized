@@ -24,12 +24,13 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 7. Original manufacturer size text is preserved while logical matching uses normalized sizing where possible.
 8. V1 member identity is authenticated-member-only.
 9. V1 People My Size UI is **Overall | Tops | Bottoms**. More garment-specific filters may be exposed later using the existing match-profile engine without a matching rewrite.
+10. Product Fit Families are intentional same-fit/cut groups only. No fuzzy-name auto-grouping. New products default to their own family unless the member explicitly selects a compatible existing family; family compatibility requires the same brand, garment type and market/cut segment.
 
 ## Current baseline — 2026-08-19
 - Full Next.js app, Supabase integration, matching/recommendation logic and canonical docs are in GitHub.
 - Live Supabase has no deliberate test-user/application data; repeatable verification uses disposable local Supabase CI.
-- **22 canonical migrations** through `20260819190312_enforce_shared_fit_photo_invariant.sql`.
-- Supabase Security Advisor: **0 findings** after the completed Phase 3 DDL.
+- **24 canonical migrations** through `20260819192804_enforce_product_family_compatibility.sql`.
+- Supabase Security Advisor: **0 findings** after the Phase 4.2 family guard.
 - CI runs `npm ci`, typecheck, production build, fresh migration replay and all pgTAP database tests.
 
 # PHASES
@@ -53,52 +54,40 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 - Owner decision: V1 filters remain **Overall | Tops | Bottoms**; richer garment filters are deferred, not architecturally blocked.
 
 ## PHASE 3 — CLOSET & FIT REPORT COMPLETION — ✅ COMPLETE
-
-### 3.1–3.2 Garment-specific controlled Fit Report capture — ✅ COMPLETE
-- `FitDimensionFields` shows only controlled dimensions mapped to the selected garment type.
-- Initial Closet logs and repeat observations persist those responses to the immutable Fit Report for that try-on.
-- Server validation rejects invalid/duplicate mappings and invalid responses.
-- Migration `20260819183601_enforce_fit_report_dimension_garment_type.sql` provides the DB-level garment/dimension guard.
-- CI `32289232671` passed install, typecheck, build, all 21 then-current migrations and every canonical DB test.
-
-### 3.3 Post Outfit latest-observation correctness — ✅ COMPLETE
-- `app/outfits/new/page.tsx` orders Fit Reports newest-first and deliberately displays the first/latest observation per Closet item.
-- Outfit posts continue to store the Closet-item relationship rather than freezing an arbitrary Fit Report ID.
-- CI `32289775049` passed the full verification gate.
-
-### 3.4 Brand/product search-before-create UX — ✅ COMPLETE
-- Add Garment now searches existing canonical products before creation.
-- Choosing an existing match carries its exact `product_id` and fills canonical brand, product, garment type, market/cut segment and known Style ID.
-- Server-side exact selection re-fetches the Product ID and verifies all submitted canonical identity fields still match before reuse; tampering/stale identity falls back to failure rather than silently attaching the wrong product.
-- Editing an identity field clears the exact selection and returns to the single existing normalized get-or-create path. No parallel catalog workflow exists.
-- CI `32290535340` passed install, typecheck, production build, full 21-migration replay and every database test then present.
-
-### 3.5 Closet integration/privacy verification — ✅ COMPLETE
-- Migration `20260819190312_enforce_shared_fit_photo_invariant.sql` closes the remaining database-level privacy gap: fit-photo metadata must match the Closet owner and may exist only on a Shared Closet item; a Shared item with a fit photo cannot become Private until photo metadata is removed.
-- `closet_integration_privacy.test.sql` runs **32 assertions** with two independent authenticated members.
-- Verified: Private vs Shared visibility, Shared Fit Report/dimension visibility, repeat observations, controlled-dimension persistence, cross-user update protection, fit-photo forced sharing, privacy transitions, outfit-item visibility and deletion cascades.
-- Closet deletion cascades Fit Reports, fit dimensions, fit-photo metadata and outfit item links while preserving the canonical Product and outfit post.
-- CI `32291185899` passed install, typecheck, production build, clean replay of all **22 migrations**, and every canonical database suite.
-- Supabase Security Advisor after Phase 3 completion: **0 findings**.
-
-**Phase 3 exit criterion: ✅ MET.** Closet captures the intended evidence and history/privacy-sensitive surfaces intentionally select and expose the correct state.
+- Garment-specific controlled Fit Report capture works for first logs and repeat observations, with DB-level garment/dimension guards.
+- Post Outfit picker intentionally uses the latest Fit Report observation.
+- Add Garment searches/reuses exact canonical Product IDs before creation.
+- Closet integration/privacy suite verifies Shared/Private transitions, fit-photo forced sharing, history and deletion cascades.
+- Phase 3 final CI `32291185899` passed clean replay of 22 migrations and every canonical database suite; Security Advisor 0 findings.
 
 ## PHASE 4 — PRODUCT EVIDENCE & RECOMMENDATIONS — ▶️ IN PROGRESS
 
-### 4.1 Exact-variant targeting — ▶️ IN PROGRESS
-- Product-page variant selector implementation has begun.
-- Closet Product links now carry the logged `variant_id` when one exists so the member lands on the exact garment variant they logged.
-- Database target validation is being added so a variant can receive Exact Variant rank only when it actually belongs to the displayed target product.
-- Preserve fallback to Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit when exact-variant evidence is insufficient.
+### 4.1 Exact-variant targeting — ✅ COMPLETE
+- Product pages load variants belonging to the displayed Product and expose an Exact Product / Exact Variant evidence target selector.
+- Closet Product links carry the logged `variant_id` when present so users land on the exact garment variant they logged.
+- Migration `20260819191518_validate_product_evidence_variant_target.sql` independently validates variant ownership inside the evidence RPC; foreign/invalid variant IDs cannot gain Exact Variant rank.
+- Exact Variant remains rank 1 and falls back through Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit when needed.
+- `product_evidence_variant_targeting.test.sql` runs **12 assertions** covering exact-variant priority, one-per-wearer behavior, other-variant Product evidence and safe foreign-variant fallback.
+- PR #17 / CI `32292794210` passed install, typecheck, production build, clean replay of all 23 then-current migrations and every database suite.
+- Security Advisor after the exact-variant migration: 0 findings.
 
-### 4.2 Product-family population/maintenance — QUEUED
-Populate/maintain product families only where non-fit-critical releases should intentionally share fit evidence.
+### 4.2 Product-family population/maintenance — ✅ COMPLETE
+- New canonical Products created through the single Closet flow receive a Product Fit Family at creation.
+- Safe default: a new standalone family keyed to that product/style. A new Product may explicitly join an existing family only for a genuinely same-fit/cut non-fit-critical release.
+- The Add Garment UI shows only compatible family choices after brand, garment type and market/cut segment line up. Choosing an existing exact Product does not expose family reassignment.
+- Migration `20260819192804_enforce_product_family_compatibility.sql` enforces same brand + garment type + market/cut segment at the database boundary.
+- Similar names alone never create family membership; existing shared canonical Products are not member-reassigned through the normal Data API path.
+- `product_family_evidence.test.sql` runs **11 assertions** covering compatibility rejection, Product Family rank 3 and explicit-family evidence vs unlinked same-brand/type lookalikes.
+- PR #18 / CI `32293810777` passed install, typecheck, production build, clean replay of all **24 migrations**, and every canonical database suite.
+- Security Advisor after the family guard: 0 findings.
 
-### 4.3 Similar Garments attributes/materials — QUEUED
-Capture controlled construction/material attributes needed for useful Similar Garments evidence.
+### 4.3 Similar Garments attributes/materials — ▶️ NEXT
+- Existing controlled dictionary already covers fit/cut, rise, stretch level, sleeve length, neckline, collar style, knit/woven construction, length profile and leg shape.
+- Add a controlled V1 primary material/fabric-family signal, then capture only category-relevant controlled attributes when a new canonical Product is created. Reusing an existing Product must preserve its established attributes rather than letting a later Closet log silently rewrite shared catalog identity.
+- Add a DB guard so category-scoped attributes cannot be attached to an incompatible Product category.
 
 ### 4.4 Evidence-tier exercise — QUEUED
-Exercise every fallback tier and verify labels/ranking with controlled data.
+Exercise all six fallback tiers together and verify labels/ranking with controlled data.
 
 ### 4.5 Recommendation confidence calibration — QUEUED
 Calibrate confidence using multiple unique wearers, conflicting outcomes and incomplete measurement coverage.
@@ -118,4 +107,4 @@ Replace homepage mock match data, remove dead prototype logic, configure product
 Use a controlled representative population, smoke the full user loop, explicitly test privacy boundaries, rerun Security/Performance Advisors, and require green CI plus browser smoke verification before beta-ready.
 
 ## Exact next action
-**PHASE 4.1 — complete and verify the validated Product-page exact-variant evidence target, including database ownership validation and controlled tests proving Exact Variant outranks Exact Product without disabling broader fallback evidence.**
+**PHASE 4.3 — extend the controlled garment-attribute dictionary with a V1 primary material/fabric-family signal, enforce category compatibility at the database boundary, capture relevant controlled attributes only when creating a new canonical Product, and verify Similar Garments evidence before proceeding to the all-tier hierarchy test.**

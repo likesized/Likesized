@@ -4,7 +4,6 @@ create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions,auth;
 select plan(12);
 
--- One viewer plus three independent evidence wearers.
 insert into auth.users(id,aud,role,email,created_at,updated_at)
 values
   ('e0000000-0000-4000-8000-000000000001'::uuid,'authenticated','authenticated','variant-viewer@likesized.test',now(),now()),
@@ -13,32 +12,29 @@ values
   ('e0000000-0000-4000-8000-000000000004'::uuid,'authenticated','authenticated','variant-fallback@likesized.test',now(),now());
 
 -- Keep bodies identical so evidence-tier ordering, not body similarity, decides priority.
-do $setup$
-declare
-  uid uuid;
-  uname text;
-begin
-  for uid,uname in
-    select * from (values
-      ('e0000000-0000-4000-8000-000000000001'::uuid,'variant_viewer'),
-      ('e0000000-0000-4000-8000-000000000002'::uuid,'variant_exact'),
-      ('e0000000-0000-4000-8000-000000000003'::uuid,'variant_product'),
-      ('e0000000-0000-4000-8000-000000000004'::uuid,'variant_fallback')
-    ) as x(id,name)
-  loop
-    perform set_config('request.jwt.claim.sub',uid::text,true);
-    perform set_config('request.jwt.claim.role','authenticated',true);
-    execute 'set local role authenticated';
-    perform public.save_fit_profile(
-      uname,
-      'imperial'::public.unit_system,
-      '[{"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"},{"measurement_type_key":"full_hip","entered_value":38,"entered_unit":"in","source":"manual","method":"tape"}]'::jsonb,
-      '[]'::jsonb
-    );
-    execute 'reset role';
-  end loop;
-end
-$setup$;
+set local role authenticated;
+set local request.jwt.claim.sub='e0000000-0000-4000-8000-000000000001';
+set local request.jwt.claim.role='authenticated';
+select public.save_fit_profile('variant_viewer','imperial'::public.unit_system,'[{"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"},{"measurement_type_key":"full_hip","entered_value":38,"entered_unit":"in","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
+reset role;
+
+set local role authenticated;
+set local request.jwt.claim.sub='e0000000-0000-4000-8000-000000000002';
+set local request.jwt.claim.role='authenticated';
+select public.save_fit_profile('variant_exact','imperial'::public.unit_system,'[{"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"},{"measurement_type_key":"full_hip","entered_value":38,"entered_unit":"in","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
+reset role;
+
+set local role authenticated;
+set local request.jwt.claim.sub='e0000000-0000-4000-8000-000000000003';
+set local request.jwt.claim.role='authenticated';
+select public.save_fit_profile('variant_product','imperial'::public.unit_system,'[{"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"},{"measurement_type_key":"full_hip","entered_value":38,"entered_unit":"in","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
+reset role;
+
+set local role authenticated;
+set local request.jwt.claim.sub='e0000000-0000-4000-8000-000000000004';
+set local request.jwt.claim.role='authenticated';
+select public.save_fit_profile('variant_fallback','imperial'::public.unit_system,'[{"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"},{"measurement_type_key":"full_hip","entered_value":38,"entered_unit":"in","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
+reset role;
 
 insert into public.brands(id,name,slug,normalized_name)
 values('e1000000-0000-4000-8000-000000000001'::uuid,'Variant Test','variant-test','varianttest');
@@ -92,13 +88,8 @@ reset role;
 set local role authenticated;
 set local request.jwt.claim.sub='e0000000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
-
 create temporary table variant_target_results on commit drop as
-select * from public.get_product_evidence_candidates(
-  'e2000000-0000-4000-8000-000000000001'::uuid,
-  'e4000000-0000-4000-8000-000000000001'::uuid,
-  50
-);
+select * from public.get_product_evidence_candidates('e2000000-0000-4000-8000-000000000001'::uuid,'e4000000-0000-4000-8000-000000000001'::uuid,50);
 
 select is((select count(*) from variant_target_results),3::bigint,'one strongest observation is returned per unique wearer');
 select is((select count(*) from variant_target_results where user_id='e0000000-0000-4000-8000-000000000002'::uuid),1::bigint,'wearer with multiple observations still contributes only one evidence row');
@@ -111,11 +102,7 @@ select is((select evidence_level::text from variant_target_results where user_id
 select is((select evidence_level::text from variant_target_results order by evidence_rank,fit_report_id limit 1),'exact_variant','Exact Variant sorts before broader evidence tiers');
 
 create temporary table foreign_variant_results on commit drop as
-select * from public.get_product_evidence_candidates(
-  'e2000000-0000-4000-8000-000000000001'::uuid,
-  'e4000000-0000-4000-8000-000000000003'::uuid,
-  50
-);
+select * from public.get_product_evidence_candidates('e2000000-0000-4000-8000-000000000001'::uuid,'e4000000-0000-4000-8000-000000000003'::uuid,50);
 select is((select count(*) from foreign_variant_results where evidence_level='exact_variant'::public.evidence_level),0::bigint,'foreign variant ID cannot receive Exact Variant rank for the target product');
 select is((select evidence_level::text from foreign_variant_results where user_id='e0000000-0000-4000-8000-000000000002'::uuid),'exact_product','foreign variant target safely falls back to Exact Product evidence');
 

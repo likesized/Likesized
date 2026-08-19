@@ -3,7 +3,7 @@
 ## Canonical source-of-truth rule — LOCKED
 GitHub `likesized/Likesized` is the single canonical source of truth for database architecture and executable history. Ordered SQL in `supabase/migrations/` is the authoritative replay/deployment history. `supabase/schema.sql` and `supabase/storage.sql` are reference/current-state aids only.
 
-The canonical directory contains all **28 migrations** recorded by the connected project, from `20260819132934_initial_likesized_schema.sql` through `20260819205518_fit_twin_activity_notifications.sql`.
+The canonical directory contains all **29 migrations** recorded by the connected project, from `20260819132934_initial_likesized_schema.sql` through `20260819211614_atomic_outfit_post_creation.sql`.
 
 Do not rewrite applied migrations. Future database changes are new ordered executable migrations. No alternate current-state schema files, patch migrations, fixed/v2 copies, or parallel database implementations.
 
@@ -29,6 +29,11 @@ Do not rewrite applied migrations. Future database changes are new ordered execu
 - because recipient notifications reference canonical activity with `ON DELETE CASCADE`, making a garment Private or deleting source Closet/outfit content removes the corresponding existing notifications. No stale notification may preserve access to Private/deleted source content.
 - notification preference/mute/recipient tables have no direct authenticated client read/write grants. Public notification RPCs are SECURITY INVOKER wrappers over narrow private auth-bound helpers: `get_fit_twin_notification_settings`, `set_fit_twin_activity_notifications`, `get_fit_twin_notification_mutes`, `set_fit_twin_notification_mute`, `get_fit_twin_activity_notifications`, `get_fit_twin_notification_unread_count`, and `mark_fit_twin_notifications_read`.
 - Fit Twin activity notifications are in-app only in V1. Likes do not generate notifications. No email or phone-push delivery exists in the V1 notification architecture.
+- `outfit_posts` are authenticated-member-readable social posts. `outfit_post_items` are member-readable only while the linked Closet item is Shared. Therefore a tagged garment can later become Private and disappear from garment tags/evidence without deleting the independent outfit post.
+- `outfit_likes` has one like per `(post_id,user_id)`; members read aggregate likes, only the liker may insert/delete their own like, and post deletion cascades likes.
+- `public.create_outfit_post(uuid,text,text,uuid[])` is the canonical SECURITY INVOKER outfit transaction. It requires an authenticated completed member, a correctly owner-scoped photo path, 1–6 unique owned Closet garments, and existing Fit Report evidence for every selected garment; then atomically changes selected garments to Shared, creates the outfit post, and creates garment links. Any database failure rolls back the sharing/post/tag state together.
+- the app uploads the owner-scoped outfit photo before `create_outfit_post`; if the database transaction fails, the app removes that photo. This prevents failed outfit creation from accidentally leaving a Private garment Shared.
+- successful outfit auto-sharing may create the locked newly-Shared-garment activity in addition to the outfit-post activity. Likes create neither Following Feed activity nor Fit Twin notifications.
 
 ## Canonical verification contract
 CI replays the complete migration directory on a disposable local Supabase database, runs the production TypeScript recommendation calibration, and runs pgTAP under `supabase/tests/`.
@@ -45,11 +50,12 @@ Key suites include:
 - `similar_garment_attributes.test.sql` — **10 assertions**
 - `product_evidence_full_hierarchy.test.sql` — **18 assertions**
 - `fit_twin_follow_foundation.test.sql` — **14 assertions**
-- `following_feed_activity.test.sql` — **25 assertions** verifying the safe RPC against Private/Shared transitions, first-share/re-try-on/outfit events, like exclusion, follow/unfollow filtering, re-share behavior, source deletion, anonymous denial, and private-ledger denial.
-- `fit_twin_activity_notifications.test.sql` — **48 assertions** verifying default-on behavior, global toggle, per-Twin mute, no backfill, like exclusion, unread/read state, unfollow/refollow semantics, Following Feed independence, source privacy/deletion cleanup, anonymous denial, and private notification/preference/mute table denial.
+- `following_feed_activity.test.sql` — **25 assertions**
+- `fit_twin_activity_notifications.test.sql` — **48 assertions**
+- `social_outfit_integration.test.sql` — **49 assertions** verifying atomic failed-post rollback, successful Private→Shared outfit tagging, Shared Fit History, member-wide vs Fit-Twin outfit filtering, likes, latest visible Fit Report tags, Following Feed/notification interaction, later Private transition, and source deletion cascades.
 
 `tests/recommendation-confidence.test.ts` calls production `recommendSize()` directly with **9 calibration cases**.
 
-Phase 5.3 final UI/foundation CI **`32302356811`** passed npm install, typecheck, recommendation calibration, production build including `/notifications`, fresh replay of all **28 migrations** and every canonical database suite. Supabase Security Advisor after Phase 5.3: **0 findings**.
+Phase 5.4 final CI **`32303418989`** passed npm install, typecheck, recommendation calibration, production build, fresh replay of all **29 migrations** and every canonical database suite. Supabase Security Advisor after Phase 5.4: **0 findings**.
 
-Do not add fixed measurement columns back to `fit_profiles`; blend current-person scores with historical garment evidence; count repeated observations as multiple wearers; fuzzy-group Product Families; expose raw body data through social activity or notifications; allow anonymous profile/follow/feed/notification discovery; reintroduce a private fit-photo state; or add Fit Twin activity email/phone push without an explicit future product decision and canonical implementation.
+Do not add fixed measurement columns back to `fit_profiles`; blend current-person scores with historical garment evidence; count repeated observations as multiple wearers; fuzzy-group Product Families; expose raw body data through social activity or notifications; allow anonymous profile/follow/feed/notification discovery; reintroduce a private fit-photo state; add Fit Twin activity email/phone push without an explicit future product decision; or reintroduce non-atomic outfit auto-sharing that can publish Closet evidence without a successful outfit transaction.

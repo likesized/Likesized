@@ -1,6 +1,6 @@
 # LikeSized
 
-Working prototype for **LikeSized — See what fits people built like you.**
+V1 application for **LikeSized — See what fits people built like you.**
 
 ## Canonical rule
 GitHub `likesized/Likesized` is the source of truth. No patch/fixed/v2/backup/parallel implementations. Database history and product status must remain canonical in-repo.
@@ -31,13 +31,17 @@ Reference documents:
 - Production recommendation-confidence calibration in CI
 - Fit Twins/following and member Shared Fit History
 - Community-public-to-members Fit Twin/follow graph with owner-only relationship changes
+- Dedicated Following Feed for Shared Closet additions, Fit Reports and outfits
+- In-app Fit Twin activity notifications with global and per-Twin controls
 - Outfit posting, likes, All/Fit-Twins feeds and outfit-photo storage
-- Product/brand/member search and discovery
+- Canonical product/brand/member search and discovery
+- Public homepage with static product-capability content; no fabricated live people, activity or match percentages
 
-## Important prototype boundaries
-- The connected database currently has no deliberate real/test user population; repeatable verification uses disposable local Supabase CI.
-- The public homepage still uses `lib/mock-data.ts` for demonstration match cards and must be converted before V1 beta.
-- The dedicated cross-content Following Feed and Fit Twin activity notifications are Phase 5 work; the canonical follow relationship they will use is already implemented and verified.
+## Current pre-beta boundaries
+- The connected Supabase database has no deliberate real/test user population; repeatable verification uses disposable local Supabase CI.
+- Prototype homepage data and the obsolete standalone prototype fit scorer have been removed from canonical source.
+- Production deployment configuration and responsive/accessibility review remain Phase 6 work.
+- Production must not be deployed until the owner explicitly authorizes it.
 
 ## Authoritative fit rules
 Raw current and historical body measurements are owner-only. Current Fit Twin scores are current-body to current-body; garment evidence uses the immutable historical snapshot attached to each Fit Report. Do not blend the two.
@@ -62,10 +66,12 @@ A Fit Twin is a Fit Match the user deliberately saves/follows; no universal perc
 - `/` — public home
 - `/signup`, `/login` — auth
 - `/onboarding` — private versioned Fit Profile
-- `/search` — discovery
+- `/search` — canonical product/member discovery
 - `/people` — People My Size
 - `/people/[username]` — member/Fit Twin profile and Shared Fit History
 - `/twins` — saved Fit Twins
+- `/following` — Following Feed
+- `/notifications` — Fit Twin activity notifications
 - `/closet`, `/closet/add`, `/closet/[id]/edit` — Closet
 - `/item/[slug]` — product evidence/recommendation
 - `/outfits`, `/outfits/new` — outfits, likes and All/Fit-Twins feeds

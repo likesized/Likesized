@@ -15,12 +15,12 @@ If another file contains an old next step, checklist, phase order, or handoff th
 
 ## Working rules — LOCKED
 - GitHub `likesized/Likesized` is the permanent canonical source of truth.
-- Approved changes go directly into the canonical implementation. Do not create fixed/v2/backup/temp copies or parallel feature implementations. Git history is history.
-- Database replay/deployment history is the ordered executable SQL in `supabase/migrations/`.
-- Supabase project `rlksidwniuoxoacumyaf` is the deployed LikeSized database instance, not a competing source of truth.
-- Production deployment remains owner-controlled. Do not deploy merely because implementation/testing is complete.
-- Work through the phases below in order. Do not divert to later feature work while an earlier phase has an unresolved exit criterion.
-- Ask the owner only when an actual product/business/cost/credential decision is required; otherwise continue automatically.
+- Approved changes go directly into canonical files. Never create fixed/v2/backup/temp copies or parallel feature implementations. Git history is history.
+- Ordered executable SQL in `supabase/migrations/` is the only database replay/deployment history.
+- Supabase project `rlksidwniuoxoacumyaf` is the deployed instance/ledger, not a competing source of truth.
+- Production deployment remains owner-controlled.
+- Work through phases below in order. Do not divert while an earlier exit criterion is unresolved.
+- Ask the owner only for a genuine product/business/cost/credential decision; otherwise continue automatically.
 
 ## Product promise — LOCKED
 **See what fits people built like you.**
@@ -29,112 +29,103 @@ Primary question: **“How did this garment fit people built like me?”**
 
 Stack: Next.js + Supabase + Vercel target.
 
-Privacy rule: exact current and historical body measurements are owner-private. Member-facing matching exposes safe derived match/evidence values, never another member’s raw measurements.
+Privacy: exact current/historical body measurements and normally-worn size references are owner-private. Member-facing matching exposes safe derived values, never another member’s raw Fit Profile data.
 
 ## Architecture rules that must not regress
 1. **Current person / Fit Twin matching** = viewer current body vs other member current body.
-2. **Historical garment matching** = viewer current body vs immutable Fit Profile snapshot attached to that specific Fit Report.
-3. Never blend those two scores.
-4. Changing current measurements never rewrites an older Fit Report/body association.
+2. **Historical garment matching** = viewer current body vs immutable Fit Profile snapshot attached to that Fit Report.
+3. Never blend current-person and historical-garment scores.
+4. Current-body changes never rewrite an older Fit Report/body association.
 5. Product recommendation aggregation uses at most one strongest relevant observation per unique wearer.
-6. Original manufacturer size text is preserved while matching uses controlled normalized sizing when possible.
-7. Private Closet items are owner-only. Shared Closet evidence is member-readable. Fit/reference photo upload is optional, but any uploaded fit/reference photo is shared with authenticated members; there is no private fit-photo mode.
-8. Controlled values drive matching/filtering/search/analytics where the architecture defines them; free text is supplemental/fallback.
-9. **V1 member identity is authenticated-member-only:** completed username/display name/bio may be discovered by signed-in LikeSized members, but anonymous visitors have no `profiles` SELECT access.
+6. Preserve original manufacturer size text; use normalized sizing for logical matching when possible.
+7. Private Closet items are owner-only. Shared Closet evidence is member-readable. Fit/reference photo upload is optional, but any uploaded fit/reference photo is shared with authenticated members; no private fit-photo mode exists.
+8. Controlled values drive matching/filtering/search/analytics where defined; free text is supplemental/fallback.
+9. **V1 member identity is authenticated-member-only.** Completed username/display name/bio may be found by signed-in LikeSized members; anonymous visitors have no `profiles` SELECT access.
 
-## 2026-08-19 full canonical audit — current baseline
-The full Next.js application, Supabase integration, matching/recommendation logic and product documentation are in GitHub. The separate LikeSized Supabase project exists. The live database remains free of test-member/application data; representative behavior is verified in disposable local Supabase CI instead of polluting the deployed project.
-
-Supabase Security Advisor has remained clean through the Phase 1 privacy/schema changes. Performance notices were unused-index INFO notices while the database was empty.
-
-### Original-plan reconciliation
-- Full V1 scaffold in GitHub: **IMPLEMENTED**.
-- LikeSized Supabase project/auth/database: **IMPLEMENTED**.
-- Fit Profile: **CORE IMPLEMENTED; behavior/privacy/history verification is active in Phase 1**.
-- People My Size: **DATABASE-BACKED; validation remains Phase 2**.
-- Closet logging: **MOSTLY IMPLEMENTED; richer controlled Fit Reports remain Phase 3**.
-- Product fit/recommendation page: **CORE IMPLEMENTED; all fallback tiers are not yet operational from user-entered data; Phase 4**.
-- Fit Twins/following/outfits/search: **MOSTLY IMPLEMENTED; final integration verification remains Phase 5**.
-- Public homepage still contains prototype mock match cards: **must be removed/replaced in Phase 6**.
+## Current canonical baseline — 2026-08-19
+- Full Next.js application, Supabase integration, matching/recommendation logic and canonical docs are in GitHub.
+- Live Supabase contains no deliberate test-member/application data; repeatable verification uses disposable local Supabase in CI.
+- Live migration ledger and GitHub contain **20 migrations** through `20260819174045_restore_current_match_helper_execute.sql`.
+- Supabase Security Advisor remained at **0 findings** through Phase 1 schema/privacy changes.
+- Canonical CI performs `npm ci`, typecheck, production build, fresh migration replay, and pgTAP database tests.
 
 # PHASES
 
 ## PHASE 0 — CANONICAL BASELINE & REPRODUCIBILITY
 **Status: ✅ COMPLETE.**
+- Missing early migrations recovered byte-for-byte from Supabase ledger.
+- Ordered migration directory locked as sole replay history.
+- One master guide locked.
+- `package-lock.json` + permanent CI established.
+- Zero-added-cost disposable local Supabase replay used instead of a paid branch.
+- PR #1 / CI `32276450771` passed install, typecheck, build and clean replay.
 
-Goal: GitHub can independently reproduce the application/database and every later phase has a reliable verification gate.
-
-- All original 14 migrations present at Phase 0 exit; first seven recovered byte-for-byte from the deployed ledger.
-- Ordered `supabase/migrations/` is the sole replay/deployment history; `schema.sql` / `storage.sql` are reference aids only.
-- This file is the sole master guide.
-- Canonical `package-lock.json` and `.github/workflows/ci.yml` exist.
-- Zero-added-cost disposable local Supabase replay is used instead of a paid development branch.
-- Phase 0 verification PR #1 / CI run `32276450771` passed install, typecheck, production build, CLI setup, and clean migration replay.
-
-**Phase 0 exit criterion: ✅ MET.**
+**Exit criterion: ✅ MET.**
 
 ## PHASE 1 — FIT PROFILE COMPLETION & PRIVACY CONTROLS
-**Status: ▶️ IN PROGRESS — 1.1/1.2 COMPLETE; 1.3 VERIFICATION RUNNING.**
+**Status: ▶️ IN PROGRESS — 1.1–1.4 COMPLETE; 1.5 FINAL GATE.**
 
 ### 1.1 Private normally-worn size references — ✅ COMPLETE
-- Fit Profile reads/edits owner-private `user_size_references`.
-- Bra and shoe references are structured; shirt/pants/dress/other are private reference context only.
-- Migration `20260819164005_atomic_fit_profile_size_references.sql` makes measurements + size references one atomic current-state save before immutable-version creation/reuse.
-- `save_fit_profile` remains SECURITY INVOKER under RLS.
-- Phase 1.1 PR #2 / CI run `32277761390` passed install, typecheck, production build, and clean 15-migration replay.
+- Fit Profile reads/edits owner-private size references.
+- Structured bra/shoe; shirt/pants/dress/other are private reference context only.
+- `20260819164005_atomic_fit_profile_size_references.sql` makes measurements + size references one atomic save before immutable-version creation/reuse.
+- PR #2 / CI `32277761390` passed app checks and clean replay.
 
 ### 1.2 Owner profile/privacy controls — ✅ COMPLETE
-- Canonical `/settings` edits optional display name/bio and explains privacy state; header/self-profile link to the same owner settings surface.
-- Avatar editing remains intentionally unexposed until an avatar Storage model is deliberately designed.
-- Migration `20260819165124_profile_identity_constraints.sql` bounds profile identity fields.
-- Owner decision locked: **V1 member profiles are signed-in-member-only**.
-- Migration `20260819165756_member_only_profile_identity.sql` revokes anonymous profile SELECT and removes the anon profile-read policy.
-- Live privilege verification: `anon` has no profile SELECT grant; remaining profile SELECT policy targets `authenticated` only.
-- Security Advisor after change: **0 findings**.
-- Phase 1.2 PR #3 / CI run `32279397793` passed install, typecheck, production build, and clean replay of all 17 then-current migrations; merged as `4d936f7`.
+- Canonical `/settings` edits optional display name/bio and explains privacy state.
+- Avatar editing intentionally remains unexposed until an avatar Storage design exists.
+- Owner decision locked: **signed-in-member-only member profiles**.
+- `20260819165124_profile_identity_constraints.sql` bounds identity fields.
+- `20260819165756_member_only_profile_identity.sql` removes anonymous profile reads.
+- Live privilege verification confirms `anon` has no `profiles` SELECT; Security Advisor 0 findings.
+- PR #3 / CI `32279397793` passed.
 
-### 1.3 Fit Profile behavior verification — ▶️ IN PROGRESS
-Goal: prove unit handling, partial profiles, edit replacement and immutable version reuse/change rather than relying on implementation inspection.
+### 1.3 Fit Profile behavior verification — ✅ COMPLETE
+- Fixed generic private size-reference normalization without reopening the general normalizer helper.
+- `20260819170808_inline_private_size_reference_normalization.sql` keeps normalization inside SECURITY INVOKER `save_fit_profile`.
+- `supabase/tests/fit_profile_behavior.test.sql` proves partial saves, unit normalization, atomic refs, current-state replacement and immutable version creation/reuse.
+- CI `32280574740`: **21/21 behavior assertions passed** plus app checks/replay.
 
-- While writing executable tests, a real regression was found: generic shirt/pants/dress/other references called `public.normalize_search_text` from the SECURITY INVOKER save even though authenticated EXECUTE had been intentionally revoked.
-- Canonical fix `20260819170808_inline_private_size_reference_normalization.sql` keeps generic label normalization inline inside `save_fit_profile`; the general normalizer helper remains unexposed.
-- `supabase/tests/fit_profile_behavior.test.sql` now exercises partial saves, structured + generic size references, canonical units, metric edits, current-state removals, immutable version creation/reuse and preservation of old snapshot rows.
-- CI now runs `supabase test db` after every fresh local migration replay.
-- Final Phase 1.3 test run must pass before 1.3 closes.
+### 1.4 Raw measurement/privacy RLS verification — ✅ COMPLETE
+- `supabase/tests/fit_profile_privacy_rls.test.sql` uses two authenticated identities plus `anon`.
+- Proves owner-only current/historical raw Fit Profile data, cross-user write/delete protection, signed-in identity discovery and anonymous denial.
+- CI `32281527759`: **16/16 privacy assertions passed** plus app checks/replay.
 
-### 1.4 Raw measurement/privacy RLS verification — QUEUED
-Add executable multi-user RLS tests proving current/historical raw measurements and private size references are owner-only.
+### 1.5 Current-body vs historical-body integrity — ▶️ FINAL VERIFICATION
+- `supabase/tests/fit_profile_history_integrity.test.sql` proves old/new garment observations remain tied to v1/v2 immutable body snapshots while current-person matching follows current body state.
+- The history gate exposed a real ambiguity in `private.calculate_fit_matches_for_profile`; `20260819173357_qualify_current_match_profile_owner.sql` fixes the owner lookup with explicit table aliases.
+- Re-running then exposed a permission regression caused by that function recreation: the authoritative architecture intentionally allows authenticated EXECUTE on this **one** SECURITY DEFINER current-match helper because it derives the viewer from `auth.uid()` and returns only safe identity/match/coverage values. Raw measurements remain private and all other private helpers remain restricted.
+- `20260819174045_restore_current_match_helper_execute.sql` restores exactly that narrow architecture grant. `get_fit_matches` and `get_garment_fit_matches` remain SECURITY INVOKER public wrappers.
+- Live verification confirms authenticated EXECUTE is present on `private.calculate_fit_matches_for_profile(text,integer)` and no raw measurement access was broadened.
+- Final CI must pass all Fit Profile behavior/privacy/history suites plus a fresh replay of all 20 migrations before Phase 1 closes.
 
-### 1.5 Current-body vs historical-body behavior — QUEUED
-Add executable history tests proving current body changes affect current matching without rewriting Fit Report snapshots/history.
-
-**Phase 1 exit criterion:** the complete private Fit Profile and historical body-state rules are verified end to end in repeatable canonical tests.
+**Phase 1 exit criterion:** complete private Fit Profile + current-vs-historical body-state behavior is proven by repeatable canonical tests.
 
 ## PHASE 2 — PEOPLE MY SIZE / MATCHING VERIFICATION
 **Status: QUEUED.**
-1. Create controlled disposable test users with deliberately different upper/lower-body profiles.
+1. Create controlled disposable users with deliberately different upper/lower-body profiles.
 2. Verify Overall/Tops/Bottoms ranking and missing-measurement coverage.
 3. Verify current Fit Twin scores recalculate with current-body changes independently of historical garment evidence.
-4. After validation only, decide whether richer garment-specific People My Size filters are necessary for V1 UI.
+4. **Owner decision after validation:** decide whether richer garment-specific People My Size filters belong in V1 UI.
 
 **Exit criterion:** expected relative rankings are demonstrated without exposing raw measurements.
 
 ## PHASE 3 — CLOSET & FIT REPORT COMPLETION
 **Status: QUEUED.**
-1. Build garment-specific controlled Fit Report inputs from existing dictionaries/taxonomy; show only dimensions relevant to the garment type.
-2. Persist those responses to `fit_report_dimensions` for initial logs and later observations.
-3. Make the Post Outfit picker explicitly display the latest Fit Report per Closet item.
-4. Improve brand/product search-before-create UX while retaining canonical normalization/deduplication.
+1. Build garment-specific controlled Fit Report inputs from existing dictionaries/taxonomy; show only relevant dimensions.
+2. Persist responses to `fit_report_dimensions` for first logs and later observations.
+3. Make Post Outfit picker deliberately use the latest Fit Report per Closet item.
+4. Improve brand/product search-before-create UX while preserving canonical normalization/deduplication.
 5. Test Private/Shared visibility, fit-photo forced sharing, history-safe editing, repeat try-ons and deletion cascades.
 
-**Exit criterion:** Closet captures the evidence the authoritative schema was designed for and every history-sensitive surface intentionally selects the right observation.
+**Exit criterion:** Closet captures the evidence the authoritative schema was designed for and history-sensitive surfaces intentionally select the correct observation.
 
 ## PHASE 4 — PRODUCT EVIDENCE & RECOMMENDATION COMPLETION
 **Status: QUEUED.**
 1. Add real exact-variant targeting.
-2. Populate/maintain canonical product families where fit evidence should carry across non-fit-critical releases.
-3. Populate controlled garment attributes/materials required by Similar Garments evidence.
-4. Exercise every evidence fallback tier and verify labels/ranking.
+2. Populate/maintain product families where non-fit-critical releases should share fit evidence.
+3. Populate controlled garment attributes/materials needed for Similar Garments evidence.
+4. Exercise every fallback tier and verify labels/ranking.
 5. Calibrate confidence with multiple unique wearers, conflicting outcomes and incomplete coverage.
 
 **Exit criterion:** every intended evidence tier is reachable and recommendation confidence is exercised, not merely coded.
@@ -143,15 +134,15 @@ Add executable history tests proving current body changes affect current matchin
 **Status: QUEUED.**
 1. Re-test follow/unfollow, live Fit Twin scores and Shared Fit History after Phases 1–4.
 2. Re-test outfit creation, auto-sharing tagged private garments, likes and Fit-Twins-only feed.
-3. Re-test search across products/brands/members with representative data.
+3. Re-test product/brand/member search with representative data.
 4. Comments remain outside V1 until moderation/reporting is intentionally designed.
 
-**Exit criterion:** social/discovery uses finalized current/historical evidence rules everywhere.
+**Exit criterion:** social/discovery consumes finalized current/historical evidence rules everywhere.
 
 ## PHASE 6 — REMOVE PROTOTYPE SURFACES & PREPARE DEPLOYMENT
 **Status: QUEUED.**
 1. Replace homepage mock match cards/demo percentages with real data or clearly static non-fake marketing content.
-2. Remove dead prototype logic once unused.
+2. Remove dead prototype-only logic once unused.
 3. Configure production site/auth/Vercel environment settings.
 4. Run mobile/responsive/accessibility review across core routes.
 
@@ -159,14 +150,12 @@ Add executable history tests proving current body changes affect current matchin
 
 ## PHASE 7 — V1 BETA END-TO-END VERIFICATION
 **Status: QUEUED.**
-1. Use a controlled test population covering different bodies, partial measurements, body changes, Shared/Private Closet items and repeated observations.
+1. Use controlled test population covering body differences, partial measurements, body changes, Shared/Private Closet items and repeated observations.
 2. Smoke the full user loop.
-3. Explicitly test all privacy boundaries.
-4. Re-run Supabase Security/Performance Advisors with representative data.
-5. Require green CI plus browser smoke verification before beta-ready.
-6. Do not deploy production unless the owner explicitly authorizes deployment.
+3. Explicitly test privacy boundaries.
+4. Re-run Security/Performance Advisors with representative data.
+5. Require green CI + browser smoke verification before beta-ready.
+6. Never deploy production without explicit owner authorization.
 
 ## Exact next action
-**Complete the Phase 1.3 pgTAP CI gate, then proceed immediately to PHASE 1.4 — raw measurement/privacy RLS verification.**
-
-Continue through phases in order. Ask the owner only when a genuine product/business/cost/credential decision is required.
+**Complete the Phase 1.5 matcher/history-integrity CI gate from the 20-migration canonical head. If green, mark PHASE 1 complete and proceed immediately to PHASE 2.1 matching verification.**

@@ -109,6 +109,11 @@ select is(
   'changed current body creates Fit Profile version 2'
 );
 select is(
+  (select value_canonical from public.fit_profile_version_measurements m join public.fit_profiles fp on fp.current_version_id=m.fit_profile_version_id where fp.user_id='44444444-4444-4444-8444-444444444444'::uuid and m.measurement_type_key='natural_waist'),
+  111.760000::numeric,
+  'current version 2 stores the changed waist snapshot'
+);
+select is(
   (select version_number from public.fit_profile_versions v join public.fit_reports r on r.fit_profile_version_id=v.id where r.id='99999999-9999-4999-8999-999999999999'::uuid),
   1,
   'old Fit Report remains attached to version 1 after current body changes'

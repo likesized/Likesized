@@ -43,8 +43,9 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 - Phase 6.1/6.2 verification PR #32 / CI `32306676280` passed install, typecheck, recommendation calibration, production build, clean replay of all 30 migrations, and all canonical database tests; verification-only PR closed without merge.
 - Vercel project **`likesized`** now exists in team `likesized-6817s-projects` with project ID `prj_ioYhiOjBNHDzPx2otiCY6XpNL3Um`.
 - Production domain is **`https://likesized.vercel.app`**.
-- Canonical production checkpoint deployment `dpl_HQMKuTLHJAXqKJv23XgoR5DdSMoT` is READY and built by checking out exact GitHub commit `93bd10253ebb7540f1640bf33bda46f73500093c`, then running canonical `npm ci --include=dev` and `npm run build` with the production Supabase URL/publishable key and `NEXT_PUBLIC_SITE_URL=https://likesized.vercel.app` supplied to that build.
-- Canonical production build passed Next compile, TypeScript and generation of all 20 application routes; live `/` returned 200, unauthenticated `/people` entered the expected login/return flow, and Vercel reported no runtime errors in the first production smoke window.
+- Live canonical production deployment is **`dpl_F7FaH6oeAt4RFh6qb5QvF6unZCAv`**. Its build checked out exact GitHub commit **`48f23518ac01b3dd7021f44e0d41bdd77ee44e15`**, then ran canonical `npm ci --include=dev` and `npm run build` with the production Supabase URL/publishable key and `NEXT_PUBLIC_SITE_URL=https://likesized.vercel.app` supplied to that build.
+- The live canonical production build passed Next compile, TypeScript and generation of all 20 application routes; live `/` returned 200, unauthenticated `/people` entered the expected login/return flow, and Vercel reported no runtime errors in the first production smoke window.
+- This master-log commit is record-only bookkeeping after that deployment; it does not change application runtime source.
 
 # PHASES
 
@@ -129,7 +130,7 @@ Dedicated Following Feed + Fit Twin activity notifications explicitly locked int
 - Signup code derives `emailRedirectTo` from `NEXT_PUBLIC_SITE_URL` (with request-origin/local fallback), and `/auth/confirm` performs server-side OTP verification before sending users to onboarding.
 - Owner authorized the initial production deployment on 2026-08-19.
 - Vercel project `likesized` / `prj_ioYhiOjBNHDzPx2otiCY6XpNL3Um` was created successfully and production domain `https://likesized.vercel.app` is active.
-- Production deployment `dpl_HQMKuTLHJAXqKJv23XgoR5DdSMoT` is READY and its build checked out exact canonical commit `93bd10253ebb7540f1640bf33bda46f73500093c`; compile, TypeScript, route generation and initial live smoke checks passed.
+- Live production deployment `dpl_F7FaH6oeAt4RFh6qb5QvF6unZCAv` is READY and its build checked out exact canonical commit `48f23518ac01b3dd7021f44e0d41bdd77ee44e15`; compile, TypeScript, route generation and initial live smoke checks passed.
 - **Still required before 6.3 is complete:** persist the three required values as Vercel **project-level Production and Preview environment variables** rather than relying only on build-time injection; verify/link the long-term Vercel Git source to canonical `likesized/Likesized`; set/verify Supabase Auth Site URL as `https://likesized.vercel.app`, configure the intended localhost/Vercel preview redirect allowlist, and verify confirmation-email behavior end to end.
 - The currently exposed Vercel connector can create/deploy/read the project but does not expose project environment-variable or Git-link mutation; the currently exposed Supabase connector does not expose hosted Auth URL/template mutation. Do not mark 6.3 complete until these persistent settings are verified.
 

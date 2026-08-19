@@ -10,7 +10,7 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 - Supabase project `rlksidwniuoxoacumyaf` is the deployed instance/ledger, not a competing source of truth.
 - Do not deploy production unless the owner explicitly authorizes it.
 - Work Phases 0→7 in order without diversion. Ask the owner only for genuine product/business/cost/credential decisions.
-- The post-Phase-4 owner checkpoint is **resolved** by the explicit V1 Following Feed decision recorded below. Phase 5 may begin with that functionality included.
+- The post-Phase-4 owner checkpoint is **resolved** by the explicit V1 Following Feed decision recorded below. Phase 5 may proceed with that functionality included.
 
 ## Product / privacy rules — LOCKED
 **See what fits people built like you.** Primary question: **“How did this garment fit people built like me?”**
@@ -30,6 +30,7 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 13. **Following Feed is V1.** Members can follow useful Fit Twins / People My Size and continue learning from their future Shared fit activity. The dedicated feed includes meaningful new fit content from followed members: Shared Closet additions, new Fit Report observations/re-try-ons, and outfit posts. Likes are not feed events. Private Closet activity never appears.
 14. A Following Feed card may show the followed member's **current relevant Fit Match** (Overall/Tops/Bottoms as appropriate) as relationship context. That current-person score is never substituted for the historical snapshot match attached to a garment Fit Report.
 15. **Fit Twin activity notifications are V1.** Followed-member Shared fit activity can generate in-app activity notifications. Exact notification default/quieting controls may be finalized during Phase 5 UX implementation, but the notification capability itself is not deferred beyond V1.
+16. **Fit Twin/follow relationships are community-public within LikeSized.** Any signed-in LikeSized member may see who follows whom. Only the follower can create or remove their own relationship. Anonymous web visitors cannot query the follow graph because V1 member identity remains signed-in-member-only.
 
 ## Current baseline — 2026-08-19
 - Full Next.js app, Supabase integration, matching/recommendation logic and canonical docs are in GitHub.
@@ -66,65 +67,33 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 - Phase 3 final CI `32291185899` passed clean replay of 22 migrations and every canonical database suite; Security Advisor 0 findings.
 
 ## PHASE 4 — PRODUCT EVIDENCE & RECOMMENDATIONS — ✅ 100% COMPLETE
-
-### 4.1 Exact-variant targeting — ✅ COMPLETE
-- Product pages expose Exact Product / Exact Variant targeting and Closet links carry the logged variant when present.
-- Migration `20260819191518_validate_product_evidence_variant_target.sql` independently validates target-variant ownership in the evidence RPC; a foreign/invalid variant cannot receive Exact Variant rank.
-- `product_evidence_variant_targeting.test.sql`: **12/12** assertions.
-- PR #17 / CI `32292794210` passed full app checks, 23-migration replay and all DB tests.
-
-### 4.2 Product-family population/maintenance — ✅ COMPLETE
-- New Products receive a standalone Product Fit Family by default or may explicitly join a compatible intentional same-fit/cut family.
-- No fuzzy-name family grouping and no normal member-side reassignment of existing shared Products.
-- Migration `20260819192804_enforce_product_family_compatibility.sql` enforces brand + garment type + market/cut segment compatibility.
-- `product_family_evidence.test.sql`: **11/11** assertions.
-- PR #18 / CI `32293810777` passed full app checks, 24-migration replay and all DB tests.
-
-### 4.3 Similar Garments attributes/materials — ✅ COMPLETE
-- Controlled dictionary includes fit/cut, rise, stretch, Primary material/fabric family, sleeve length, neckline, collar style, knit/woven construction, length profile and leg shape.
-- Add Garment renders only global + category-relevant controlled Product attributes.
-- Product attributes are applied only when this flow truly creates a new canonical Product; reusing/deduplicating an existing Product preserves its established shared catalog attributes.
-- Migration `20260819194010_controlled_primary_material_and_attribute_category.sql` adds controlled material options and the DB category-compatibility guard.
-- `similar_garment_attributes.test.sql`: **10/10** assertions.
-- PR #19 / CI `32294768975` passed full app checks, 25-migration replay and every canonical DB suite.
-
-### 4.4 Full evidence hierarchy — ✅ COMPLETE
-- `product_evidence_full_hierarchy.test.sql` creates six distinct evidence wearers and exercises every tier simultaneously.
-- **18/18 assertions passed**: Exact Variant rank 1, Exact Product 2, Product Family 3, Similar Garments 4, Brand + Garment Type 5, Category Fit 6.
-- The test also proves one strongest historical observation per unique wearer when the same wearer has stronger and weaker records.
-- PR #20 / CI `32295291639` passed typecheck, production build, clean 25-migration replay and every database suite.
-
-### 4.5 Recommendation confidence calibration — ✅ COMPLETE
-- `tests/recommendation-confidence.test.ts` calls the production `recommendSize()` function directly; no copied scoring formula or test-only recommendation engine exists.
-- Permanent CI step **Recommendation confidence calibration** runs before the production build.
-- **9/9 calibration cases passed**, exercising:
-  - 50% historical body-match eligibility floor,
-  - unique-wearer/sample-strength growth,
-  - incomplete measurement coverage,
-  - weaker historical match quality,
-  - evidence-tier exactness,
-  - conflicting fit outcomes,
-  - competing supported sizes,
-  - Similar Garments attribute overlap,
-  - buy-again weighting.
-- Current calibrated reference cases include: one perfect Exact Variant wearer ≈ **56%** confidence, four ≈ **76%**, ten cap at **99%**; ten perfect wearers with 50% coverage produce **50%**; ten perfect Category Fit observations produce **42%**; five positive + five too-small reports on the same size reduce confidence to **61%**; a 5-vs-5 supported-size split produces **40%**.
-- PR #21 / final Phase 4 CI `32295755268` passed **npm ci → typecheck → recommendation calibration → production build → clean 25-migration replay → every canonical pgTAP suite**.
-- Final Supabase Security Advisor: **0 findings**.
-
-**Phase 4 exit criterion: ✅ MET.** Every intended evidence tier is reachable and verified in the locked order; one-per-wearer aggregation is enforced; recommendation confidence is exercised against representative strong, weak, incomplete and conflicting evidence.
+- Exact Variant targeting, Product Fit Families, Similar Garments controlled attributes/materials, all six evidence tiers and recommendation-confidence calibration are complete and permanently tested.
+- Locked hierarchy: Exact Variant 1 → Exact Product 2 → Product Family 3 → Similar Garments 4 → Brand + Garment Type 5 → Category Fit 6.
+- `product_evidence_variant_targeting.test.sql`: **12/12**.
+- `product_family_evidence.test.sql`: **11/11**.
+- `similar_garment_attributes.test.sql`: **10/10**.
+- `product_evidence_full_hierarchy.test.sql`: **18/18**.
+- `tests/recommendation-confidence.test.ts`: **9/9** production-function calibration cases.
+- Final Phase 4 CI `32295755268` passed npm ci → typecheck → recommendation calibration → production build → clean 25-migration replay → every canonical pgTAP suite.
+- Final Phase 4 Supabase Security Advisor: **0 findings**.
 
 ## OWNER CHECKPOINT AFTER PHASE 4 — ✅ RESOLVED
 The owner explicitly locked a dedicated **Following Feed** into V1 before Phase 5. Following Fit Twins / People My Size was already part of the LikeSized concept; the newly locked requirement is the persistent personalized activity feed plus Fit Twin activity notifications described above.
 
-This checkpoint is complete. Phase 5 may now proceed with the Following Feed treated as core V1 scope, not a future social enhancement.
+The owner also locked the follow graph as visible to signed-in LikeSized members. This checkpoint is complete.
 
-## PHASE 5 — FIT TWINS / FOLLOWING FEED / SOCIAL / SEARCH — ▶️ NEXT
+## PHASE 5 — FIT TWINS / FOLLOWING FEED / SOCIAL / SEARCH — ▶️ IN PROGRESS
 
-### 5.1 Existing follow/Fit Twin foundation audit
-Re-test the existing follow/unfollow relationship, current Fit Twin scores, member profile relationships and privacy boundaries before adding new feed behavior. Preserve the rule that a Fit Twin is a deliberately followed/saved useful match with no universal percentage threshold.
+### 5.1 Existing follow/Fit Twin foundation audit — ✅ COMPLETE
+- Existing People My Size save/remove actions, `/twins`, member profiles and the Fit-Twins outfit filter all use the same canonical `follows` relationship.
+- No second friends/follow data model exists or is needed.
+- Database constraints already enforce unique relationships and no self-follow; RLS allows only the follower to create/delete a relationship.
+- Owner decision: the follow graph remains readable by all signed-in LikeSized members, while anonymous visitors remain blocked.
+- `fit_twin_follow_foundation.test.sql`: **14/14 assertions** verifying save/unfollow, duplicate/self-follow rejection, public-to-members relationship visibility, cross-user write/delete protection, live Fit Match recalculation independent of the saved relationship, and anonymous denial.
+- PR #22 / CI `32297673470` passed full canonical app checks, clean replay of all 25 migrations, and every database suite.
 
-### 5.2 Dedicated Following Feed — V1 LOCKED
-Build and verify a personalized feed of meaningful Shared activity from followed Fit Twins / People My Size.
+### 5.2 Dedicated Following Feed — ▶️ NEXT
+Build and verify a personalized feed of meaningful Shared activity from followed Fit Twins / People My Size using the canonical `follows` relationship.
 
 Feed activity includes:
 - a newly Shared Closet garment,
@@ -162,4 +131,4 @@ Replace homepage mock match data, remove dead prototype logic, configure product
 Use a controlled representative population, smoke the full user loop, explicitly test privacy boundaries, rerun Security/Performance Advisors, and require green CI plus browser smoke verification before beta-ready.
 
 ## Exact next action
-**PHASE 5.1 — audit and re-verify the existing follow/Fit Twin foundation and privacy behavior, then build the locked dedicated Following Feed on that canonical relationship rather than creating a parallel social-follow system.**
+**PHASE 5.2 — build the dedicated Following Feed on the existing canonical `follows` relationship, with Shared Closet additions, subsequent Shared Fit Report observations and outfit posts as meaningful activity while preserving all existing RLS/privacy boundaries.**

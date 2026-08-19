@@ -33,7 +33,8 @@ The connected Supabase project is the deployed instance and execution ledger. **
 25. `20260819194010_controlled_primary_material_and_attribute_category.sql` — controlled material/category attributes.
 26. `20260819202515_following_feed_activity_foundation.sql` — private canonical ledger for Shared-garment, re-try-on and outfit Following Feed activity; current visibility/source checks and auth-bound feed output.
 27. `20260819202851_harden_following_feed_rpc_boundary.sql` — moves privileged Following Feed implementation to a private auth-bound SECURITY DEFINER helper behind a public SECURITY INVOKER wrapper.
+28. `20260819205518_fit_twin_activity_notifications.sql` — private default-on global/per-Fit-Twin notification state plus recipient in-app notifications fanned out from the canonical Following Feed activity ledger through safe auth-bound RPCs; source privacy/deletion cascades corresponding notifications.
 
-The first seven files were recovered from `supabase_migrations.schema_migrations` during the 2026-08-19 canonical audit and verified byte-for-byte against the deployed migration ledger before being committed. Migrations 16–27 are stored under the exact versions recorded by the deployed Supabase ledger.
+The first seven files were recovered from `supabase_migrations.schema_migrations` during the 2026-08-19 canonical audit and verified byte-for-byte against the deployed migration ledger before being committed. Migrations 16–28 are stored under the exact versions recorded by the deployed Supabase ledger.
 
 Future database changes are new ordered executable migrations in this same directory. Update `docs/V1_PRODUCT_SPEC.md`, `docs/AI_MASTER_LOG.md`, and `supabase/schema_contract.md` when architecture or locked behavior changes.

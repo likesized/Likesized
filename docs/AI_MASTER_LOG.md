@@ -27,8 +27,8 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 ## Current baseline — 2026-08-19
 - Full Next.js app, Supabase integration, matching/recommendation logic and canonical docs are in GitHub.
 - Live Supabase has no deliberate test-user/application data; repeatable verification uses disposable local Supabase CI.
-- **21 canonical migrations** through `20260819183601_enforce_fit_report_dimension_garment_type.sql`.
-- Supabase Security Advisor: **0 findings** after Phase 3.1 DDL.
+- **22 canonical migrations** through `20260819190312_enforce_shared_fit_photo_invariant.sql`.
+- Supabase Security Advisor: **0 findings** after the completed Phase 3 DDL.
 - CI runs `npm ci`, typecheck, production build, fresh migration replay and all pgTAP database tests.
 
 # PHASES
@@ -51,37 +51,55 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 - PR #11 / CI `32285618067` passed the expanded **16-assertion** matching suite.
 - Owner decision: V1 filters remain **Overall | Tops | Bottoms**; richer garment filters are deferred, not architecturally blocked.
 
-## PHASE 3 — CLOSET & FIT REPORT COMPLETION — ▶️ IN PROGRESS
+## PHASE 3 — CLOSET & FIT REPORT COMPLETION — ✅ COMPLETE
 
 ### 3.1–3.2 Garment-specific controlled Fit Report capture — ✅ COMPLETE
-- `FitDimensionFields` shows only fit dimensions mapped to the selected garment type.
-- Initial Closet logs and repeat observations both persist controlled responses to `fit_report_dimensions` on the immutable Fit Report.
+- `FitDimensionFields` shows only controlled dimensions mapped to the selected garment type.
+- Initial Closet logs and repeat observations persist those responses to the immutable Fit Report for that try-on.
 - Server validation rejects invalid/duplicate mappings and invalid responses.
-- Migration `20260819183601_enforce_fit_report_dimension_garment_type.sql` provides the final DB guard.
-- `fit_report_dimensions.test.sql` verifies accepted/rejected combinations.
-- Verification CI `32289232671` passed install, typecheck, build, all 21 migrations and every canonical DB test.
-- Security Advisor: 0 findings.
+- Migration `20260819183601_enforce_fit_report_dimension_garment_type.sql` provides the DB-level garment/dimension guard.
+- CI `32289232671` passed install, typecheck, build, all 21 then-current migrations and every canonical DB test.
 
-### 3.3 Post Outfit latest-observation correctness — ▶️ VERIFICATION RUNNING
-- `app/outfits/new/page.tsx` now orders Fit Reports newest-first and deliberately keeps the first/latest observation per Closet item.
-- The picker labels the displayed result as **Latest fit**.
-- Outfit storage still correctly references the Closet item rather than freezing a separate Fit Report ID; member-facing feed/history logic can resolve current appropriate evidence independently.
-- Full CI gate must pass before 3.3 closes.
+### 3.3 Post Outfit latest-observation correctness — ✅ COMPLETE
+- `app/outfits/new/page.tsx` orders Fit Reports newest-first and deliberately displays the first/latest observation per Closet item.
+- Outfit posts continue to store the Closet-item relationship rather than freezing an arbitrary Fit Report ID.
+- CI `32289775049` passed the full verification gate.
 
-### 3.4 Brand/product search-before-create UX — QUEUED
-Improve lookup/selection so users reuse canonical brands/products before creating records while preserving normalization/deduplication and product identity rules.
+### 3.4 Brand/product search-before-create UX — ✅ COMPLETE
+- Add Garment now searches existing canonical products before creation.
+- Choosing an existing match carries its exact `product_id` and fills canonical brand, product, garment type, market/cut segment and known Style ID.
+- Server-side exact selection re-fetches the Product ID and verifies all submitted canonical identity fields still match before reuse; tampering/stale identity falls back to failure rather than silently attaching the wrong product.
+- Editing an identity field clears the exact selection and returns to the single existing normalized get-or-create path. No parallel catalog workflow exists.
+- CI `32290535340` passed install, typecheck, production build, full 21-migration replay and every database test then present.
 
-### 3.5 Closet integration/privacy verification — QUEUED
-Test Private/Shared visibility, fit-photo forced sharing, history-safe edits, repeat try-ons, controlled dimension persistence and deletion cascades.
+### 3.5 Closet integration/privacy verification — ✅ COMPLETE
+- Migration `20260819190312_enforce_shared_fit_photo_invariant.sql` closes the remaining database-level privacy gap: fit-photo metadata must match the Closet owner and may exist only on a Shared Closet item; a Shared item with a fit photo cannot become Private until photo metadata is removed.
+- `closet_integration_privacy.test.sql` runs **32 assertions** with two independent authenticated members.
+- Verified: Private vs Shared visibility, Shared Fit Report/dimension visibility, repeat observations, controlled-dimension persistence, cross-user update protection, fit-photo forced sharing, privacy transitions, outfit-item visibility and deletion cascades.
+- Closet deletion cascades Fit Reports, fit dimensions, fit-photo metadata and outfit item links while preserving the canonical Product and outfit post.
+- CI `32291185899` passed install, typecheck, production build, clean replay of all **22 migrations**, and every canonical database suite.
+- Supabase Security Advisor after Phase 3 completion: **0 findings**.
 
-**Phase 3 exit:** Closet captures intended evidence and every history-sensitive surface intentionally selects the correct observation.
+**Phase 3 exit criterion: ✅ MET.** Closet captures the intended evidence and history/privacy-sensitive surfaces intentionally select and expose the correct state.
 
-## PHASE 4 — PRODUCT EVIDENCE & RECOMMENDATIONS — QUEUED
-1. Exact-variant targeting.
-2. Product-family population/maintenance for non-fit-critical releases.
-3. Controlled garment attributes/materials for Similar Garments evidence.
-4. Exercise every evidence fallback tier and labels/ranking.
-5. Calibrate confidence with multiple unique wearers/conflicting outcomes/incomplete coverage.
+## PHASE 4 — PRODUCT EVIDENCE & RECOMMENDATIONS — ▶️ IN PROGRESS
+
+### 4.1 Exact-variant targeting — ▶️ NEXT
+The evidence RPC already supports `p_variant_id` and ranks Exact Variant above Exact Product, but the Product page currently always passes `null`. Add a validated Product-page variant target/selector so a selected variant is guaranteed to belong to the displayed product, pass that canonical variant ID into `get_product_evidence_candidates`, and make the selected evidence target obvious in the UI. Preserve fallback to Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit when exact-variant evidence is insufficient.
+
+### 4.2 Product-family population/maintenance — QUEUED
+Populate/maintain product families only where non-fit-critical releases should intentionally share fit evidence.
+
+### 4.3 Similar Garments attributes/materials — QUEUED
+Capture controlled construction/material attributes needed for useful Similar Garments evidence.
+
+### 4.4 Evidence-tier exercise — QUEUED
+Exercise every fallback tier and verify labels/ranking with controlled data.
+
+### 4.5 Recommendation confidence calibration — QUEUED
+Calibrate confidence using multiple unique wearers, conflicting outcomes and incomplete measurement coverage.
+
+**Phase 4 exit:** every intended evidence tier is reachable, correctly labeled/ranked, and recommendation confidence has been exercised with representative evidence.
 
 ## PHASE 5 — FIT TWINS / SOCIAL / SEARCH — QUEUED
 Re-test follow/unfollow, live Fit Twin scores, Shared Fit History, outfit creation/auto-sharing/likes/Fit-Twins feed and representative product/brand/member search. Comments remain outside V1 until moderation/reporting is intentionally designed.
@@ -93,4 +111,4 @@ Replace homepage mock match data, remove dead prototype logic, configure product
 Use a controlled representative population, smoke the full user loop, explicitly test privacy boundaries, rerun Security/Performance Advisors, and require green CI plus browser smoke verification before beta-ready.
 
 ## Exact next action
-**Complete the Phase 3.3 CI gate. If green, merge this checkpoint and proceed immediately to Phase 3.4 brand/product search-before-create UX.**
+**PHASE 4.1 — make Product-page variant targeting real: load canonical variants for the displayed product, validate the selected variant belongs to that product, pass it to `get_product_evidence_candidates`, show the active target clearly, then add controlled evidence tests proving Exact Variant outranks Exact Product while all fallback tiers remain available.**

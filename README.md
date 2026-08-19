@@ -6,15 +6,15 @@ Working prototype for **LikeSized — See what fits people built like you.**
 - Responsive landing page
 - Supabase email/password auth integration with SSR cookie sessions
 - Protected app routes backed by verified Supabase JWT claims
-- Fit Profile onboarding UI
-- People My Size / match cards
+- Hosted LikeSized PostgreSQL schema with privacy-first RLS
+- Private Fit Profile save/edit flow with server validation
+- Garment-specific match scoring infrastructure for overall, tops, and bottoms
+- People My Size / match-card UI
 - Closet UI
 - Product fit evidence page
-- Garment-specific matching utility (`lib/fit.ts`)
-- Supabase PostgreSQL starter schema with privacy-first RLS defaults
 - V1 product spec
 
-The product UI still uses mock fit/closet data. The authentication code is wired to the LikeSized Supabase project through environment variables; production Auth URL/email-template configuration and product-data persistence remain to be completed.
+Fit Profile data is now persisted in Supabase and exact body measurements are owner-only through RLS. People My Size, Closet, and product evidence pages still use mock presentation data until their live-data milestones are completed.
 
 ## Run locally
 ```bash
@@ -50,21 +50,26 @@ For production email confirmation, configure the Auth Site URL and allowed redir
 
 Keep `http://localhost:3000` available as a development redirect while working locally.
 
+## Database
+The canonical current-state schema is `supabase/schema.sql`. The connected LikeSized Supabase project has the V1 tables, RLS policies, signup profile trigger, separated fit reports, follows, safe match-score storage, and private match calculation functions applied.
+
+Raw measurements live only in `fit_profiles`. Product fit evidence lives in `fit_reports`, and safe calculated similarity percentages live in `fit_matches` so People My Size and future Fit Twins do not require exposing another member's measurements.
+
 ## Key routes
 - `/` — public home
 - `/signup` — create account
 - `/login` — sign in
-- `/onboarding` — protected Fit Profile
+- `/onboarding` — protected Fit Profile save/edit
 - `/people` — protected matches
 - `/closet` — protected closet database
 - `/item/levi-541` — protected example product page
 
 ## Next build milestone
-1. Finalize and apply the canonical Supabase schema to the connected LikeSized project.
-2. Persist Fit Profile onboarding.
-3. Implement Add Garment / product search-or-create flow.
-4. Calculate match score server-side without exposing other users' raw measurements.
+1. Replace People My Size mock cards with live `get_fit_matches` results and garment-category filtering.
+2. Implement Add Garment / product search-or-create flow and persist Closet data.
+3. Replace the example product page with live fit-report evidence and size recommendations.
+4. Add Fit Twins and follows on top of safe stored match scores.
 5. Add photo uploads and moderation path.
 
 ## Important product decision
-Raw measurements should not be sent broadly to clients just to calculate matches. For production, calculate similarity server-side or in a database function/view that returns scores and safe display fields only.
+Raw measurements must not be sent broadly to clients just to calculate matches. Similarity is calculated behind a controlled database function that returns scores and safe display fields only.

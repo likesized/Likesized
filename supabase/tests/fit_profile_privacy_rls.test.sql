@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, auth;
 
-select plan(15);
+select plan(16);
 
 insert into auth.users (id, aud, role, email, created_at, updated_at)
 values
@@ -102,17 +102,19 @@ select throws_like(
   '%row-level security%',
   'a member cannot write another member raw body measurement'
 );
-select is(
-  (with deleted as (
-    delete from public.user_size_references
-    where user_id='33333333-3333-4333-8333-333333333333'::uuid
-    returning id
-  ) select count(*) from deleted),
-  0::bigint,
-  'a member cannot target another member private size reference for deletion'
+select lives_ok(
+  $$delete from public.user_size_references
+    where user_id='33333333-3333-4333-8333-333333333333'::uuid$$,
+  'cross-user delete runs only against rows visible through RLS'
 );
 
 reset role;
+
+select is(
+  (select count(*) from public.user_size_references where user_id='33333333-3333-4333-8333-333333333333'::uuid),
+  1::bigint,
+  'other member private size reference survives attempted cross-user delete'
+);
 
 select ok(
   not has_table_privilege('anon','public.profiles','SELECT'),

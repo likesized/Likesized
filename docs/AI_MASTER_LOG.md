@@ -28,14 +28,14 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 12. Product evidence order is **Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit**.
 13. **Following Feed is V1.** Meaningful activity: Shared Closet additions, new Shared Fit Report observations/re-try-ons, outfit posts. Likes are not feed events. Private activity/raw body data never appears.
 14. Following Feed current match badges are relationship context only; garment evidence remains historical-snapshot based.
-15. **Fit Twin activity notifications are V1.** Exact default/quieting behavior is the next owner decision.
+15. **Fit Twin activity notifications are V1 and are in-app only.** Future Fit Twin activity alerts are ON by default. Members have one global on/off control plus per-Fit-Twin mute. Global off/mute does not change the Following Feed. Alerts use the same three meaningful activity types as the Following Feed; likes never alert. V1 sends no Fit Twin activity email or phone push. Global off, mute, or unfollow prevents future alerts without deleting already-valid prior alerts; re-enable/refollow does not backfill missed alerts. Unfollow clears that relationship's mute so refollow starts unmuted, subject to the global setting. If underlying Shared content becomes Private or is deleted, its existing notification is removed with the source activity.
 16. **Fit Twin/follow relationships are community-public within LikeSized.** Any signed-in member may see who follows whom; only the follower can change their relationship. Anonymous visitors cannot query the graph.
 
 ## Current baseline — 2026-08-19
 - Full Next.js app, Supabase integration, matching/recommendation logic and canonical docs are in GitHub.
 - Live Supabase has no deliberate test-user/application population; verification uses disposable local Supabase CI.
-- **27 canonical migrations** through `20260819202851_harden_following_feed_rpc_boundary.sql`.
-- Supabase Security Advisor: **0 findings** after the hardened Following Feed RPC.
+- **28 canonical migrations** through `20260819205518_fit_twin_activity_notifications.sql`.
+- Supabase Security Advisor: **0 findings** after the Phase 5.3 notification architecture.
 - CI runs npm ci, typecheck, production recommendation calibration, production build, fresh migration replay and all pgTAP suites.
 
 # PHASES
@@ -79,11 +79,22 @@ Dedicated Following Feed + Fit Twin activity notifications explicitly locked int
 - `following_feed_activity.test.sql`: **25/25** safe-API assertions.
 - Final Phase 5.2 PR #25 / CI `32299715319` passed typecheck, recommendation calibration, production build including `/following`, clean replay of all **27 migrations**, and every database suite.
 
-### 5.3 Fit Twin activity notifications — ▶️ NEXT / OWNER DECISION REQUIRED
-Build in-app notification support from the same canonical activity ledger and privacy rules as the Following Feed. No duplicate event system. Before implementation, lock the default/quieting UX: whether activity notifications are on by default, and whether V1 supports a global toggle, per-Fit-Twin mute, or both.
+### 5.3 Fit Twin activity notifications — ✅ COMPLETE
+- Owner locked V1 behavior: in-app notifications ON by default for future Fit Twin activity; one global Settings toggle; per-Fit-Twin mute; no likes; no email or phone push.
+- Migration `20260819205518_fit_twin_activity_notifications.sql` adds private owner preferences, private per-follow mute state, and recipient notification rows linked to the canonical Following Feed activity ledger. No duplicate event system exists.
+- Fanout occurs only to current followers who are globally enabled and not muted for that Fit Twin.
+- Global off, per-Twin mute and unfollow suppress future notifications only; they do not alter the Following Feed or delete already-valid existing notifications. Re-enable/refollow does not backfill missed alerts.
+- Per-Twin mute is tied to the canonical follow relationship and cascades on unfollow, so a later refollow starts unmuted subject to the global setting.
+- Because notification rows reference canonical activity rows, making a source garment Private or deleting source Closet/outfit content removes the corresponding existing notifications automatically.
+- Private notification/preference/mute tables are not directly client-readable; authenticated UI uses narrow public SECURITY INVOKER wrappers over private auth-bound helpers.
+- `/notifications` provides unread/new state, mark-one-read and mark-all-read, safe activity context and links. Signed-in header shows unread count.
+- `/settings` exposes the global Fit Twin activity toggle and explicitly states V1 is in-app only. `/twins` exposes Mute/Unmute without changing the follow relationship or Following Feed.
+- `fit_twin_activity_notifications.test.sql`: **48/48 assertions** covering default ON, global toggle, per-Twin mute, no backfill, no likes, read state, unfollow/refollow behavior, Following Feed independence, source privacy/deletion cleanup, anonymous denial and private-table denial.
+- Final Phase 5.3 PR #27 / CI **`32302356811`** passed npm install, typecheck, recommendation calibration, production build including `/notifications`, clean replay of all **28 migrations**, and every canonical database suite.
+- Supabase Security Advisor after Phase 5.3: **0 findings**.
 
-### 5.4 Existing social surfaces verification — QUEUED
-Re-test Shared Fit History, outfit creation/auto-sharing, outfit likes, All/Fit-Twins outfit feed and interaction with Following Feed. Comments remain outside V1 until moderation/reporting is intentionally designed.
+### 5.4 Existing social surfaces verification — ▶️ NEXT
+Re-test Shared Fit History, outfit creation/auto-sharing, outfit likes, All/Fit-Twins outfit feed and interaction with Following Feed/notifications. Comments remain outside V1 until moderation/reporting is intentionally designed.
 
 ### 5.5 Search/discovery verification — QUEUED
 Re-test representative member/brand/product search and the People My Size/search/profile → follow → Following Feed loop.
@@ -97,4 +108,4 @@ Replace homepage mock match data, remove dead prototype logic, configure product
 Use a controlled representative population, smoke the full user loop, explicitly test privacy boundaries, rerun advisors, and require green CI plus browser smoke before beta-ready.
 
 ## Exact next action
-**PHASE 5.3 OWNER DECISION — lock V1 Fit Twin activity-notification defaults/quieting controls, then implement notifications from the existing canonical Following Feed activity ledger.**
+**PHASE 5.4 — re-test the existing Shared Fit History, outfit creation/auto-sharing, outfit likes, All/Fit-Twins outfit feed and their interaction with the verified Following Feed/notification system. Comments remain outside V1.**

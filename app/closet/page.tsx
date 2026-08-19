@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 type SearchParams=Promise<Record<string,string|string[]|undefined>>;
-type ClosetRow={id:string;size_label:string;wears_count:number;visibility:"private"|"shared";product:unknown};
+type ClosetRow={id:string;variant_id:string|null;size_label:string;wears_count:number;visibility:"private"|"shared";product:unknown};
 type ProductView={id:string;name:string;slug:string;category:string;garment_type_key:string|null;brand:unknown};
 type BrandView={name:string};
 type FitReport={closet_item_id:string;fit:string;would_buy_again:boolean|null;created_at:string};
@@ -22,7 +22,7 @@ export default async function ClosetPage({searchParams}:{searchParams:SearchPara
   const added=first(params.added)==="1";
   const deleted=first(params.deleted)==="1";
 
-  const {data,error}=await supabase.from("closet_items").select("id,size_label,wears_count,visibility,product:products(id,name,slug,category,garment_type_key,brand:brands(name))").eq("user_id",userId).order("created_at",{ascending:false});
+  const {data,error}=await supabase.from("closet_items").select("id,variant_id,size_label,wears_count,visibility,product:products(id,name,slug,category,garment_type_key,brand:brands(name))").eq("user_id",userId).order("created_at",{ascending:false});
   if(error)throw new Error("Could not load Closet.");
   const items=(data??[]) as ClosetRow[];
   const ids=items.map((item)=>item.id);
@@ -44,7 +44,7 @@ export default async function ClosetPage({searchParams}:{searchParams:SearchPara
       {photo?<img className="garmentPhoto" src={photo} alt="Fit reference"/>:<div className="garmentThumb">{(brand?.name||"?").slice(0,1).toUpperCase()}</div>}
       <div className="closetMain"><span className="muted">{brand?.name||"Brand"}</span><strong>{product?.name||"Garment"}</strong><span>{CATEGORY_LABELS[product?.category||""]||"Other"}{product?.garment_type_key?` · ${product.garment_type_key.replaceAll("_"," ")}`:""}</span></div>
       <div><span className="muted">SIZE</span><strong>{item.size_label}</strong></div><div><span className="muted">LATEST FIT</span><strong>{FIT_LABELS[report?.fit||""]||"—"}</strong></div><div><span className="muted">VISIBILITY</span><strong>{item.visibility==="shared"?"Shared":"Private"}</strong></div>
-      <div className="authActions"><Link className="textLink" href={`/closet/${item.id}/edit`}>Edit →</Link>{product?<Link className="textLink closetViewLink" href={`/item/${product.slug}`}>Product →</Link>:null}</div>
+      <div className="authActions"><Link className="textLink" href={`/closet/${item.id}/edit`}>Edit →</Link>{product?<Link className="textLink closetViewLink" href={`/item/${product.slug}${item.variant_id?`?variant=${encodeURIComponent(item.variant_id)}`:""}`}>Product →</Link>:null}</div>
     </div>;})}</div>:<div className="emptyState"><span className="eyebrow">YOUR CLOSET IS EMPTY</span><h2>Start with something you already know fits.</h2><p>Log the product, original size and fit. Choose Shared only when you want other members to browse the fit evidence; uploading a Fit Photo automatically shares that item.</p><Link className="primaryButton" href="/closet/add">Add my first garment →</Link></div>}
   </main>;
 }

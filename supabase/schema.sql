@@ -507,6 +507,21 @@ using (
   )
 );
 
+-- Remove Supabase's broad default table grants before adding the exact Data API privileges below.
+revoke all on
+  public.profiles,
+  public.fit_profiles,
+  public.brands,
+  public.products,
+  public.product_variants,
+  public.closet_items,
+  public.fit_reports,
+  public.follows,
+  public.fit_matches,
+  public.outfit_posts,
+  public.outfit_post_items
+from anon, authenticated;
+
 -- Explicit Data API privileges. RLS still controls which rows are reachable.
 grant select on public.profiles to anon, authenticated;
 grant update on public.profiles to authenticated;

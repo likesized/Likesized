@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
-export function Header() {
+export async function Header() {
+  const supabase = await createClient();
+  const { data: claimsData, error } = await supabase.auth.getClaims();
+  const signedIn = !error && Boolean(claimsData?.claims);
+
   return (
     <header className="header">
       <Link className="brand" href="/">
@@ -8,9 +13,21 @@ export function Header() {
         <span>LikeSized</span>
       </Link>
       <nav>
-        <Link href="/people">People my size</Link>
-        <Link href="/closet">Closet</Link>
-        <Link className="navButton" href="/onboarding">Fit profile</Link>
+        {signedIn ? (
+          <>
+            <Link href="/people">People my size</Link>
+            <Link href="/closet">Closet</Link>
+            <Link className="navButton" href="/onboarding">Fit profile</Link>
+            <form action="/auth/signout" method="post">
+              <button className="navTextButton" type="submit">Sign out</button>
+            </form>
+          </>
+        ) : (
+          <>
+            <Link href="/login">Sign in</Link>
+            <Link className="navButton" href="/signup">Create account</Link>
+          </>
+        )}
       </nav>
     </header>
   );

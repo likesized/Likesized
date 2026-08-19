@@ -17,6 +17,8 @@ button, input { font: inherit; }
 .brandMark { width:34px; height:34px; display:grid; place-items:center; border-radius:50%; background:var(--ink); color:var(--lime); font-size:12px; }
 nav { display:flex; align-items:center; gap:26px; font-size:14px; font-weight:700; }
 .navButton { padding: 11px 16px; border:1px solid var(--ink); border-radius:999px; }
+.header form { margin:0; }
+.navTextButton { appearance:none; border:0; background:transparent; padding:0; color:inherit; font-weight:700; cursor:pointer; }
 .hero { min-height: 680px; padding: 105px 7vw 60px; background: radial-gradient(circle at 80% 10%, rgba(110,76,255,.18), transparent 33%), linear-gradient(180deg, var(--paper), #eee8dd); }
 .eyebrow { display:block; font-size:12px; font-weight:900; letter-spacing:1.7px; margin-bottom:14px; }
 .hero h1, .pageTitle h1, .onboardingIntro h1, .itemDetails h1 { margin:0; max-width: 1000px; font-size: clamp(48px, 8vw, 108px); line-height:.91; letter-spacing:-5px; font-weight:900; }
@@ -100,6 +102,17 @@ summary { cursor:pointer; font-weight:900; }
 .evidence:last-child { border-bottom:none; }
 .avatar.small { width:42px; height:42px; font-size:16px; }
 .evidence span { display:block; color:var(--muted); font-size:11px; margin-bottom:3px; }
+.authShell { min-height:calc(100vh - 72px); display:grid; place-items:center; padding:64px 20px; background:radial-gradient(circle at 80% 12%, rgba(110,76,255,.18), transparent 35%), var(--paper); }
+.authCard { width:min(100%, 560px); padding:38px; border:1px solid var(--line); border-radius:28px; background:var(--white); box-shadow:0 24px 80px rgba(18,18,18,.08); }
+.authCard h1 { margin:0; font-size:clamp(38px,6vw,62px); line-height:.95; letter-spacing:-2.6px; }
+.authCard > p { color:var(--muted); line-height:1.55; }
+.authForm { display:grid; gap:17px; margin-top:26px; }
+.authForm label { display:grid; gap:8px; }
+.authMessage { margin-top:18px; padding:13px 15px; border-radius:12px; font-size:13px; font-weight:800; }
+.authMessage.error { background:#ffe5df; border:1px solid #efb4a8; }
+.authActions { display:flex; gap:10px; flex-wrap:wrap; margin-top:24px; }
+.authFootnote { margin:20px 0 0; font-size:13px; }
+.authFootnote a { font-weight:900; text-decoration:underline; text-underline-offset:3px; }
 
 @media (max-width: 900px) {
   nav a:not(.navButton) { display:none; }
@@ -128,4 +141,5 @@ summary { cursor:pointer; font-weight:900; }
   .onboardingIntro h1 { font-size:50px; letter-spacing:-2.5px; }
   .itemDetails h1 { font-size:52px; letter-spacing:-2.8px; }
   .recommendation strong { font-size:45px; }
+  .authCard { padding:28px 22px; border-radius:22px; }
 }

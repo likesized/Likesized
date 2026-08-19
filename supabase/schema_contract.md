@@ -1,20 +1,15 @@
 # LikeSized database schema contract
 
 ## Canonical source-of-truth rule — LOCKED
-GitHub `likesized/Likesized` is the single canonical source of truth for the database architecture. `supabase/schema.sql` is the historical V1 bootstrap, and the executable SQL under `supabase/migrations/` is the authoritative ordered evolution from that bootstrap to the current schema.
+GitHub `likesized/Likesized` is the single canonical source of truth for the database architecture and executable history.
 
-The connected Supabase project is the deployed database instance. Its migration ledger is used to verify that canonical repository migrations were applied in the expected order; it must never be the only place where migration SQL exists.
+The **ordered executable SQL in `supabase/migrations/` is the authoritative replay/deployment history from an empty Supabase database to the current LikeSized schema.** The connected Supabase project is the deployed instance and execution ledger used to verify that those migrations were applied in the expected order; it must never be the only place where required SQL exists.
 
-Authoritative architecture migrations:
-- `20260819144032_authoritative_v1_fit_garment_architecture.sql`
-- `20260819144343_authoritative_v1_architecture_constraints.sql`
-- `20260819150022_immutable_fit_profile_versions.sql`
-- `20260819150923_historical_fit_evidence_unique_wearers.sql`
-- `20260819151101_atomic_fit_profile_version_saves.sql`
-- `20260819152030_harden_fit_profile_version_rpcs.sql`
-- `20260819152056_index_authoritative_v1_relationships.sql`
+`supabase/schema.sql` and `supabase/storage.sql` are reference/current-state aids only. They are not a second migration history and must not be combined with the ordered migration replay on a fresh environment.
 
-Every file above contains executable SQL in the canonical repository. Do not replace migration contents with hosted-ledger pointers or summaries.
+The canonical directory now contains all 14 migrations recorded by the connected project, from `20260819132934_initial_likesized_schema.sql` through `20260819152056_index_authoritative_v1_relationships.sql`. During the 2026-08-19 canonical audit, the first seven historical migrations were recovered from the deployed migration ledger and their Git blob SHAs were verified byte-for-byte against the SQL Supabase originally executed before they were committed.
+
+Do not rewrite historical migrations that have already been applied. Future database changes are new ordered executable migrations. Do not create alternate current-state schema files, patch migrations, fixed/v2 copies, or parallel database implementations.
 
 ## Locked current-state contract
 - `fit_profiles`: current settings/completion/current immutable version pointer only.
@@ -31,4 +26,4 @@ Every file above contains executable SQL in the canonical repository. Do not rep
 - Every uploaded fit/reference photo belongs to a Shared Closet item and is member-readable through a non-public bucket. No private fit-photo mode exists.
 - Authoritative foreign-key relationships have covering indexes.
 
-Do not add fixed measurement columns back to `fit_profiles`. Do not use current-person match scores to weight historical garment evidence. Do not count multiple historical observations from one member as multiple people. Do not create alternate current-state schema files, patch migrations, or parallel implementations.
+Do not add fixed measurement columns back to `fit_profiles`. Do not use current-person match scores to weight historical garment evidence. Do not count multiple historical observations from one member as multiple people.

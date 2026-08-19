@@ -1,15 +1,20 @@
 # LikeSized database schema contract
 
-GitHub `likesized/Likesized` is the canonical project record. `supabase/schema.sql` is the historical V1 bootstrap; current state is that bootstrap plus the ordered migrations documented here and under `supabase/migrations/`. The connected Supabase project is the deployed instance and its migration table verifies the applied order.
+## Canonical source-of-truth rule — LOCKED
+GitHub `likesized/Likesized` is the single canonical source of truth for the database architecture. `supabase/schema.sql` is the historical V1 bootstrap, and the executable SQL under `supabase/migrations/` is the authoritative ordered evolution from that bootstrap to the current schema.
+
+The connected Supabase project is the deployed database instance. Its migration ledger is used to verify that canonical repository migrations were applied in the expected order; it must never be the only place where migration SQL exists.
 
 Authoritative architecture migrations:
-- `20260819144032_authoritative_v1_fit_garment_architecture`
-- `20260819144343_authoritative_v1_architecture_constraints`
-- `20260819150022_immutable_fit_profile_versions`
-- `20260819150923_historical_fit_evidence_unique_wearers`
-- `20260819151101_atomic_fit_profile_version_saves`
-- `20260819152030_harden_fit_profile_version_rpcs`
-- `20260819152056_index_authoritative_v1_relationships`
+- `20260819144032_authoritative_v1_fit_garment_architecture.sql`
+- `20260819144343_authoritative_v1_architecture_constraints.sql`
+- `20260819150022_immutable_fit_profile_versions.sql`
+- `20260819150923_historical_fit_evidence_unique_wearers.sql`
+- `20260819151101_atomic_fit_profile_version_saves.sql`
+- `20260819152030_harden_fit_profile_version_rpcs.sql`
+- `20260819152056_index_authoritative_v1_relationships.sql`
+
+Every file above contains executable SQL in the canonical repository. Do not replace migration contents with hosted-ledger pointers or summaries.
 
 ## Locked current-state contract
 - `fit_profiles`: current settings/completion/current immutable version pointer only.

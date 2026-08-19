@@ -42,7 +42,7 @@ values('fc511000-0000-4000-8000-000000000001'::uuid,'fc510000-0000-4000-8000-000
 insert into public.products(id,brand_id,name,slug,category,normalized_name,garment_type_key,market_segment,manufacturer_style_number,manufacturer_style_normalized)
 values
  ('fc520000-0000-4000-8000-000000000001'::uuid,'fc510000-0000-4000-8000-000000000001'::uuid,'Ribcage Straight Jeans','levi-ribcage-straight-jeans','bottoms','ribcagestraightjeans','jeans','womens','A123-45','A12345'),
- ('fc520000-0000-4000-8000-000000000002'::uuid,'fc510000-0000-4000-8000-000000000002'::uuid,'Utility Chore Coat','other-utility-chore-coat','outerwear','utilitychorecoat','jacket','unisex','COAT-1','COAT1');
+ ('fc520000-0000-4000-8000-000000000002'::uuid,'fc510000-0000-4000-8000-000000000002'::uuid,'Utility Work Jeans','other-utility-work-jeans','bottoms','utilityworkjeans','jeans','unisex','OTHER-1','OTHER1');
 
 insert into public.product_identifiers(id,product_id,identifier_type,original_value,normalized_value)
 values

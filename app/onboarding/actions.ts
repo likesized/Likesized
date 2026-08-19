@@ -8,6 +8,8 @@ type MeasurementType = {
   dimension: "length" | "weight";
 };
 
+type SizeReferenceType = "bra" | "shoe" | "shirt" | "pants" | "dress" | "other";
+
 function fail(code: string): never {
   redirect(`/onboarding?error=${encodeURIComponent(code)}`);
 }
@@ -53,15 +55,68 @@ export async function saveFitProfile(formData: FormData) {
 
   if (!rows.length) fail("invalid_measurements");
 
+  const sizeReferences: Array<Record<string, unknown>> = [];
+  const braBandRaw = text(formData, "size_ref_bra_band");
+  const braCup = text(formData, "size_ref_bra_cup").toUpperCase();
+  const braSystem = text(formData, "size_ref_bra_system").toUpperCase();
+  if (braBandRaw || braCup) {
+    const band = Number(braBandRaw);
+    if (!braBandRaw || !braCup || !["US", "UK", "EU"].includes(braSystem) || !Number.isFinite(band) || band <= 0) {
+      fail("invalid_size_references");
+    }
+    sizeReferences.push({
+      reference_type: "bra",
+      original_size_label: `${band}${braCup}`,
+      sizing_system: braSystem,
+      band_size: band,
+      cup_designation: braCup,
+    });
+  }
+
+  const shoeRaw = text(formData, "size_ref_shoe_size");
+  const shoeSystem = text(formData, "size_ref_shoe_system").toUpperCase();
+  if (shoeRaw) {
+    const shoeSize = Number(shoeRaw);
+    if (!["US", "UK", "EU", "JP"].includes(shoeSystem) || !Number.isFinite(shoeSize) || shoeSize <= 0) {
+      fail("invalid_size_references");
+    }
+    sizeReferences.push({
+      reference_type: "shoe",
+      original_size_label: String(shoeSize),
+      sizing_system: shoeSystem,
+      shoe_size: shoeSize,
+    });
+  }
+
+  const simpleReferences: Array<[SizeReferenceType, string]> = [
+    ["shirt", "size_ref_shirt"],
+    ["pants", "size_ref_pants"],
+    ["dress", "size_ref_dress"],
+    ["other", "size_ref_other"],
+  ];
+  for (const [referenceType, fieldName] of simpleReferences) {
+    const label = text(formData, fieldName);
+    if (!label) continue;
+    if (label.length > 60) fail("invalid_size_references");
+    sizeReferences.push({
+      reference_type: referenceType,
+      original_size_label: label,
+    });
+  }
+
   const { error } = await supabase.rpc("save_fit_profile", {
     p_username: username,
     p_unit_system: unitSystem,
     p_measurements: rows,
+    p_size_references: sizeReferences,
   });
 
   if (error) {
     if (error.code === "23505") fail("username_taken");
-    if (error.code === "22023") fail("invalid_measurements");
+    if (error.code === "22023") {
+      if (error.message.toLowerCase().includes("size reference")) fail("invalid_size_references");
+      fail("invalid_measurements");
+    }
     fail("save_failed");
   }
 

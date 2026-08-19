@@ -102,10 +102,14 @@ select throws_like(
   '%row-level security%',
   'a member cannot write another member raw body measurement'
 );
-select throws_like(
-  $$delete from public.user_size_references where user_id='33333333-3333-4333-8333-333333333333'::uuid$$,
-  '%row-level security%',
-  'a member cannot delete another member private size reference'
+select is(
+  (with deleted as (
+    delete from public.user_size_references
+    where user_id='33333333-3333-4333-8333-333333333333'::uuid
+    returning id
+  ) select count(*) from deleted),
+  0::bigint,
+  'a member cannot target another member private size reference for deletion'
 );
 
 reset role;

@@ -15,6 +15,7 @@ GitHub `likesized/Likesized` is the source of truth. No patch/fixed/v2/backup/pa
 - Controlled extensible garment taxonomy/attributes
 - Original garment-size preservation plus structured normalized size identity
 - Private and Shared Closet architecture
+- Closet edit/remove controls that preserve immutable fit history; repeat try-ons create new observations
 - Controlled overall + garment-specific Fit Reports
 - Optional member-shared fit/reference photos in a non-public Storage bucket
 - Evidence hierarchy from Exact Variant through Category Fit
@@ -25,6 +26,9 @@ GitHub `likesized/Likesized` is the source of truth. No patch/fixed/v2/backup/pa
 
 ## Authoritative architecture
 `docs/V1_PRODUCT_SPEC.md` is the authoritative V1 fit/garment product architecture. `docs/AI_MASTER_LOG.md` is the durable AI-session handoff. Raw current and historical body measurements are owner-only. Current Fit Twin scores are current-body to current-body; garment evidence uses the historical snapshot attached to each Fit Report.
+
+## Closet history rule
+Changing current body measurements or logging a new try-on never rewrites an old Fit Report. Closet edit controls change current sharing/wear-count settings. A new fit experience creates a new observation tied to the current immutable body snapshot. Deleting a Closet item is explicit and removes that item's fit history; canonical product catalog records remain.
 
 ## Storage
 - `fit-reference-photos`: non-public; authenticated members may read shared references; only the owner writes/deletes.
@@ -47,14 +51,13 @@ A Fit Twin is a Fit Match the user deliberately saves/follows; no universal perc
 - `/people` — People My Size
 - `/people/[username]` — member/Fit Twin profile and Shared Fit History
 - `/twins` — saved Fit Twins
-- `/closet`, `/closet/add` — Closet
+- `/closet`, `/closet/add`, `/closet/[id]/edit` — Closet
 - `/item/[slug]` — product evidence/recommendation
 - `/outfits`, `/outfits/new` — outfits, likes and All/Fit-Twins feeds
 
 ## Next build milestone
-1. Closet garment edit/remove controls.
-2. Profile/privacy controls before public beta.
-3. Continue richer garment-specific UX where the authoritative foundation is already in place.
+1. Profile/privacy controls before public beta.
+2. Continue richer garment-specific UX where the authoritative foundation is already in place.
 
 Open comments remain deferred until moderation/reporting exists.
 

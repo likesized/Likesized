@@ -12,10 +12,18 @@ type ProductRecord = {
   name: string;
   slug: string;
   category: string;
+  brand_name: string | null;
+};
+
+type RecentProductRecord = {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
   brand: unknown;
 };
 
-type BrandRecord = { id?: string; name: string };
+type BrandRecord = { name: string };
 
 type ProfileRecord = {
   id: string;
@@ -60,10 +68,6 @@ function cleanQuery(value: string | undefined) {
 function one<T>(value: unknown): T | null {
   if (Array.isArray(value)) return (value[0] as T | undefined) ?? null;
   return (value as T | null) ?? null;
-}
-
-function uniqueById<T extends { id: string }>(rows: T[]) {
-  return [...new Map(rows.map((row) => [row.id, row])).values()];
 }
 
 export default async function SearchPage({
@@ -111,7 +115,13 @@ export default async function SearchPage({
         .order("created_at", { ascending: false })
         .limit(12);
       if (error) throw new Error("Could not load product discovery.");
-      products = (data ?? []) as ProductRecord[];
+      products = ((data ?? []) as RecentProductRecord[]).map((product) => ({
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        category: product.category,
+        brand_name: one<BrandRecord>(product.brand)?.name ?? null,
+      }));
     }
 
     if (type !== "products") {
@@ -123,66 +133,22 @@ export default async function SearchPage({
       }));
     }
   } else {
-    const pattern = `%${q}%`;
-
     if (type !== "people") {
-      const [{ data: nameProducts, error: productError }, { data: brandData, error: brandError }] =
-        await Promise.all([
-          supabase
-            .from("products")
-            .select("id, name, slug, category, brand:brands(name)")
-            .ilike("name", pattern)
-            .limit(24),
-          supabase
-            .from("brands")
-            .select("id, name")
-            .ilike("name", pattern)
-            .limit(12),
-        ]);
-
-      if (productError || brandError) throw new Error("Could not search products.");
-
-      const brandIds = ((brandData ?? []) as { id: string; name: string }[]).map((brand) => brand.id);
-      let brandProducts: ProductRecord[] = [];
-
-      if (brandIds.length > 0) {
-        const { data, error } = await supabase
-          .from("products")
-          .select("id, name, slug, category, brand:brands(name)")
-          .in("brand_id", brandIds)
-          .limit(24);
-        if (error) throw new Error("Could not search brand products.");
-        brandProducts = (data ?? []) as ProductRecord[];
-      }
-
-      products = uniqueById([
-        ...((nameProducts ?? []) as ProductRecord[]),
-        ...brandProducts,
-      ]).slice(0, 24);
+      const { data, error } = await supabase.rpc("search_catalog_products", {
+        p_query: q,
+        p_result_limit: 24,
+      });
+      if (error) throw new Error("Could not search products.");
+      products = (data ?? []) as ProductRecord[];
     }
 
     if (type !== "products") {
-      const [{ data: byUsername, error: usernameError }, { data: byDisplayName, error: displayError }] =
-        await Promise.all([
-          supabase
-            .from("profiles")
-            .select("id, username, display_name, avatar_url")
-            .neq("id", userId)
-            .ilike("username", pattern)
-            .limit(18),
-          supabase
-            .from("profiles")
-            .select("id, username, display_name, avatar_url")
-            .neq("id", userId)
-            .ilike("display_name", pattern)
-            .limit(18),
-        ]);
-
-      if (usernameError || displayError) throw new Error("Could not search members.");
-      people = uniqueById([
-        ...((byUsername ?? []) as ProfileRecord[]),
-        ...((byDisplayName ?? []) as ProfileRecord[]),
-      ]).slice(0, 24);
+      const { data, error } = await supabase.rpc("search_members", {
+        p_query: q,
+        p_result_limit: 24,
+      });
+      if (error) throw new Error("Could not search members.");
+      people = (data ?? []) as ProfileRecord[];
     }
   }
 
@@ -195,12 +161,12 @@ export default async function SearchPage({
         <span className="eyebrow">SEARCH & DISCOVERY</span>
         <h1>Find the clothes—or the people—behind the fit data.</h1>
         <p>
-          Search products and brands for real fit evidence, or find members and open their Fit Twin profile. Exact measurements never appear in search.
+          Search product or brand names, brand aliases, style numbers, SKU/UPC/barcodes and retailer IDs—or find members by username/display name. Exact measurements never appear in search.
         </p>
       </div>
 
       <form className={styles.searchForm} action="/search" method="get">
-        <input name="q" type="search" defaultValue={q} maxLength={80} placeholder="Search Levi's, 541, alex_fit..." aria-label="Search products, brands, or members" />
+        <input name="q" type="search" defaultValue={q} maxLength={80} placeholder="Search Levi's, 541, SKU, UPC, alex_fit..." aria-label="Search products, brands, identifiers, or members" />
         {type !== "all" ? <input type="hidden" name="type" value={type} /> : null}
         <button className="primaryButton" type="submit">Search</button>
       </form>
@@ -219,17 +185,14 @@ export default async function SearchPage({
             <div><span className="eyebrow">PRODUCTS</span><h2>{q ? `Results for “${q}”` : "Recently logged products"}</h2></div>
           </div>
           <div className={styles.productGrid}>
-            {products.map((product) => {
-              const brand = one<BrandRecord>(product.brand);
-              return (
-                <Link className={styles.productCard} href={`/item/${product.slug}`} key={product.id}>
-                  <div className={styles.productMark}>{product.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase() || "LS"}</div>
-                  <span className="muted">{brand?.name || "Brand"} · {CATEGORY_LABELS[product.category] || "Other"}</span>
-                  <strong>{product.name}</strong>
-                  <span className="textLink">View fit evidence →</span>
-                </Link>
-              );
-            })}
+            {products.map((product) => (
+              <Link className={styles.productCard} href={`/item/${product.slug}`} key={product.id}>
+                <div className={styles.productMark}>{product.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase() || "LS"}</div>
+                <span className="muted">{product.brand_name || "Brand"} · {CATEGORY_LABELS[product.category] || "Other"}</span>
+                <strong>{product.name}</strong>
+                <span className="textLink">View fit evidence →</span>
+              </Link>
+            ))}
           </div>
         </section>
       ) : null}

@@ -52,18 +52,20 @@ export default async function FitTwinsPage({searchParams}:{searchParams:SearchPa
     profiles = (data ?? []) as ProfileRecord[];
   }
 
-  const [{data:matchesData,error:matchesError},{data:muteData,error:muteError}]=await Promise.all([
+  const [{data:matchesData,error:matchesError},{data:muteData,error:muteError},{data:notificationSettings,error:notificationSettingsError}]=await Promise.all([
     supabase.rpc("get_fit_matches",{p_match_category:"overall",p_result_limit:100}),
     supabase.rpc("get_fit_twin_notification_mutes"),
+    supabase.rpc("get_fit_twin_notification_settings"),
   ]);
 
   if (matchesError) throw new Error("Could not refresh Fit Twin scores.");
-  if (muteError) throw new Error("Could not load Fit Twin notification settings.");
+  if (muteError||notificationSettingsError) throw new Error("Could not load Fit Twin notification settings.");
 
   const matchByUser = new Map(
     ((matchesData ?? []) as MatchRecord[]).map((row) => [row.user_id, row.match_score]),
   );
   const mutedIds=new Set((muteData??[]).map((row:{followed_id:string})=>row.followed_id));
+  const notificationsEnabled=notificationSettings?.[0]?.fit_twin_activity_enabled!==false;
   const profileById = new Map(profiles.map((profile) => [profile.id, profile]));
   const orderedProfiles = followedIds
     .map((id) => profileById.get(id))
@@ -79,7 +81,7 @@ export default async function FitTwinsPage({searchParams}:{searchParams:SearchPa
         <p>
           Fit Twins are your saved Fit Matches. Their current safe match score can change as either person improves their Fit Profile; exact measurements remain private.
         </p>
-        <div className="authActions"><Link className="textLink" href="/people">Find more Fit Matches →</Link><Link className="textLink" href="/notifications">Notification settings →</Link></div>
+        <div className="authActions"><Link className="textLink" href="/people">Find more Fit Matches →</Link><Link className="textLink" href="/settings">Notification settings →</Link></div>
       </div>
 
       {notificationError?<div className="authMessage error">That Fit Twin notification preference could not be changed.</div>:null}
@@ -88,13 +90,14 @@ export default async function FitTwinsPage({searchParams}:{searchParams:SearchPa
         <div className="cardGrid">
           {orderedProfiles.map((person) => {
             const muted=mutedIds.has(person.id);
+            const alertStatus=!notificationsEnabled?"Saved · Global activity alerts off":muted?"Saved · Activity alerts muted":"Saved · Activity alerts on";
             return <MatchCard
               key={person.id}
               name={person.display_name?.trim() || person.username}
               handle={`@${person.username}`}
               style="Fit Twin"
               match={matchByUser.get(person.id)}
-              secondary={muted?"Saved · Activity alerts muted":"Saved · Activity alerts on"}
+              secondary={alertStatus}
               description="Open this Fit Twin profile to see their safe match scores and real garment fit evidence."
               href={`/people/${person.username}`}
               linkLabel="View Fit Twin profile →"

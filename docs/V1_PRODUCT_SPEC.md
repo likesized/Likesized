@@ -86,8 +86,35 @@ Do not blend current-person scores with historical garment scores.
 - Fit/reference photo upload is optional. **If uploaded, it is shared with authenticated LikeSized members. There is no private fit-photo mode.**
 - `fit-reference-photos` is a non-public Supabase Storage bucket: authenticated members may read shared references, only the owner may write/delete their folder. A retired empty `closet-photos` bucket has no application policies and is not used.
 
-## Fit Twins
-A V1 Fit Twin is a Fit Match the user deliberately saves/follows. There is no universal percentage threshold. The relationship is stable while live current-person match scores may change. Fit Twin/member pages show current match scores separately from historical Shared Fit History.
+## Fit Twins, Following and the Following Feed — LOCKED V1
+A V1 Fit Twin is a Fit Match the user deliberately saves/follows. There is no universal percentage threshold. The follow relationship is stable while live current-person match scores may change.
+
+Following is not only a bookmark. The purpose is to let a member keep learning from people whose body/fit experiences are useful to them over time.
+
+### Dedicated Following Feed
+V1 includes a dedicated personalized Following Feed driven by the same canonical Fit Twin/follow relationship used elsewhere in the product. Do not create a separate friend/follower relationship for this feed.
+
+Meaningful feed activity from followed members includes:
+- a newly Shared Closet garment,
+- a new Shared Fit Report observation or re-try-on,
+- a new outfit post.
+
+Standalone likes are not Following Feed activity. Private Closet items, Private Fit Reports/activity and raw body measurements never appear.
+
+A garment activity card should foreground the relationship and fit evidence, for example:
+**Sarah — 96% Tops Fit Match**
+**Added Levi's Ribcage Straight Jeans**
+**Size 29 — “Perfect waist, tight through thighs”**
+**View Fit Report**
+
+The match badge on a Following Feed card is the followed member's **current relevant person-to-person match** to the viewer (Overall/Tops/Bottoms as appropriate) and may change when either current Fit Profile changes. It is relationship context only. The linked Fit Report remains historical garment evidence and uses the immutable body snapshot stored when that garment observation was created.
+
+If Shared content is later made Private or deleted, the feed must no longer expose content the viewer is not authorized to see. Feed convenience never overrides Closet/Fit Report RLS.
+
+### Fit Twin activity notifications
+V1 includes in-app notification capability for meaningful Shared fit activity from followed members. Notifications obey the same activity and privacy rules as the Following Feed. The exact default preference/quieting UX may be finalized during implementation, but the activity-notification capability itself is core V1 scope.
+
+Fit Twin/member pages continue to show current match scores separately from historical Shared Fit History.
 
 ## Data-quality rule
 **Controlled when possible. Normalize when necessary. Free text only when useful.** Search/autocomplete must prefer canonical brands/products before creation. Text, identifiers and URLs are normalized for matching while original human-facing values are preserved where useful.
@@ -98,7 +125,8 @@ A V1 Fit Twin is a Fit Match the user deliberately saves/follows. There is no un
 3. Browse shared historical fit evidence from current or former body-state matches.
 4. Log a garment with canonical product identity, original + normalized size, controlled fit and optional shared fit photo; the observation locks to the current Fit Profile version.
 5. Open a product page and see exact evidence first, then clearly labeled fallback evidence, weighted against each observation's historical snapshot.
-6. Save useful current matches as Fit Twins.
-7. Post outfits and search/discover products, brands and members.
+6. Save useful current matches as Fit Twins / followed members.
+7. Keep learning from those people through the dedicated Following Feed and Fit Twin activity notifications when they add new Shared fit evidence or outfits.
+8. Post outfits and search/discover products, brands and members.
 
 Project completion status, gaps and exact next work live only in `docs/AI_MASTER_LOG.md`.

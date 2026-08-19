@@ -111,8 +111,17 @@ The match badge on a Following Feed card is the followed member's **current rele
 
 If Shared content is later made Private or deleted, the feed must no longer expose content the viewer is not authorized to see. Feed convenience never overrides Closet/Fit Report RLS.
 
-### Fit Twin activity notifications
-V1 includes in-app notification capability for meaningful Shared fit activity from followed members. Notifications obey the same activity and privacy rules as the Following Feed. The exact default preference/quieting UX may be finalized during implementation, but the activity-notification capability itself is core V1 scope.
+### Fit Twin activity notifications — LOCKED V1
+- Fit Twin activity notifications are **in-app only in V1** and are **ON by default for future activity**.
+- Members have one global Fit Twin activity notification on/off setting plus a private per-Fit-Twin mute.
+- Muting one Fit Twin does not unfollow them and does not remove their authorized activity from the Following Feed. Global notification off also leaves the Following Feed unchanged.
+- Notification-worthy activity is exactly the same meaningful activity used by the Following Feed: a newly Shared Closet garment, a new Shared Fit Report observation/re-try-on, or a new outfit post. Likes never generate Fit Twin activity notifications.
+- V1 does **not** send these alerts by email or phone push.
+- Global off, per-Fit-Twin mute, or unfollow stops future notifications only. Already-valid existing notifications remain unless their underlying source ceases to be authorized.
+- Re-enabling notifications or refollowing does not backfill activity that occurred while alerts were suppressed.
+- Per-Fit-Twin mute belongs to the active canonical follow relationship. Unfollow clears that mute; a later refollow starts unmuted, still subject to the global setting.
+- If a source Closet item becomes Private, or source Closet/outfit content is deleted, corresponding existing notifications are removed with the canonical activity record and cannot expose stale content.
+- Notification state, preferences and mute rows are private. Notification output may contain only the same safe identity/activity/product/Fit Report/outfit context authorized for the signed-in recipient. It never contains raw current or historical body measurements.
 
 Fit Twin/member pages continue to show current match scores separately from historical Shared Fit History.
 
@@ -126,7 +135,7 @@ Fit Twin/member pages continue to show current match scores separately from hist
 4. Log a garment with canonical product identity, original + normalized size, controlled fit and optional shared fit photo; the observation locks to the current Fit Profile version.
 5. Open a product page and see exact evidence first, then clearly labeled fallback evidence, weighted against each observation's historical snapshot.
 6. Save useful current matches as Fit Twins / followed members.
-7. Keep learning from those people through the dedicated Following Feed and Fit Twin activity notifications when they add new Shared fit evidence or outfits.
+7. Keep learning from those people through the dedicated Following Feed and in-app Fit Twin activity notifications when they add new Shared fit evidence or outfits.
 8. Post outfits and search/discover products, brands and members.
 
 Project completion status, gaps and exact next work live only in `docs/AI_MASTER_LOG.md`.

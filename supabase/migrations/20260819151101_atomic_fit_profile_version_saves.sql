@@ -1,0 +1,4 @@
+-- Applied canonical hosted migration: 20260819151101_atomic_fit_profile_version_saves.
+-- public.save_fit_profile(username, unit_system, measurements_jsonb) is the single canonical current Fit Profile write path.
+-- It authenticates the caller, validates username/payload, replaces omitted current measurements, writes numeric controlled measurement rows, lets the body_measurements trigger normalize precision/canonical units, updates fit_profiles, and commits/reuses the matching immutable Fit Profile version in one database transaction.
+-- Future application code must not reintroduce a multi-write profile-save path.

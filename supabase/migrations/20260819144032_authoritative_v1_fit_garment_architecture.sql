@@ -1,0 +1,9 @@
+-- Canonical pointer for hosted migration 20260819144032.
+--
+-- The full migration was applied to the connected LikeSized Supabase project as
+-- `authoritative_v1_fit_garment_architecture` and is the authoritative operational history.
+-- Its resulting current-state contract is documented in docs/V1_PRODUCT_SPEC.md and
+-- docs/AI_MASTER_LOG.md, with generated database types reflecting the live schema.
+--
+-- Do not create an alternate/parallel architecture migration to replace it.
+-- Future schema changes must be new ordered migrations against this hosted state.

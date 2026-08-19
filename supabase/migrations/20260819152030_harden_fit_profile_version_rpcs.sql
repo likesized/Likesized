@@ -1,0 +1,4 @@
+-- Applied canonical hosted migration: 20260819152030_harden_fit_profile_version_rpcs.
+-- Public Fit Profile/version RPCs are SECURITY INVOKER and operate under the signed-in user's RLS.
+-- Immutable version creation is delegated only to a narrow private SECURITY DEFINER helper that derives the user from auth.uid().
+-- This removed all Supabase security-advisor findings for the snapshot/profile-save RPCs.

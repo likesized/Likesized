@@ -1,0 +1,3 @@
+-- Applied canonical hosted migration: 20260819152056_index_authoritative_v1_relationships.
+-- Adds covering indexes for every authoritative-V1 foreign-key relationship flagged by the Supabase performance advisor.
+-- After application, no unindexed-foreign-key notices remain; only expected unused-index INFO notices remain while the application database is empty.

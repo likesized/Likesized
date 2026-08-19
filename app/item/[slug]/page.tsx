@@ -1,266 +1,96 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import {
-  recommendSize,
-  type RecommendationEvidence,
-} from "@/lib/recommendation";
+import { EVIDENCE_LABELS, type EvidenceLevel } from "@/lib/domain";
+import { recommendSize, type RecommendationEvidence } from "@/lib/recommendation";
 
-type Params = Promise<{ slug: string }>;
+type Params=Promise<{slug:string}>;
+type ProductRecord={id:string;name:string;slug:string;category:string;garment_type_key:string|null;image_url:string|null;brand:unknown};
+type BrandRecord={name:string};
+type Candidate={fit_report_id:string;user_id:string;closet_item_id:string;evidence_product_id:string;evidence_variant_id:string|null;fit_profile_version_id:string;original_size_label:string;normalized_size_id:string|null;fit:RecommendationEvidence["fit"];would_buy_again:boolean|null;historical_match_score:number;historical_coverage_percent:number;evidence_level:EvidenceLevel;evidence_rank:number;attribute_overlap:number};
+type Profile={id:string;username:string;display_name:string|null};
+type EvidenceProduct={id:string;name:string;slug:string;brand:unknown};
+type SizeRow={id:string;normalized_key:string;display_label:string};
+function one<T>(value:unknown):T|null{return Array.isArray(value)?((value[0] as T|undefined)??null):((value as T|null)??null);}
+const FIT_LABELS:Record<string,string>={too_small:"Too small",snug:"Snug",just_right:"Just right",relaxed:"Relaxed",too_big:"Too big"};
 
-type ProductRecord = {
-  id: string;
-  name: string;
-  slug: string;
-  category: string;
-  image_url: string | null;
-  brand: unknown;
-};
+export default async function ItemPage({params}:{params:Params}){
+  const {slug}=await params;
+  const supabase=await createClient();
+  const {data:claimsData,error:claimsError}=await supabase.auth.getClaims();
+  const viewerId=claimsData?.claims?.sub;
+  if(claimsError||!viewerId)redirect(`/login?next=${encodeURIComponent(`/item/${slug}`)}`);
 
-type BrandRecord = { name: string };
-
-type ReportRecord = {
-  user_id: string;
-  size_label: string;
-  fit: RecommendationEvidence["fit"];
-  would_buy_again: boolean | null;
-  created_at: string;
-  profile: unknown;
-};
-
-type ProfileRecord = {
-  username: string;
-  display_name: string | null;
-};
-
-type MatchRecord = {
-  user_id: string;
-  match_score: number;
-};
-
-const FIT_LABELS: Record<RecommendationEvidence["fit"], string> = {
-  too_small: "Too small",
-  snug: "Snug",
-  just_right: "Just right",
-  relaxed: "Relaxed",
-  too_big: "Too big",
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  tops: "TOPS",
-  bottoms: "BOTTOMS",
-  dresses: "DRESSES",
-  outerwear: "OUTERWEAR",
-  shoes: "SHOES",
-  other: "OTHER",
-};
-
-function one<T>(value: unknown): T | null {
-  if (Array.isArray(value)) return (value[0] as T | undefined) ?? null;
-  return (value as T | null) ?? null;
-}
-
-function matchCategory(category: string): "overall" | "tops" | "bottoms" {
-  if (category === "bottoms") return "bottoms";
-  if (category === "tops" || category === "outerwear") return "tops";
-  return "overall";
-}
-
-function categoryMatchLabel(category: "overall" | "tops" | "bottoms") {
-  return category === "overall"
-    ? "Overall match"
-    : `${category[0].toUpperCase()}${category.slice(1)} match`;
-}
-
-export default async function ItemPage({ params }: { params: Params }) {
-  const { slug } = await params;
-  const supabase = await createClient();
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-  const viewerId = claimsData?.claims?.sub;
-
-  if (claimsError || !viewerId) {
-    redirect(`/login?next=${encodeURIComponent(`/item/${slug}`)}`);
-  }
-
-  const [{ data: viewerProfile }, { data: viewerFitProfile }] = await Promise.all([
-    supabase.from("profiles").select("username").eq("id", viewerId).maybeSingle(),
-    supabase.from("fit_profiles").select("user_id").eq("user_id", viewerId).maybeSingle(),
+  const [{data:viewerProfile},{data:viewerFit}]=await Promise.all([
+    supabase.from("profiles").select("username").eq("id",viewerId).maybeSingle(),
+    supabase.from("fit_profiles").select("completed_at").eq("user_id",viewerId).maybeSingle(),
   ]);
+  if(!viewerProfile?.username||!viewerFit?.completed_at)redirect("/onboarding");
 
-  if (!viewerProfile?.username || !viewerFitProfile) {
-    redirect("/onboarding");
-  }
+  const {data:productData,error:productError}=await supabase.from("products").select("id,name,slug,category,garment_type_key,image_url,brand:brands(name)").eq("slug",slug).maybeSingle();
+  if(productError)throw new Error("Could not load product.");
+  if(!productData)notFound();
+  const product=productData as ProductRecord;
+  const brand=one<BrandRecord>(product.brand);
 
-  const { data: productData, error: productError } = await supabase
-    .from("products")
-    .select("id, name, slug, category, image_url, brand:brands(name)")
-    .eq("slug", slug)
-    .maybeSingle();
+  const {data:candidateData,error:candidateError}=await supabase.rpc("get_product_evidence_candidates",{p_product_id:product.id,p_variant_id:null,p_result_limit:300});
+  if(candidateError)throw new Error("Could not load product fit evidence.");
 
-  if (productError) {
-    throw new Error("Could not load product.");
-  }
+  // The database returns at most one strongest historical observation per unique wearer.
+  // Every match score below compares the viewer's CURRENT body to the immutable snapshot attached to that Fit Report.
+  const candidates=((candidateData??[]) as Candidate[]).filter((row)=>row.user_id!==viewerId);
+  const ranked=[...candidates].sort((a,b)=>a.evidence_rank-b.evidence_rank||b.historical_match_score-a.historical_match_score||b.historical_coverage_percent-a.historical_coverage_percent||b.attribute_overlap-a.attribute_overlap);
 
-  if (!productData) notFound();
+  const profileIds=[...new Set(ranked.map((row)=>row.user_id))];
+  const productIds=[...new Set(ranked.map((row)=>row.evidence_product_id))];
+  const sizeIds=[...new Set(ranked.map((row)=>row.normalized_size_id).filter((value):value is string=>Boolean(value)))];
+  let profiles:Profile[]=[]; let evidenceProducts:EvidenceProduct[]=[]; let sizes:SizeRow[]=[];
+  if(profileIds.length){const {data}=await supabase.from("profiles").select("id,username,display_name").in("id",profileIds);profiles=(data??[]) as Profile[];}
+  if(productIds.length){const {data}=await supabase.from("products").select("id,name,slug,brand:brands(name)").in("id",productIds);evidenceProducts=(data??[]) as EvidenceProduct[];}
+  if(sizeIds.length){const {data}=await supabase.from("normalized_sizes").select("id,normalized_key,display_label").in("id",sizeIds);sizes=(data??[]) as SizeRow[];}
 
-  const product = productData as ProductRecord;
-  const brand = one<BrandRecord>(product.brand);
-  const selectedMatchCategory = matchCategory(product.category);
+  const profileById=new Map(profiles.map((row)=>[row.id,row]));
+  const productById=new Map(evidenceProducts.map((row)=>[row.id,row]));
+  const sizeById=new Map(sizes.map((row)=>[row.id,row]));
 
-  const [{ data: reportsData, error: reportsError }, { data: matchesData, error: matchesError }] =
-    await Promise.all([
-      supabase
-        .from("fit_reports")
-        .select(
-          "user_id, size_label, fit, would_buy_again, created_at, profile:profiles(username, display_name)",
-        )
-        .eq("product_id", product.id)
-        .order("created_at", { ascending: false }),
-      supabase.rpc("get_fit_matches", {
-        p_match_category: selectedMatchCategory,
-        p_result_limit: 100,
-      }),
-    ]);
+  const recommendation=recommendSize(ranked.map((row)=>{
+    const normalized=row.normalized_size_id?sizeById.get(row.normalized_size_id):null;
+    return{
+      sizeKey:normalized?.normalized_key||`raw:${row.original_size_label.trim().toUpperCase()}`,
+      sizeLabel:normalized?.display_label||row.original_size_label,
+      fit:row.fit,
+      matchScore:row.historical_match_score,
+      coveragePercent:row.historical_coverage_percent,
+      evidenceLevel:row.evidence_level,
+      attributeOverlap:row.attribute_overlap,
+      wouldBuyAgain:row.would_buy_again,
+    };
+  }));
 
-  if (reportsError || matchesError) {
-    throw new Error("Could not load product fit evidence.");
-  }
+  const bestLevel=ranked[0]?.evidence_level??null;
+  const bestCount=bestLevel?ranked.filter((row)=>row.evidence_level===bestLevel).length:0;
+  const placeholder=product.name.replace(/[^A-Za-z0-9]/g,"").slice(0,3).toUpperCase()||"FIT";
 
-  const reports = (reportsData ?? []) as ReportRecord[];
-  const matchRows = (matchesData ?? []) as MatchRecord[];
-  const matchByUser = new Map(matchRows.map((row) => [row.user_id, row.match_score]));
+  return <main className="pageShell">
+    <section className="itemHero"><div className="productImage">{placeholder}</div><div className="itemDetails"><span className="eyebrow">{brand?.name?.toUpperCase()||"BRAND"}{product.garment_type_key?` · ${product.garment_type_key.replaceAll("_"," ").toUpperCase()}`:""}</span><h1>{product.name}</h1><p>LikeSized uses the strongest relevant evidence available. Each garment report stays tied to the body measurements from when it was actually worn, even if that member's body changes later.</p>
+      {recommendation?<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>{recommendation.sizeLabel}</strong><b>{recommendation.confidence}% confidence</b></div><div className="tiny">Based on {recommendation.similarWearerCount} unique relevant wearer{recommendation.similarWearerCount===1?"":"s"}. Strongest supporting tier: {EVIDENCE_LABELS[recommendation.strongestEvidenceLevel]}.</div></>:<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>—</strong><b>Not enough relevant evidence yet</b></div><div className="tiny">No eligible shared historical fit evidence from sufficiently similar body snapshots yet.</div></>}
+      <div className="statsRow"><span><b>{ranked.length}</b> unique wearer{ranked.length===1?"":"s"}</span><span><b>{bestLevel?EVIDENCE_LABELS[bestLevel]:"—"}</b> strongest tier</span><span><b>{bestCount}</b> at strongest tier</span></div>
+    </div></section>
 
-  const uniqueReports: ReportRecord[] = [];
-  const seenUsers = new Set<string>();
-
-  for (const report of reports) {
-    if (seenUsers.has(report.user_id)) continue;
-    seenUsers.add(report.user_id);
-    uniqueReports.push(report);
-  }
-
-  const otherWearers = uniqueReports.filter((report) => report.user_id !== viewerId);
-  const similarRows = otherWearers
-    .map((report) => ({
-      report,
-      matchScore: matchByUser.get(report.user_id),
-    }))
-    .filter(
-      (row): row is { report: ReportRecord; matchScore: number } =>
-        typeof row.matchScore === "number",
-    )
-    .sort((a, b) => b.matchScore - a.matchScore);
-
-  const recommendation = recommendSize(
-    similarRows.map(({ report, matchScore }) => ({
-      sizeLabel: report.size_label,
-      fit: report.fit,
-      matchScore,
-      wouldBuyAgain: report.would_buy_again,
-    })),
-  );
-
-  const closeMatches = similarRows.filter((row) => row.matchScore >= 70).length;
-  const buyAgainAnswers = uniqueReports.filter(
-    (report) => report.would_buy_again !== null,
-  );
-  const buyAgainPercent =
-    buyAgainAnswers.length > 0
-      ? Math.round(
-          (buyAgainAnswers.filter((report) => report.would_buy_again === true).length /
-            buyAgainAnswers.length) *
-            100,
-        )
-      : null;
-  const categoryLabel = CATEGORY_LABELS[product.category] || "OTHER";
-  const matchLabel = categoryMatchLabel(selectedMatchCategory);
-  const evidenceRows = similarRows.slice(0, 20);
-  const placeholder =
-    product.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 3).toUpperCase() || "FIT";
-
-  return (
-    <main className="pageShell">
-      <section className="itemHero">
-        <div className="productImage">{placeholder}</div>
-        <div className="itemDetails">
-          <span className="eyebrow">
-            {brand?.name?.toUpperCase() || "BRAND"} · {categoryLabel}
-          </span>
-          <h1>{product.name}</h1>
-          <p>
-            Fit evidence from real wearers, ranked using the measurements that matter most for this garment category. Their exact measurements stay private.
-          </p>
-
-          {recommendation ? (
-            <>
-              <div className="recommendation">
-                <span>RECOMMENDED SIZE</span>
-                <strong>{recommendation.sizeLabel}</strong>
-                <b>{recommendation.confidence}% confidence</b>
-              </div>
-              <div className="tiny">
-                Based on {recommendation.similarWearerCount} similar wearer{recommendation.similarWearerCount === 1 ? "" : "s"}; {recommendation.sizeEvidenceCount} reported this size.
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="recommendation">
-                <span>RECOMMENDED SIZE</span>
-                <strong>—</strong>
-                <b>Not enough evidence yet</b>
-              </div>
-              <div className="tiny">
-                We need positive fit reports from people with a meaningful {selectedMatchCategory} match before calling a size.
-              </div>
-            </>
-          )}
-
-          <div className="statsRow">
-            <span><b>{reports.length}</b> fit report{reports.length === 1 ? "" : "s"}</span>
-            <span><b>{closeMatches}</b> close match{closeMatches === 1 ? "" : "es"}</span>
-            <span><b>{buyAgainPercent === null ? "—" : `${buyAgainPercent}%`}</b> would buy again</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="section flush">
-        <div className="sectionHeading">
-          <div>
-            <span className="eyebrow">BEST EVIDENCE FIRST</span>
-            <h2>People closest to your fit</h2>
-          </div>
-        </div>
-
-        {evidenceRows.length > 0 ? (
-          <div className="evidenceList">
-            {evidenceRows.map(({ report, matchScore }) => {
-              const profile = one<ProfileRecord>(report.profile);
-              const name =
-                profile?.display_name?.trim() ||
-                profile?.username ||
-                "LikeSized member";
-              const handle = profile?.username ? `@${profile.username}` : "Member";
-
-              return (
-                <div className="evidence" key={report.user_id}>
-                  <div className="avatar small">{name.slice(0, 1).toUpperCase()}</div>
-                  <div><strong>{name}</strong><span>{handle}</span></div>
-                  <div><span>{matchLabel}</span><strong>{matchScore}%</strong></div>
-                  <div><span>Wore</span><strong>{report.size_label}</strong></div>
-                  <div><span>Reported fit</span><strong>{FIT_LABELS[report.fit]}</strong></div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="emptyState">
-            <span className="eyebrow">MATCHED EVIDENCE</span>
-            <h2>No similar wearers have reported this product yet.</h2>
-            <p>
-              General fit reports can exist before a matched recommendation does. LikeSized waits for meaningful body-match evidence instead of pretending certainty.
-            </p>
-          </div>
-        )}
-      </section>
-    </main>
-  );
+    <section className="section flush"><div className="sectionHeading"><div><span className="eyebrow">BEST EVIDENCE FIRST</span><h2>How this—or the closest relevant garments—fit bodies like yours</h2></div></div>
+      {ranked.length?<div className="evidenceList">{ranked.slice(0,30).map((row)=>{
+        const profile=profileById.get(row.user_id);
+        const sourceProduct=productById.get(row.evidence_product_id);
+        const sourceBrand=one<BrandRecord>(sourceProduct?.brand);
+        const normalized=row.normalized_size_id?sizeById.get(row.normalized_size_id):null;
+        return <div className="evidence" key={row.fit_report_id}>
+          <div className="avatar small">{(profile?.display_name||profile?.username||"F").slice(0,1).toUpperCase()}</div>
+          <div><strong>{profile?.display_name||profile?.username||"LikeSized member"}</strong><span>{row.historical_match_score}% match to your current body when this was worn · {row.historical_coverage_percent}% measurement coverage</span></div>
+          <div><span>Evidence</span><strong>{EVIDENCE_LABELS[row.evidence_level]}</strong></div>
+          <div><span>Garment</span><strong>{sourceBrand?.name?`${sourceBrand.name} · `:""}{sourceProduct?.name||"Garment"}</strong></div>
+          <div><span>Size</span><strong>{normalized?.display_label||row.original_size_label}</strong></div>
+          <div><span>Fit</span><strong>{FIT_LABELS[row.fit]||row.fit}</strong></div>
+        </div>;
+      })}</div>:<div className="emptyState"><span className="eyebrow">NO FIT EVIDENCE YET</span><h2>Be the first useful data point.</h2><p>LikeSized will use exact variant/product evidence first, then family and clearly labeled similar-garment evidence as the user-built database grows.</p></div>}
+    </section>
+  </main>;
 }

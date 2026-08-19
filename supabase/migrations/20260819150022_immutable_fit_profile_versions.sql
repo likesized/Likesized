@@ -1,0 +1,11 @@
+-- Applied canonical hosted migration: 20260819150022_immutable_fit_profile_versions.
+-- Operational SQL is recorded in the connected Supabase migration ledger.
+-- Canonical behavioral contract:
+--   * immutable fit_profile_versions + private version measurements/size references
+--   * fit_profiles.current_version_id points to current immutable body state
+--   * every fit_reports row has immutable fit_profile_version_id
+--   * multiple historical Fit Reports may exist for one Closet item
+--   * insert trigger creates/reuses the correct snapshot; update trigger forbids moving a report to another body/garment state
+--   * private snapshot matching compares viewer current body to the historical snapshot
+--   * product evidence returns safe historical match/coverage, never raw measurements
+-- See supabase/schema_contract.md and docs/V1_PRODUCT_SPEC.md. Do not create a duplicate migration for this version.

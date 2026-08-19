@@ -2,112 +2,53 @@
 
 Working prototype for **LikeSized — See what fits people built like you.**
 
+## Canonical rule
+GitHub `likesized/Likesized` is the source of truth. No patch/fixed/v2/backup/parallel implementations. Database history is the ordered Supabase migration history; `supabase/schema.sql` is the historical bootstrap and `supabase/schema_contract.md` explains the current contract.
+
 ## What is implemented
-- Responsive landing page
-- Supabase email/password auth integration with SSR cookie sessions
-- Protected app routes backed by verified Supabase JWT claims
-- Hosted LikeSized PostgreSQL schema with privacy-first RLS and least-privilege Data API grants
-- Private Fit Profile save/edit flow with server validation
-- Live People My Size matching for Overall, Tops, and Bottoms
-- Safe server/database match scoring without exposing raw measurements
-- Live Closet logging with brand, product, category, size, fit, wear count, notes, and buy-again evidence
-- Private optional Closet-photo storage with per-user RLS
-- Live product fit pages backed by real `fit_reports`
-- Similar-wearer size recommendations with evidence-sensitive confidence
-- Fit Twin save/remove flow, saved Fit Twin list, and member-facing Fit Twin profiles
-- Member outfit feed with photo posts and 1–6 intentionally tagged Closet garments
-- Product/brand/member search and default discovery
-- V1 product spec
+- Supabase email/password auth with protected routes
+- Privacy-first RLS and least-privilege Data API grants
+- Extensible private Fit Profile using controlled normalized `body_measurements`
+- Garment-specific People My Size matching with safe derived scores
+- Canonical brands/products, product families, variants, retailer listings and normalized identifiers
+- Controlled extensible garment taxonomy/attributes
+- Original garment-size preservation plus structured normalized size identity
+- Private and Shared Closet architecture
+- Controlled overall + garment-specific Fit Reports
+- Optional member-shared fit/reference photos in a non-public Storage bucket
+- Evidence hierarchy from Exact Variant through Category Fit
+- Fit Twins/follows, member profiles, outfits and search/discovery
+- Outfit-like database support
 
-Fit Profile and Closet data are persisted in Supabase. Exact body measurements and owned Closet rows are owner-only through RLS. People My Size, Fit Twins, outfits, search, and product evidence use safe fit data instead of exposing another member's raw measurements.
+## Authoritative architecture
+`docs/V1_PRODUCT_SPEC.md` is the authoritative V1 fit/garment product architecture. `docs/AI_MASTER_LOG.md` is the durable AI-session handoff. The final architecture supersedes the earlier fixed-column Fit Profile/simple product-size/photo model.
 
-## Run locally
-```bash
-cp .env.example .env.local
-npm install
-npm run dev
-```
-Then open `http://localhost:3000`.
-
-Required environment variables:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- `NEXT_PUBLIC_SITE_URL`
-
-## Authentication
-Public routes:
-- `/`
-- `/login`
-- `/signup`
-- `/check-email`
-- `/auth/*`
-
-Everything else is protected by `proxy.ts`. Unauthenticated visitors are redirected to `/login` and returned to their requested path after successful sign-in.
-
-Supabase SSR clients live in `lib/supabase/`. Server authorization uses `auth.getClaims()` instead of trusting an unverified cookie session.
-
-### Required Supabase dashboard configuration
-For production email confirmation, configure the Auth Site URL and allowed redirect URLs for the deployed LikeSized domain and update the **Confirm signup** email template link to:
-
-```html
-{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next={{ .RedirectTo }}
-```
-
-Keep `http://localhost:3000` available as a development redirect while working locally.
-
-## Database
-The canonical current-state database bootstrap is `supabase/schema.sql`. The connected LikeSized Supabase project has the V1 tables, RLS policies, signup profile trigger, separated fit reports, follows, safe match-score storage, and private match calculation functions applied.
-
-The schema revokes Supabase's broad default grants from `anon` and `authenticated` before granting only the operations each table needs. RLS then controls which permitted rows are reachable.
-
-Raw measurements live only in `fit_profiles`. Product fit evidence lives in `fit_reports`, and safe calculated similarity percentages live in `fit_matches` so People My Size, product recommendations, and Fit Twins do not require exposing another member's measurements.
+Raw body measurements and normally worn bra/shoe size references are owner-only. Other members receive safe Fit Match percentages and only deliberately shared Closet/Fit Report/photo evidence.
 
 ## Storage
-The canonical photo bootstrap is `supabase/storage.sql`.
+- `fit-reference-photos`: private from the public internet; authenticated LikeSized members may read photos whose associated Closet item is shared; only the owner may write/delete their files.
+- `outfit-photos`: private from the public internet and member-readable; owner-only writes.
+- Legacy `closet-photos`: retired/empty and has no application access policies. Application code must not use it.
 
-- `closet-photos` is private and owner-readable only.
-- `outfit-photos` is private from the public internet but readable by authenticated members; writes remain restricted to the owner's user-ID folder.
-- Both buckets allow JPEG/PNG/WebP up to 8 MB.
+**Fit-photo rule:** upload is optional. If uploaded, the fit/reference photo is shared with authenticated LikeSized members. There is no private fit-photo mode.
 
-Photo uploads go through Server Actions. `next.config.ts` raises the Server Action request-body cap to 9 MB so an allowed 8 MB image plus form fields can reach the storage layer.
-
-## Product recommendations
-Product routes use `/item/[slug]`. For the signed-in viewer, LikeSized maps the product category to the relevant match model (`tops`, `bottoms`, or `overall`), ranks product fit reports by that safe match score, and deduplicates recommendation evidence to one current report per wearer.
-
-`lib/recommendation.ts` requires at least a 50% body match before a report influences a size recommendation. “Just right” is strongest positive evidence, “relaxed” and “snug” are weaker positive evidence, and “too small” / “too big” count against that exact size. Confidence also falls when evidence is sparse, matched wearers disagree across sizes, match quality is lower, or the winning reports are not strong fits.
+## Product evidence
+Exact evidence is preferred. When unavailable, the data foundation supports Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit. Evidence level must be surfaced rather than presenting fallback evidence as exact-product data.
 
 ## Fit Twins
-In V1, a **Fit Twin is a Fit Match the user chooses to save/follow**. There is no invented fixed percentage cutoff. The current Overall/Tops/Bottoms scores remain live and can change as either member updates their Fit Profile.
-
-`/twins` lists saved Fit Twins. `/people/[username]` is the signed-in member-facing Fit Twin profile: it can show safe match percentages plus product, size, fit, and buy-again evidence. It does not expose exact body measurements or another member's private Closet ownership data.
-
-## Outfits
-`/outfits` is a signed-in member feed. `/outfits/new` creates a photo post and requires 1–6 Closet garments with existing fit reports. The feed resolves those deliberate tags through shareable `fit_reports`, so members can see the linked product, purchased size, and reported fit without gaining access to the underlying private Closet row.
-
-## Search
-`/search` provides product, brand, and member discovery. With no query it shows recently logged products plus the signed-in user's closest Overall Fit Matches. Member results may show a safe Overall match score when that member is in the viewer's current match set; search never exposes raw body measurements.
+A Fit Twin is a Fit Match the user deliberately saves/follows; no universal percentage cutoff is invented. Raw body measurements never appear on Fit Twin/member pages.
 
 ## Key routes
 - `/` — public home
-- `/signup` — create account
-- `/login` — sign in
-- `/onboarding` — protected Fit Profile save/edit
-- `/search` — protected product/brand/member discovery
-- `/people` — protected live Overall/Tops/Bottoms matches
-- `/people/[username]` — protected member-facing Fit Twin profile
-- `/twins` — protected saved Fit Twins
-- `/outfits` — protected member outfit feed
-- `/outfits/new` — protected outfit-post flow
-- `/closet` — protected live Closet
-- `/closet/add` — protected Add Garment flow
-- `/item/[slug]` — protected live product fit evidence and recommendation
+- `/signup`, `/login` — auth
+- `/onboarding` — private Fit Profile
+- `/search` — product/brand/member discovery
+- `/people` — People My Size
+- `/people/[username]` — member/Fit Twin profile
+- `/twins` — saved Fit Twins
+- `/closet`, `/closet/add` — Closet
+- `/item/[slug]` — product evidence/recommendation
+- `/outfits`, `/outfits/new` — outfits
 
-## Next build milestone
-1. Add social interactions around outfits and Fit Twins.
-2. Add Closet garment edit/remove controls.
-3. Add profile/privacy controls before public beta.
-4. Add richer garment-specific match models such as Dresses and Shoes.
-5. Add recommendation feedback and evidence-quality signals.
-
-## Important product decision
-Raw measurements must not be sent broadly to clients just to calculate matches. Similarity is calculated behind a controlled database function that returns scores and safe display fields only.
+## Exact build checkpoint
+Before the authoritative architecture correction, canonical `main` was `2fd2fcb` and the next incomplete step was **Outfit likes UI + Fit-Twins-only outfit feed UI**. After this correction is synchronized and verified, resume that exact step. Then continue Closet edit/remove controls and profile/privacy controls.

@@ -1,0 +1,6 @@
+-- Applied canonical hosted migration: 20260819150923_historical_fit_evidence_unique_wearers.
+-- Product recommendation evidence is current viewer body vs immutable Fit Report snapshot.
+-- The database returns at most one strongest observation per unique wearer, ordered by evidence exactness, historical body-match score, measurement coverage, attribute overlap, and recency.
+-- All legitimate observations remain in fit_reports for Shared Fit History.
+-- public.get_fit_report_snapshot_matches(uuid[]) returns safe derived historical scores for RLS-visible reports only.
+-- Raw historical measurements remain owner-only.

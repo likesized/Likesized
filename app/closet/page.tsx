@@ -167,13 +167,11 @@ export default async function ClosetPage({
                 <div><span className="muted">SIZE</span><strong>{item.size_label}</strong></div>
                 <div><span className="muted">FIT</span><strong>{FIT_LABELS[report?.fit || ""] || "—"}</strong></div>
                 <div><span className="muted">WORN</span><strong>{item.wears_count}×</strong></div>
-                <span className="closetStatus">
-                  {report?.would_buy_again === true
-                    ? "Buy again"
-                    : report?.would_buy_again === false
-                      ? "Wouldn't rebuy"
-                      : "Logged"}
-                </span>
+                {product ? (
+                  <Link className="textLink closetViewLink" href={`/item/${product.slug}`}>View →</Link>
+                ) : (
+                  <span className="closetStatus">Logged</span>
+                )}
               </div>
             );
           })}

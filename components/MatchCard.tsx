@@ -23,7 +23,7 @@ export function MatchCard({
   item,
   size,
   fit,
-  href = "/item/levi-541",
+  href = "",
 }: MatchCardProps) {
   return (
     <article className="matchCard">

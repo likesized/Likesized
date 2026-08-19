@@ -3,7 +3,7 @@
 ## Canonical source-of-truth rule — LOCKED
 GitHub `likesized/Likesized` is the single canonical source of truth for database architecture and executable history. Ordered SQL in `supabase/migrations/` is the authoritative replay/deployment history. `supabase/schema.sql` and `supabase/storage.sql` are reference/current-state aids only.
 
-The canonical directory contains all **29 migrations** recorded by the connected project, from `20260819132934_initial_likesized_schema.sql` through `20260819211614_atomic_outfit_post_creation.sql`.
+The canonical directory contains all **30 migrations** recorded by the connected project, from `20260819132934_initial_likesized_schema.sql` through `20260819212753_canonical_search_discovery_rpcs.sql`.
 
 Do not rewrite applied migrations. Future database changes are new ordered executable migrations. No alternate current-state schema files, patch migrations, fixed/v2 copies, or parallel database implementations.
 
@@ -18,25 +18,21 @@ Do not rewrite applied migrations. Future database changes are new ordered execu
 - Product Fit Families are intentional same-fit/cut groups with compatibility enforcement; Similar Garments uses controlled construction/material attributes.
 - Private Closet items remain owner-only; Shared items/reports are member-readable under RLS. Fit/reference photos may exist only while the Closet item is Shared.
 - `follows`: canonical Fit Twin relationship. Signed-in LikeSized members may read the community follow graph; only `auth.uid() = follower_id` may insert/delete. Anonymous users have no SELECT grant.
-- `private.following_activity_events`: private canonical activity ledger containing only meaningful V1 Following Feed source references: `closet_shared`, `fit_report_added`, and `outfit_posted`. Authenticated clients have no direct table access.
-- activity triggers record the first Fit Report on an already-Shared garment as `closet_shared`, later Shared Fit Reports as `fit_report_added`, and new outfit posts as `outfit_posted`. Likes do not create activity.
-- when a Closet item becomes Private, its garment activity ledger rows are removed. Re-sharing creates one fresh `closet_shared` event from the latest Fit Report rather than resurrecting old re-try-on activity. Deleting source Closet/outfit records cascades corresponding activity.
-- `public.get_following_feed(integer,timestamptz)` is a SECURITY INVOKER wrapper over `private.get_following_feed_for_current_user`. The private helper is auth-bound, reads only the current viewer's canonical follows, re-checks current source visibility/existence, and returns safe activity/product/Fit Report/outfit fields. No raw body data is stored or returned.
-- `private.fit_twin_activity_notification_preferences`: private owner global preference. Missing row means Fit Twin activity notifications are enabled by default.
-- `private.fit_twin_notification_mutes`: private per-active-follow mute state keyed by `(follower_id, followed_id)` and cascading when the canonical follow is deleted.
-- `private.fit_twin_activity_notifications`: private recipient notification rows referencing the canonical Following Feed activity ledger. Notification creation is fanned out only to current followers whose global setting is enabled and who have not muted that Fit Twin.
-- global notification off, per-Twin mute and unfollow suppress future notifications only; they do not modify the Following Feed or erase already-valid prior notifications. Re-enable/refollow does not backfill missed activity.
-- because recipient notifications reference canonical activity with `ON DELETE CASCADE`, making a garment Private or deleting source Closet/outfit content removes the corresponding existing notifications. No stale notification may preserve access to Private/deleted source content.
-- notification preference/mute/recipient tables have no direct authenticated client read/write grants. Public notification RPCs are SECURITY INVOKER wrappers over narrow private auth-bound helpers: `get_fit_twin_notification_settings`, `set_fit_twin_activity_notifications`, `get_fit_twin_notification_mutes`, `set_fit_twin_notification_mute`, `get_fit_twin_activity_notifications`, `get_fit_twin_notification_unread_count`, and `mark_fit_twin_notifications_read`.
-- Fit Twin activity notifications are in-app only in V1. Likes do not generate notifications. No email or phone-push delivery exists in the V1 notification architecture.
-- `outfit_posts` are authenticated-member-readable social posts. `outfit_post_items` are member-readable only while the linked Closet item is Shared. Therefore a tagged garment can later become Private and disappear from garment tags/evidence without deleting the independent outfit post.
-- `outfit_likes` has one like per `(post_id,user_id)`; members read aggregate likes, only the liker may insert/delete their own like, and post deletion cascades likes.
-- `public.create_outfit_post(uuid,text,text,uuid[])` is the canonical SECURITY INVOKER outfit transaction. It requires an authenticated completed member, a correctly owner-scoped photo path, 1–6 unique owned Closet garments, and existing Fit Report evidence for every selected garment; then atomically changes selected garments to Shared, creates the outfit post, and creates garment links. Any database failure rolls back the sharing/post/tag state together.
-- the app uploads the owner-scoped outfit photo before `create_outfit_post`; if the database transaction fails, the app removes that photo. This prevents failed outfit creation from accidentally leaving a Private garment Shared.
-- successful outfit auto-sharing may create the locked newly-Shared-garment activity in addition to the outfit-post activity. Likes create neither Following Feed activity nor Fit Twin notifications.
+- `private.following_activity_events`: private canonical Following Feed ledger with only `closet_shared`, `fit_report_added`, and `outfit_posted`. Authenticated clients have no direct table access; likes never create activity.
+- Shared→Private removes garment activity; re-share creates fresh share activity from the latest Fit Report; source deletion cascades activity.
+- `public.get_following_feed(integer,timestamptz)` is a SECURITY INVOKER wrapper over a private auth-bound helper that re-checks current canonical follows and source visibility/existence and never returns raw body data.
+- Fit Twin notification preferences, per-follow mutes, and recipient notification rows live in private tables. Missing global preference means ON by default. Notification fanout uses canonical Following Feed activity and only current eligible followers.
+- Global notification off, per-Twin mute and unfollow suppress future notifications only; they do not modify the Following Feed or erase still-valid prior notifications. Re-enable/refollow does not backfill missed activity; unfollow clears the relationship-specific mute.
+- Notification rows reference canonical activity with cascade, so source privacy/deletion removes corresponding existing notifications. Public notification functions are SECURITY INVOKER wrappers over narrow private auth-bound helpers. V1 sends no Fit Twin activity email or phone push.
+- `outfit_posts` are authenticated-member-readable social posts. `outfit_post_items` are readable only while linked Closet evidence is Shared. A garment may later become Private without deleting the independent outfit post.
+- `outfit_likes` has one like per `(post_id,user_id)`; only the liker may insert/delete their own like; post deletion cascades likes.
+- `public.create_outfit_post(uuid,text,text,uuid[])` is the canonical SECURITY INVOKER transaction requiring an authenticated completed member, owner-scoped photo path, 1–6 unique owned Closet garments and Fit Report evidence for each; it atomically shares selected garments, creates the outfit and creates tag links. Any DB failure rolls back sharing/post/tag state. The app removes the prior uploaded photo if the transaction fails.
+- `public.search_catalog_products(text,integer)` is authenticated-only SECURITY INVOKER catalog discovery. It searches canonical Product names, canonical Brand names, Brand aliases, manufacturer style numbers, `product_identifiers` (including SKU/UPC/barcode), retailer product IDs/SKUs and retailer listing titles; punctuation/case normalization is applied internally and results deduplicate to one canonical Product with its canonical slug/brand display identity.
+- `public.search_members(text,integer)` is authenticated-only SECURITY INVOKER member discovery over member-readable username/display name. It excludes `auth.uid()`, is case-insensitive and returns only member identity fields—never raw measurements/private size references.
+- Search RPCs do not expose the intentionally non-public general normalizer helper functions and do not create a duplicate search catalog, member index or follow system.
 
 ## Canonical verification contract
-CI replays the complete migration directory on a disposable local Supabase database, runs the production TypeScript recommendation calibration, and runs pgTAP under `supabase/tests/`.
+CI replays the complete migration directory on a disposable local Supabase database, runs production recommendation calibration, production build, and pgTAP under `supabase/tests/`.
 
 Key suites include:
 - `fit_profile_behavior.test.sql`
@@ -52,10 +48,11 @@ Key suites include:
 - `fit_twin_follow_foundation.test.sql` — **14 assertions**
 - `following_feed_activity.test.sql` — **25 assertions**
 - `fit_twin_activity_notifications.test.sql` — **48 assertions**
-- `social_outfit_integration.test.sql` — **49 assertions** verifying atomic failed-post rollback, successful Private→Shared outfit tagging, Shared Fit History, member-wide vs Fit-Twin outfit filtering, likes, latest visible Fit Report tags, Following Feed/notification interaction, later Private transition, and source deletion cascades.
+- `social_outfit_integration.test.sql` — **49 assertions**
+- `search_discovery_integration.test.sql` — **35 assertions** covering product/brand/alias/style/SKU/UPC/retailer/listing-title discovery, member username/display-name discovery, self/raw-data privacy boundaries, People My Size reachability, canonical follow creation, and searched-member Shared activity reaching Following Feed + Fit Twin notifications.
 
 `tests/recommendation-confidence.test.ts` calls production `recommendSize()` directly with **9 calibration cases**.
 
-Phase 5.4 final CI **`32303418989`** passed npm install, typecheck, recommendation calibration, production build, fresh replay of all **29 migrations** and every canonical database suite. Supabase Security Advisor after Phase 5.4: **0 findings**.
+Final Phase 5 corrected CI **`32304787008`** passed npm install, typecheck, recommendation calibration, production build, fresh replay of all **30 migrations**, and every canonical database suite. Supabase Security Advisor after Phase 5.5: **0 findings**.
 
-Do not add fixed measurement columns back to `fit_profiles`; blend current-person scores with historical garment evidence; count repeated observations as multiple wearers; fuzzy-group Product Families; expose raw body data through social activity or notifications; allow anonymous profile/follow/feed/notification discovery; reintroduce a private fit-photo state; add Fit Twin activity email/phone push without an explicit future product decision; or reintroduce non-atomic outfit auto-sharing that can publish Closet evidence without a successful outfit transaction.
+Do not add fixed measurement columns back to `fit_profiles`; blend current-person scores with historical garment evidence; count repeated observations as multiple wearers; fuzzy-group Product Families; expose raw body data through social/search/notifications; allow anonymous member/follow/feed/notification discovery; reintroduce a private fit-photo state; add Fit Twin activity email/phone push without an explicit future decision; reintroduce non-atomic outfit auto-sharing; or create a second catalog/member/follow system for search.

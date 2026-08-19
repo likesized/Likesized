@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, auth;
 
-select plan(23);
+select plan(25);
 
 insert into auth.users(id,aud,role,email,created_at,updated_at)
 values
@@ -34,7 +34,6 @@ values('f5210000-0000-4000-8000-000000000001'::uuid,'Feed Denim','feed-denim','f
 insert into public.products(id,brand_id,name,slug,category,normalized_name,garment_type_key,market_segment)
 values('f5220000-0000-4000-8000-000000000001'::uuid,'f5210000-0000-4000-8000-000000000001'::uuid,'Straight Jeans','feed-denim-straight-jeans','bottoms','straightjeans','jeans','unisex');
 
--- Viewer follows only member A.
 set local role authenticated;
 set local request.jwt.claim.sub='f5200000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
@@ -42,7 +41,6 @@ insert into public.follows(follower_id,followed_id)
 values('f5200000-0000-4000-8000-000000000001'::uuid,'f5200000-0000-4000-8000-000000000002'::uuid);
 reset role;
 
--- Followed member: one Private garment must never generate activity.
 set local role authenticated;
 set local request.jwt.claim.sub='f5200000-0000-4000-8000-000000000002';
 set local request.jwt.claim.role='authenticated';
@@ -52,10 +50,8 @@ insert into public.fit_reports(id,user_id,closet_item_id,product_id,fit_profile_
 select 'f5240000-0000-4000-8000-000000000001'::uuid,'f5200000-0000-4000-8000-000000000002'::uuid,'f5230000-0000-4000-8000-000000000001'::uuid,'f5220000-0000-4000-8000-000000000001'::uuid,current_version_id,'29','just_right','Private evidence'
 from public.fit_profiles where user_id='f5200000-0000-4000-8000-000000000002'::uuid;
 reset role;
-
 select is((select count(*) from private.following_activity_events where closet_item_id='f5230000-0000-4000-8000-000000000001'::uuid),0::bigint,'Private Closet Fit Report creates no Following Feed activity');
 
--- Followed member: Shared garment first report becomes closet_shared; second report is a re-try-on.
 set local role authenticated;
 set local request.jwt.claim.sub='f5200000-0000-4000-8000-000000000002';
 set local request.jwt.claim.role='authenticated';
@@ -65,18 +61,15 @@ insert into public.fit_reports(id,user_id,closet_item_id,product_id,fit_profile_
 select 'f5240000-0000-4000-8000-000000000002'::uuid,'f5200000-0000-4000-8000-000000000002'::uuid,'f5230000-0000-4000-8000-000000000002'::uuid,'f5220000-0000-4000-8000-000000000001'::uuid,current_version_id,'29','snug','Perfect waist, snug through thighs',true
 from public.fit_profiles where user_id='f5200000-0000-4000-8000-000000000002'::uuid;
 select is((select count(*) from private.following_activity_events where closet_item_id='f5230000-0000-4000-8000-000000000002'::uuid and event_type='closet_shared'),1::bigint,'first Fit Report on a Shared garment creates one Shared-garment event');
-
 insert into public.fit_reports(id,user_id,closet_item_id,product_id,fit_profile_version_id,size_label,fit,fit_notes,would_buy_again)
 select 'f5240000-0000-4000-8000-000000000003'::uuid,'f5200000-0000-4000-8000-000000000002'::uuid,'f5230000-0000-4000-8000-000000000002'::uuid,'f5220000-0000-4000-8000-000000000001'::uuid,current_version_id,'29','just_right','Fit better on the second try',true
 from public.fit_profiles where user_id='f5200000-0000-4000-8000-000000000002'::uuid;
 select is((select count(*) from private.following_activity_events where closet_item_id='f5230000-0000-4000-8000-000000000002'::uuid and event_type='fit_report_added'),1::bigint,'later Fit Report on a Shared garment creates one re-try-on event');
-
 insert into public.outfit_posts(id,user_id,caption,photo_url)
 values('f5250000-0000-4000-8000-000000000001'::uuid,'f5200000-0000-4000-8000-000000000002'::uuid,'Denim day','f5200000-0000-4000-8000-000000000002/f5250000-0000-4000-8000-000000000001/outfit.jpg');
 select is((select count(*) from private.following_activity_events where outfit_post_id='f5250000-0000-4000-8000-000000000001'::uuid and event_type='outfit_posted'),1::bigint,'outfit post creates one Following Feed event');
 reset role;
 
--- A like is social interaction but explicitly not a Following Feed activity type.
 set local role authenticated;
 set local request.jwt.claim.sub='f5200000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
@@ -85,7 +78,6 @@ values('f5250000-0000-4000-8000-000000000001'::uuid,'f5200000-0000-4000-8000-000
 reset role;
 select is((select count(*) from private.following_activity_events where actor_id='f5200000-0000-4000-8000-000000000002'::uuid),3::bigint,'likes do not create activity events');
 
--- Unfollowed member can create otherwise valid activity; viewer must not receive it.
 set local role authenticated;
 set local request.jwt.claim.sub='f5200000-0000-4000-8000-000000000003';
 set local request.jwt.claim.role='authenticated';
@@ -97,7 +89,6 @@ from public.fit_profiles where user_id='f5200000-0000-4000-8000-000000000003'::u
 reset role;
 select is((select count(*) from private.following_activity_events where actor_id='f5200000-0000-4000-8000-000000000003'::uuid),1::bigint,'unfollowed member activity is recorded canonically');
 
--- Viewer sees exactly the three meaningful events from the followed member.
 set local role authenticated;
 set local request.jwt.claim.sub='f5200000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
@@ -112,7 +103,6 @@ select is((select product_name from public.get_following_feed(50,null) where act
 select is((select size_label from public.get_following_feed(50,null) where activity_type='closet_shared' limit 1),'29','feed exposes the Shared Fit Report size');
 reset role;
 
--- Making the garment Private erases its ledger events, so old activity cannot reappear.
 set local role authenticated;
 set local request.jwt.claim.sub='f5200000-0000-4000-8000-000000000002';
 set local request.jwt.claim.role='authenticated';
@@ -126,7 +116,6 @@ set local request.jwt.claim.role='authenticated';
 select is((select count(*) from public.get_following_feed(50,null)),1::bigint,'after garment becomes Private only the followed outfit remains');
 reset role;
 
--- Re-sharing creates one fresh share event from the latest existing Fit Report; old re-try-on events do not resurrect.
 set local role authenticated;
 set local request.jwt.claim.sub='f5200000-0000-4000-8000-000000000002';
 set local request.jwt.claim.role='authenticated';
@@ -138,8 +127,6 @@ set local request.jwt.claim.sub='f5200000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
 select is((select count(*) from public.get_following_feed(50,null)),2::bigint,'re-sharing adds one fresh Shared-garment event beside the outfit');
 select is((select count(*) from public.get_following_feed(50,null) where closet_item_id='f5230000-0000-4000-8000-000000000002'::uuid and activity_type='fit_report_added'),0::bigint,'old re-try-on events do not resurrect after re-sharing');
-
--- Unfollowing immediately removes all of that member activity from this viewer feed without deleting canonical events.
 delete from public.follows where follower_id='f5200000-0000-4000-8000-000000000001'::uuid and followed_id='f5200000-0000-4000-8000-000000000002'::uuid;
 select is((select count(*) from public.get_following_feed(50,null)),0::bigint,'unfollow immediately removes the member from the personalized feed');
 insert into public.follows(follower_id,followed_id)
@@ -147,7 +134,6 @@ values('f5200000-0000-4000-8000-000000000001'::uuid,'f5200000-0000-4000-8000-000
 select is((select count(*) from public.get_following_feed(50,null)),2::bigint,'refollow uses the same canonical relationship and restores currently visible activity');
 reset role;
 
--- Source deletion cascades ledger activity and therefore feed exposure.
 set local role authenticated;
 set local request.jwt.claim.sub='f5200000-0000-4000-8000-000000000002';
 set local request.jwt.claim.role='authenticated';

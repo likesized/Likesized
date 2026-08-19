@@ -15,25 +15,25 @@ values
 set local role authenticated;
 set local request.jwt.claim.sub='e0000000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
-select public.save_fit_profile('variant_viewer','imperial'::public.unit_system,'[{"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"},{"measurement_type_key":"full_hip","entered_value":38,"entered_unit":"in","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
+select public.save_fit_profile('variant_viewer','imperial'::public.unit_system,'[{"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"},{"measurement_type_key":"full_hip_seat","entered_value":38,"entered_unit":"in","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
 reset role;
 
 set local role authenticated;
 set local request.jwt.claim.sub='e0000000-0000-4000-8000-000000000002';
 set local request.jwt.claim.role='authenticated';
-select public.save_fit_profile('variant_exact','imperial'::public.unit_system,'[{"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"},{"measurement_type_key":"full_hip","entered_value":38,"entered_unit":"in","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
+select public.save_fit_profile('variant_exact','imperial'::public.unit_system,'[{"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"},{"measurement_type_key":"full_hip_seat","entered_value":38,"entered_unit":"in","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
 reset role;
 
 set local role authenticated;
 set local request.jwt.claim.sub='e0000000-0000-4000-8000-000000000003';
 set local request.jwt.claim.role='authenticated';
-select public.save_fit_profile('variant_product','imperial'::public.unit_system,'[{"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"},{"measurement_type_key":"full_hip","entered_value":38,"entered_unit":"in","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
+select public.save_fit_profile('variant_product','imperial'::public.unit_system,'[{"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"},{"measurement_type_key":"full_hip_seat","entered_value":38,"entered_unit":"in","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
 reset role;
 
 set local role authenticated;
 set local request.jwt.claim.sub='e0000000-0000-4000-8000-000000000004';
 set local request.jwt.claim.role='authenticated';
-select public.save_fit_profile('variant_fallback','imperial'::public.unit_system,'[{"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"},{"measurement_type_key":"full_hip","entered_value":38,"entered_unit":"in","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
+select public.save_fit_profile('variant_fallback','imperial'::public.unit_system,'[{"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"},{"measurement_type_key":"full_hip_seat","entered_value":38,"entered_unit":"in","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
 reset role;
 
 insert into public.brands(id,name,slug,normalized_name)

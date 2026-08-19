@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, auth;
 
-select plan(20);
+select plan(21);
 
 -- Disposable local test identity. The canonical auth trigger must create its profile shell.
 insert into auth.users (id, aud, role, email, created_at, updated_at)

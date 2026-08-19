@@ -17,6 +17,7 @@ Reference documents:
 - Supabase email/password auth with protected routes
 - Privacy-first RLS and least-privilege Data API grants
 - Extensible private Fit Profile using controlled normalized body measurements
+- Private normally-worn size references saved atomically with Fit Profile measurements and historical versions
 - Immutable private Fit Profile versions for historical try-on state
 - Garment-specific People My Size matching with safe derived scores
 - Canonical brands/products, product families, variants, retailer listings and normalized identifiers

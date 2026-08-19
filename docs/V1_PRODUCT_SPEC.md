@@ -123,6 +123,17 @@ If Shared content is later made Private or deleted, the feed must no longer expo
 - If a source Closet item becomes Private, or source Closet/outfit content is deleted, corresponding existing notifications are removed with the canonical activity record and cannot expose stale content.
 - Notification state, preferences and mute rows are private. Notification output may contain only the same safe identity/activity/product/Fit Report/outfit context authorized for the signed-in recipient. It never contains raw current or historical body measurements.
 
+### Outfit social behavior — LOCKED V1
+- Outfit posts are authenticated-member-readable social content. Outfit likes are one per member per post; only the liker can remove their own like.
+- The All Outfits feed is member-wide. The Fit Twins outfit feed filters those same canonical outfit posts through the viewer's existing `follows` relationship; it does not use another friend/social graph.
+- Posting an outfit requires one photo and **1–6 unique owned Closet garments that already have Fit Report evidence**.
+- Selecting a Private Closet garment in an outfit intentionally publishes that garment's fit-reference evidence by changing it to Shared, but the share + outfit post + garment-tag creation must succeed atomically. A failed outfit transaction cannot leave a previously Private garment Shared.
+- The photo is uploaded first to the owner's `outfit-photos/<user-id>/...` path. The app then calls the atomic outfit database transaction; if that transaction fails, the uploaded photo is removed.
+- Outfit garment tags display the **latest currently visible Fit Report observation** for the tagged Closet item.
+- A tagged garment can later be made Private. When that happens, other members lose access to that garment's Closet/Fit Report evidence and the garment tag disappears from the outfit, Following Feed garment activity and corresponding notifications. The independent outfit social post and its likes may remain visible until the outfit itself is deleted.
+- Deleting an outfit cascades its garment links, likes, outfit activity and source-linked notifications. It does not automatically make previously Shared Closet garments Private.
+- Likes never create Following Feed activity or Fit Twin notifications.
+
 Fit Twin/member pages continue to show current match scores separately from historical Shared Fit History.
 
 ## Data-quality rule

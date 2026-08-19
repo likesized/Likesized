@@ -1,0 +1,1 @@
+Verification marker only. Corrected Phase 5.2 activity foundation must pass canonical CI with all 27 migrations and the 25 safe-API Following Feed assertions.

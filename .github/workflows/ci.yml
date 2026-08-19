@@ -47,3 +47,6 @@ jobs:
 
       - name: Replay all canonical migrations on a fresh local database
         run: supabase db start
+
+      - name: Run canonical database behavior tests
+        run: supabase test db --db-url postgresql://postgres:postgres@127.0.0.1:54322/postgres

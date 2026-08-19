@@ -75,10 +75,10 @@ The live Supabase ledger contained seven early migrations that were not present 
 
 Before commit, each recovered file’s Git blob SHA was calculated independently from `supabase_migrations.schema_migrations` and matched the staged Git blob byte-for-byte. Canonical recovery commit: `4141995`.
 
-The repository now contains all 14 migrations recorded by the connected project through `20260819152056_index_authoritative_v1_relationships`.
+At Phase 0 exit, the repository contained all 14 migrations then recorded by the connected project through `20260819152056_index_authoritative_v1_relationships`. Later phase migrations continue in the same ordered canonical directory.
 
 ### 0.2 Lock the replay contract — ✅ COMPLETE
-`supabase/migrations/README.md` and `supabase/schema_contract.md` define the 14-file migration directory as the only database replay/deployment history. `supabase/schema.sql` and `supabase/storage.sql` are reference/current-state aids only and are not layered onto a fresh migration replay.
+`supabase/migrations/README.md` and `supabase/schema_contract.md` define the ordered migration directory as the only database replay/deployment history. `supabase/schema.sql` and `supabase/storage.sql` are reference/current-state aids only and are not layered onto a fresh migration replay.
 
 ### 0.3 One master guide — ✅ COMPLETE
 This file is the only roadmap/status/handoff. Product spec, database contract, README and agent files do not own phase order.
@@ -104,20 +104,39 @@ Verification PR #1 (`Verify Phase 0 canonical replay`) ran CI run `32276450771`.
 
 No paid Supabase branch was created and the connected LikeSized project was not modified by this replay. Verification documentation merged to `main` in commit `4a525ab`.
 
-### 0.6 Resolve compile/type failures — ✅ COMPLETE FOR CURRENT HEAD
-The verified Phase 0 run completed typecheck and Next.js build successfully. There are no known compile/type failures at the Phase 0 exit point.
+### 0.6 Resolve compile/type failures — ✅ COMPLETE FOR PHASE 0 EXIT
+The verified Phase 0 run completed typecheck and Next.js build successfully.
 
 **Phase 0 exit criterion: ✅ MET.** GitHub contains the complete executable migration history, clean database replay is proven, the npm dependency graph is lockfile-backed, and typecheck/build are green.
 
 ## PHASE 1 — FIT PROFILE COMPLETION & PRIVACY CONTROLS
-**Status: ▶️ IN PROGRESS.**
-1. Add private normally-worn size-reference UI backed by `user_size_references` for supported references such as bra/shoe sizing.
-2. Add owner profile/privacy controls without weakening raw-measurement privacy.
-3. Test unit switching, partial measurements, edit saves and immutable version creation/reuse.
-4. Verify raw current/historical measurement RLS.
-5. Verify body changes affect current matching without rewriting historical Fit Report snapshots.
+**Status: ▶️ IN PROGRESS — 1.1 COMPLETE.**
 
-**Exit criterion:** a real test user can create/edit/manage the complete private Fit Profile and historical body-state behavior is verified end to end.
+### 1.1 Private normally-worn size references — ✅ COMPLETE
+- Fit Profile now reads and edits owner-private `user_size_references`.
+- Structured bra reference: band + controlled cup + US/UK/EU sizing system.
+- Structured shoe reference: numeric size + US/UK/EU/JP sizing system.
+- Optional shirt/pants/dress/other reference labels are private context only and are explicitly not treated as matching keys.
+- Migration `20260819164005_atomic_fit_profile_size_references.sql` extends `save_fit_profile` so body measurements and private size references replace atomically **before** immutable-version creation/reuse.
+- One current reference per controlled type remains enforced by the existing unique `(user_id, reference_type)` index; the redundant non-unique index was removed.
+- The applied migration SQL was verified byte-for-byte against the canonical Git blob `953271fb22263cb577793290df2c96fa498128d9`.
+- `save_fit_profile(text,unit_system,jsonb,jsonb)` remains SECURITY INVOKER under RLS.
+- Supabase Security Advisor after the migration: **0 findings**.
+- Verification PR #2 ran CI run `32277761390`: npm install, typecheck, Next.js build, and clean replay of all 15 migrations succeeded.
+
+### 1.2 Owner profile/privacy controls — ▶️ NEXT
+Add owner-facing profile controls supported by the existing canonical schema without weakening the locked raw-measurement privacy model.
+
+### 1.3 Fit Profile behavior verification — QUEUED
+Test unit switching, partial measurements, edit saves and immutable version creation/reuse.
+
+### 1.4 Raw measurement/privacy RLS verification — QUEUED
+Verify current and historical raw measurements/size references remain owner-only.
+
+### 1.5 Current-body vs historical-body behavior — QUEUED
+Verify body changes affect current matching without rewriting historical Fit Report snapshots.
+
+**Phase 1 exit criterion:** a real test user can create/edit/manage the complete private Fit Profile and historical body-state behavior is verified end to end.
 
 ## PHASE 2 — PEOPLE MY SIZE / MATCHING VERIFICATION
 **Status: QUEUED.**
@@ -176,6 +195,6 @@ The verified Phase 0 run completed typecheck and Next.js build successfully. The
 6. Do not deploy production unless the owner explicitly authorizes deployment.
 
 ## Exact next action
-**PHASE 1.1 — add the private normally-worn size-reference UI to the canonical Fit Profile flow using the existing `user_size_references` architecture.**
+**PHASE 1.2 — add owner profile/privacy controls using only the existing canonical profile/privacy model.**
 
 Continue through Phase 1 in order. Ask the owner only if an actual product/privacy decision cannot be resolved from the locked product specification and schema contract.

@@ -28,9 +28,10 @@ The connected Supabase project is the deployed instance and execution ledger. It
 18. `20260819170808_inline_private_size_reference_normalization.sql` — keeps generic private shirt/pants/dress/other reference normalization inside the SECURITY INVOKER Fit Profile save without reopening authenticated EXECUTE on the general-purpose text normalizer helper.
 19. `20260819173357_qualify_current_match_profile_owner.sql` — fixes the current-person matcher replay by qualifying the Fit Profile owner reference inside the SECURITY DEFINER derived-match helper.
 20. `20260819174045_restore_current_match_helper_execute.sql` — restores the narrow authenticated EXECUTE/USAGE path required by the SECURITY INVOKER public matching wrappers; the helper remains auth-bound and returns only member identity plus derived score/coverage, never raw measurements.
+21. `20260819183601_enforce_fit_report_dimension_garment_type.sql` — adds the trigger-only database guard that prevents a controlled Fit Report dimension from being attached to a garment type for which that dimension is not defined.
 
 The first seven files were recovered from `supabase_migrations.schema_migrations` during the 2026-08-19 canonical audit. Their Git blob SHAs were verified byte-for-byte against the SQL stored in the deployed migration ledger before being committed. They are historical migration records, not newly invented database changes, and must not be re-applied to the already-migrated connected project.
 
-Migration 15 was verified against the deployed ledger after application: the executed SQL Git-blob SHA is `953271fb22263cb577793290df2c96fa498128d9`, matching the canonical repository file exactly. Migrations 16–20 are stored under the exact versions recorded by the deployed Supabase ledger.
+Migration 15 was verified against the deployed ledger after application: the executed SQL Git-blob SHA is `953271fb22263cb577793290df2c96fa498128d9`, matching the canonical repository file exactly. Migrations 16–21 are stored under the exact versions recorded by the deployed Supabase ledger.
 
 Future database changes are new ordered executable migrations in this same directory. Update `docs/V1_PRODUCT_SPEC.md`, `docs/AI_MASTER_LOG.md`, and `supabase/schema_contract.md` when architecture or locked behavior changes.

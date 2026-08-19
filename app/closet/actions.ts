@@ -11,6 +11,7 @@ const SIZE_KINDS = new Set(["alpha", "numeric", "waist_inseam", "dress_shirt", "
 const PHOTO_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const TRACKING_PARAMS = new Set(["fbclid", "gclid", "dclid", "mc_cid", "mc_eid", "msclkid"]);
 const FIT_DIMENSION_PREFIX="fit_dimension__";
+const PRODUCT_ATTRIBUTE_PREFIX="product_attribute__";
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
@@ -106,14 +107,14 @@ async function getOrCreateProductFamily(supabase:SupabaseClient,brand:BrandRecor
 
 async function getOrCreateProduct(supabase: SupabaseClient, brand: BrandRecord, name: string, garmentType: string, category: string, marketSegment: GarmentMarketSegment, styleNumber: string | null, requestedFamilyId:string|null) {
   const existing = await findProduct(supabase, brand.id, name, garmentType, marketSegment, styleNumber);
-  if (existing) return existing;
+  if (existing) return {product:existing,created:false};
   const family=await getOrCreateProductFamily(supabase,brand,name,garmentType,marketSegment,styleNumber,requestedFamilyId);
   const baseSlug = `${brand.slug}-${slugify(name)}-${marketSegment}`.slice(0, 140);
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const slug = attempt === 0 ? baseSlug : `${baseSlug}-${randomUUID().slice(0, 8)}`;
     const { data, error } = await supabase.from("products").insert({ brand_id: brand.id, name, normalized_name: normalizeSearchText(name), slug, category, product_family_id:family.id, garment_type_key: garmentType, market_segment: marketSegment, manufacturer_style_number: styleNumber, manufacturer_style_normalized: styleNumber ? normalizeIdentifier(styleNumber) : null }).select("id,name,slug,category,garment_type_key,market_segment,product_family_id").single();
-    if (!error) return data as ProductRecord;
-    if (error.code === "23505") { const raced = await findProduct(supabase, brand.id, name, garmentType, marketSegment, styleNumber); if (raced) return raced; continue; }
+    if (!error) return {product:data as ProductRecord,created:true};
+    if (error.code === "23505") { const raced = await findProduct(supabase, brand.id, name, garmentType, marketSegment, styleNumber); if (raced) return {product:raced,created:false}; continue; }
     throw error;
   }
   throw new Error("Could not resolve product");
@@ -194,6 +195,22 @@ async function validatedFitDimensions(supabase:SupabaseClient,formData:FormData,
   return submitted;
 }
 
+async function validatedProductAttributes(supabase:SupabaseClient,formData:FormData,productCategory:string){
+  const submitted=[...formData.entries()].filter(([name,value])=>name.startsWith(PRODUCT_ATTRIBUTE_PREFIX)&&typeof value==="string"&&value.trim()).map(([name,value])=>({attribute_key:name.slice(PRODUCT_ATTRIBUTE_PREFIX.length),option_key:String(value).trim()}));
+  if(!submitted.length)return [];
+  if(submitted.some((row)=>!row.attribute_key||row.attribute_key.length>80||!row.option_key||row.option_key.length>80)||new Set(submitted.map((row)=>row.attribute_key)).size!==submitted.length)throw new Error("Invalid product attributes");
+  const keys=submitted.map((row)=>row.attribute_key);
+  const {data:definitions,error:definitionError}=await supabase.from("garment_attribute_definitions").select("key,category").in("key",keys);
+  if(definitionError)throw definitionError;
+  const definitionByKey=new Map((definitions??[]).map((row)=>[row.key,row.category]));
+  if(definitionByKey.size!==keys.length||submitted.some((row)=>{const category=definitionByKey.get(row.attribute_key);return category!==null&&category!==productCategory;}))throw new Error("Product attribute does not match category");
+  const {data:options,error:optionError}=await supabase.from("garment_attribute_options").select("attribute_key,option_key").in("attribute_key",keys);
+  if(optionError)throw optionError;
+  const allowed=new Set((options??[]).map((row)=>`${row.attribute_key}:${row.option_key}`));
+  if(submitted.some((row)=>!allowed.has(`${row.attribute_key}:${row.option_key}`)))throw new Error("Invalid product attribute option");
+  return submitted;
+}
+
 export async function addGarment(formData: FormData) {
   const brandName = text(formData, "brand");
   const productName = text(formData, "product");
@@ -243,15 +260,23 @@ export async function addGarment(formData: FormData) {
   try {
     const type = await getGarmentType(supabase, garmentType);
     const dimensionRows=await validatedFitDimensions(supabase,formData,garmentType);
+    const attributeRows=await validatedProductAttributes(supabase,formData,type.category);
     let brand:BrandRecord;
     let product:ProductRecord;
+    let productCreated=false;
     if(existingProductId){
       const exact=await getExactCatalogProduct(supabase,existingProductId,brandName,productName,garmentType,marketSegment,styleNumber);
       brand=exact.brand;
       product=exact.product;
     }else{
       brand=await getOrCreateBrand(supabase, brandName);
-      product=await getOrCreateProduct(supabase, brand, productName, garmentType, type.category, marketSegment, styleNumber,requestedFamilyId);
+      const resolved=await getOrCreateProduct(supabase, brand, productName, garmentType, type.category, marketSegment, styleNumber,requestedFamilyId);
+      product=resolved.product;
+      productCreated=resolved.created;
+    }
+    if(productCreated&&attributeRows.length){
+      const {error:attributeError}=await supabase.from("product_attribute_values").insert(attributeRows.map((row)=>({product_id:product.id,...row})));
+      if(attributeError)throw attributeError;
     }
     const normalizedSizeId = await getNormalizedSize(supabase, structuredSizeLabel, sizeKind, sizingSystem);
     const identifierKind = identifier && /^\d{8}$|^\d{12,14}$/.test(normalizeIdentifier(identifier)) ? "upc" : "sku";

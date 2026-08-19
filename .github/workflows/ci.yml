@@ -30,6 +30,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Recommendation confidence calibration
+        run: node --test tests/recommendation-confidence.test.ts
+
       - name: Build
         run: npm run build
 

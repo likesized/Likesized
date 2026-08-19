@@ -40,6 +40,7 @@ Privacy rule: exact current and historical body measurements are owner-private. 
 6. Original manufacturer size text is preserved while matching uses controlled normalized sizing when possible.
 7. Private Closet items are owner-only. Shared Closet evidence is member-readable. Fit/reference photo upload is optional, but any uploaded fit/reference photo is shared with authenticated members; there is no private fit-photo mode.
 8. Controlled values drive matching/filtering/search/analytics where the architecture defines them; free text is supplemental/fallback.
+9. **V1 member identity is authenticated-member-only:** completed username/display name/bio may be discovered by signed-in LikeSized members, but anonymous visitors have no `profiles` SELECT access.
 
 ## 2026-08-19 full canonical audit — current baseline
 The full Next.js application, Supabase integration, matching/recommendation logic and product documentation are in GitHub. The separate LikeSized Supabase project exists. The live database currently contains no application users/data, so database-backed product flows are implemented but representative multi-user behavior still needs controlled verification in later phases.
@@ -110,7 +111,7 @@ The verified Phase 0 run completed typecheck and Next.js build successfully.
 **Phase 0 exit criterion: ✅ MET.** GitHub contains the complete executable migration history, clean database replay is proven, the npm dependency graph is lockfile-backed, and typecheck/build are green.
 
 ## PHASE 1 — FIT PROFILE COMPLETION & PRIVACY CONTROLS
-**Status: ▶️ IN PROGRESS — 1.1 COMPLETE.**
+**Status: ▶️ IN PROGRESS — 1.1/1.2 COMPLETE.**
 
 ### 1.1 Private normally-worn size references — ✅ COMPLETE
 - Fit Profile now reads and edits owner-private `user_size_references`.
@@ -124,10 +125,18 @@ The verified Phase 0 run completed typecheck and Next.js build successfully.
 - Supabase Security Advisor after the migration: **0 findings**.
 - Verification PR #2 ran CI run `32277761390`: npm install, typecheck, Next.js build, and clean replay of all 15 migrations succeeded.
 
-### 1.2 Owner profile/privacy controls — ▶️ NEXT
-Add owner-facing profile controls supported by the existing canonical schema without weakening the locked raw-measurement privacy model.
+### 1.2 Owner profile/privacy controls — ✅ IMPLEMENTED; CI GATE RUNNING
+- Canonical `/settings` route now provides owner editing for optional display name and bio plus a privacy-status panel.
+- Username continues through the existing Fit Profile flow; avatar editing remains intentionally unexposed until an avatar Storage model is deliberately designed.
+- Database constraints cap display name at 80 characters, bio at 300, and the reserved avatar URL field at 2048 via migration `20260819165124_profile_identity_constraints.sql`.
+- Owner decision locked: **V1 member profiles are signed-in-member-only**.
+- Migration `20260819165756_member_only_profile_identity.sql` removes the anonymous profile-read policy and revokes `anon` SELECT on `public.profiles`; authenticated completed-profile/owner reads remain.
+- Live privilege/policy verification confirms `anon` has no profile SELECT grant and the remaining profile SELECT policy targets `authenticated` only.
+- Header and self-profile controls link to the single canonical `/settings` owner page.
+- Supabase Security Advisor after these changes: **0 findings**.
+- Final Phase 1.2 CI/replay verification must pass before this checkpoint merges to `main`.
 
-### 1.3 Fit Profile behavior verification — QUEUED
+### 1.3 Fit Profile behavior verification — ▶️ NEXT AFTER 1.2 CI
 Test unit switching, partial measurements, edit saves and immutable version creation/reuse.
 
 ### 1.4 Raw measurement/privacy RLS verification — QUEUED
@@ -195,6 +204,6 @@ Verify body changes affect current matching without rewriting historical Fit Rep
 6. Do not deploy production unless the owner explicitly authorizes deployment.
 
 ## Exact next action
-**PHASE 1.2 — add owner profile/privacy controls using only the existing canonical profile/privacy model.**
+**Complete the Phase 1.2 CI/replay gate, then proceed immediately to PHASE 1.3 — Fit Profile behavior verification.**
 
 Continue through Phase 1 in order. Ask the owner only if an actual product/privacy decision cannot be resolved from the locked product specification and schema contract.

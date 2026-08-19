@@ -30,12 +30,13 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 14. Following Feed current match badges are relationship context only; garment evidence remains historical-snapshot based.
 15. **Fit Twin activity notifications are V1 and are in-app only.** Future Fit Twin activity alerts are ON by default. Members have one global on/off control plus per-Fit-Twin mute. Global off/mute does not change the Following Feed. Alerts use the same three meaningful activity types as the Following Feed; likes never alert. V1 sends no Fit Twin activity email or phone push. Global off, mute, or unfollow prevents future alerts without deleting already-valid prior alerts; re-enable/refollow does not backfill missed alerts. Unfollow clears that relationship's mute so refollow starts unmuted, subject to the global setting. If underlying Shared content becomes Private or is deleted, its existing notification is removed with the source activity.
 16. **Fit Twin/follow relationships are community-public within LikeSized.** Any signed-in member may see who follows whom; only the follower can change their relationship. Anonymous visitors cannot query the graph.
+17. Outfit posting may intentionally auto-share tagged Private Closet garments, but that share/post/tag operation must be atomic. A failed outfit post cannot leave a previously Private garment Shared. If a tagged garment is later made Private, its garment tag/fit evidence disappears from other members while the independent outfit social post may remain visible.
 
 ## Current baseline — 2026-08-19
 - Full Next.js app, Supabase integration, matching/recommendation logic and canonical docs are in GitHub.
 - Live Supabase has no deliberate test-user/application population; verification uses disposable local Supabase CI.
-- **28 canonical migrations** through `20260819205518_fit_twin_activity_notifications.sql`.
-- Supabase Security Advisor: **0 findings** after the Phase 5.3 notification architecture.
+- **29 canonical migrations** through `20260819211614_atomic_outfit_post_creation.sql`.
+- Supabase Security Advisor: **0 findings** after Phase 5.4.
 - CI runs npm ci, typecheck, production recommendation calibration, production build, fresh migration replay and all pgTAP suites.
 
 # PHASES
@@ -89,14 +90,24 @@ Dedicated Following Feed + Fit Twin activity notifications explicitly locked int
 - Private notification/preference/mute tables are not directly client-readable; authenticated UI uses narrow public SECURITY INVOKER wrappers over private auth-bound helpers.
 - `/notifications` provides unread/new state, mark-one-read and mark-all-read, safe activity context and links. Signed-in header shows unread count.
 - `/settings` exposes the global Fit Twin activity toggle and explicitly states V1 is in-app only. `/twins` exposes Mute/Unmute without changing the follow relationship or Following Feed.
-- `fit_twin_activity_notifications.test.sql`: **48/48 assertions** covering default ON, global toggle, per-Twin mute, no backfill, no likes, read state, unfollow/refollow behavior, Following Feed independence, source privacy/deletion cleanup, anonymous denial and private-table denial.
+- `fit_twin_activity_notifications.test.sql`: **48/48 assertions**.
 - Final Phase 5.3 PR #27 / CI **`32302356811`** passed npm install, typecheck, recommendation calibration, production build including `/notifications`, clean replay of all **28 migrations**, and every canonical database suite.
 - Supabase Security Advisor after Phase 5.3: **0 findings**.
 
-### 5.4 Existing social surfaces verification — ▶️ NEXT
-Re-test Shared Fit History, outfit creation/auto-sharing, outfit likes, All/Fit-Twins outfit feed and interaction with Following Feed/notifications. Comments remain outside V1 until moderation/reporting is intentionally designed.
+### 5.4 Existing social surfaces verification — ✅ COMPLETE
+- Re-audited Shared Fit History, outfit creation, garment auto-sharing, outfit likes, All/Fit-Twins outfit feed, latest visible Fit Report tags, Following Feed and notification interactions.
+- Found and fixed a correctness/privacy failure path in the old multi-request outfit action: selected Private Closet items were being changed to Shared before photo/post/tag creation finished, so a later failure could leave them Shared without a successful outfit.
+- Migration `20260819211614_atomic_outfit_post_creation.sql` adds `public.create_outfit_post(...)`, a SECURITY INVOKER transaction that validates 1–6 unique owned Closet garments with Fit Reports, atomically shares them, creates the outfit post, and creates tags. The app uploads the owner-scoped photo first and removes it if the database transaction fails.
+- Successful outfit tagging still intentionally auto-shares selected Private garments. Auto-sharing can generate the locked newly-Shared-garment activity plus the outfit activity; likes generate neither Following Feed events nor notifications.
+- All Outfits remains member-wide. Fit-Twins Outfits filters through the canonical `follows` relationship only.
+- Outfit tags intentionally display the latest visible Fit Report observation for each tagged garment.
+- When a tagged garment later becomes Private, other members lose Closet/Fit Report/tag access and garment feed/notification events are removed, while the independent outfit post and its likes may remain visible. Deleting the outfit cascades its tags, likes, outfit activity and source-linked notifications.
+- `social_outfit_integration.test.sql`: **49/49 assertions**, including the failed-post rollback that proves a Private garment remains Private when outfit creation fails.
+- Final Phase 5.4 PR #28 / CI **`32303418989`** passed npm install, typecheck, recommendation calibration, production build, clean replay of all **29 migrations**, and every canonical database suite.
+- Supabase Security Advisor after Phase 5.4: **0 findings**.
+- Comments remain outside V1 until moderation/reporting is intentionally designed.
 
-### 5.5 Search/discovery verification — QUEUED
+### 5.5 Search/discovery verification — ▶️ NEXT
 Re-test representative member/brand/product search and the People My Size/search/profile → follow → Following Feed loop.
 
 **Phase 5 exit:** following stable; Following Feed exposes only authorized meaningful Shared activity; current context remains distinct from historical evidence; activity notifications obey the same privacy rules; existing social/search surfaces remain green.
@@ -108,4 +119,4 @@ Replace homepage mock match data, remove dead prototype logic, configure product
 Use a controlled representative population, smoke the full user loop, explicitly test privacy boundaries, rerun advisors, and require green CI plus browser smoke before beta-ready.
 
 ## Exact next action
-**PHASE 5.4 — re-test the existing Shared Fit History, outfit creation/auto-sharing, outfit likes, All/Fit-Twins outfit feed and their interaction with the verified Following Feed/notification system. Comments remain outside V1.**
+**PHASE 5.5 — re-test representative member, brand and product search and verify the People My Size/search/member profile → follow → Following Feed/notifications loop without creating another discovery or relationship system.**

@@ -10,6 +10,7 @@ const MARKET_SEGMENTS = new Set(["mens", "womens", "unisex", "kids_youth", "unkn
 const SIZE_KINDS = new Set(["alpha", "numeric", "waist_inseam", "dress_shirt", "jacket", "bra", "shoe", "length_designation", "freeform"]);
 const PHOTO_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const TRACKING_PARAMS = new Set(["fbclid", "gclid", "dclid", "mc_cid", "mc_eid", "msclkid"]);
+const FIT_DIMENSION_PREFIX="fit_dimension__";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type BrandRecord = { id: string; name: string; slug: string; normalized_name: string };
@@ -136,6 +137,20 @@ async function recordListing(supabase: SupabaseClient, productId: string, varian
   if (error && error.code !== "23505") throw error;
 }
 
+async function validatedFitDimensions(supabase:SupabaseClient,formData:FormData,garmentType:string){
+  const submitted=[...formData.entries()].filter(([name,value])=>name.startsWith(FIT_DIMENSION_PREFIX)&&typeof value==="string"&&value.trim()).map(([name,value])=>({dimension_key:name.slice(FIT_DIMENSION_PREFIX.length),response_key:String(value).trim()}));
+  if(!submitted.length)return [];
+  if(new Set(submitted.map((item)=>item.dimension_key)).size!==submitted.length)throw new Error("Duplicate fit dimension");
+  const keys=submitted.map((item)=>item.dimension_key);
+  const {data:mappings,error:mappingError}=await supabase.from("garment_type_fit_dimensions").select("dimension_key").eq("garment_type_key",garmentType).in("dimension_key",keys);
+  if(mappingError||new Set((mappings??[]).map((item)=>item.dimension_key)).size!==keys.length)throw mappingError??new Error("Invalid fit dimension");
+  const {data:responses,error:responseError}=await supabase.from("fit_dimension_responses").select("dimension_key,response_key").in("dimension_key",keys);
+  if(responseError)throw responseError;
+  const allowed=new Set((responses??[]).map((item)=>`${item.dimension_key}:${item.response_key}`));
+  if(submitted.some((item)=>!allowed.has(`${item.dimension_key}:${item.response_key}`)))throw new Error("Invalid fit response");
+  return submitted;
+}
+
 export async function addGarment(formData: FormData) {
   const brandName = text(formData, "brand");
   const productName = text(formData, "product");
@@ -182,6 +197,7 @@ export async function addGarment(formData: FormData) {
   let photoPath: string | null = null;
   try {
     const type = await getGarmentType(supabase, garmentType);
+    const dimensionRows=await validatedFitDimensions(supabase,formData,garmentType);
     const brand = await getOrCreateBrand(supabase, brandName);
     const product = await getOrCreateProduct(supabase, brand, productName, garmentType, type.category, marketSegment, styleNumber);
     const normalizedSizeId = await getNormalizedSize(supabase, structuredSizeLabel, sizeKind, sizingSystem);
@@ -193,6 +209,7 @@ export async function addGarment(formData: FormData) {
 
     const { data: report, error: reportError } = await supabase.from("fit_reports").insert({ user_id: userId, closet_item_id: closetItemId, product_id: product.id, variant_id: variantId, fit_profile_version_id: fitProfileVersionId, size_label: originalSizeLabel, normalized_size_id: normalizedSizeId, fit, fit_notes: fitNotes, would_buy_again: wouldBuyAgain }).select("id").single();
     if (reportError || !report) throw reportError ?? new Error("Could not save fit report");
+    if(dimensionRows.length){const {error:dimensionError}=await supabase.from("fit_report_dimensions").insert(dimensionRows.map((row)=>({fit_report_id:report.id,...row})));if(dimensionError)throw dimensionError;}
 
     if (styleNumber) await recordIdentifier(supabase, product.id, variantId, styleNumber, "manufacturer_style");
     if (identifier) await recordIdentifier(supabase, product.id, variantId, identifier, identifierKind);

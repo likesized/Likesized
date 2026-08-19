@@ -7,11 +7,12 @@ The **ordered executable SQL in `supabase/migrations/` is the authoritative repl
 
 `supabase/schema.sql` and `supabase/storage.sql` are reference/current-state aids only. They are not a second migration history and must not be combined with the ordered migration replay on a fresh environment.
 
-The canonical directory contains all 15 migrations recorded by the connected project, from `20260819132934_initial_likesized_schema.sql` through `20260819164005_atomic_fit_profile_size_references.sql`. During the 2026-08-19 canonical audit, the first seven historical migrations were recovered from the deployed migration ledger and their Git blob SHAs were verified byte-for-byte against the SQL Supabase originally executed before they were committed. Migration 15 was likewise verified byte-for-byte against its applied ledger SQL.
+The canonical directory contains all 17 migrations recorded by the connected project, from `20260819132934_initial_likesized_schema.sql` through `20260819165756_member_only_profile_identity.sql`. During the 2026-08-19 canonical audit, the first seven historical migrations were recovered from the deployed migration ledger and their Git blob SHAs were verified byte-for-byte against the SQL Supabase originally executed before they were committed.
 
 Do not rewrite historical migrations that have already been applied. Future database changes are new ordered executable migrations. Do not create alternate current-state schema files, patch migrations, fixed/v2 copies, or parallel database implementations.
 
 ## Locked current-state contract
+- `profiles`: member-facing identity shell. Completed username/display name/bio are readable to authenticated LikeSized members only; anonymous SELECT access is revoked. Avatar editing remains intentionally unexposed until a storage model is designed.
 - `fit_profiles`: current settings/completion/current immutable version pointer only.
 - `body_measurements`: current owner-private normalized raw measurements.
 - `user_size_references`: current owner-private normally-worn size references; one current reference per controlled reference type.
@@ -27,4 +28,4 @@ Do not rewrite historical migrations that have already been applied. Future data
 - Every uploaded fit/reference photo belongs to a Shared Closet item and is member-readable through a non-public bucket. No private fit-photo mode exists.
 - Authoritative foreign-key relationships have covering indexes; the unique `(user_id, reference_type)` index is the sole current `user_size_references` lookup/uniqueness index.
 
-Do not add fixed measurement columns back to `fit_profiles`. Do not use current-person match scores to weight historical garment evidence. Do not count multiple historical observations from one member as multiple people.
+Do not add fixed measurement columns back to `fit_profiles`. Do not use current-person match scores to weight historical garment evidence. Do not count multiple historical observations from one member as multiple people. Do not reintroduce anonymous profile discovery without an explicit owner privacy decision and a new canonical migration.

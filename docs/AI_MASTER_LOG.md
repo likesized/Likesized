@@ -46,7 +46,7 @@ Privacy: exact current/historical body measurements and normally-worn size refer
 - Full Next.js application, Supabase integration, matching/recommendation logic and canonical docs are in GitHub.
 - Live Supabase contains no deliberate test-member/application data; repeatable verification uses disposable local Supabase in CI.
 - Live migration ledger and GitHub contain 20 migrations through `20260819174045_restore_current_match_helper_execute.sql`.
-- Supabase Security Advisor remained at **0 findings** through Phase 1 schema/privacy changes.
+- Supabase Security Advisor is **0 findings** after the Phase 1 matcher repairs.
 - Canonical CI performs `npm ci`, typecheck, production build, fresh migration replay, and pgTAP database tests.
 
 # PHASES
@@ -63,7 +63,7 @@ Privacy: exact current/historical body measurements and normally-worn size refer
 **Exit criterion: ✅ MET.**
 
 ## PHASE 1 — FIT PROFILE COMPLETION & PRIVACY CONTROLS
-**Status: ▶️ IN PROGRESS — 1.1–1.4 COMPLETE; 1.5 VERIFICATION RUNNING.**
+**Status: ✅ COMPLETE.**
 
 ### 1.1 Private normally-worn size references — ✅ COMPLETE
 - Fit Profile reads/edits owner-private size references.
@@ -93,18 +93,17 @@ Privacy: exact current/historical body measurements and normally-worn size refer
 - Proves signed-in member identity discovery remains allowed while anonymous profile query is denied.
 - Verification CI `32281527759`: **16/16 privacy assertions passed**, plus app checks and fresh replay.
 
-### 1.5 Current-body vs historical-body integrity — ▶️ VERIFICATION RUNNING
-- Canonical `supabase/tests/fit_profile_history_integrity.test.sql` verifies current-body changes create a new immutable version, old reports remain tied to the prior version, new observations may use the new version, and current-person match remains independent from historical-garment match.
-- First fresh replay exposed an ambiguous unqualified `user_id` in `private.calculate_fit_matches_for_profile`; `20260819173357_qualify_current_match_profile_owner.sql` fixes that replay defect.
-- The next run exposed a second real replay defect: migration 19 revoked authenticated EXECUTE on the private SECURITY DEFINER matcher even though the public matching wrappers are SECURITY INVOKER and must call it.
-- `20260819174045_restore_current_match_helper_execute.sql` restores the narrow authenticated schema/function path. The helper derives the viewer from `auth.uid()` and returns only member identity plus safe derived match score/coverage; it never returns raw measurements.
-- The accidental duplicate local history test was removed; `fit_profile_history_integrity.test.sql` remains the sole canonical Phase 1.5 history test.
-- Final Phase 1.5 CI/pgTAP gate must pass before Phase 1 closes.
+### 1.5 Current-body vs historical-body integrity — ✅ COMPLETE
+- `supabase/tests/fit_profile_history_integrity.test.sql` proves current-body changes create a new immutable version, old reports remain tied to the prior version, new observations use the new version, and current-person matching remains independent from historical-garment matching.
+- Fresh replay exposed and fixed two real current-matcher defects: `20260819173357_qualify_current_match_profile_owner.sql` qualifies the Fit Profile owner reference; `20260819174045_restore_current_match_helper_execute.sql` restores only the narrow authenticated helper path required by the SECURITY INVOKER public wrappers.
+- The helper is auth-bound, returns only identity + derived score/coverage, and never exposes raw measurements.
+- PR #7 / CI `32283292782` passed install, typecheck, production build, clean replay of all 20 migrations, behavior/privacy tests, and **14/14 history-integrity assertions**.
+- Security Advisor after the matcher repair: **0 findings**.
 
-**Phase 1 exit criterion:** complete private Fit Profile + current-vs-historical body-state behavior is proven by repeatable canonical tests.
+**Phase 1 exit criterion: ✅ MET.**
 
 ## PHASE 2 — PEOPLE MY SIZE / MATCHING VERIFICATION
-**Status: QUEUED.**
+**Status: ▶️ IN PROGRESS — 2.1 CONTROLLED MATCH POPULATION / RANKING.**
 1. Create controlled disposable users with deliberately different upper/lower-body profiles.
 2. Verify Overall/Tops/Bottoms ranking and missing-measurement coverage.
 3. Verify current Fit Twin scores recalculate with current-body changes independently of historical garment evidence.
@@ -160,4 +159,4 @@ Privacy: exact current/historical body measurements and normally-worn size refer
 6. Never deploy production without explicit owner authorization.
 
 ## Exact next action
-**Complete the Phase 1.5 history-integrity CI gate after the matcher permission repair. If green, mark PHASE 1 complete and proceed immediately to PHASE 2.1 matching verification.**
+**Build and run the Phase 2.1 controlled People My Size ranking/coverage test, then proceed through the remaining Phase 2 matching verification before asking the owner the richer-filter V1 decision.**

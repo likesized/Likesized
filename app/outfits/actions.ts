@@ -23,25 +23,23 @@ export async function createOutfit(formData:FormData) {
   const { data:profile,error:profileError } = await supabase.from("profiles").select("username").eq("id",userId).maybeSingle();
   if (profileError || !profile?.username) redirect("/onboarding");
 
-  const [{data:ownedItems,error:closetError},{data:reports,error:reportsError}] = await Promise.all([
-    supabase.from("closet_items").select("id").eq("user_id",userId).in("id",selectedIds),
-    supabase.from("fit_reports").select("closet_item_id").eq("user_id",userId).in("closet_item_id",selectedIds),
-  ]);
-  const reportedIds=new Set((reports??[]).map((report)=>report.closet_item_id));
-  if (closetError || reportsError || (ownedItems??[]).length!==selectedIds.length || selectedIds.some((id)=>!reportedIds.has(id))) fail("invalid_items");
-
-  // Deliberately tagging a Closet garment in a member-facing outfit shares that garment's fit-reference evidence.
-  const { error:shareError } = await supabase.from("closet_items").update({visibility:"shared"}).eq("user_id",userId).in("id",selectedIds);
-  if (shareError) fail("save_failed");
-
   const postId = randomUUID();
   const photoPath = `${userId}/${postId}/outfit.${PHOTO_TYPES[photo.type]}`;
   const { error:uploadError } = await supabase.storage.from("outfit-photos").upload(photoPath,await photo.arrayBuffer(),{contentType:photo.type,upsert:false});
   if (uploadError) fail("save_failed");
-  const { error:postError } = await supabase.from("outfit_posts").insert({id:postId,user_id:userId,caption:caption||null,photo_url:photoPath});
-  if (postError) { await supabase.storage.from("outfit-photos").remove([photoPath]); fail("save_failed"); }
-  const { error:itemsError } = await supabase.from("outfit_post_items").insert(selectedIds.map((closetItemId)=>({post_id:postId,closet_item_id:closetItemId})));
-  if (itemsError) { await supabase.from("outfit_posts").delete().eq("id",postId); await supabase.storage.from("outfit-photos").remove([photoPath]); fail("save_failed"); }
+
+  const {error:createError}=await supabase.rpc("create_outfit_post",{
+    p_post_id:postId,
+    p_caption:caption||null,
+    p_photo_url:photoPath,
+    p_closet_item_ids:selectedIds,
+  });
+  if(createError){
+    await supabase.storage.from("outfit-photos").remove([photoPath]);
+    if(createError.message.includes("Closet")||createError.message.includes("Fit Report"))fail("invalid_items");
+    fail("save_failed");
+  }
+
   redirect("/outfits?posted=1");
 }
 

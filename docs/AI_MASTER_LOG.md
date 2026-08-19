@@ -10,7 +10,7 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 - Supabase project `rlksidwniuoxoacumyaf` is the deployed instance/ledger, not a competing source of truth.
 - Do not deploy production unless the owner explicitly authorizes it.
 - Work Phases 0→7 in order without diversion. Ask the owner only for genuine product/business/cost/credential decisions.
-- **Owner checkpoint after Phase 4:** Phase 4 is now 100% complete and fully verified. **STOP before Phase 5** and obtain the owner's planned addition before any Phase 5 work begins.
+- The post-Phase-4 owner checkpoint is **resolved** by the explicit V1 Following Feed decision recorded below. Phase 5 may begin with that functionality included.
 
 ## Product / privacy rules — LOCKED
 **See what fits people built like you.** Primary question: **“How did this garment fit people built like me?”**
@@ -27,6 +27,9 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 10. Product Fit Families are intentional same-fit/cut groups only. No fuzzy-name auto-grouping. New products default to their own family unless the member explicitly selects a compatible existing family; family compatibility requires the same brand, garment type and market/cut segment.
 11. Similar Garments uses controlled Product construction attributes. V1 includes a controlled Primary material/fabric-family field rather than free-form composition percentages. Category-scoped attributes are allowed only on compatible Product categories.
 12. Product evidence fallback order is locked and verified: **Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit**.
+13. **Following Feed is V1.** Members can follow useful Fit Twins / People My Size and continue learning from their future Shared fit activity. The dedicated feed includes meaningful new fit content from followed members: Shared Closet additions, new Fit Report observations/re-try-ons, and outfit posts. Likes are not feed events. Private Closet activity never appears.
+14. A Following Feed card may show the followed member's **current relevant Fit Match** (Overall/Tops/Bottoms as appropriate) as relationship context. That current-person score is never substituted for the historical snapshot match attached to a garment Fit Report.
+15. **Fit Twin activity notifications are V1.** Followed-member Shared fit activity can generate in-app activity notifications. Exact notification default/quieting controls may be finalized during Phase 5 UX implementation, but the notification capability itself is not deferred beyond V1.
 
 ## Current baseline — 2026-08-19
 - Full Next.js app, Supabase integration, matching/recommendation logic and canonical docs are in GitHub.
@@ -110,13 +113,47 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 
 **Phase 4 exit criterion: ✅ MET.** Every intended evidence tier is reachable and verified in the locked order; one-per-wearer aggregation is enforced; recommendation confidence is exercised against representative strong, weak, incomplete and conflicting evidence.
 
-## OWNER CHECKPOINT AFTER PHASE 4 — 🛑 ACTIVE
-**STOP HERE. Phase 4 is 100% complete. Do not begin Phase 5.**
+## OWNER CHECKPOINT AFTER PHASE 4 — ✅ RESOLVED
+The owner explicitly locked a dedicated **Following Feed** into V1 before Phase 5. Following Fit Twins / People My Size was already part of the LikeSized concept; the newly locked requirement is the persistent personalized activity feed plus Fit Twin activity notifications described above.
 
-The owner said they have an addition to make before Phase 5. Obtain that addition, decide/lock its behavior with the owner as needed, incorporate it into this sole master guide, and only then resume the ordered phase sequence.
+This checkpoint is complete. Phase 5 may now proceed with the Following Feed treated as core V1 scope, not a future social enhancement.
 
-## PHASE 5 — FIT TWINS / SOCIAL / SEARCH — QUEUED / OWNER HOLD
-Re-test follow/unfollow, live Fit Twin scores, Shared Fit History, outfit creation/auto-sharing/likes/Fit-Twins feed and representative product/brand/member search. Comments remain outside V1 until moderation/reporting is intentionally designed. **No Phase 5 work may begin until the active owner checkpoint is resolved.**
+## PHASE 5 — FIT TWINS / FOLLOWING FEED / SOCIAL / SEARCH — ▶️ NEXT
+
+### 5.1 Existing follow/Fit Twin foundation audit
+Re-test the existing follow/unfollow relationship, current Fit Twin scores, member profile relationships and privacy boundaries before adding new feed behavior. Preserve the rule that a Fit Twin is a deliberately followed/saved useful match with no universal percentage threshold.
+
+### 5.2 Dedicated Following Feed — V1 LOCKED
+Build and verify a personalized feed of meaningful Shared activity from followed Fit Twins / People My Size.
+
+Feed activity includes:
+- a newly Shared Closet garment,
+- a new Shared Fit Report observation/re-try-on,
+- a new outfit post.
+
+Feed activity excludes:
+- likes as standalone feed events,
+- Private Closet items or Private activity,
+- raw current or historical body measurements.
+
+A garment activity card should make the useful fit context obvious, for example:
+**Sarah — 96% Tops Fit Match**
+**Added Levi's Ribcage Straight Jeans**
+**Size 29 — “Perfect waist, tight through thighs”**
+**View Fit Report**
+
+The displayed current Fit Match is contextual and may change as either member's current body changes. The linked garment Fit Report continues to use its immutable historical body snapshot for garment evidence.
+
+### 5.3 Fit Twin activity notifications — V1 LOCKED
+Add in-app notification support for meaningful Shared activity from followed members. Notification generation must obey the same privacy/activity rules as the Following Feed. Exact default notification preference/quieting controls can be finalized during this Phase 5 UX implementation without changing the locked requirement that the capability exists in V1.
+
+### 5.4 Existing social surfaces verification
+Re-test Shared Fit History, outfit creation/auto-sharing, outfit likes, All/Fit-Twins outfit feed and the interaction between those surfaces and the new Following Feed. Comments remain outside V1 until moderation/reporting is intentionally designed.
+
+### 5.5 Search/discovery verification
+Re-test representative member, brand and product search and ensure members can move cleanly from People My Size/search/member profiles into follow/unfollow and the Following Feed loop.
+
+**Phase 5 exit:** following is stable, the dedicated Following Feed surfaces only authorized meaningful Shared fit activity, current match context remains distinct from historical garment evidence, Fit Twin activity notifications work within the same privacy rules, and the existing social/search surfaces remain green.
 
 ## PHASE 6 — REMOVE PROTOTYPE SURFACES & PREPARE DEPLOYMENT — QUEUED
 Replace homepage mock match data, remove dead prototype logic, configure production auth/Vercel environment settings, and run mobile/responsive/accessibility review. No production deploy without owner authorization.
@@ -125,4 +162,4 @@ Replace homepage mock match data, remove dead prototype logic, configure product
 Use a controlled representative population, smoke the full user loop, explicitly test privacy boundaries, rerun Security/Performance Advisors, and require green CI plus browser smoke verification before beta-ready.
 
 ## Exact next action
-**OWNER CHECKPOINT — prompt the owner for the addition they want to make before Phase 5. Do not start Phase 5 until that addition is decided, locked, and recorded here.**
+**PHASE 5.1 — audit and re-verify the existing follow/Fit Twin foundation and privacy behavior, then build the locked dedicated Following Feed on that canonical relationship rather than creating a parallel social-follow system.**

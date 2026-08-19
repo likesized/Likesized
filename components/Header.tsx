@@ -20,6 +20,7 @@ export async function Header() {
             <Link href="/twins">Fit twins</Link>
             <Link href="/outfits">Outfits</Link>
             <Link href="/closet">Closet</Link>
+            <Link href="/settings">Settings</Link>
             <Link className="navButton" href="/onboarding">Fit profile</Link>
             <form action="/auth/signout" method="post">
               <button className="navTextButton" type="submit">Sign out</button>

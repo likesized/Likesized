@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type GarmentType={key:string;label:string;category?:string|null};
 type Dimension={garment_type_key:string;dimension_key:string;label:string;sort_order:number};
@@ -8,6 +8,7 @@ type Response={dimension_key:string;response_key:string;label:string;sort_order:
 
 export function FitDimensionFields({garmentTypes,dimensions,responses,garmentType,showGarmentSelect=false}:{garmentTypes?:GarmentType[];dimensions:Dimension[];responses:Response[];garmentType?:string|null;showGarmentSelect?:boolean}){
   const [selectedGarment,setSelectedGarment]=useState(garmentType??"");
+  useEffect(()=>{if(!showGarmentSelect)setSelectedGarment(garmentType??"");},[garmentType,showGarmentSelect]);
   const relevant=useMemo(()=>dimensions.filter((item)=>item.garment_type_key===selectedGarment).sort((a,b)=>a.sort_order-b.sort_order),[dimensions,selectedGarment]);
   const responsesByDimension=useMemo(()=>{
     const map=new Map<string,Response[]>();

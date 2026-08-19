@@ -14,46 +14,30 @@ Reference documents:
 - `supabase/schema_contract.md` — database behavior/privacy contract.
 
 ## What is implemented
-- Supabase email/password auth with protected routes
+- Supabase auth with protected routes
 - Privacy-first RLS and least-privilege Data API grants
 - Extensible private Fit Profile using controlled normalized body measurements
 - Private normally-worn size references saved atomically with Fit Profile measurements and historical versions
 - Immutable private Fit Profile versions for historical try-on state
 - Garment-specific People My Size matching with safe derived scores
-- Canonical brands/products, product families, variants, retailer listings and normalized identifiers
-- Controlled extensible garment taxonomy, construction attributes and Primary material/fabric-family data
+- Canonical brands/products, Product Fit Families, variants, retailer listings and normalized identifiers
+- Controlled garment taxonomy, construction/material attributes and garment-specific Fit Report dimensions
 - Original garment-size preservation plus structured normalized size identity
 - Private and Shared Closet architecture
 - Closet edit/remove controls that preserve immutable fit history; repeat try-ons create new observations
-- Controlled overall Fit Reports plus garment-specific controlled Fit Report dimensions collected for initial and repeat try-ons
-- Optional member-shared fit/reference photos in a non-public Storage bucket with database-enforced Shared-only invariant
-- Product-page Exact Product / validated Exact Variant evidence targeting
-- Operational Product Fit Families with conservative compatibility guards
-- Operational Similar Garments evidence using controlled attribute overlap
-- Fully verified evidence hierarchy: Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit
+- Optional member-shared fit/reference photos in a non-public Storage bucket
+- Fully exercised evidence hierarchy from Exact Variant through Category Fit
 - Historical garment evidence matched to the body snapshot from that try-on, unique-wearer capped for recommendations
-- Production recommendation-confidence model with permanent calibration tests
+- Production recommendation-confidence calibration in CI
 - Fit Twins/following and member Shared Fit History
+- Community-public-to-members Fit Twin/follow graph with owner-only relationship changes
 - Outfit posting, likes, All/Fit-Twins feeds and outfit-photo storage
 - Product/brand/member search and discovery
 
 ## Important prototype boundaries
-- The connected database currently has no deliberate users/products/Fit Reports, so the full V1 user loop still requires representative end-to-end beta verification later in the master phase sequence.
+- The connected database currently has no deliberate real/test user population; repeatable verification uses disposable local Supabase CI.
 - The public homepage still uses `lib/mock-data.ts` for demonstration match cards and must be converted before V1 beta.
-- Comments remain intentionally outside V1 until moderation/reporting is designed.
-- Production auth/Vercel configuration, responsive/accessibility review and final browser smoke verification remain later master-guide phases.
-- No production deployment occurs without explicit owner authorization.
-
-## Verification
-Canonical CI uses the committed npm lockfile and currently gates on:
-1. `npm ci`
-2. TypeScript typecheck
-3. Direct production `recommendSize()` confidence-calibration tests
-4. Next.js production build
-5. Fresh replay of all ordered Supabase migrations on a disposable local database
-6. All canonical pgTAP behavior/privacy/matching/evidence suites
-
-The exact current verification record and phase status live only in `docs/AI_MASTER_LOG.md`.
+- The dedicated cross-content Following Feed and Fit Twin activity notifications are Phase 5 work; the canonical follow relationship they will use is already implemented and verified.
 
 ## Authoritative fit rules
 Raw current and historical body measurements are owner-only. Current Fit Twin scores are current-body to current-body; garment evidence uses the immutable historical snapshot attached to each Fit Report. Do not blend the two.
@@ -72,7 +56,7 @@ Changing current body measurements or logging a new try-on never rewrites an old
 Exact evidence is preferred. Fallback hierarchy: Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit. Recommendation aggregation uses at most one strongest observation per unique wearer.
 
 ## Fit Twins
-A Fit Twin is a Fit Match the user deliberately saves/follows; no universal percentage cutoff is invented. Member profile headers show current match scores separately from historical Shared Fit History.
+A Fit Twin is a Fit Match the user deliberately saves/follows; no universal percentage cutoff is invented. Signed-in LikeSized members may see the community follow graph, while only the follower controls their own relationship. Member profile headers show current match scores separately from historical Shared Fit History.
 
 ## Key routes
 - `/` — public home
@@ -83,7 +67,7 @@ A Fit Twin is a Fit Match the user deliberately saves/follows; no universal perc
 - `/people/[username]` — member/Fit Twin profile and Shared Fit History
 - `/twins` — saved Fit Twins
 - `/closet`, `/closet/add`, `/closet/[id]/edit` — Closet
-- `/item/[slug]` — product evidence/recommendation with optional validated variant target
+- `/item/[slug]` — product evidence/recommendation
 - `/outfits`, `/outfits/new` — outfits, likes and All/Fit-Twins feeds
 
 For exact current status and the next phase, read `docs/AI_MASTER_LOG.md`.

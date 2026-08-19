@@ -22,9 +22,6 @@ This section supersedes every earlier simplified architecture decision about mea
 - Every Fit Report stores an immutable `fit_profile_version_id`. Editing current measurements later never changes the body state attached to an older garment observation.
 - A later try-on after a body change is a new Fit Report observation tied to the new version; historical garment/body associations are not rewritten.
 - Manual values are numeric, validated and normalized to a canonical internal unit. Measurement types define sensible imperial/metric precision; ordinary body measurements can use quarter-inch precision while foot/device/imported data may be finer.
-- Natural waist, lower/pants waist, high hip and full hip/seat are distinct types.
-- Full bust, high/upper bust, underbust, overbust, bust-point spacing and shoulder-to-bust-point are distinct types.
-- Neck/collar, arm/sleeve, bicep, wrist, across-back/front, rise, thigh/knee/calf, torso girth, crotch/outseam, foot length/width and other tailoring measurements are extensible controlled types.
 - Normally worn bra/shoe/other size references are private `user_size_references`; historical copies live with each Fit Profile version.
 - Raw current and historical measurements and size references are never member-visible.
 
@@ -38,9 +35,9 @@ This section supersedes every earlier simplified architecture decision about mea
 - `product_identifiers` stores original plus normalized manufacturer style, SKU, UPC/barcode and retailer identifiers.
 - `product_variants` handles color/variant identity and normalized size.
 - Garment market segment is controlled: men's, women's, unisex, kids/youth, unknown. It describes cut/sizing, never user gender identity.
-- `garment_types` is an extensible controlled taxonomy (T-shirt, dress/work shirt, blouse, jeans, dresses, bras, shoes, etc.).
+- `garment_types` is an extensible controlled taxonomy.
 - Similar Garments uses controlled construction attributes, not free-text similarity guesses. V1 controlled attributes include fit/cut, rise, stretch level, **Primary material / fabric family**, sleeve length, neckline, collar style, knit/woven construction, length profile and leg shape.
-- V1 does **not** attempt exact fiber-percentage composition. Primary material/fabric family is a controlled broad signal such as cotton, denim, linen, wool, silk, polyester, nylon, rayon/viscose, modal/lyocell, leather, fleece, canvas, mixed blend, etc.
+- V1 does **not** attempt exact fiber-percentage composition.
 - Category-scoped attributes may be stored only for compatible Product categories; global attributes such as primary material may apply across categories.
 - Product construction attributes are initialized only when the Closet flow truly creates a new canonical Product. A later log that reuses or deduplicates to an existing Product does not silently rewrite that shared Product's established attributes.
 
@@ -63,9 +60,9 @@ Do not blend current-person scores with historical garment scores.
 - Evidence hierarchy is locked as: **Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit**.
 - An Exact Variant target is canonical only when that variant belongs to the displayed Product. A foreign/invalid variant ID cannot promote unrelated evidence and safely falls back to Product/broader tiers.
 - Product Family evidence exists only through explicit compatible family membership; similar product names alone never create this tier.
-- Similar Garments requires same garment type plus controlled Product-attribute overlap; controlled overlap is stronger than mere same-brand/type evidence.
+- Similar Garments requires same garment type plus controlled Product-attribute overlap.
 - Product evidence uses historical snapshot match scores, never the wearer's current-person Fit Twin score.
-- Product recommendation evidence is capped to **one strongest historical observation per unique wearer**. Five observations from one person never count as five people and cannot inflate confidence.
+- Product recommendation evidence is capped to **one strongest historical observation per unique wearer**.
 - All legitimate historical observations remain available in that member's Shared Fit History; the unique-wearer cap applies to recommendation aggregation, not history deletion.
 
 ### Recommendation confidence — LOCKED V1 behavior
@@ -76,7 +73,7 @@ Do not blend current-person scores with historical garment scores.
 - Missing or incomplete relevant measurements reduce confidence rather than failing the recommendation when enough evidence remains.
 - Conflicting reports or evidence split across multiple plausible sizes reduce confidence.
 - Weaker fallback tiers remain usable but are intentionally less confidence-producing than exact evidence.
-- Current calibration reference cases are maintained in `tests/recommendation-confidence.test.ts` and enforced by CI; numerical changes to production confidence behavior must update those tests intentionally rather than drifting silently.
+- Current calibration reference cases are maintained in `tests/recommendation-confidence.test.ts` and enforced by CI.
 
 ### Fit Reports, Shared Closet and photos
 - Overall fit remains controlled; optional garment-specific dimensions live in `fit_report_dimensions` using controlled response dictionaries.
@@ -84,12 +81,15 @@ Do not blend current-person scores with historical garment scores.
 - `closet_items.visibility` is `private` or `shared`; RLS—not UI filtering—controls member access.
 - Shared Closet history may expose brand/product, garment type, original size, Fit Report, safe historical match percentage and fit/reference photo; it never exposes raw measurements.
 - Fit/reference photo upload is optional. **If uploaded, it is shared with authenticated LikeSized members. There is no private fit-photo mode.**
-- `fit-reference-photos` is a non-public Supabase Storage bucket: authenticated members may read shared references, only the owner may write/delete their folder. A retired empty `closet-photos` bucket has no application policies and is not used.
+- `fit-reference-photos` is a non-public Supabase Storage bucket: authenticated members may read shared references, only the owner may write/delete their folder.
 
 ## Fit Twins, Following and the Following Feed — LOCKED V1
 A V1 Fit Twin is a Fit Match the user deliberately saves/follows. There is no universal percentage threshold. The follow relationship is stable while live current-person match scores may change.
 
 Following is not only a bookmark. The purpose is to let a member keep learning from people whose body/fit experiences are useful to them over time.
+
+### Follow visibility
+The Fit Twin/follow graph is **community-public within LikeSized**. Any authenticated LikeSized member may see who follows whom. Only the follower may create or remove their own relationship. The graph is not anonymous-web-visible because V1 member identity remains available only to signed-in members.
 
 ### Dedicated Following Feed
 V1 includes a dedicated personalized Following Feed driven by the same canonical Fit Twin/follow relationship used elsewhere in the product. Do not create a separate friend/follower relationship for this feed.

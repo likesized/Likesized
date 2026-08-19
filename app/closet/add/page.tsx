@@ -13,10 +13,11 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
   if (!claimsData?.claims?.sub) redirect("/login?next=/closet/add");
-  const [{ data: garmentTypes }, { data: brands }, { data: products }, { data: mappings }, { data: definitions }, { data: responses }] = await Promise.all([
+  const [{ data: garmentTypes }, { data: brands }, { data: products }, { data: families }, { data: mappings }, { data: definitions }, { data: responses }] = await Promise.all([
     supabase.from("garment_types").select("key, label, category").eq("active", true).order("sort_order"),
     supabase.from("brands").select("id, name").order("name").limit(300),
     supabase.from("products").select("id,name,brand_id,garment_type_key,market_segment,manufacturer_style_number,brand:brands(name)").order("name").limit(300),
+    supabase.from("product_families").select("id,name,brand_id,garment_type_key,market_segment,brand:brands(name)").order("name").limit(300),
     supabase.from("garment_type_fit_dimensions").select("garment_type_key,dimension_key,sort_order").order("sort_order"),
     supabase.from("fit_dimension_definitions").select("key,label"),
     supabase.from("fit_dimension_responses").select("dimension_key,response_key,label,sort_order").order("sort_order"),
@@ -32,6 +33,14 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
     market_segment:product.market_segment,
     manufacturer_style_number:product.manufacturer_style_number,
   }));
+  const catalogFamilies=(families??[]).map((family)=>({
+    id:family.id,
+    name:family.name,
+    brand_id:family.brand_id,
+    brand_name:one<{name:string}>(family.brand)?.name??"",
+    garment_type_key:family.garment_type_key,
+    market_segment:family.market_segment,
+  }));
   const params = await searchParams;
   const error = first(params.error);
   const errorMessage = error === "invalid_fields" ? "Check the controlled garment details and try again." : error === "invalid_photo" ? "Fit photo must be JPEG, PNG, or WebP and no larger than 8 MB." : error === "save_failed" ? "That garment could not be saved." : null;
@@ -40,7 +49,7 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
     <div className="pageTitle rowTitle"><div><span className="eyebrow">MY CLOSET · ADD GARMENT</span><h1>Log what you actually wear.</h1><p>Search existing catalog data first; LikeSized only creates a canonical record when needed.</p></div><Link className="secondaryButton" href="/closet">Back to Closet</Link></div>
     <form className="garmentForm" action={addGarment}>
       {errorMessage ? <div className="authMessage error">{errorMessage}</div> : null}
-      <CatalogGarmentFields brands={brands??[]} products={catalogProducts} garmentTypes={garmentTypes??[]} dimensions={dimensions} responses={responses??[]}/>
+      <CatalogGarmentFields brands={brands??[]} products={catalogProducts} families={catalogFamilies} garmentTypes={garmentTypes??[]} dimensions={dimensions} responses={responses??[]}/>
       <GarmentSizeFields />
       <label>SKU / UPC / barcode<input name="identifier" maxLength={120} placeholder="Optional identifier" /></label>
       <div className="fieldPair"><label>Product URL<input name="product_url" type="url" maxLength={1000} placeholder="https://..." /></label><label>Color / variant<input name="color_label" maxLength={80} placeholder="Optional" /></label></div>

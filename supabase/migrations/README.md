@@ -19,10 +19,13 @@ The connected Supabase project is the deployed instance and execution ledger. It
 9. `20260819144343_authoritative_v1_architecture_constraints.sql` — product identity uniqueness, brand alias normalization, helper privileges, URL validation and schema comments.
 10. `20260819150022_immutable_fit_profile_versions.sql` — immutable historical body/size snapshots; Fit Reports lock to try-on body state; multiple observations per Closet item; safe snapshot matching.
 11. `20260819150923_historical_fit_evidence_unique_wearers.sql` — historical evidence uses snapshot match and returns at most one strongest observation per unique wearer; safe batch historical score RPC.
-12. `20260819151101_atomic_fit_profile_version_saves.sql` — one-transaction current Fit Profile replacement/normalization/version commit.
+12. `20260819151101_atomic_fit_profile_version_saves.sql` — one-transaction current Fit Profile measurement replacement/normalization/version commit.
 13. `20260819152030_harden_fit_profile_version_rpcs.sql` — public profile/version RPCs run SECURITY INVOKER under RLS; only the narrow private auth-bound snapshot helper is SECURITY DEFINER.
 14. `20260819152056_index_authoritative_v1_relationships.sql` — covering indexes for authoritative-V1 foreign keys.
+15. `20260819164005_atomic_fit_profile_size_references.sql` — extends the canonical Fit Profile save so current private normally-worn size references and body measurements are replaced in one transaction before immutable-version creation/reuse; removes the redundant non-unique size-reference index.
 
 The first seven files were recovered from `supabase_migrations.schema_migrations` during the 2026-08-19 canonical audit. Their Git blob SHAs were verified byte-for-byte against the SQL stored in the deployed migration ledger before being committed. They are historical migration records, not newly invented database changes, and must not be re-applied to the already-migrated connected project.
+
+Migration 15 was also verified against the deployed ledger after application: the executed SQL Git-blob SHA is `953271fb22263cb577793290df2c96fa498128d9`, matching the canonical repository file exactly.
 
 Future database changes are new ordered executable migrations in this same directory. Update `docs/V1_PRODUCT_SPEC.md`, `docs/AI_MASTER_LOG.md`, and `supabase/schema_contract.md` when architecture or locked behavior changes.

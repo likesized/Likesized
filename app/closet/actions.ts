@@ -11,10 +11,11 @@ const SIZE_KINDS = new Set(["alpha", "numeric", "waist_inseam", "dress_shirt", "
 const PHOTO_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const TRACKING_PARAMS = new Set(["fbclid", "gclid", "dclid", "mc_cid", "mc_eid", "msclkid"]);
 const FIT_DIMENSION_PREFIX="fit_dimension__";
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type BrandRecord = { id: string; name: string; slug: string; normalized_name: string };
-type ProductRecord = { id: string; name: string; slug: string; category: string; garment_type_key: string | null; market_segment: GarmentMarketSegment };
+type ProductRecord = { id: string; name: string; slug: string; category: string; garment_type_key: string | null; market_segment: GarmentMarketSegment; brand_id?:string; manufacturer_style_number?:string|null; manufacturer_style_normalized?:string|null };
 type ParsedSize = Record<string, string | number | null> & { kind: GarmentSizeKind; normalized_key: string; display_label: string };
 
 function fail(code: string): never { redirect(`/closet/add?error=${encodeURIComponent(code)}`); }
@@ -87,6 +88,17 @@ async function getOrCreateProduct(supabase: SupabaseClient, brand: BrandRecord, 
   throw new Error("Could not resolve product");
 }
 
+async function getExactCatalogProduct(supabase:SupabaseClient,id:string,brandName:string,productName:string,garmentType:string,marketSegment:GarmentMarketSegment,styleNumber:string|null){
+  const {data:product,error}=await supabase.from("products").select("id,name,slug,category,garment_type_key,market_segment,brand_id,manufacturer_style_number,manufacturer_style_normalized").eq("id",id).maybeSingle();
+  if(error||!product)throw error??new Error("Unknown catalog product");
+  const {data:brand,error:brandError}=await supabase.from("brands").select("id,name,slug,normalized_name").eq("id",product.brand_id).maybeSingle();
+  if(brandError||!brand)throw brandError??new Error("Unknown product brand");
+  const submittedStyle=styleNumber?normalizeIdentifier(styleNumber):null;
+  const canonicalStyle=product.manufacturer_style_normalized??null;
+  if(normalizeSearchText(brandName)!==brand.normalized_name||normalizeSearchText(productName)!==normalizeSearchText(product.name)||garmentType!==product.garment_type_key||marketSegment!==product.market_segment||submittedStyle!==canonicalStyle)throw new Error("Exact catalog identity changed");
+  return {brand:brand as BrandRecord,product:product as ProductRecord};
+}
+
 async function getNormalizedSize(supabase: SupabaseClient, structuredLabel: string, kind: GarmentSizeKind, sizingSystem: string | null) {
   const { data: parsedData, error: parseError } = await supabase.rpc("parse_garment_size", { p_label: structuredLabel, p_kind: kind, p_system: sizingSystem });
   if (parseError || !parsedData || typeof parsedData !== "object" || Array.isArray(parsedData)) throw parseError ?? new Error("Could not parse size");
@@ -154,6 +166,7 @@ async function validatedFitDimensions(supabase:SupabaseClient,formData:FormData,
 export async function addGarment(formData: FormData) {
   const brandName = text(formData, "brand");
   const productName = text(formData, "product");
+  const existingProductId=text(formData,"existing_product_id")||null;
   const garmentType = text(formData, "garment_type");
   const marketSegment = text(formData, "market_segment") as GarmentMarketSegment;
   const sizeKind = text(formData, "size_kind") as GarmentSizeKind;
@@ -170,7 +183,7 @@ export async function addGarment(formData: FormData) {
   const wouldBuyAgainRaw = text(formData, "would_buy_again");
   const wearsCount = Number(text(formData, "wears_count") || "0");
 
-  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || !garmentType || !MARKET_SEGMENTS.has(marketSegment) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || !originalSizeLabel || originalSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !FIT_RATINGS.has(fit) || !Number.isInteger(wearsCount) || wearsCount < 0 || wearsCount > 100000 || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000)) fail("invalid_fields");
+  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId&&!UUID.test(existingProductId)) || !garmentType || !MARKET_SEGMENTS.has(marketSegment) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || !originalSizeLabel || originalSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !FIT_RATINGS.has(fit) || !Number.isInteger(wearsCount) || wearsCount < 0 || wearsCount > 100000 || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000)) fail("invalid_fields");
   if (productUrl) { try { normalizeProductUrl(productUrl); } catch { fail("invalid_fields"); } }
 
   const photoEntry = formData.get("photo");
@@ -198,8 +211,16 @@ export async function addGarment(formData: FormData) {
   try {
     const type = await getGarmentType(supabase, garmentType);
     const dimensionRows=await validatedFitDimensions(supabase,formData,garmentType);
-    const brand = await getOrCreateBrand(supabase, brandName);
-    const product = await getOrCreateProduct(supabase, brand, productName, garmentType, type.category, marketSegment, styleNumber);
+    let brand:BrandRecord;
+    let product:ProductRecord;
+    if(existingProductId){
+      const exact=await getExactCatalogProduct(supabase,existingProductId,brandName,productName,garmentType,marketSegment,styleNumber);
+      brand=exact.brand;
+      product=exact.product;
+    }else{
+      brand=await getOrCreateBrand(supabase, brandName);
+      product=await getOrCreateProduct(supabase, brand, productName, garmentType, type.category, marketSegment, styleNumber);
+    }
     const normalizedSizeId = await getNormalizedSize(supabase, structuredSizeLabel, sizeKind, sizingSystem);
     const identifierKind = identifier && /^\d{8}$|^\d{12,14}$/.test(normalizeIdentifier(identifier)) ? "upc" : "sku";
     const variantId = await getOrCreateVariant(supabase, product.id, normalizedSizeId, originalSizeLabel, colorLabel, marketSegment, identifierKind === "sku" ? identifier || null : null);

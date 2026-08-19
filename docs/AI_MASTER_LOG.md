@@ -25,12 +25,13 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 8. V1 member identity is authenticated-member-only.
 9. V1 People My Size UI is **Overall | Tops | Bottoms**. More garment-specific filters may be exposed later using the existing match-profile engine without a matching rewrite.
 10. Product Fit Families are intentional same-fit/cut groups only. No fuzzy-name auto-grouping. New products default to their own family unless the member explicitly selects a compatible existing family; family compatibility requires the same brand, garment type and market/cut segment.
+11. Similar Garments uses controlled Product construction attributes. V1 includes a controlled Primary material/fabric-family field rather than free-form composition percentages. Category-scoped attributes are allowed only on compatible Product categories.
 
 ## Current baseline — 2026-08-19
 - Full Next.js app, Supabase integration, matching/recommendation logic and canonical docs are in GitHub.
 - Live Supabase has no deliberate test-user/application data; repeatable verification uses disposable local Supabase CI.
-- **24 canonical migrations** through `20260819192804_enforce_product_family_compatibility.sql`.
-- Supabase Security Advisor: **0 findings** after the Phase 4.2 family guard.
+- **25 canonical migrations** through `20260819194010_controlled_primary_material_and_attribute_category.sql`.
+- Supabase Security Advisor: **0 findings** after the Phase 4.3 attribute/material guard.
 - CI runs `npm ci`, typecheck, production build, fresh migration replay and all pgTAP database tests.
 
 # PHASES
@@ -63,31 +64,29 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 ## PHASE 4 — PRODUCT EVIDENCE & RECOMMENDATIONS — ▶️ IN PROGRESS
 
 ### 4.1 Exact-variant targeting — ✅ COMPLETE
-- Product pages load variants belonging to the displayed Product and expose an Exact Product / Exact Variant evidence target selector.
-- Closet Product links carry the logged `variant_id` when present so users land on the exact garment variant they logged.
-- Migration `20260819191518_validate_product_evidence_variant_target.sql` independently validates variant ownership inside the evidence RPC; foreign/invalid variant IDs cannot gain Exact Variant rank.
-- Exact Variant remains rank 1 and falls back through Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit when needed.
-- `product_evidence_variant_targeting.test.sql` runs **12 assertions** covering exact-variant priority, one-per-wearer behavior, other-variant Product evidence and safe foreign-variant fallback.
-- PR #17 / CI `32292794210` passed install, typecheck, production build, clean replay of all 23 then-current migrations and every database suite.
-- Security Advisor after the exact-variant migration: 0 findings.
+- Product pages expose Exact Product / Exact Variant targeting and Closet links carry the logged variant when present.
+- Migration `20260819191518_validate_product_evidence_variant_target.sql` independently validates target-variant ownership in the evidence RPC.
+- `product_evidence_variant_targeting.test.sql`: **12/12** assertions.
+- PR #17 / CI `32292794210` passed full app checks, 23-migration replay and all DB tests.
 
 ### 4.2 Product-family population/maintenance — ✅ COMPLETE
-- New canonical Products created through the single Closet flow receive a Product Fit Family at creation.
-- Safe default: a new standalone family keyed to that product/style. A new Product may explicitly join an existing family only for a genuinely same-fit/cut non-fit-critical release.
-- The Add Garment UI shows only compatible family choices after brand, garment type and market/cut segment line up. Choosing an existing exact Product does not expose family reassignment.
-- Migration `20260819192804_enforce_product_family_compatibility.sql` enforces same brand + garment type + market/cut segment at the database boundary.
-- Similar names alone never create family membership; existing shared canonical Products are not member-reassigned through the normal Data API path.
-- `product_family_evidence.test.sql` runs **11 assertions** covering compatibility rejection, Product Family rank 3 and explicit-family evidence vs unlinked same-brand/type lookalikes.
-- PR #18 / CI `32293810777` passed install, typecheck, production build, clean replay of all **24 migrations**, and every canonical database suite.
-- Security Advisor after the family guard: 0 findings.
+- New Products receive a standalone Product Fit Family by default or may explicitly join a compatible intentional same-fit/cut family.
+- No fuzzy-name family grouping and no normal member-side reassignment of existing shared Products.
+- Migration `20260819192804_enforce_product_family_compatibility.sql` enforces brand + garment type + market/cut segment compatibility.
+- `product_family_evidence.test.sql`: **11/11** assertions.
+- PR #18 / CI `32293810777` passed full app checks, 24-migration replay and all DB tests.
 
-### 4.3 Similar Garments attributes/materials — ▶️ NEXT
-- Existing controlled dictionary already covers fit/cut, rise, stretch level, sleeve length, neckline, collar style, knit/woven construction, length profile and leg shape.
-- Add a controlled V1 primary material/fabric-family signal, then capture only category-relevant controlled attributes when a new canonical Product is created. Reusing an existing Product must preserve its established attributes rather than letting a later Closet log silently rewrite shared catalog identity.
-- Add a DB guard so category-scoped attributes cannot be attached to an incompatible Product category.
+### 4.3 Similar Garments attributes/materials — ✅ COMPLETE
+- Controlled dictionary now includes fit/cut, rise, stretch, Primary material/fabric family, sleeve length, neckline, collar style, knit/woven construction, length profile and leg shape.
+- Add Garment renders only global + category-relevant controlled Product attributes.
+- Product attributes are applied only when this flow truly creates a new canonical Product; reusing/deduplicating an existing Product preserves its established shared catalog attributes.
+- Migration `20260819194010_controlled_primary_material_and_attribute_category.sql` adds controlled material options and the DB category-compatibility guard.
+- `similar_garment_attributes.test.sql`: **10/10** assertions proving category rejection, exact attribute-overlap counts, Similar Garments rank 4 and non-overlap Brand + Garment Type rank 5.
+- PR #19 / CI `32294768975` passed install, typecheck, production build, clean replay of all **25 migrations**, and every canonical database suite.
+- Security Advisor after the attribute/material guard: 0 findings.
 
-### 4.4 Evidence-tier exercise — QUEUED
-Exercise all six fallback tiers together and verify labels/ranking with controlled data.
+### 4.4 Evidence-tier exercise — ▶️ NEXT
+Exercise Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit **simultaneously** with six distinct evidence wearers and assert labels, ranks, ordering and one-per-wearer behavior.
 
 ### 4.5 Recommendation confidence calibration — QUEUED
 Calibrate confidence using multiple unique wearers, conflicting outcomes and incomplete measurement coverage.
@@ -107,4 +106,4 @@ Replace homepage mock match data, remove dead prototype logic, configure product
 Use a controlled representative population, smoke the full user loop, explicitly test privacy boundaries, rerun Security/Performance Advisors, and require green CI plus browser smoke verification before beta-ready.
 
 ## Exact next action
-**PHASE 4.3 — extend the controlled garment-attribute dictionary with a V1 primary material/fabric-family signal, enforce category compatibility at the database boundary, capture relevant controlled attributes only when creating a new canonical Product, and verify Similar Garments evidence before proceeding to the all-tier hierarchy test.**
+**PHASE 4.4 — build one controlled evidence-hierarchy test that reaches all six evidence tiers at once and proves exact ranks/order and one-per-unique-wearer behavior, then proceed to recommendation confidence calibration only after that hierarchy gate is green.**

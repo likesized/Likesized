@@ -21,25 +21,39 @@ Reference documents:
 - Immutable private Fit Profile versions for historical try-on state
 - Garment-specific People My Size matching with safe derived scores
 - Canonical brands/products, product families, variants, retailer listings and normalized identifiers
-- Controlled extensible garment taxonomy/attributes
+- Controlled extensible garment taxonomy, construction attributes and Primary material/fabric-family data
 - Original garment-size preservation plus structured normalized size identity
 - Private and Shared Closet architecture
 - Closet edit/remove controls that preserve immutable fit history; repeat try-ons create new observations
-- Controlled overall Fit Reports plus schema support for garment-specific Fit Report dimensions
-- Optional member-shared fit/reference photos in a non-public Storage bucket
-- Evidence hierarchy from Exact Variant through Category Fit
+- Controlled overall Fit Reports plus garment-specific controlled Fit Report dimensions collected for initial and repeat try-ons
+- Optional member-shared fit/reference photos in a non-public Storage bucket with database-enforced Shared-only invariant
+- Product-page Exact Product / validated Exact Variant evidence targeting
+- Operational Product Fit Families with conservative compatibility guards
+- Operational Similar Garments evidence using controlled attribute overlap
+- Fully verified evidence hierarchy: Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit
 - Historical garment evidence matched to the body snapshot from that try-on, unique-wearer capped for recommendations
+- Production recommendation-confidence model with permanent calibration tests
 - Fit Twins/following and member Shared Fit History
 - Outfit posting, likes, All/Fit-Twins feeds and outfit-photo storage
 - Product/brand/member search and discovery
 
 ## Important prototype boundaries
-- The connected database currently has no users/products/Fit Reports, so database-backed flows are implemented but not yet exercised end to end with representative data.
+- The connected database currently has no deliberate users/products/Fit Reports, so the full V1 user loop still requires representative end-to-end beta verification later in the master phase sequence.
 - The public homepage still uses `lib/mock-data.ts` for demonstration match cards and must be converted before V1 beta.
-- Garment-specific Fit Report dimension dictionaries exist in the database, but the current Closet logging UI does not yet collect those structured responses.
-- Product Family / Similar Garment fallback structures exist, but current user logging does not yet populate enough family/attribute/material data to make those tiers broadly operational.
-- Product pages currently target the canonical product rather than a selected exact variant.
-- Canonical CI uses the committed npm lockfile, runs `npm ci`, typecheck and Next.js build, replays the complete ordered Supabase migration set on a fresh disposable local database, and runs the canonical pgTAP behavior/privacy/matching suites.
+- Comments remain intentionally outside V1 until moderation/reporting is designed.
+- Production auth/Vercel configuration, responsive/accessibility review and final browser smoke verification remain later master-guide phases.
+- No production deployment occurs without explicit owner authorization.
+
+## Verification
+Canonical CI uses the committed npm lockfile and currently gates on:
+1. `npm ci`
+2. TypeScript typecheck
+3. Direct production `recommendSize()` confidence-calibration tests
+4. Next.js production build
+5. Fresh replay of all ordered Supabase migrations on a disposable local database
+6. All canonical pgTAP behavior/privacy/matching/evidence suites
+
+The exact current verification record and phase status live only in `docs/AI_MASTER_LOG.md`.
 
 ## Authoritative fit rules
 Raw current and historical body measurements are owner-only. Current Fit Twin scores are current-body to current-body; garment evidence uses the immutable historical snapshot attached to each Fit Report. Do not blend the two.
@@ -69,7 +83,7 @@ A Fit Twin is a Fit Match the user deliberately saves/follows; no universal perc
 - `/people/[username]` — member/Fit Twin profile and Shared Fit History
 - `/twins` — saved Fit Twins
 - `/closet`, `/closet/add`, `/closet/[id]/edit` — Closet
-- `/item/[slug]` — product evidence/recommendation
+- `/item/[slug]` — product evidence/recommendation with optional validated variant target
 - `/outfits`, `/outfits/new` — outfits, likes and All/Fit-Twins feeds
 
 For exact current status and the next phase, read `docs/AI_MASTER_LOG.md`.

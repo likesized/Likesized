@@ -18,7 +18,7 @@ If another file contains an old next step, checklist, phase order, or handoff th
 - Approved changes go directly into canonical files. Never create fixed/v2/backup/temp copies or parallel feature implementations. Git history is history.
 - Ordered executable SQL in `supabase/migrations/` is the only database replay/deployment history.
 - Supabase project `rlksidwniuoxoacumyaf` is the deployed instance/ledger, not a competing source of truth.
-- Production deployment remains owner-controlled.
+- Production deployment remains owner-controlled. Do not deploy merely because implementation/testing is complete.
 - Work through phases below in order. Do not divert while an earlier exit criterion is unresolved.
 - Ask the owner only for a genuine product/business/cost/credential decision; otherwise continue automatically.
 
@@ -41,85 +41,76 @@ Privacy: exact current/historical body measurements and normally-worn size refer
 7. Private Closet items are owner-only. Shared Closet evidence is member-readable. Fit/reference photo upload is optional, but any uploaded fit/reference photo is shared with authenticated members; no private fit-photo mode exists.
 8. Controlled values drive matching/filtering/search/analytics where defined; free text is supplemental/fallback.
 9. **V1 member identity is authenticated-member-only.** Completed username/display name/bio may be found by signed-in LikeSized members; anonymous visitors have no `profiles` SELECT access.
+10. **V1 People My Size UI stays Overall | Tops | Bottoms.** Garment-specific match profiles remain available under the hood and may be exposed later without rebuilding the matching engine.
 
 ## Current canonical baseline — 2026-08-19
 - Full Next.js application, Supabase integration, matching/recommendation logic and canonical docs are in GitHub.
 - Live Supabase contains no deliberate test-member/application data; repeatable verification uses disposable local Supabase in CI.
-- Live migration ledger and GitHub contain 20 migrations through `20260819174045_restore_current_match_helper_execute.sql`.
-- Supabase Security Advisor is **0 findings** after the Phase 1 matcher repairs.
+- Live migration ledger and GitHub contain **21 migrations** through `20260819183601_enforce_fit_report_dimension_garment_type.sql`.
+- Supabase Security Advisor: **0 findings** after the Phase 3.1 DDL change.
 - Canonical CI performs `npm ci`, typecheck, production build, fresh migration replay, and pgTAP database tests.
 
 # PHASES
 
 ## PHASE 0 — CANONICAL BASELINE & REPRODUCIBILITY
 **Status: ✅ COMPLETE.**
-- Missing early migrations recovered byte-for-byte from Supabase ledger.
+- Missing early migrations recovered byte-for-byte from the Supabase ledger.
 - Ordered migration directory locked as sole replay history.
 - One master guide locked.
 - `package-lock.json` + permanent CI established.
 - Zero-added-cost disposable local Supabase replay used instead of a paid branch.
-- PR #1 / CI `32276450771` passed install, typecheck, build and clean replay.
+- Phase 0 verification passed install, typecheck, build and clean migration replay.
 
 **Exit criterion: ✅ MET.**
 
 ## PHASE 1 — FIT PROFILE COMPLETION & PRIVACY CONTROLS
 **Status: ✅ COMPLETE.**
+- Private normally-worn size references are editable and saved atomically with measurements.
+- `/settings` edits supported member identity fields; avatar remains intentionally unexposed until a deliberate Storage design exists.
+- Owner decision locked: member profiles are signed-in-member-only.
+- Behavior suite: **21/21** assertions passed.
+- Multi-user privacy/RLS suite: **16/16** assertions passed.
+- Current-vs-historical body integrity suite: **14/14** assertions passed.
+- Current matching and historical garment matching remain separate by architecture and tests.
 
-### 1.1 Private normally-worn size references — ✅ COMPLETE
-- Fit Profile reads/edits owner-private size references.
-- Structured bra/shoe; shirt/pants/dress/other are private reference context only.
-- `20260819164005_atomic_fit_profile_size_references.sql` makes body measurements + size references one atomic save before immutable-version creation/reuse.
-- PR #2 / CI `32277761390` passed app checks and 15-migration replay.
-
-### 1.2 Owner profile/privacy controls — ✅ COMPLETE
-- Canonical `/settings` edits optional display name/bio and explains privacy state.
-- Avatar editing intentionally remains unexposed until an avatar Storage design exists.
-- `20260819165124_profile_identity_constraints.sql` bounds identity fields.
-- Owner decision locked: **signed-in-member-only member profiles**.
-- `20260819165756_member_only_profile_identity.sql` removes anonymous profile reads.
-- Live privilege verification confirms `anon` has no `profiles` SELECT; Security Advisor 0 findings.
-- PR #3 / CI `32279397793` passed app checks and 17-migration replay.
-
-### 1.3 Fit Profile behavior verification — ✅ COMPLETE
-- Found and fixed a generic-reference permission regression without broadening helper permissions.
-- `20260819170808_inline_private_size_reference_normalization.sql` keeps generic private size-label normalization inside `save_fit_profile`.
-- `supabase/tests/fit_profile_behavior.test.sql` proves partial saves, structured + generic refs, unit normalization, current-state replacement, immutable version creation/reuse and preservation of old snapshots.
-- Verification CI `32280574740`: **21/21 behavior assertions passed**, plus install/typecheck/build/fresh replay.
-
-### 1.4 Raw measurement/privacy RLS verification — ✅ COMPLETE
-- `supabase/tests/fit_profile_privacy_rls.test.sql` uses two independent authenticated users plus `anon`.
-- Proves owner-only current measurements, current private size references, Fit Profile shell, immutable versions and historical raw snapshot rows.
-- Proves cross-user raw write/delete protection.
-- Proves signed-in member identity discovery remains allowed while anonymous profile query is denied.
-- Verification CI `32281527759`: **16/16 privacy assertions passed**, plus app checks and fresh replay.
-
-### 1.5 Current-body vs historical-body integrity — ✅ COMPLETE
-- `supabase/tests/fit_profile_history_integrity.test.sql` proves current-body changes create a new immutable version, old reports remain tied to the prior version, new observations use the new version, and current-person matching remains independent from historical-garment matching.
-- Fresh replay exposed and fixed two real current-matcher defects: `20260819173357_qualify_current_match_profile_owner.sql` qualifies the Fit Profile owner reference; `20260819174045_restore_current_match_helper_execute.sql` restores only the narrow authenticated helper path required by the SECURITY INVOKER public wrappers.
-- The helper is auth-bound, returns only identity + derived score/coverage, and never exposes raw measurements.
-- PR #7 / CI `32283292782` passed install, typecheck, production build, clean replay of all 20 migrations, behavior/privacy tests, and **14/14 history-integrity assertions**.
-- Security Advisor after the matcher repair: **0 findings**.
-
-**Phase 1 exit criterion: ✅ MET.**
+**Exit criterion: ✅ MET.**
 
 ## PHASE 2 — PEOPLE MY SIZE / MATCHING VERIFICATION
-**Status: ▶️ IN PROGRESS — 2.1 CONTROLLED MATCH POPULATION / RANKING.**
-1. Create controlled disposable users with deliberately different upper/lower-body profiles.
-2. Verify Overall/Tops/Bottoms ranking and missing-measurement coverage.
-3. Verify current Fit Twin scores recalculate with current-body changes independently of historical garment evidence.
-4. **Owner decision after validation:** decide whether richer garment-specific People My Size filters belong in V1 UI.
+**Status: ✅ COMPLETE.**
+- `supabase/tests/people_my_size_matching.test.sql` uses controlled disposable users with deliberately different upper/lower-body profiles.
+- Overall/Tops/Bottoms relative ranking is verified.
+- Missing-measurement behavior is verified: a partial profile may have a high score on shared evidence but carries reduced coverage; a member with no relevant overlap is excluded.
+- Raw candidate measurements remain unreadable to the viewer.
+- Current-body recalculation is verified: changing top-relevant current measurements changes Tops and Overall immediately while Bottoms remains unchanged when its relevant inputs are unchanged.
+- PR #10 validated the initial controlled ranking/coverage suite.
+- PR #11 / CI `32285618067` validated the expanded **16-assertion** People My Size suite and was merged.
+- **Owner decision locked:** keep V1 People My Size filters at **Overall | Tops | Bottoms**. Do not expose a long garment-specific filter list in V1. The underlying match-profile architecture remains extensible for later Jeans/Work Shirt/Bra/etc. filters without a full matching rewrite.
 
-**Exit criterion:** expected relative rankings are demonstrated without exposing raw measurements.
+**Exit criterion: ✅ MET.**
 
 ## PHASE 3 — CLOSET & FIT REPORT COMPLETION
-**Status: QUEUED.**
-1. Build garment-specific controlled Fit Report inputs from existing dictionaries/taxonomy; show only relevant dimensions.
-2. Persist responses to `fit_report_dimensions` for first logs and later observations.
-3. Make Post Outfit picker deliberately use the latest Fit Report per Closet item.
-4. Improve brand/product search-before-create UX while preserving canonical normalization/deduplication.
-5. Test Private/Shared visibility, fit-photo forced sharing, history-safe editing, repeat try-ons and deletion cascades.
+**Status: ▶️ IN PROGRESS — GARMENT-SPECIFIC FIT REPORT CAPTURE COMPLETE; NEXT = POST OUTFIT LATEST-OBSERVATION RULE.**
 
-**Exit criterion:** Closet captures the evidence the authoritative schema was designed for and history-sensitive surfaces intentionally select the correct observation.
+### 3.1–3.2 Garment-specific controlled Fit Report capture — ✅ COMPLETE
+- `app/closet/FitDimensionFields.tsx` renders only the controlled fit dimensions mapped to the selected garment type.
+- First-time Closet logging and later repeat observations both write selected controlled responses to `fit_report_dimensions` on the immutable Fit Report for that try-on.
+- Server validation rejects duplicate dimensions, dimensions not mapped to the selected garment type, and responses not defined for the selected dimension.
+- Migration `20260819183601_enforce_fit_report_dimension_garment_type.sql` adds the final database trigger guard so invalid garment/dimension combinations cannot bypass the application.
+- `supabase/tests/fit_report_dimensions.test.sql` verifies valid mapped responses are accepted and invalid dimension/response combinations are rejected.
+- PR #12 was a verification-only branch and was deliberately **closed without merge** so its temporary marker never entered canonical `main`.
+- CI run `32289232671` passed install, typecheck, production build, clean replay of all 21 migrations, and every canonical database test.
+- Security Advisor after the new trigger: **0 findings**.
+
+### 3.3 Post Outfit history correctness — ▶️ NEXT
+Make the Post Outfit garment picker deliberately choose/display the **latest Fit Report observation** for each Closet item, matching the already history-safe Closet/feed behavior.
+
+### 3.4 Brand/product search-before-create UX — QUEUED
+Improve lookup/selection so members reuse canonical brands/products before creating new records while preserving normalization/deduplication and product identity rules.
+
+### 3.5 Closet integration/privacy verification — QUEUED
+Test Private/Shared visibility, fit-photo forced sharing, history-safe settings edits, repeat try-ons, controlled dimension persistence and deletion cascades.
+
+**Phase 3 exit criterion:** Closet captures the evidence the authoritative schema was designed for and every history-sensitive surface intentionally selects the correct observation.
 
 ## PHASE 4 — PRODUCT EVIDENCE & RECOMMENDATION COMPLETION
 **Status: QUEUED.**
@@ -151,7 +142,7 @@ Privacy: exact current/historical body measurements and normally-worn size refer
 
 ## PHASE 7 — V1 BETA END-TO-END VERIFICATION
 **Status: QUEUED.**
-1. Use controlled test population covering body differences, partial measurements, body changes, Shared/Private Closet items and repeated observations.
+1. Use a controlled test population covering body differences, partial measurements, body changes, Shared/Private Closet items and repeated observations.
 2. Smoke the full user loop.
 3. Explicitly test privacy boundaries.
 4. Re-run Security/Performance Advisors with representative data.
@@ -159,4 +150,4 @@ Privacy: exact current/historical body measurements and normally-worn size refer
 6. Never deploy production without explicit owner authorization.
 
 ## Exact next action
-**Build and run the Phase 2.1 controlled People My Size ranking/coverage test, then proceed through the remaining Phase 2 matching verification before asking the owner the richer-filter V1 decision.**
+**PHASE 3.3 — inspect and correct the Post Outfit garment picker so every Closet item intentionally uses its latest Fit Report observation, then verify that change before proceeding to brand/product search-before-create UX.**

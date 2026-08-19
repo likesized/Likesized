@@ -215,6 +215,16 @@ create table public.outfit_post_items (
 create index outfit_post_items_closet_item_id_idx
   on public.outfit_post_items (closet_item_id);
 
+create table public.outfit_likes (
+  post_id uuid not null references public.outfit_posts(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (post_id, user_id)
+);
+
+create index outfit_likes_user_id_idx
+  on public.outfit_likes (user_id);
+
 -- Create the public profile shell as soon as Supabase Auth creates auth.users.
 -- Username intentionally starts null so signup never exposes an email-derived handle
 -- and incomplete profiles stay hidden from other users until onboarding is finished.
@@ -256,6 +266,7 @@ alter table public.follows enable row level security;
 alter table public.fit_matches enable row level security;
 alter table public.outfit_posts enable row level security;
 alter table public.outfit_post_items enable row level security;
+alter table public.outfit_likes enable row level security;
 
 -- Profiles: incomplete profiles are visible only to their owner.
 create policy "completed profiles readable to anon"
@@ -507,6 +518,24 @@ using (
   )
 );
 
+create policy "members read outfit likes"
+on public.outfit_likes
+for select
+to authenticated
+using (true);
+
+create policy "owner likes outfit"
+on public.outfit_likes
+for insert
+to authenticated
+with check ((select auth.uid()) = user_id);
+
+create policy "owner unlikes outfit"
+on public.outfit_likes
+for delete
+to authenticated
+using ((select auth.uid()) = user_id);
+
 -- Remove Supabase's broad default table grants before adding the exact Data API privileges below.
 revoke all on
   public.profiles,
@@ -519,7 +548,8 @@ revoke all on
   public.follows,
   public.fit_matches,
   public.outfit_posts,
-  public.outfit_post_items
+  public.outfit_post_items,
+  public.outfit_likes
 from anon, authenticated;
 
 -- Explicit Data API privileges. RLS still controls which rows are reachable.
@@ -537,6 +567,7 @@ grant select, insert, delete on public.follows to authenticated;
 grant select on public.fit_matches to authenticated;
 grant select, insert, update, delete on public.outfit_posts to authenticated;
 grant select, insert, delete on public.outfit_post_items to authenticated;
+grant select, insert, delete on public.outfit_likes to authenticated;
 
 -- Safe similarity helper. Raw measurements remain inside the private schema path.
 create or replace function private.clamped_similarity(
@@ -804,3 +835,6 @@ comment on table public.fit_reports is
 
 comment on table public.fit_matches is
   'Safe cached match scores used by People My Size and future Fit Twins; contains no raw measurements.';
+
+comment on table public.outfit_likes is
+  'Member-facing likes on outfit posts. Contains no body measurements or private Closet data.';

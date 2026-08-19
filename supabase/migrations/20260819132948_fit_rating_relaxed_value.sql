@@ -1,0 +1,1 @@
+alter type public.fit_rating add value if not exists 'relaxed' after 'just_right';

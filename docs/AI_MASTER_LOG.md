@@ -8,7 +8,7 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 - No patch/fixed/v2/backup/temp files or parallel implementations. Approved changes modify canonical source; Git history is history.
 - Ordered executable SQL in `supabase/migrations/` is the only database replay/deployment history.
 - Supabase project `rlksidwniuoxoacumyaf` is the deployed instance/ledger, not a competing source of truth.
-- Do not deploy production unless the owner explicitly authorizes it.
+- Do not deploy production unless the owner explicitly authorizes it. **Owner explicitly authorized the initial LikeSized Vercel production deployment on 2026-08-19.** Future production changes still require owner authorization unless the owner changes this rule.
 - Work Phases 0→7 in order without diversion. Ask the owner only for genuine product/business/cost/credential decisions.
 
 ## Product / privacy rules — LOCKED
@@ -41,7 +41,10 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 - CI runs npm ci, typecheck, production recommendation calibration, production build, fresh migration replay and all pgTAP suites.
 - Prototype homepage data, `lib/mock-data.ts`, and the obsolete standalone `lib/fit.ts` implementation have been removed from canonical source.
 - Phase 6.1/6.2 verification PR #32 / CI `32306676280` passed install, typecheck, recommendation calibration, production build, clean replay of all 30 migrations, and all canonical database tests; verification-only PR closed without merge.
-- Connected Vercel team `likesized-6817s-projects` currently contains **no Vercel project**, so production environment variables cannot yet be configured there.
+- Vercel project **`likesized`** now exists in team `likesized-6817s-projects` with project ID `prj_ioYhiOjBNHDzPx2otiCY6XpNL3Um`.
+- Production domain is **`https://likesized.vercel.app`**.
+- Canonical production checkpoint deployment `dpl_HQMKuTLHJAXqKJv23XgoR5DdSMoT` is READY and built by checking out exact GitHub commit `93bd10253ebb7540f1640bf33bda46f73500093c`, then running canonical `npm ci --include=dev` and `npm run build` with the production Supabase URL/publishable key and `NEXT_PUBLIC_SITE_URL=https://likesized.vercel.app` supplied to that build.
+- Canonical production build passed Next compile, TypeScript and generation of all 20 application routes; live `/` returned 200, unauthenticated `/people` entered the expected login/return flow, and Vercel reported no runtime errors in the first production smoke window.
 
 # PHASES
 
@@ -124,17 +127,19 @@ Dedicated Following Feed + Fit Twin activity notifications explicitly locked int
 - Canonical repo requires exactly these public runtime values: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `NEXT_PUBLIC_SITE_URL`.
 - Supabase project `rlksidwniuoxoacumyaf` is ACTIVE_HEALTHY in `us-east-1`; project URL and an enabled modern publishable key are available.
 - Signup code derives `emailRedirectTo` from `NEXT_PUBLIC_SITE_URL` (with request-origin/local fallback), and `/auth/confirm` performs server-side OTP verification before sending users to onboarding.
-- Current Supabase guidance requires the production Site URL to be the official site URL and allows localhost plus Vercel preview URLs in the additional redirect allowlist.
-- **BLOCKER:** connected Vercel team `likesized-6817s-projects` currently has zero projects. No Vercel environment-variable target exists yet. Production must not be deployed merely to create one.
-- After the Vercel project exists/links to `likesized/Likesized`, verify/set the three required variables for Production and Preview, then set/verify Supabase Auth Site URL and redirect allowlist against the final Vercel/domain URLs and verify email confirmation behavior end to end.
+- Owner authorized the initial production deployment on 2026-08-19.
+- Vercel project `likesized` / `prj_ioYhiOjBNHDzPx2otiCY6XpNL3Um` was created successfully and production domain `https://likesized.vercel.app` is active.
+- Production deployment `dpl_HQMKuTLHJAXqKJv23XgoR5DdSMoT` is READY and its build checked out exact canonical commit `93bd10253ebb7540f1640bf33bda46f73500093c`; compile, TypeScript, route generation and initial live smoke checks passed.
+- **Still required before 6.3 is complete:** persist the three required values as Vercel **project-level Production and Preview environment variables** rather than relying only on build-time injection; verify/link the long-term Vercel Git source to canonical `likesized/Likesized`; set/verify Supabase Auth Site URL as `https://likesized.vercel.app`, configure the intended localhost/Vercel preview redirect allowlist, and verify confirmation-email behavior end to end.
+- The currently exposed Vercel connector can create/deploy/read the project but does not expose project environment-variable or Git-link mutation; the currently exposed Supabase connector does not expose hosted Auth URL/template mutation. Do not mark 6.3 complete until these persistent settings are verified.
 
 ### 6.4 Responsive/accessibility review — QUEUED
 Run mobile/responsive/accessibility review across V1 primary flows and correct blockers in canonical source.
 
-**Phase 6 exit:** no fake live state, no dead prototype path competing with canonical logic, production auth/environment configuration is ready, and primary V1 flows are responsive/accessibility-ready. Production remains undeployed until owner explicitly authorizes it.
+**Phase 6 exit:** no fake live state, no dead prototype path competing with canonical logic, production auth/environment configuration is ready, and primary V1 flows are responsive/accessibility-ready. A canonical production checkpoint is now deployed; later production updates remain owner-controlled.
 
 ## PHASE 7 — V1 BETA END-TO-END VERIFICATION — QUEUED
 Use a controlled representative population, smoke the full user loop, explicitly test privacy boundaries, rerun advisors, and require green CI plus browser smoke before beta-ready.
 
 ## Exact next action
-**PHASE 6.3 — create/link a LikeSized Vercel project without authorizing a production deployment, then configure/verify `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `NEXT_PUBLIC_SITE_URL`; finish Supabase Auth Site URL/redirect allowlist/email-confirmation verification against the resulting URLs before starting Phase 6.4.**
+**PHASE 6.3 — persist the three required Vercel project-level Production/Preview environment variables, link/verify the Vercel project against canonical GitHub `likesized/Likesized`, then set/verify Supabase Auth Site URL + redirect allowlist + confirmation-email behavior for `https://likesized.vercel.app`; only after those persistent settings are verified proceed to Phase 6.4.**

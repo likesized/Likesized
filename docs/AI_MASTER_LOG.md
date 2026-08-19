@@ -10,7 +10,7 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 - Supabase project `rlksidwniuoxoacumyaf` is the deployed instance/ledger, not a competing source of truth.
 - Do not deploy production unless the owner explicitly authorizes it.
 - Work Phases 0→7 in order without diversion. Ask the owner only for genuine product/business/cost/credential decisions.
-- **Owner checkpoint after Phase 4:** once Phase 4 is 100% complete and fully verified, stop before beginning any Phase 5 work and prompt the owner for the addition they want to make.
+- **Owner checkpoint after Phase 4:** Phase 4 is now 100% complete and fully verified. **STOP before Phase 5** and obtain the owner's planned addition before any Phase 5 work begins.
 
 ## Product / privacy rules — LOCKED
 **See what fits people built like you.** Primary question: **“How did this garment fit people built like me?”**
@@ -26,13 +26,14 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 9. V1 People My Size UI is **Overall | Tops | Bottoms**. More garment-specific filters may be exposed later using the existing match-profile engine without a matching rewrite.
 10. Product Fit Families are intentional same-fit/cut groups only. No fuzzy-name auto-grouping. New products default to their own family unless the member explicitly selects a compatible existing family; family compatibility requires the same brand, garment type and market/cut segment.
 11. Similar Garments uses controlled Product construction attributes. V1 includes a controlled Primary material/fabric-family field rather than free-form composition percentages. Category-scoped attributes are allowed only on compatible Product categories.
+12. Product evidence fallback order is locked and verified: **Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit**.
 
 ## Current baseline — 2026-08-19
 - Full Next.js app, Supabase integration, matching/recommendation logic and canonical docs are in GitHub.
 - Live Supabase has no deliberate test-user/application data; repeatable verification uses disposable local Supabase CI.
 - **25 canonical migrations** through `20260819194010_controlled_primary_material_and_attribute_category.sql`.
-- Supabase Security Advisor: **0 findings** after the Phase 4.3 attribute/material guard.
-- CI runs `npm ci`, typecheck, production build, fresh migration replay and all pgTAP database tests.
+- Supabase Security Advisor: **0 findings** after final Phase 4 verification.
+- CI runs `npm ci`, typecheck, the production recommendation-confidence calibration, production build, fresh migration replay and all pgTAP database tests.
 
 # PHASES
 
@@ -61,11 +62,11 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 - Closet integration/privacy suite verifies Shared/Private transitions, fit-photo forced sharing, history and deletion cascades.
 - Phase 3 final CI `32291185899` passed clean replay of 22 migrations and every canonical database suite; Security Advisor 0 findings.
 
-## PHASE 4 — PRODUCT EVIDENCE & RECOMMENDATIONS — ▶️ IN PROGRESS
+## PHASE 4 — PRODUCT EVIDENCE & RECOMMENDATIONS — ✅ 100% COMPLETE
 
 ### 4.1 Exact-variant targeting — ✅ COMPLETE
 - Product pages expose Exact Product / Exact Variant targeting and Closet links carry the logged variant when present.
-- Migration `20260819191518_validate_product_evidence_variant_target.sql` independently validates target-variant ownership in the evidence RPC.
+- Migration `20260819191518_validate_product_evidence_variant_target.sql` independently validates target-variant ownership in the evidence RPC; a foreign/invalid variant cannot receive Exact Variant rank.
 - `product_evidence_variant_targeting.test.sql`: **12/12** assertions.
 - PR #17 / CI `32292794210` passed full app checks, 23-migration replay and all DB tests.
 
@@ -77,27 +78,45 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 - PR #18 / CI `32293810777` passed full app checks, 24-migration replay and all DB tests.
 
 ### 4.3 Similar Garments attributes/materials — ✅ COMPLETE
-- Controlled dictionary now includes fit/cut, rise, stretch, Primary material/fabric family, sleeve length, neckline, collar style, knit/woven construction, length profile and leg shape.
+- Controlled dictionary includes fit/cut, rise, stretch, Primary material/fabric family, sleeve length, neckline, collar style, knit/woven construction, length profile and leg shape.
 - Add Garment renders only global + category-relevant controlled Product attributes.
 - Product attributes are applied only when this flow truly creates a new canonical Product; reusing/deduplicating an existing Product preserves its established shared catalog attributes.
 - Migration `20260819194010_controlled_primary_material_and_attribute_category.sql` adds controlled material options and the DB category-compatibility guard.
-- `similar_garment_attributes.test.sql`: **10/10** assertions proving category rejection, exact attribute-overlap counts, Similar Garments rank 4 and non-overlap Brand + Garment Type rank 5.
-- PR #19 / CI `32294768975` passed install, typecheck, production build, clean replay of all **25 migrations**, and every canonical database suite.
-- Security Advisor after the attribute/material guard: 0 findings.
+- `similar_garment_attributes.test.sql`: **10/10** assertions.
+- PR #19 / CI `32294768975` passed full app checks, 25-migration replay and every canonical DB suite.
 
-### 4.4 Evidence-tier exercise — ▶️ NEXT
-Exercise Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit **simultaneously** with six distinct evidence wearers and assert labels, ranks, ordering and one-per-wearer behavior.
+### 4.4 Full evidence hierarchy — ✅ COMPLETE
+- `product_evidence_full_hierarchy.test.sql` creates six distinct evidence wearers and exercises every tier simultaneously.
+- **18/18 assertions passed**: Exact Variant rank 1, Exact Product 2, Product Family 3, Similar Garments 4, Brand + Garment Type 5, Category Fit 6.
+- The test also proves one strongest historical observation per unique wearer when the same wearer has stronger and weaker records.
+- PR #20 / CI `32295291639` passed typecheck, production build, clean 25-migration replay and every database suite.
 
-### 4.5 Recommendation confidence calibration — QUEUED
-Calibrate confidence using multiple unique wearers, conflicting outcomes and incomplete measurement coverage.
+### 4.5 Recommendation confidence calibration — ✅ COMPLETE
+- `tests/recommendation-confidence.test.ts` calls the production `recommendSize()` function directly; no copied scoring formula or test-only recommendation engine exists.
+- Permanent CI step **Recommendation confidence calibration** runs before the production build.
+- **9/9 calibration cases passed**, exercising:
+  - 50% historical body-match eligibility floor,
+  - unique-wearer/sample-strength growth,
+  - incomplete measurement coverage,
+  - weaker historical match quality,
+  - evidence-tier exactness,
+  - conflicting fit outcomes,
+  - competing supported sizes,
+  - Similar Garments attribute overlap,
+  - buy-again weighting.
+- Current calibrated reference cases include: one perfect Exact Variant wearer ≈ **56%** confidence, four ≈ **76%**, ten cap at **99%**; ten perfect wearers with 50% coverage produce **50%**; ten perfect Category Fit observations produce **42%**; five positive + five too-small reports on the same size reduce confidence to **61%**; a 5-vs-5 supported-size split produces **40%**.
+- PR #21 / final Phase 4 CI `32295755268` passed **npm ci → typecheck → recommendation calibration → production build → clean 25-migration replay → every canonical pgTAP suite**.
+- Final Supabase Security Advisor: **0 findings**.
 
-**Phase 4 exit:** every intended evidence tier is reachable, correctly labeled/ranked, and recommendation confidence has been exercised with representative evidence.
+**Phase 4 exit criterion: ✅ MET.** Every intended evidence tier is reachable and verified in the locked order; one-per-wearer aggregation is enforced; recommendation confidence is exercised against representative strong, weak, incomplete and conflicting evidence.
 
-## OWNER CHECKPOINT AFTER PHASE 4 — ⏸️ REQUIRED BEFORE PHASE 5
-When Phase 4 exit is fully met and verified, **STOP**. Do not begin Phase 5. Prompt the owner for the new addition they said they want to make before Phase 5 begins. Incorporate that decision into this sole master guide before resuming the phase sequence.
+## OWNER CHECKPOINT AFTER PHASE 4 — 🛑 ACTIVE
+**STOP HERE. Phase 4 is 100% complete. Do not begin Phase 5.**
+
+The owner said they have an addition to make before Phase 5. Obtain that addition, decide/lock its behavior with the owner as needed, incorporate it into this sole master guide, and only then resume the ordered phase sequence.
 
 ## PHASE 5 — FIT TWINS / SOCIAL / SEARCH — QUEUED / OWNER HOLD
-Re-test follow/unfollow, live Fit Twin scores, Shared Fit History, outfit creation/auto-sharing/likes/Fit-Twins feed and representative product/brand/member search. Comments remain outside V1 until moderation/reporting is intentionally designed. **Do not start until the post-Phase-4 owner checkpoint is resolved.**
+Re-test follow/unfollow, live Fit Twin scores, Shared Fit History, outfit creation/auto-sharing/likes/Fit-Twins feed and representative product/brand/member search. Comments remain outside V1 until moderation/reporting is intentionally designed. **No Phase 5 work may begin until the active owner checkpoint is resolved.**
 
 ## PHASE 6 — REMOVE PROTOTYPE SURFACES & PREPARE DEPLOYMENT — QUEUED
 Replace homepage mock match data, remove dead prototype logic, configure production auth/Vercel environment settings, and run mobile/responsive/accessibility review. No production deploy without owner authorization.
@@ -106,4 +125,4 @@ Replace homepage mock match data, remove dead prototype logic, configure product
 Use a controlled representative population, smoke the full user loop, explicitly test privacy boundaries, rerun Security/Performance Advisors, and require green CI plus browser smoke verification before beta-ready.
 
 ## Exact next action
-**PHASE 4.4 — build one controlled evidence-hierarchy test that reaches all six evidence tiers at once and proves exact ranks/order and one-per-unique-wearer behavior, then proceed to recommendation confidence calibration only after that hierarchy gate is green.**
+**OWNER CHECKPOINT — prompt the owner for the addition they want to make before Phase 5. Do not start Phase 5 until that addition is decided, locked, and recorded here.**

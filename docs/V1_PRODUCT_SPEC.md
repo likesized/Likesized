@@ -39,7 +39,10 @@ This section supersedes every earlier simplified architecture decision about mea
 - `product_variants` handles color/variant identity and normalized size.
 - Garment market segment is controlled: men's, women's, unisex, kids/youth, unknown. It describes cut/sizing, never user gender identity.
 - `garment_types` is an extensible controlled taxonomy (T-shirt, dress/work shirt, blouse, jeans, dresses, bras, shoes, etc.).
-- Optional controlled garment attributes/materials support construction similarity without making missing attributes fatal.
+- Similar Garments uses controlled construction attributes, not free-text similarity guesses. V1 controlled attributes include fit/cut, rise, stretch level, **Primary material / fabric family**, sleeve length, neckline, collar style, knit/woven construction, length profile and leg shape.
+- V1 does **not** attempt exact fiber-percentage composition. Primary material/fabric family is a controlled broad signal such as cotton, denim, linen, wool, silk, polyester, nylon, rayon/viscose, modal/lyocell, leather, fleece, canvas, mixed blend, etc.
+- Category-scoped attributes may be stored only for compatible Product categories; global attributes such as primary material may apply across categories.
+- Product construction attributes are initialized only when the Closet flow truly creates a new canonical Product. A later log that reuses or deduplicates to an existing Product does not silently rewrite that shared Product's established attributes.
 
 ### Size normalization
 - Original manufacturer/retailer `size_label` is always preserved.
@@ -57,12 +60,23 @@ Do not blend current-person scores with historical garment scores.
 ### Fit matching and evidence
 - No separate men's/women's engines. Garment type selects `match_profiles` and relevant `match_profile_measurements`.
 - Missing relevant measurements reduce coverage/confidence; irrelevant measurements are not used merely because they exist.
-- Evidence hierarchy is: Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit.
+- Evidence hierarchy is locked as: **Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit**.
 - An Exact Variant target is canonical only when that variant belongs to the displayed Product. A foreign/invalid variant ID cannot promote unrelated evidence and safely falls back to Product/broader tiers.
+- Product Family evidence exists only through explicit compatible family membership; similar product names alone never create this tier.
+- Similar Garments requires same garment type plus controlled Product-attribute overlap; controlled overlap is stronger than mere same-brand/type evidence.
 - Product evidence uses historical snapshot match scores, never the wearer's current-person Fit Twin score.
 - Product recommendation evidence is capped to **one strongest historical observation per unique wearer**. Five observations from one person never count as five people and cannot inflate confidence.
 - All legitimate historical observations remain available in that member's Shared Fit History; the unique-wearer cap applies to recommendation aggregation, not history deletion.
-- Confidence may consider unique wearer count, historical body-match closeness, measurement coverage, evidence exactness, attribute similarity, missing product data, missing relevant measurements and evidence quality.
+
+### Recommendation confidence — LOCKED V1 behavior
+- The production `recommendSize()` function is the single confidence implementation; tests call it directly rather than duplicating its formula.
+- Evidence below **50% historical body match** is not recommendation-eligible.
+- Confidence is influenced by unique-wearer/sample strength, historical body-match closeness, relevant measurement coverage, evidence-tier exactness, fit outcome support/conflict, Similar Garments attribute overlap, buy-again signal and whether multiple sizes compete for support.
+- Confidence is capped below absolute certainty at **99%**.
+- Missing or incomplete relevant measurements reduce confidence rather than failing the recommendation when enough evidence remains.
+- Conflicting reports or evidence split across multiple plausible sizes reduce confidence.
+- Weaker fallback tiers remain usable but are intentionally less confidence-producing than exact evidence.
+- Current calibration reference cases are maintained in `tests/recommendation-confidence.test.ts` and enforced by CI; numerical changes to production confidence behavior must update those tests intentionally rather than drifting silently.
 
 ### Fit Reports, Shared Closet and photos
 - Overall fit remains controlled; optional garment-specific dimensions live in `fit_report_dimensions` using controlled response dictionaries.

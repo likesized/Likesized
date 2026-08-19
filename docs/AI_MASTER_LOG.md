@@ -10,6 +10,7 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 - Supabase project `rlksidwniuoxoacumyaf` is the deployed instance/ledger, not a competing source of truth.
 - Do not deploy production unless the owner explicitly authorizes it.
 - Work Phases 0→7 in order without diversion. Ask the owner only for genuine product/business/cost/credential decisions.
+- **Owner checkpoint after Phase 4:** once Phase 4 is 100% complete and fully verified, stop before beginning any Phase 5 work and prompt the owner for the addition they want to make.
 
 ## Product / privacy rules — LOCKED
 **See what fits people built like you.** Primary question: **“How did this garment fit people built like me?”**
@@ -84,8 +85,11 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 
 ## PHASE 4 — PRODUCT EVIDENCE & RECOMMENDATIONS — ▶️ IN PROGRESS
 
-### 4.1 Exact-variant targeting — ▶️ NEXT
-The evidence RPC already supports `p_variant_id` and ranks Exact Variant above Exact Product, but the Product page currently always passes `null`. Add a validated Product-page variant target/selector so a selected variant is guaranteed to belong to the displayed product, pass that canonical variant ID into `get_product_evidence_candidates`, and make the selected evidence target obvious in the UI. Preserve fallback to Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit when exact-variant evidence is insufficient.
+### 4.1 Exact-variant targeting — ▶️ IN PROGRESS
+- Product-page variant selector implementation has begun.
+- Closet Product links now carry the logged `variant_id` when one exists so the member lands on the exact garment variant they logged.
+- Database target validation is being added so a variant can receive Exact Variant rank only when it actually belongs to the displayed target product.
+- Preserve fallback to Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit when exact-variant evidence is insufficient.
 
 ### 4.2 Product-family population/maintenance — QUEUED
 Populate/maintain product families only where non-fit-critical releases should intentionally share fit evidence.
@@ -101,8 +105,11 @@ Calibrate confidence using multiple unique wearers, conflicting outcomes and inc
 
 **Phase 4 exit:** every intended evidence tier is reachable, correctly labeled/ranked, and recommendation confidence has been exercised with representative evidence.
 
-## PHASE 5 — FIT TWINS / SOCIAL / SEARCH — QUEUED
-Re-test follow/unfollow, live Fit Twin scores, Shared Fit History, outfit creation/auto-sharing/likes/Fit-Twins feed and representative product/brand/member search. Comments remain outside V1 until moderation/reporting is intentionally designed.
+## OWNER CHECKPOINT AFTER PHASE 4 — ⏸️ REQUIRED BEFORE PHASE 5
+When Phase 4 exit is fully met and verified, **STOP**. Do not begin Phase 5. Prompt the owner for the new addition they said they want to make before Phase 5 begins. Incorporate that decision into this sole master guide before resuming the phase sequence.
+
+## PHASE 5 — FIT TWINS / SOCIAL / SEARCH — QUEUED / OWNER HOLD
+Re-test follow/unfollow, live Fit Twin scores, Shared Fit History, outfit creation/auto-sharing/likes/Fit-Twins feed and representative product/brand/member search. Comments remain outside V1 until moderation/reporting is intentionally designed. **Do not start until the post-Phase-4 owner checkpoint is resolved.**
 
 ## PHASE 6 — REMOVE PROTOTYPE SURFACES & PREPARE DEPLOYMENT — QUEUED
 Replace homepage mock match data, remove dead prototype logic, configure production auth/Vercel environment settings, and run mobile/responsive/accessibility review. No production deploy without owner authorization.
@@ -111,4 +118,4 @@ Replace homepage mock match data, remove dead prototype logic, configure product
 Use a controlled representative population, smoke the full user loop, explicitly test privacy boundaries, rerun Security/Performance Advisors, and require green CI plus browser smoke verification before beta-ready.
 
 ## Exact next action
-**PHASE 4.1 — make Product-page variant targeting real: load canonical variants for the displayed product, validate the selected variant belongs to that product, pass it to `get_product_evidence_candidates`, show the active target clearly, then add controlled evidence tests proving Exact Variant outranks Exact Product while all fallback tiers remain available.**
+**PHASE 4.1 — complete and verify the validated Product-page exact-variant evidence target, including database ownership validation and controlled tests proving Exact Variant outranks Exact Product without disabling broader fallback evidence.**

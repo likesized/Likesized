@@ -1,11 +1,9 @@
 -- Extend the canonical Fit Profile save so current private size references and body
 -- measurements commit in one transaction before the immutable version is created.
 
--- One current reference per controlled reference type keeps the current profile and
--- immutable fingerprint deterministic.
+-- The immutable-version migration already enforces one current reference per type.
+-- Remove the now-redundant non-unique covering index; the existing unique index covers it.
 drop index if exists public.user_size_references_user_idx;
-create unique index user_size_references_user_type_uq
-  on public.user_size_references (user_id, reference_type);
 
 revoke all on function public.save_fit_profile(text, public.unit_system, jsonb)
 from public, anon, authenticated;

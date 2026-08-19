@@ -8,13 +8,13 @@ Working prototype for **LikeSized — See what fits people built like you.**
 - Protected app routes backed by verified Supabase JWT claims
 - Hosted LikeSized PostgreSQL schema with privacy-first RLS
 - Private Fit Profile save/edit flow with server validation
-- Garment-specific match scoring infrastructure for overall, tops, and bottoms
-- People My Size / match-card UI
+- Live People My Size matching for Overall, Tops, and Bottoms
+- Safe server/database match scoring without exposing raw measurements
 - Closet UI
 - Product fit evidence page
 - V1 product spec
 
-Fit Profile data is now persisted in Supabase and exact body measurements are owner-only through RLS. People My Size, Closet, and product evidence pages still use mock presentation data until their live-data milestones are completed.
+Fit Profile data is persisted in Supabase and exact body measurements are owner-only through RLS. People My Size now calculates live garment-specific match percentages from the database. Closet and product evidence pages still use mock presentation data until their live-data milestones are completed.
 
 ## Run locally
 ```bash
@@ -60,13 +60,13 @@ Raw measurements live only in `fit_profiles`. Product fit evidence lives in `fit
 - `/signup` — create account
 - `/login` — sign in
 - `/onboarding` — protected Fit Profile save/edit
-- `/people` — protected matches
+- `/people` — protected live Overall/Tops/Bottoms matches
 - `/closet` — protected closet database
 - `/item/levi-541` — protected example product page
 
 ## Next build milestone
-1. Replace People My Size mock cards with live `get_fit_matches` results and garment-category filtering.
-2. Implement Add Garment / product search-or-create flow and persist Closet data.
+1. Implement Add Garment / product search-or-create flow and persist Closet data.
+2. Persist separate fit reports for each logged garment.
 3. Replace the example product page with live fit-report evidence and size recommendations.
 4. Add Fit Twins and follows on top of safe stored match scores.
 5. Add photo uploads and moderation path.

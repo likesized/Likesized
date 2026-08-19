@@ -18,6 +18,7 @@ export async function Header() {
             <Link href="/search">Search</Link>
             <Link href="/people">People my size</Link>
             <Link href="/twins">Fit twins</Link>
+            <Link href="/following">Following</Link>
             <Link href="/outfits">Outfits</Link>
             <Link href="/closet">Closet</Link>
             <Link href="/settings">Settings</Link>

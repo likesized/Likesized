@@ -1,17 +1,28 @@
 # LikeSized ordered migrations
 
 ## Canonical rule — LOCKED
-GitHub `likesized/Likesized` is the single source of truth. Every migration file in this directory must contain the executable SQL needed to reproduce that migration. Never replace migration SQL with a pointer to the hosted database, a prose-only summary, a patch/fixed/v2 copy, or a parallel schema implementation.
+GitHub `likesized/Likesized` is the single source of truth. Every migration file in this directory contains the executable SQL needed to reproduce that migration. Never replace migration SQL with a pointer to the hosted database, a prose-only summary, a fixed/v2 copy, or a parallel schema implementation.
 
-The connected Supabase project is the deployed instance. Its migration ledger verifies which canonical migrations have been applied and in what order; it is not the only storage location for migration SQL.
+The connected Supabase project is the deployed instance and execution ledger. Its migration history verifies what was applied and in what order; it is not the source from which a future environment must be reconstructed.
 
-Authoritative V1 architecture sequence:
-- `20260819144032_authoritative_v1_fit_garment_architecture.sql` — normalized/extensible body measurements; product families/listings/identifiers; structured sizes; garment taxonomy/attributes; controlled fit dimensions; Shared Closet; shared fit-reference photos; garment-specific matching; evidence fallback.
-- `20260819144343_authoritative_v1_architecture_constraints.sql` — product identity uniqueness, brand alias normalization, helper privileges, URL pair validation, schema comments.
-- `20260819150022_immutable_fit_profile_versions.sql` — immutable historical body/size snapshots; Fit Reports lock to the try-on body state; multiple observations per Closet item; safe snapshot matcher.
-- `20260819150923_historical_fit_evidence_unique_wearers.sql` — historical product evidence uses snapshot match and returns at most one strongest observation per unique wearer; safe batch historical score RPC for visible reports.
-- `20260819151101_atomic_fit_profile_version_saves.sql` — one-transaction current Fit Profile replacement/normalization/version commit.
-- `20260819152030_harden_fit_profile_version_rpcs.sql` — public profile/version RPCs run SECURITY INVOKER under RLS; only the narrow private auth-bound snapshot helper is SECURITY DEFINER.
-- `20260819152056_index_authoritative_v1_relationships.sql` — covering indexes for all new authoritative-V1 foreign keys.
+**Database replay/deployment history is this ordered directory.** `supabase/schema.sql` and `supabase/storage.sql` are reference/current-state aids only. Do not run them before or in addition to the migration directory when replaying a fresh database.
+
+## Complete V1 migration sequence
+1. `20260819132934_initial_likesized_schema.sql` — original V1 schema, RLS, grants and first current-body matching engine.
+2. `20260819132948_fit_rating_relaxed_value.sql` — adds the `relaxed` overall fit value.
+3. `20260819133114_index_relationships_and_streamline_profile_read.sql` — relationship indexes and completed/own-profile read policies.
+4. `20260819134229_private_closet_photo_storage.sql` — original private `closet-photos` storage bootstrap.
+5. `20260819135959_harden_public_table_privileges.sql` — explicit least-privilege Data API grants.
+6. `20260819140445_member_readable_outfit_photo_storage.sql` — member-readable/owner-written `outfit-photos` storage.
+7. `20260819141225_outfit_likes.sql` — Outfit likes table, RLS and grants.
+8. `20260819144032_authoritative_v1_fit_garment_architecture.sql` — normalized/extensible body measurements; product families/listings/identifiers; structured sizes; garment taxonomy/attributes; controlled fit dimensions; Shared Closet; shared fit-reference photos; garment-specific matching; evidence fallback.
+9. `20260819144343_authoritative_v1_architecture_constraints.sql` — product identity uniqueness, brand alias normalization, helper privileges, URL validation and schema comments.
+10. `20260819150022_immutable_fit_profile_versions.sql` — immutable historical body/size snapshots; Fit Reports lock to try-on body state; multiple observations per Closet item; safe snapshot matching.
+11. `20260819150923_historical_fit_evidence_unique_wearers.sql` — historical evidence uses snapshot match and returns at most one strongest observation per unique wearer; safe batch historical score RPC.
+12. `20260819151101_atomic_fit_profile_version_saves.sql` — one-transaction current Fit Profile replacement/normalization/version commit.
+13. `20260819152030_harden_fit_profile_version_rpcs.sql` — public profile/version RPCs run SECURITY INVOKER under RLS; only the narrow private auth-bound snapshot helper is SECURITY DEFINER.
+14. `20260819152056_index_authoritative_v1_relationships.sql` — covering indexes for authoritative-V1 foreign keys.
+
+The first seven files were recovered from `supabase_migrations.schema_migrations` during the 2026-08-19 canonical audit. Their Git blob SHAs were verified byte-for-byte against the SQL stored in the deployed migration ledger before being committed. They are historical migration records, not newly invented database changes, and must not be re-applied to the already-migrated connected project.
 
 Future database changes are new ordered executable migrations in this same directory. Update `docs/V1_PRODUCT_SPEC.md`, `docs/AI_MASTER_LOG.md`, and `supabase/schema_contract.md` when architecture or locked behavior changes.

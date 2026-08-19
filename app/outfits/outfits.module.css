@@ -1,3 +1,23 @@
+.feedTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.tab,
+.activeTab {
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.activeTab {
+  background: var(--ink);
+  color: var(--white);
+}
+
 .feed {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -17,6 +37,11 @@
   align-items: center;
   gap: 12px;
   padding: 18px;
+}
+
+.postHeader > div:last-child {
+  display: grid;
+  gap: 3px;
 }
 
 .photo {
@@ -46,6 +71,34 @@
   line-height: 1.5;
 }
 
+.socialRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.likeButton,
+.likedButton {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.likedButton {
+  background: var(--ink);
+  color: var(--white);
+}
+
 .tags {
   display: grid;
   gap: 8px;
@@ -60,14 +113,8 @@
   background: var(--paper);
 }
 
-.tag strong {
-  font-size: 13px;
-}
-
-.tag span {
-  color: var(--muted);
-  font-size: 11px;
-}
+.tag strong { font-size: 13px; }
+.tag span { color: var(--muted); font-size: 11px; }
 
 .form {
   display: grid;
@@ -79,63 +126,21 @@
   background: var(--white);
 }
 
-.fieldset {
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.fieldset legend {
-  margin-bottom: 12px;
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.choices {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.choice {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--paper);
-  cursor: pointer;
-}
-
-.choice input {
-  width: auto;
-  margin-top: 2px;
-}
-
-.choice span {
-  display: grid;
-  gap: 4px;
-}
-
-.choice strong {
-  font-size: 13px;
-}
-
-.choice small {
-  color: var(--muted);
-  font-size: 11px;
-}
+.fieldset { margin: 0; padding: 0; border: 0; }
+.fieldset legend { margin-bottom: 12px; font-size: 13px; font-weight: 900; }
+.choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.choice { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); cursor: pointer; }
+.choice input { width: auto; margin-top: 2px; }
+.choice span { display: grid; gap: 4px; }
+.choice strong { font-size: 13px; }
+.choice small { color: var(--muted); font-size: 11px; }
 
 @media (max-width: 800px) {
   .feed,
-  .choices {
-    grid-template-columns: 1fr;
-  }
+  .choices { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {
-  .form {
-    padding: 22px;
-  }
+  .form { padding: 22px; }
+  .feedTabs { overflow-x: auto; }
 }

@@ -1,4 +1,4 @@
-# LikeSized V1
+# LikeSized
 
 Working prototype for **LikeSized — See what fits people built like you.**
 
@@ -8,7 +8,8 @@ GitHub `likesized/Likesized` is the source of truth. No patch/fixed/v2/backup/pa
 ## What is implemented
 - Supabase email/password auth with protected routes
 - Privacy-first RLS and least-privilege Data API grants
-- Extensible private Fit Profile using controlled normalized `body_measurements`
+- Extensible private Fit Profile using controlled normalized body measurements
+- Immutable private Fit Profile versions for historical try-on state
 - Garment-specific People My Size matching with safe derived scores
 - Canonical brands/products, product families, variants, retailer listings and normalized identifiers
 - Controlled extensible garment taxonomy/attributes
@@ -17,38 +18,45 @@ GitHub `likesized/Likesized` is the source of truth. No patch/fixed/v2/backup/pa
 - Controlled overall + garment-specific Fit Reports
 - Optional member-shared fit/reference photos in a non-public Storage bucket
 - Evidence hierarchy from Exact Variant through Category Fit
-- Fit Twins/follows, member profiles, outfits and search/discovery
-- Outfit-like database support
+- Historical garment evidence matched to the body snapshot from that try-on, unique-wearer capped for recommendations
+- Fit Twins/following and member Shared Fit History
+- Outfit posting, likes, All/Fit-Twins feeds and outfit-photo storage
+- Product/brand/member search and discovery
 
 ## Authoritative architecture
-`docs/V1_PRODUCT_SPEC.md` is the authoritative V1 fit/garment product architecture. `docs/AI_MASTER_LOG.md` is the durable AI-session handoff. The final architecture supersedes the earlier fixed-column Fit Profile/simple product-size/photo model.
-
-Raw body measurements and normally worn bra/shoe size references are owner-only. Other members receive safe Fit Match percentages and only deliberately shared Closet/Fit Report/photo evidence.
+`docs/V1_PRODUCT_SPEC.md` is the authoritative V1 fit/garment product architecture. `docs/AI_MASTER_LOG.md` is the durable AI-session handoff. Raw current and historical body measurements are owner-only. Current Fit Twin scores are current-body to current-body; garment evidence uses the historical snapshot attached to each Fit Report.
 
 ## Storage
-- `fit-reference-photos`: private from the public internet; authenticated LikeSized members may read photos whose associated Closet item is shared; only the owner may write/delete their files.
-- `outfit-photos`: private from the public internet and member-readable; owner-only writes.
-- Legacy `closet-photos`: retired/empty and has no application access policies. Application code must not use it.
+- `fit-reference-photos`: non-public; authenticated members may read shared references; only the owner writes/deletes.
+- `outfit-photos`: non-public/member-readable; owner-only writes.
+- Legacy `closet-photos`: retired/empty with no application access policies.
 
-**Fit-photo rule:** upload is optional. If uploaded, the fit/reference photo is shared with authenticated LikeSized members. There is no private fit-photo mode.
+**Fit-photo rule:** upload is optional. If uploaded, it is shared with authenticated LikeSized members. There is no private fit-photo mode.
 
 ## Product evidence
-Exact evidence is preferred. When unavailable, the data foundation supports Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit. Evidence level must be surfaced rather than presenting fallback evidence as exact-product data.
+Exact evidence is preferred. Fallback hierarchy: Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit. Recommendation aggregation uses at most one strongest observation per unique wearer.
 
 ## Fit Twins
-A Fit Twin is a Fit Match the user deliberately saves/follows; no universal percentage cutoff is invented. Raw body measurements never appear on Fit Twin/member pages.
+A Fit Twin is a Fit Match the user deliberately saves/follows; no universal percentage cutoff is invented. Member profile headers show current match scores separately from historical Shared Fit History.
 
 ## Key routes
 - `/` — public home
 - `/signup`, `/login` — auth
-- `/onboarding` — private Fit Profile
-- `/search` — product/brand/member discovery
+- `/onboarding` — private versioned Fit Profile
+- `/search` — discovery
 - `/people` — People My Size
-- `/people/[username]` — member/Fit Twin profile
+- `/people/[username]` — member/Fit Twin profile and Shared Fit History
 - `/twins` — saved Fit Twins
 - `/closet`, `/closet/add` — Closet
 - `/item/[slug]` — product evidence/recommendation
-- `/outfits`, `/outfits/new` — outfits
+- `/outfits`, `/outfits/new` — outfits, likes and All/Fit-Twins feeds
 
-## Exact build checkpoint
-Before the authoritative architecture correction, canonical `main` was `2fd2fcb` and the next incomplete step was **Outfit likes UI + Fit-Twins-only outfit feed UI**. After this correction is synchronized and verified, resume that exact step. Then continue Closet edit/remove controls and profile/privacy controls.
+## Next build milestone
+1. Closet garment edit/remove controls.
+2. Profile/privacy controls before public beta.
+3. Continue richer garment-specific UX where the authoritative foundation is already in place.
+
+Open comments remain deferred until moderation/reporting exists.
+
+## Verification note
+The connected Supabase schema/migrations, RLS and security policies have been verified live. A complete local npm build/typecheck still needs to run in an environment with package/network access; the current automation environment has previously been unable to resolve npm/GitHub package hosts.

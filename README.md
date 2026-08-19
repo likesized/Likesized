@@ -3,7 +3,15 @@
 Working prototype for **LikeSized — See what fits people built like you.**
 
 ## Canonical rule
-GitHub `likesized/Likesized` is the source of truth. No patch/fixed/v2/backup/parallel implementations. Database history is the ordered Supabase migration history; `supabase/schema.sql` is the historical bootstrap and `supabase/schema_contract.md` explains the current contract.
+GitHub `likesized/Likesized` is the source of truth. No patch/fixed/v2/backup/parallel implementations. Database history and product status must remain canonical in-repo.
+
+## Project planning
+`docs/AI_MASTER_LOG.md` is the **sole master guide, roadmap, status record and AI handoff**. README does not define build order.
+
+Reference documents:
+- `AI_REPOSITORY_RULES.md` — repository policy.
+- `docs/V1_PRODUCT_SPEC.md` — authoritative product/fit architecture.
+- `supabase/schema_contract.md` — database behavior/privacy contract.
 
 ## What is implemented
 - Supabase email/password auth with protected routes
@@ -16,7 +24,7 @@ GitHub `likesized/Likesized` is the source of truth. No patch/fixed/v2/backup/pa
 - Original garment-size preservation plus structured normalized size identity
 - Private and Shared Closet architecture
 - Closet edit/remove controls that preserve immutable fit history; repeat try-ons create new observations
-- Controlled overall + garment-specific Fit Reports
+- Controlled overall Fit Reports plus schema support for garment-specific Fit Report dimensions
 - Optional member-shared fit/reference photos in a non-public Storage bucket
 - Evidence hierarchy from Exact Variant through Category Fit
 - Historical garment evidence matched to the body snapshot from that try-on, unique-wearer capped for recommendations
@@ -24,8 +32,16 @@ GitHub `likesized/Likesized` is the source of truth. No patch/fixed/v2/backup/pa
 - Outfit posting, likes, All/Fit-Twins feeds and outfit-photo storage
 - Product/brand/member search and discovery
 
-## Authoritative architecture
-`docs/V1_PRODUCT_SPEC.md` is the authoritative V1 fit/garment product architecture. `docs/AI_MASTER_LOG.md` is the durable AI-session handoff. Raw current and historical body measurements are owner-only. Current Fit Twin scores are current-body to current-body; garment evidence uses the historical snapshot attached to each Fit Report.
+## Important prototype boundaries
+- The connected database currently has no users/products/Fit Reports, so database-backed flows are implemented but not yet exercised end to end with representative data.
+- The public homepage still uses `lib/mock-data.ts` for demonstration match cards and must be converted before V1 beta.
+- Garment-specific Fit Report dimension dictionaries exist in the database, but the current Closet logging UI does not yet collect those structured responses.
+- Product Family / Similar Garment fallback structures exist, but current user logging does not yet populate enough family/attribute/material data to make those tiers broadly operational.
+- Product pages currently target the canonical product rather than a selected exact variant.
+- Full npm build/typecheck/CI verification is still pending; there is currently no workflow and no package lockfile.
+
+## Authoritative fit rules
+Raw current and historical body measurements are owner-only. Current Fit Twin scores are current-body to current-body; garment evidence uses the immutable historical snapshot attached to each Fit Report. Do not blend the two.
 
 ## Closet history rule
 Changing current body measurements or logging a new try-on never rewrites an old Fit Report. Closet edit controls change current sharing/wear-count settings. A new fit experience creates a new observation tied to the current immutable body snapshot. Deleting a Closet item is explicit and removes that item's fit history; canonical product catalog records remain.
@@ -55,11 +71,4 @@ A Fit Twin is a Fit Match the user deliberately saves/follows; no universal perc
 - `/item/[slug]` — product evidence/recommendation
 - `/outfits`, `/outfits/new` — outfits, likes and All/Fit-Twins feeds
 
-## Next build milestone
-1. Profile/privacy controls before public beta.
-2. Continue richer garment-specific UX where the authoritative foundation is already in place.
-
-Open comments remain deferred until moderation/reporting exists.
-
-## Verification note
-The connected Supabase schema/migrations, RLS and security policies have been verified live. A complete local npm build/typecheck still needs to run in an environment with package/network access; the current automation environment has previously been unable to resolve npm/GitHub package hosts.
+For exact current status and the next phase, read `docs/AI_MASTER_LOG.md`.

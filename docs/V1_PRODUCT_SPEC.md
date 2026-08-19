@@ -8,6 +8,9 @@ LikeSized answers: **“How did this garment fit people built like me?”**
 The V1 evidence chain is:
 **private body measurements + garment-specific body matching + canonical garment/product identity + real-world Fit Reports + shared fit/reference photos → useful fit evidence.**
 
+## Planning source
+This file defines the **product/fit architecture only**. It does not own project status or build order. The sole canonical roadmap/status/handoff is `docs/AI_MASTER_LOG.md`.
+
 ## Authoritative V1 fit/garment architecture — 2026-08-19
 This section supersedes every earlier simplified architecture decision about measurements, products, sizing, Fit Reports, Closet sharing, Fit Twins, and fit/reference photos.
 
@@ -81,5 +84,4 @@ A V1 Fit Twin is a Fit Match the user deliberately saves/follows. There is no un
 6. Save useful current matches as Fit Twins.
 7. Post outfits and search/discover products, brands and members.
 
-## Current build sequence checkpoint
-Before this architecture correction, the next incomplete build step was **Outfit likes + Fit-Twins-only outfit feed UI**. Resume there after architecture verification. Then continue Closet edit/remove controls and profile/privacy controls.
+Project completion status, gaps and exact next work live only in `docs/AI_MASTER_LOG.md`.

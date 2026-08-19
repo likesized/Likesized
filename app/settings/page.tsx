@@ -39,7 +39,7 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
         <label>Username<div><input value={profile.username} disabled /></div><span className="fieldHelp">Your username is managed with your Fit Profile because it is required for completed-profile identity. <Link className="textLink" href="/onboarding">Edit username →</Link></span></label>
         <label>Display name <span className="muted inlineMuted">optional</span><div><input name="display_name" defaultValue={profile.display_name??""} maxLength={80} placeholder="Name shown on your profile" /></div></label>
         <label>Bio <span className="muted inlineMuted">optional · 300 characters</span><textarea name="bio" defaultValue={profile.bio??""} maxLength={300} rows={4} placeholder="A short profile bio" /></label>
-        <div className="privacyNote"><b>Discoverability:</b> completed profiles can be found by username/display name and opened as member profiles. LikeSized does not currently expose a separate profile-discovery visibility setting.</div>
+        <div className="privacyNote"><b>Discoverability:</b> completed profiles can be found by username/display name and opened by signed-in LikeSized members only. Public visitors cannot read member profile identity from the database.</div>
         <button type="submit" className="primaryButton">Save profile settings</button>
       </form>
     </section>
@@ -48,7 +48,7 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
       <div className="sectionHeading"><div><span className="eyebrow">PRIVACY</span><h2>What is—and is not—shared</h2></div></div>
       <div className="evidenceList">
         <div className="evidence"><div><strong>Always private</strong><span>Exact current body measurements, immutable historical measurements, and normally-worn size references. There is no public-measurement switch.</span></div></div>
-        <div className="evidence"><div><strong>Profile identity</strong><span>Username, optional display name, and optional bio are member-facing discovery/profile fields. Avatar editing is not exposed until LikeSized has an intentional avatar-storage model.</span></div></div>
+        <div className="evidence"><div><strong>Profile identity</strong><span>Username, optional display name, and optional bio are visible to authenticated LikeSized members only. Avatar editing is not exposed until LikeSized has an intentional avatar-storage model.</span></div></div>
         <div className="evidence"><div><strong>Closet visibility</strong><span>{privateCount} Private · {sharedCount} Shared. Each garment controls whether its fit evidence can appear to other signed-in members.</span></div><Link className="secondaryButton" href="/closet">Manage Closet</Link></div>
         <div className="evidence"><div><strong>Fit/reference photos</strong><span>Uploading one is optional. If you upload one, the garment must be Shared and the photo is visible to authenticated LikeSized members. There is no private fit-photo mode.</span></div></div>
         <div className="evidence"><div><strong>Safe match scores</strong><span>Other members may see derived Fit Match or historical-body-match percentages where appropriate, but never the raw measurements used to calculate them.</span></div></div>

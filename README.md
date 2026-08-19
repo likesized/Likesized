@@ -38,7 +38,7 @@ Reference documents:
 - Garment-specific Fit Report dimension dictionaries exist in the database, but the current Closet logging UI does not yet collect those structured responses.
 - Product Family / Similar Garment fallback structures exist, but current user logging does not yet populate enough family/attribute/material data to make those tiers broadly operational.
 - Product pages currently target the canonical product rather than a selected exact variant.
-- Full npm build/typecheck/CI verification is still pending; there is currently no workflow and no package lockfile.
+- Canonical CI now uses the committed npm lockfile, runs `npm ci`, typecheck and Next.js build, and replays the complete ordered Supabase migration set on a fresh disposable local database.
 
 ## Authoritative fit rules
 Raw current and historical body measurements are owner-only. Current Fit Twin scores are current-body to current-body; garment evidence uses the immutable historical snapshot attached to each Fit Report. Do not blend the two.

@@ -1,16 +1,19 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 
 type MatchCardProps = {
   name: string;
   handle: string;
   style: string;
-  match: number;
+  match?: number;
   secondary?: string;
   description?: string;
   item?: string;
   size?: string;
   fit?: string;
   href?: string;
+  linkLabel?: string;
+  footer?: ReactNode;
 };
 
 export function MatchCard({
@@ -24,7 +27,11 @@ export function MatchCard({
   size,
   fit,
   href = "",
+  linkLabel,
+  footer,
 }: MatchCardProps) {
+  const resolvedLinkLabel = linkLabel ?? (item ? "See fit details →" : "View profile →");
+
   return (
     <article className="matchCard">
       <div className="photoPlaceholder">
@@ -37,7 +44,7 @@ export function MatchCard({
             <strong>{name}</strong>
             <span className="muted">{handle}</span>
           </div>
-          <div className="matchBadge">{match}% match</div>
+          {typeof match === "number" ? <div className="matchBadge">{match}% match</div> : null}
         </div>
         {secondary ? <div className="tiny">{secondary}</div> : null}
         {item ? (
@@ -53,11 +60,12 @@ export function MatchCard({
             <span>{description}</span>
           </div>
         ) : null}
-        {href && item ? (
+        {href ? (
           <Link href={href} className="textLink">
-            See fit details →
+            {resolvedLinkLabel}
           </Link>
         ) : null}
+        {footer ? <div className="authActions">{footer}</div> : null}
       </div>
     </article>
   );

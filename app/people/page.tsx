@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { followFitTwin, unfollowFitTwin } from "@/app/people/actions";
 import { MatchCard } from "@/components/MatchCard";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,6 +37,7 @@ export default async function PeoplePage({
   const params = await searchParams;
   const category = matchCategory(first(params.category));
   const profileSaved = first(params.profile) === "saved";
+  const followError = first(params.follow) === "error";
   const supabase = await createClient();
 
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
@@ -59,17 +61,28 @@ export default async function PeoplePage({
     redirect("/onboarding");
   }
 
-  const { data, error } = await supabase.rpc("get_fit_matches", {
-    p_match_category: category,
-    p_result_limit: 30,
-  });
+  const [{ data: matchData, error: matchError }, { data: followData, error: followLoadError }] =
+    await Promise.all([
+      supabase.rpc("get_fit_matches", {
+        p_match_category: category,
+        p_result_limit: 30,
+      }),
+      supabase
+        .from("follows")
+        .select("followed_id")
+        .eq("follower_id", userId),
+    ]);
 
-  if (error) {
-    throw new Error("Could not calculate Fit Matches.");
+  if (matchError || followLoadError) {
+    throw new Error("Could not load Fit Matches.");
   }
 
-  const matches = (data ?? []) as FitMatch[];
+  const matches = (matchData ?? []) as FitMatch[];
+  const followedIds = new Set(
+    (followData ?? []).map((row: { followed_id: string }) => row.followed_id),
+  );
   const categoryLabel = CATEGORY_LABELS[category];
+  const returnTo = category === "overall" ? "/people" : `/people?category=${category}`;
 
   return (
     <main className="pageShell">
@@ -79,10 +92,14 @@ export default async function PeoplePage({
         <p>
           Overall is useful for discovery. Tops and Bottoms recalculate the score using only the measurements that matter most for that garment category.
         </p>
+        <Link className="textLink" href="/twins">My Fit Twins →</Link>
       </div>
 
       {profileSaved ? (
         <div className="authMessage">Fit Profile saved. Your match scores are current.</div>
+      ) : null}
+      {followError ? (
+        <div className="authMessage error">That Fit Twin change could not be saved.</div>
       ) : null}
 
       <div className="filterBar">
@@ -99,18 +116,31 @@ export default async function PeoplePage({
 
       {matches.length > 0 ? (
         <div className="cardGrid">
-          {matches.map((person) => (
-            <MatchCard
-              key={person.user_id}
-              name={person.display_name?.trim() || person.username}
-              handle={`@${person.username}`}
-              style={`${categoryLabel} Fit Match`}
-              match={person.match_score}
-              secondary={`${categoryLabel} measurements · exact measurements stay private`}
-              description={`This ${categoryLabel.toLowerCase()} score is calculated from shared measurement categories without exposing either person's raw measurements.`}
-              href=""
-            />
-          ))}
+          {matches.map((person) => {
+            const followed = followedIds.has(person.user_id);
+            return (
+              <MatchCard
+                key={person.user_id}
+                name={person.display_name?.trim() || person.username}
+                handle={`@${person.username}`}
+                style={followed ? "Saved Fit Twin" : `${categoryLabel} Fit Match`}
+                match={person.match_score}
+                secondary={`${categoryLabel} measurements · exact measurements stay private`}
+                description={`This ${categoryLabel.toLowerCase()} score is calculated from shared measurement categories without exposing either person's raw measurements.`}
+                href={`/people/${person.username}`}
+                linkLabel="View Fit Twin profile →"
+                footer={
+                  <form action={followed ? unfollowFitTwin : followFitTwin}>
+                    <input type="hidden" name="target_user_id" value={person.user_id} />
+                    <input type="hidden" name="return_to" value={returnTo} />
+                    <button className="secondaryButton" type="submit">
+                      {followed ? "Remove Fit Twin" : "Save as Fit Twin"}
+                    </button>
+                  </form>
+                }
+              />
+            );
+          })}
         </div>
       ) : (
         <div className="tableLike">

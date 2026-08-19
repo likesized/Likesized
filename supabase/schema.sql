@@ -133,6 +133,15 @@ create table public.closet_items (
     references public.product_variants (id, product_id, size_label)
 );
 
+create index closet_items_user_id_idx
+  on public.closet_items (user_id);
+
+create index closet_items_product_id_idx
+  on public.closet_items (product_id);
+
+create index closet_items_variant_product_size_idx
+  on public.closet_items (variant_id, product_id, size_label);
+
 create table public.fit_reports (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -153,6 +162,12 @@ create table public.fit_reports (
 create index fit_reports_product_lookup_idx
   on public.fit_reports (product_id, size_label, fit);
 
+create index fit_reports_user_id_idx
+  on public.fit_reports (user_id);
+
+create index fit_reports_variant_product_size_idx
+  on public.fit_reports (variant_id, product_id, size_label);
+
 create table public.follows (
   follower_id uuid not null references public.profiles(id) on delete cascade,
   followed_id uuid not null references public.profiles(id) on delete cascade,
@@ -160,6 +175,9 @@ create table public.follows (
   primary key (follower_id, followed_id),
   check (follower_id <> followed_id)
 );
+
+create index follows_followed_id_idx
+  on public.follows (followed_id);
 
 create table public.fit_matches (
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -174,6 +192,9 @@ create table public.fit_matches (
 create index fit_matches_rank_idx
   on public.fit_matches (user_id, match_category, match_score desc);
 
+create index fit_matches_matched_user_id_idx
+  on public.fit_matches (matched_user_id);
+
 create table public.outfit_posts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -182,11 +203,17 @@ create table public.outfit_posts (
   created_at timestamptz not null default now()
 );
 
+create index outfit_posts_user_id_idx
+  on public.outfit_posts (user_id);
+
 create table public.outfit_post_items (
   post_id uuid not null references public.outfit_posts(id) on delete cascade,
   closet_item_id uuid not null references public.closet_items(id) on delete cascade,
   primary key (post_id, closet_item_id)
 );
+
+create index outfit_post_items_closet_item_id_idx
+  on public.outfit_post_items (closet_item_id);
 
 -- Create the public profile shell as soon as Supabase Auth creates auth.users.
 -- Username intentionally starts null so signup never exposes an email-derived handle
@@ -231,17 +258,20 @@ alter table public.outfit_posts enable row level security;
 alter table public.outfit_post_items enable row level security;
 
 -- Profiles: incomplete profiles are visible only to their owner.
-create policy "completed profiles readable"
+create policy "completed profiles readable to anon"
 on public.profiles
 for select
-to anon, authenticated
+to anon
 using (username is not null);
 
-create policy "owner reads own profile"
+create policy "members read completed or own profile"
 on public.profiles
 for select
 to authenticated
-using ((select auth.uid()) = id);
+using (
+  username is not null
+  or (select auth.uid()) = id
+);
 
 create policy "owner updates own profile"
 on public.profiles

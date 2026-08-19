@@ -6,19 +6,21 @@ import { GARMENT_MARKET_SEGMENTS } from "@/lib/domain";
 
 type Brand={id:string;name:string};
 type Product={id:string;name:string;brand_id:string;brand_name:string;garment_type_key:string|null;market_segment:string;manufacturer_style_number:string|null};
+type ProductFamily={id:string;name:string;brand_id:string;brand_name:string;garment_type_key:string;market_segment:string};
 type GarmentType={key:string;label:string;category?:string|null};
 type Dimension={garment_type_key:string;dimension_key:string;label:string;sort_order:number};
 type Response={dimension_key:string;response_key:string;label:string;sort_order:number};
 
 function normalize(value:string){return value.trim().toLowerCase().replace(/[^a-z0-9]+/g,"");}
 
-export function CatalogGarmentFields({brands,products,garmentTypes,dimensions,responses}:{brands:Brand[];products:Product[];garmentTypes:GarmentType[];dimensions:Dimension[];responses:Response[]}){
+export function CatalogGarmentFields({brands,products,families,garmentTypes,dimensions,responses}:{brands:Brand[];products:Product[];families:ProductFamily[];garmentTypes:GarmentType[];dimensions:Dimension[];responses:Response[]}){
   const [brand,setBrand]=useState("");
   const [product,setProduct]=useState("");
   const [garmentType,setGarmentType]=useState("");
   const [marketSegment,setMarketSegment]=useState("unknown");
   const [styleNumber,setStyleNumber]=useState("");
   const [existingProductId,setExistingProductId]=useState("");
+  const [familyId,setFamilyId]=useState("");
 
   const matches=useMemo(()=>{
     const productNeedle=normalize(product);
@@ -31,11 +33,19 @@ export function CatalogGarmentFields({brands,products,garmentTypes,dimensions,re
     }).slice(0,12);
   },[brand,product,products]);
 
+  const compatibleFamilies=useMemo(()=>{
+    if(existingProductId||!brand||!garmentType)return [];
+    const selectedBrand=brands.find((item)=>normalize(item.name)===normalize(brand));
+    if(!selectedBrand)return [];
+    return families.filter((family)=>family.brand_id===selectedBrand.id&&family.garment_type_key===garmentType&&family.market_segment===marketSegment).slice(0,50);
+  },[brand,brands,existingProductId,families,garmentType,marketSegment]);
+
   function clearExact(){if(existingProductId)setExistingProductId("");}
   function chooseExisting(id:string){
     const selected=products.find((item)=>item.id===id);
     if(!selected)return;
     setExistingProductId(selected.id);
+    setFamilyId("");
     setBrand(selected.brand_name);
     setProduct(selected.name);
     setGarmentType(selected.garment_type_key??"");
@@ -47,7 +57,7 @@ export function CatalogGarmentFields({brands,products,garmentTypes,dimensions,re
     <input type="hidden" name="existing_product_id" value={existingProductId}/>
     <div className="fieldPair">
       <label>Brand
-        <input name="brand" list="brand-options" maxLength={120} placeholder="Levi's" value={brand} onChange={(event)=>{clearExact();setBrand(event.target.value);}} required/>
+        <input name="brand" list="brand-options" maxLength={120} placeholder="Levi's" value={brand} onChange={(event)=>{clearExact();setFamilyId("");setBrand(event.target.value);}} required/>
         <datalist id="brand-options">{brands.map((item)=><option value={item.name} key={item.id}/>)}</datalist>
         <span className="fieldHelp">Start with an existing brand when possible. New punctuation/case variants still normalize to the same canonical brand.</span>
       </label>
@@ -66,18 +76,25 @@ export function CatalogGarmentFields({brands,products,garmentTypes,dimensions,re
     {existingProductId?<div className="privacyNote"><b>Existing canonical product selected.</b> This Closet log will reuse that exact product record. Editing any identity field below clears the exact selection and returns to normalized search/create.</div>:null}
     <div className="fieldPair">
       <label>Garment type
-        <select name="garment_type" value={garmentType} onChange={(event)=>{clearExact();setGarmentType(event.target.value);}} required>
+        <select name="garment_type" value={garmentType} onChange={(event)=>{clearExact();setFamilyId("");setGarmentType(event.target.value);}} required>
           <option value="" disabled>Select garment type</option>
           {garmentTypes.map((type)=><option value={type.key} key={type.key}>{type.label}</option>)}
         </select>
       </label>
       <label>Market / cut segment
-        <select name="market_segment" value={marketSegment} onChange={(event)=>{clearExact();setMarketSegment(event.target.value);}}>
+        <select name="market_segment" value={marketSegment} onChange={(event)=>{clearExact();setFamilyId("");setMarketSegment(event.target.value);}}>
           {GARMENT_MARKET_SEGMENTS.map((item)=><option value={item.value} key={item.value}>{item.label}</option>)}
         </select>
         <span className="fieldHelp">Describes the garment sizing/cut system—not your gender identity.</span>
       </label>
     </div>
+    {!existingProductId?<label>Same fit / cut family <span className="muted inlineMuted">optional</span>
+      <select name="product_family_id" value={familyId} onChange={(event)=>setFamilyId(event.target.value)}>
+        <option value="">Start a new fit family for this product</option>
+        {compatibleFamilies.map((family)=><option value={family.id} key={family.id}>{family.brand_name} · {family.name}</option>)}
+      </select>
+      <span className="fieldHelp">Only join an existing family when this is genuinely the same fit/cut released under another non-fit-critical style, color, wash, or release. If you are unsure, leave this on a new fit family.</span>
+    </label>:null}
     <FitDimensionFields garmentType={garmentType} dimensions={dimensions} responses={responses}/>
     <label>Manufacturer style / Style ID
       <input name="style_number" maxLength={100} placeholder="Optional" value={styleNumber} onChange={(event)=>{clearExact();setStyleNumber(event.target.value);}}/>

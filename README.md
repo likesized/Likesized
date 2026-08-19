@@ -16,9 +16,10 @@ Working prototype for **LikeSized — See what fits people built like you.**
 - Similar-wearer size recommendations with evidence-sensitive confidence
 - Fit Twin save/remove flow, saved Fit Twin list, and member-facing Fit Twin profiles
 - Member outfit feed with photo posts and 1–6 intentionally tagged Closet garments
+- Product/brand/member search and default discovery
 - V1 product spec
 
-Fit Profile and Closet data are persisted in Supabase. Exact body measurements and owned Closet rows are owner-only through RLS. People My Size, Fit Twins, outfits, and product evidence use safe fit data instead of exposing another member's raw measurements.
+Fit Profile and Closet data are persisted in Supabase. Exact body measurements and owned Closet rows are owner-only through RLS. People My Size, Fit Twins, outfits, search, and product evidence use safe fit data instead of exposing another member's raw measurements.
 
 ## Run locally
 ```bash
@@ -83,11 +84,15 @@ In V1, a **Fit Twin is a Fit Match the user chooses to save/follow**. There is n
 ## Outfits
 `/outfits` is a signed-in member feed. `/outfits/new` creates a photo post and requires 1–6 Closet garments with existing fit reports. The feed resolves those deliberate tags through shareable `fit_reports`, so members can see the linked product, purchased size, and reported fit without gaining access to the underlying private Closet row.
 
+## Search
+`/search` provides product, brand, and member discovery. With no query it shows recently logged products plus the signed-in user's closest Overall Fit Matches. Member results may show a safe Overall match score when that member is in the viewer's current match set; search never exposes raw body measurements.
+
 ## Key routes
 - `/` — public home
 - `/signup` — create account
 - `/login` — sign in
 - `/onboarding` — protected Fit Profile save/edit
+- `/search` — protected product/brand/member discovery
 - `/people` — protected live Overall/Tops/Bottoms matches
 - `/people/[username]` — protected member-facing Fit Twin profile
 - `/twins` — protected saved Fit Twins
@@ -98,11 +103,11 @@ In V1, a **Fit Twin is a Fit Match the user chooses to save/follow**. There is n
 - `/item/[slug]` — protected live product fit evidence and recommendation
 
 ## Next build milestone
-1. Add product/member search and discovery.
-2. Add social interactions around outfits and Fit Twins.
-3. Add Closet garment edit/remove controls.
-4. Add profile/privacy controls before public beta.
-5. Add richer garment-specific match models such as Dresses and Shoes.
+1. Add social interactions around outfits and Fit Twins.
+2. Add Closet garment edit/remove controls.
+3. Add profile/privacy controls before public beta.
+4. Add richer garment-specific match models such as Dresses and Shoes.
+5. Add recommendation feedback and evidence-quality signals.
 
 ## Important product decision
 Raw measurements must not be sent broadly to clients just to calculate matches. Similarity is calculated behind a controlled database function that returns scores and safe display fields only.

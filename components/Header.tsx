@@ -15,6 +15,7 @@ export async function Header() {
       <nav>
         {signedIn ? (
           <>
+            <Link href="/search">Search</Link>
             <Link href="/people">People my size</Link>
             <Link href="/twins">Fit twins</Link>
             <Link href="/outfits">Outfits</Link>

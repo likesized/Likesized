@@ -13,6 +13,7 @@ LikeSized is not a generic size predictor. It is a structured real-world fit dat
 5. Open a product page and see the most relevant fit evidence first.
 6. Save useful Fit Matches as “Fit Twins” and revisit their real-world fit evidence.
 7. Post outfits that intentionally connect photos to real Closet garments and fit evidence.
+8. Search products, brands, and members to move directly between discovery and evidence.
 
 ## V1 screens
 1. Landing / logged-in home
@@ -50,6 +51,15 @@ Outfit posts are signed-in member-facing in V1. A post contains one photo, an op
 
 Tagging a Closet item authorizes only the shareable fit evidence already represented by its fit report: product, purchased size, fit result, and related product metadata. The post must not make the underlying private Closet row or exact body measurements readable to other members.
 
+## Search / discovery
+Search is member-facing in V1 and covers products, brands, and completed member profiles.
+
+- Product/brand results link to real product fit evidence.
+- Member results link to the member-facing Fit Twin profile.
+- When available, search may show the viewer's safe Overall match score for a member.
+- Search never returns raw Fit Profile measurements.
+- With no query, the screen can act as lightweight discovery using recently logged products and the viewer's closest Fit Matches.
+
 ## Fit labels
 - Too small
 - Snug
@@ -64,7 +74,7 @@ Precise body measurements are private by default. Users can choose visibility la
 
 Weight is supporting data, not the main matching axis.
 
-Fit Twin/profile and outfit surfaces are member-facing in the current V1. Anonymous public visibility should not be enabled until explicit privacy controls exist.
+Fit Twin/profile, outfit, and search surfaces are member-facing in the current V1. Anonymous public visibility should not be enabled until explicit privacy controls exist.
 
 ## Database moat
 The valuable record is:
@@ -79,6 +89,7 @@ Each closet submission improves both individual recommendations and item-level a
 - product pages viewed per session
 - match-profile follows / saved Fit Twins
 - outfit posts and product-tag clickthrough
+- search-to-product and search-to-profile clickthrough
 - “recommendation helpful” rate
 - repeat visits after a Fit Twin posts/logs an item
 

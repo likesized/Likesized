@@ -31,7 +31,9 @@ This section supersedes every earlier simplified architecture decision about mea
 ### Garment identity and taxonomy
 - `brands` uses normalized names plus aliases for deduplication/autocomplete.
 - `products` are canonical products; retailer URLs are not product identity.
-- `product_families` preserve fit evidence across non-fit-critical releases/variants.
+- `product_families` preserve fit evidence across **intentional non-fit-critical releases that genuinely share the same fit/cut**. Product Families are never created from fuzzy name similarity alone.
+- New canonical Products created through the Closet flow receive a Product Fit Family at creation. Safe default is a standalone family for that product/style. A new Product may explicitly join an existing family only when the member knows it is the same fit/cut and the brand, garment type and market/cut segment all match.
+- Existing shared canonical Products are not silently reassigned between families by later Closet logs. Reusing an existing Product preserves its established family.
 - `retailer_listings` preserves retailer-specific URLs, IDs and SKUs while pointing to one canonical product/variant.
 - `product_identifiers` stores original plus normalized manufacturer style, SKU, UPC/barcode and retailer identifiers.
 - `product_variants` handles color/variant identity and normalized size.
@@ -56,6 +58,7 @@ Do not blend current-person scores with historical garment scores.
 - No separate men's/women's engines. Garment type selects `match_profiles` and relevant `match_profile_measurements`.
 - Missing relevant measurements reduce coverage/confidence; irrelevant measurements are not used merely because they exist.
 - Evidence hierarchy is: Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit.
+- An Exact Variant target is canonical only when that variant belongs to the displayed Product. A foreign/invalid variant ID cannot promote unrelated evidence and safely falls back to Product/broader tiers.
 - Product evidence uses historical snapshot match scores, never the wearer's current-person Fit Twin score.
 - Product recommendation evidence is capped to **one strongest historical observation per unique wearer**. Five observations from one person never count as five people and cannot inflate confidence.
 - All legitimate historical observations remain available in that member's Shared Fit History; the unique-wearer cap applies to recommendation aggregation, not history deletion.

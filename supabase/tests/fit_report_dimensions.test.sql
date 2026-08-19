@@ -24,8 +24,8 @@ select 'c4000000-0000-4000-8000-000000000001'::uuid,'c0000000-0000-4000-8000-000
 from public.fit_profiles where user_id='c0000000-0000-4000-8000-000000000001'::uuid;
 
 select lives_ok($$insert into public.fit_report_dimensions(fit_report_id,dimension_key,response_key) values('c4000000-0000-4000-8000-000000000001','waist','just_right')$$,'jeans accept a mapped waist response');
-select dies_ok($$insert into public.fit_report_dimensions(fit_report_id,dimension_key,response_key) values('c4000000-0000-4000-8000-000000000001','chest','just_right')$$,'Fit dimension chest is not valid for garment type jeans','jeans reject an unmapped chest dimension');
-select dies_ok($$insert into public.fit_report_dimensions(fit_report_id,dimension_key,response_key) values('c4000000-0000-4000-8000-000000000001','rise','too_tight')$$,'insert or update on table "fit_report_dimensions" violates foreign key constraint "fit_report_dimensions_dimension_key_response_key_fkey"','response keys remain controlled per dimension');
+select dies_ok($$insert into public.fit_report_dimensions(fit_report_id,dimension_key,response_key) values('c4000000-0000-4000-8000-000000000001','chest','just_right')$$,'jeans reject an unmapped chest dimension');
+select dies_ok($$insert into public.fit_report_dimensions(fit_report_id,dimension_key,response_key) values('c4000000-0000-4000-8000-000000000001','rise','too_tight')$$,'response keys remain controlled per dimension');
 select is((select count(*) from public.fit_report_dimensions where fit_report_id='c4000000-0000-4000-8000-000000000001'::uuid),1::bigint,'only the valid controlled dimension remains');
 
 select * from finish();

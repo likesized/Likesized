@@ -17,6 +17,7 @@ export async function Header() {
           <>
             <Link href="/people">People my size</Link>
             <Link href="/twins">Fit twins</Link>
+            <Link href="/outfits">Outfits</Link>
             <Link href="/closet">Closet</Link>
             <Link className="navButton" href="/onboarding">Fit profile</Link>
             <form action="/auth/signout" method="post">

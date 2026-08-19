@@ -39,6 +39,9 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 - **30 canonical migrations** through `20260819212753_canonical_search_discovery_rpcs.sql`.
 - Supabase Security Advisor: **0 findings** after Phase 5.5 search architecture.
 - CI runs npm ci, typecheck, production recommendation calibration, production build, fresh migration replay and all pgTAP suites.
+- Prototype homepage data, `lib/mock-data.ts`, and the obsolete standalone `lib/fit.ts` implementation have been removed from canonical source.
+- Phase 6.1/6.2 verification PR #32 / CI `32306676280` passed install, typecheck, recommendation calibration, production build, clean replay of all 30 migrations, and all canonical database tests; verification-only PR closed without merge.
+- Connected Vercel team `likesized-6817s-projects` currently contains **no Vercel project**, so production environment variables cannot yet be configured there.
 
 # PHASES
 
@@ -104,18 +107,28 @@ Dedicated Following Feed + Fit Twin activity notifications explicitly locked int
 
 **Phase 5 exit criterion: ✅ MET.** Following, Following Feed, notifications, existing social/outfit surfaces, and search/discovery all operate on canonical relationships/evidence with privacy boundaries intact.
 
-## PHASE 6 — REMOVE PROTOTYPE SURFACES & PREPARE DEPLOYMENT — ▶️ NEXT
+## PHASE 6 — REMOVE PROTOTYPE SURFACES & PREPARE DEPLOYMENT — ▶️ IN PROGRESS
 
-### 6.1 Remove fake/prototype homepage state
-Replace homepage mock match/product/member state with real database-backed or clearly static non-fake content. No fabricated live match percentages or user activity may remain.
+### 6.1 Remove fake/prototype homepage state — ✅ COMPLETE
+- Removed fabricated member identities, demo garment activity and live-looking match percentages from `/`.
+- Homepage now uses clearly static capability/explainer content linked to the real canonical routes.
+- No fake user activity or match score is presented as live state.
 
-### 6.2 Remove dead prototype logic
-Remove `lib/mock-data.ts` after all usage is gone. Audit `lib/fit.ts` and other old prototype helpers; remove only if truly unused. No parallel implementations.
+### 6.2 Remove dead prototype logic — ✅ COMPLETE
+- Removed `lib/mock-data.ts` after its final homepage usage was eliminated.
+- Removed obsolete standalone `lib/fit.ts`; production matching remains canonical in the database/RPC path rather than parallel TypeScript scoring logic.
+- README stale prototype claims were removed so repository documentation reflects the current canonical state.
+- Verification PR #32 / CI `32306676280` passed all canonical checks and was closed without merge because it contained only the verification marker.
 
-### 6.3 Production configuration readiness
-Verify/configure `NEXT_PUBLIC_SITE_URL`, Supabase Site URL/redirect allowlist/email confirmation behavior, and required Vercel environment variables. Do **not** deploy production without explicit owner authorization.
+### 6.3 Production configuration readiness — ▶️ IN PROGRESS
+- Canonical repo requires exactly these public runtime values: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `NEXT_PUBLIC_SITE_URL`.
+- Supabase project `rlksidwniuoxoacumyaf` is ACTIVE_HEALTHY in `us-east-1`; project URL and an enabled modern publishable key are available.
+- Signup code derives `emailRedirectTo` from `NEXT_PUBLIC_SITE_URL` (with request-origin/local fallback), and `/auth/confirm` performs server-side OTP verification before sending users to onboarding.
+- Current Supabase guidance requires the production Site URL to be the official site URL and allows localhost plus Vercel preview URLs in the additional redirect allowlist.
+- **BLOCKER:** connected Vercel team `likesized-6817s-projects` currently has zero projects. No Vercel environment-variable target exists yet. Production must not be deployed merely to create one.
+- After the Vercel project exists/links to `likesized/Likesized`, verify/set the three required variables for Production and Preview, then set/verify Supabase Auth Site URL and redirect allowlist against the final Vercel/domain URLs and verify email confirmation behavior end to end.
 
-### 6.4 Responsive/accessibility review
+### 6.4 Responsive/accessibility review — QUEUED
 Run mobile/responsive/accessibility review across V1 primary flows and correct blockers in canonical source.
 
 **Phase 6 exit:** no fake live state, no dead prototype path competing with canonical logic, production auth/environment configuration is ready, and primary V1 flows are responsive/accessibility-ready. Production remains undeployed until owner explicitly authorizes it.
@@ -124,4 +137,4 @@ Run mobile/responsive/accessibility review across V1 primary flows and correct b
 Use a controlled representative population, smoke the full user loop, explicitly test privacy boundaries, rerun advisors, and require green CI plus browser smoke before beta-ready.
 
 ## Exact next action
-**PHASE 6.1 — audit and replace homepage mock/fabricated live state with real database-backed or clearly static non-fake content, then remove the canonical mock-data dependency before proceeding to other Phase 6 work.**
+**PHASE 6.3 — create/link a LikeSized Vercel project without authorizing a production deployment, then configure/verify `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `NEXT_PUBLIC_SITE_URL`; finish Supabase Auth Site URL/redirect allowlist/email-confirmation verification against the resulting URLs before starting Phase 6.4.**

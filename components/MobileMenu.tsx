@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import styles from "@/components/HeaderResponsive.module.css";
 
 type MobileMenuProps = {
@@ -11,11 +11,9 @@ type MobileMenuProps = {
 
 export function MobileMenu({ unreadCount }: MobileMenuProps) {
   const pathname = usePathname();
-  const menuRef = useRef<HTMLDetailsElement>(null);
+  const [open, setOpen] = useState(false);
 
-  const closeMenu = () => {
-    if (menuRef.current) menuRef.current.open = false;
-  };
+  const closeMenu = () => setOpen(false);
 
   useEffect(() => {
     closeMenu();
@@ -23,9 +21,23 @@ export function MobileMenu({ unreadCount }: MobileMenuProps) {
 
   return (
     <div className={styles.mobileNav}>
-      <details className={styles.mobileMenu} ref={menuRef}>
-        <summary>Menu</summary>
-        <div className={styles.mobileMenuPanel} role="navigation" aria-label="Mobile navigation">
+      <button
+        type="button"
+        className={styles.mobileMenuButton}
+        aria-expanded={open}
+        aria-controls="mobile-navigation-menu"
+        onClick={() => setOpen((current) => !current)}
+      >
+        Menu
+      </button>
+
+      {open ? (
+        <div
+          id="mobile-navigation-menu"
+          className={styles.mobileMenuPanel}
+          role="navigation"
+          aria-label="Mobile navigation"
+        >
           <Link href="/onboarding" onClick={closeMenu}>Fit Profile</Link>
           <Link href="/notifications" onClick={closeMenu}>
             Notifications
@@ -42,7 +54,7 @@ export function MobileMenu({ unreadCount }: MobileMenuProps) {
             <button type="submit">Sign out</button>
           </form>
         </div>
-      </details>
+      ) : null}
     </div>
   );
 }

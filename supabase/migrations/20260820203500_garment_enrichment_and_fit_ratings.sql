@@ -332,6 +332,8 @@ grant execute on function public.record_member_product_evidence(uuid,text,text,j
 
 -- Exact known product resolution order for a new Closet log:
 -- explicit canonical Product -> UPC/barcode -> exact normalized URL -> Brand+Style ID.
+-- This resolver exposes only a Product UUID; SECURITY DEFINER keeps the underlying
+-- normalization helpers and identifier/listing tables private to their canonical boundary.
 create or replace function public.resolve_catalog_product(
   p_existing_product_id uuid default null,
   p_brand_name text default null,
@@ -339,7 +341,7 @@ create or replace function public.resolve_catalog_product(
   p_identifier text default null,
   p_normalized_url text default null
 ) returns uuid
-language plpgsql security invoker set search_path=''
+language plpgsql security definer set search_path=''
 as $$
 declare
   v_id uuid;

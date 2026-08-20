@@ -35,11 +35,16 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - Live verification confirmed corrected canonical binaries, and the owner confirmed the rendered measurement guides work.
 - Binary verification rule remains locked: HTTP 200 alone is not sufficient for image assets. Verify deployed files are complete/decodable and match expected canonical bytes/hash.
 
+## Phase 6.4 measurement audit — owner-locked decisions
+- **Individual Shoulder Length:** keep current name, description, how-to, and guide as-is.
+- **Torso Girth:** keep current name, description, how-to, tip, and approved guide as-is.
+- **Bust Point to Bust Point:** keep the measurement and guide; use title capitalization `Bust Point to Bust Point`; description stays `The horizontal distance between the fullest points of the bust.`; how-to is `Measure straight across from the fullest point of one bust to the fullest point of the other while standing naturally.`
+
 ## Phase 6.4 — remaining work
 1. Mobile Menu auto-close behavior.
 2. iPhone Safari form-focus zoom fix.
 3. Final Fit Profile save/load/edit regression verification.
-4. Resume measurement-name/help audit at **Individual Shoulder Length** and finish the remaining measurement audit.
+4. Continue the remaining measurement-name/help audit after **Bust Point to Bust Point**.
 5. Close Phase 6.4 only after the canonical source, verification result, and this master agree.
 
 # Phase 6.5 — V1 PRODUCT SURFACE + NAVIGATION AUDIT — LOCKED
@@ -384,8 +389,8 @@ Representative end-to-end verification must cover:
 
 ## Exact next action
 Continue Phase 6.4 in order:
-1. Fix mobile Menu auto-close behavior canonically.
-2. Fix iPhone Safari form-focus zoom canonically.
-3. Verify Fit Profile save/load/edit regression behavior.
-4. Resume measurement-name/help audit at **Individual Shoulder Length** and finish the remaining measurement audit.
+1. Finish verification for mobile Menu auto-close and iPhone Safari focus zoom fixes on the working branch.
+2. Verify Fit Profile save/load/edit regression behavior.
+3. Continue the measurement-name/help audit with **Shoulder to Bust Point**.
+4. Finish the remaining measurement audit.
 5. Close Phase 6.4, then begin Phase 6.5 at navigation/information architecture audit.

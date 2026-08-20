@@ -9,6 +9,8 @@ type MeasurementType = {
 };
 
 type SizeReferenceType = "bra" | "shoe" | "shirt" | "pants" | "dress" | "other";
+const FIT_PREFERENCE_PREFIX = "fit_preference__";
+const FIT_PREFERENCES = new Set(["fitted", "standard", "relaxed"]);
 
 function fail(code: string): never {
   redirect(`/onboarding?error=${encodeURIComponent(code)}`);
@@ -114,17 +116,36 @@ export async function saveFitProfile(formData: FormData) {
     });
   }
 
+  const fitPreferences: Array<Record<string, string>> = [];
+  let invalidFitPreference = false;
+  formData.forEach((rawValue, fieldName) => {
+    if (!fieldName.startsWith(FIT_PREFERENCE_PREFIX)) return;
+    const garmentTypeKey = fieldName.slice(FIT_PREFERENCE_PREFIX.length);
+    const preference = String(rawValue).trim();
+    if (!/^[a-z0-9_]+$/.test(garmentTypeKey) || !FIT_PREFERENCES.has(preference)) {
+      invalidFitPreference = true;
+      return;
+    }
+    if (preference !== "standard") {
+      fitPreferences.push({ garment_type_key: garmentTypeKey, preference });
+    }
+  });
+  if (invalidFitPreference) fail("invalid_fit_preferences");
+
   const { error } = await supabase.rpc("save_fit_profile", {
     p_username: username,
     p_unit_system: unitSystem,
     p_measurements: rows,
     p_size_references: sizeReferences,
+    p_fit_preferences: fitPreferences,
   });
 
   if (error) {
     if (error.code === "23505") fail("username_taken");
     if (error.code === "22023") {
-      if (error.message.toLowerCase().includes("size reference")) fail("invalid_size_references");
+      const message = error.message.toLowerCase();
+      if (message.includes("fit preference")) fail("invalid_fit_preferences");
+      if (message.includes("size reference")) fail("invalid_size_references");
       fail("invalid_measurements");
     }
     fail("save_failed");

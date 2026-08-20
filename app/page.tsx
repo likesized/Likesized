@@ -29,7 +29,10 @@ export default function Home() {
     <main>
       <section className="hero">
         <div className="eyebrow">REAL PEOPLE. SMARTER MATCHING. BETTER FIT.</div>
-        <h1>Find your Fit Twin.<br />Find your fit.</h1>
+        <h1>
+          <span className="heroLine heroLinePrimary">Find your Fit Twin.</span>
+          <span className="heroLine">Find your fit.</span>
+        </h1>
         <p>Match with people who have a body like yours. See the brands they wear, the sizes they buy, and what actually works on them.</p>
         <div className="heroActions">
           <Link className="primaryButton" href="/onboarding">Create My Fit Profile</Link>
@@ -46,7 +49,7 @@ export default function Home() {
         <div className="sectionHeading">
           <div>
             <span className="eyebrow">WHAT LIKESIZED DOES</span>
-            <h2>Ranks your closest body matches, then shows you what they actually wear.</h2>
+            <h2>Makes shopping personal to your body.</h2>
           </div>
           <Link href="/search" className="textLink">Search LikeSized →</Link>
         </div>
@@ -68,11 +71,11 @@ export default function Home() {
 
       <section className="howItWorks section" id="how-it-works">
         <span className="eyebrow">THE LOOP</span>
-        <h2>The more people share, the smarter LikeSized gets.</h2>
+        <h2>The more you share, the smarter LikeSized gets.</h2>
         <div className="steps">
           <div><b>01</b><h3>Build your profile</h3><p>Tell us about your size and measurements.</p></div>
           <div><b>02</b><h3>Find your matches</h3><p>Get ranked matches based on the measurements that matter most for each garment type.</p></div>
-          <div><b>03</b><h3>Share what works (and what doesn’t)</h3><p>Help others learn from your real experience.</p></div>
+          <div><b>03</b><h3>Share what works<span className="stepAside">(and what doesn’t)</span></h3><p>Help others learn from your real experience.</p></div>
           <div><b>04</b><h3>Shop with better answers</h3><p>Use personalized insights from people like you to make smarter choices and get the fit right the first time.</p></div>
         </div>
       </section>

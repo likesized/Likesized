@@ -1,14 +1,19 @@
 # LikeSized V1 Master Guide
 
 ## Sole master-guide rule — LOCKED
-This is the **one and only LikeSized roadmap, status record, phase checklist, and AI handoff**. Repository policy lives in `AI_REPOSITORY_RULES.md`; product architecture lives in `docs/V1_PRODUCT_SPEC.md`; database/privacy behavior lives in `supabase/schema_contract.md`. If old planning text conflicts with this guide, this guide wins and stale planning text must be removed.
+This is the **one and only LikeSized roadmap, status record, completed-work ledger, phase checklist, and AI handoff**. Repository policy lives in `AI_REPOSITORY_RULES.md`; product architecture lives in `docs/V1_PRODUCT_SPEC.md`; database/privacy behavior lives in `supabase/schema_contract.md`. If old planning text conflicts with this guide, this guide wins for roadmap/status/handoff and stale planning text must be removed.
 
 ## Working rules — LOCKED
 - GitHub `likesized/Likesized` is the permanent canonical source of truth.
 - No patch/fixed/v2/backup/temp files or parallel implementations. Approved changes modify canonical source; Git history is history.
+- **Every completed task, approved update, canonical source change, configuration change, deployment checkpoint, verification result, and owner-locked decision must be logged in this master.**
+- **A task is not complete until the canonical repository and this master both reflect the final verified state.** When practical, the implementation and master-log update belong in the same canonical change set.
+- Never record planned, attempted, failed, local-only, preview-only, approved-but-unimplemented, or unverified work as complete. Record meaningful unresolved work explicitly.
+- Before any handoff, this master must contain the current phase, completed work, unresolved work, deployment state, and exact next action.
+- If an audit proves a prior completion claim does not match canonical source or verified production, correct this master immediately. Canonical source and verified production determine implementation status.
 - Ordered executable SQL in `supabase/migrations/` is the only database replay/deployment history.
 - Supabase project `rlksidwniuoxoacumyaf` is the deployed instance/ledger, not a competing source of truth.
-- Do not deploy production unless the owner explicitly authorizes it. **Owner explicitly authorized the initial LikeSized Vercel production deployment on 2026-08-19.** Future production changes still require owner authorization unless the owner changes this rule.
+- Do not deploy production unless the owner explicitly authorizes it. Updating `main` may trigger Vercel and therefore requires owner authorization when it will cause production deployment.
 - Work Phases 0→7 in order without diversion. Ask the owner only for genuine product/business/cost/credential decisions.
 
 ## Product / privacy rules — LOCKED
@@ -33,21 +38,16 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 17. Outfit posting may intentionally auto-share tagged Private Closet garments, but share/post/tag creation must be atomic. A failed outfit post cannot leave a previously Private garment Shared. If a tagged garment later becomes Private, its garment tag/fit evidence disappears from other members while the independent outfit social post may remain visible.
 18. **V1 Search uses canonical database identity, not a parallel search catalog.** Authenticated catalog discovery searches product name, canonical brand, brand alias, manufacturer style, product identifiers such as SKU/UPC/barcode, retailer product ID/SKU, and listing title, deduplicated to one canonical Product. Member discovery searches authenticated-member-readable username/display name only, excludes the viewer, and never exposes raw Fit Profile data.
 
-## Current baseline — 2026-08-19
-- Full Next.js app, Supabase integration, matching/recommendation logic and canonical docs are in GitHub.
-- Live Supabase has no deliberate test-user/application population; repeatable verification uses disposable local Supabase CI.
+## Current baseline — 2026-08-20
+- Full Next.js app, Supabase integration, matching/recommendation logic, canonical docs, and Vercel production connection are in GitHub.
 - **30 canonical migrations** through `20260819212753_canonical_search_discovery_rpcs.sql`.
-- Supabase Security Advisor: **0 findings** after Phase 5.5 search architecture and re-verified after the initial Vercel production checkpoint.
-- CI runs npm ci, typecheck, production recommendation calibration, production build, fresh migration replay and all pgTAP suites.
-- Prototype homepage data, `lib/mock-data.ts`, and the obsolete standalone `lib/fit.ts` implementation have been removed from canonical source.
-- Phase 6.1/6.2 verification PR #32 / CI `32306676280` passed install, typecheck, recommendation calibration, production build, clean replay of all 30 migrations, and all canonical database tests; verification-only PR closed without merge.
-- Vercel project **`likesized`** exists in team `likesized-6817s-projects` with project ID `prj_ioYhiOjBNHDzPx2otiCY6XpNL3Um`.
-- Production domain is **`https://likesized.vercel.app`**; owner also connected **`likesized.com`** in Vercel and SSL provisioning is in progress.
-- Live canonical production deployment before the final Phase 6.3 auth/config pass is **`dpl_F7FaH6oeAt4RFh6qb5QvF6unZCAv`**. Its build checked out exact GitHub commit **`48f23518ac01b3dd7021f44e0d41bdd77ee44e15`**, then ran canonical `npm ci --include=dev` and `npm run build` with the production Supabase URL/publishable key and `NEXT_PUBLIC_SITE_URL=https://likesized.vercel.app` supplied to that build.
-- The live canonical production build passed Next compile, TypeScript and generation of all 20 application routes; live `/` returned 200, unauthenticated `/people` entered the expected login/return flow, and Vercel reported no runtime errors in the first production smoke window.
-- Canonical commit **`72bf20da511b63c9bb8f33887c8dafafc42d9c4c`** corrected signup `emailRedirectTo` to pass only the request/site origin. This intentionally pairs with the hosted Supabase confirmation template using `{{ .RedirectTo }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`; `/auth/confirm` verifies the token server-side and defaults the successful destination to `/onboarding`.
-- On 2026-08-19 the owner completed the Phase 6.3 dashboard configuration: Vercel shared environment variables were linked to the `likesized` project with Production/Preview scoping, Vercel Git was connected to `likesized/Likesized`, Supabase Site URL/redirect allowlist were configured, custom SMTP was configured through Resend, and the Confirm signup template was changed to the canonical `/auth/confirm` token-hash route.
-- Resend domain `likesized.com` is connected through Vercel DNS and is currently **Pending / Checking DNS**. SMTP credentials are stored only in Supabase/Resend and are not recorded in repository docs.
+- Supabase Security Advisor was last verified at **0 findings** after the canonical Phase 5 work and production readiness checks.
+- CI covers install, typecheck, recommendation calibration, production build, fresh migration replay, and canonical pgTAP suites.
+- Prototype homepage data, `lib/mock-data.ts`, and obsolete standalone `lib/fit.ts` have been removed.
+- Vercel project: **`likesized`**, project ID `prj_ioYhiOjBNHDzPx2otiCY6XpNL3Um`, team `likesized-6817s-projects`.
+- Production domains include **`https://likesized.com`** and `https://likesized.vercel.app`.
+- Current application-code production checkpoint before this documentation/rules synchronization is canonical commit **`1c5e9763cdd6f5e96f5bb2e3e62e47e64d0f4dd2`** (`Style standardized measurement controls and visual guides`). Vercel production deployment **`dpl_4HwXq2dmmzdyzPay64HYJxp6BPC6`** is READY on that application state.
+- This 2026-08-20 master/rules synchronization was explicitly authorized by the owner for `main`; it is documentation/policy synchronization and does not represent additional product-feature completion.
 
 # PHASES
 
@@ -80,7 +80,6 @@ Dedicated Following Feed + Fit Twin activity notifications explicitly locked int
 
 ### 5.2 Dedicated Following Feed — ✅ COMPLETE
 - `/following` uses canonical follows and a private activity ledger; no parallel social relationship/event system.
-- Migrations `20260819202515_following_feed_activity_foundation.sql` and `20260819202851_harden_following_feed_rpc_boundary.sql`.
 - Only `closet_shared`, `fit_report_added`, and `outfit_posted` are feed events. Likes never create activity.
 - Private transitions/deletion remove unauthorized source activity; re-share creates fresh share activity without resurrecting old re-try-ons.
 - `following_feed_activity.test.sql`: **25/25**.
@@ -94,7 +93,6 @@ Dedicated Following Feed + Fit Twin activity notifications explicitly locked int
 - Final Phase 5.3 CI `32302356811` green; Security Advisor 0.
 
 ### 5.4 Social/outfit verification — ✅ COMPLETE
-- Found/fixed non-atomic outfit auto-share failure path.
 - Migration `20260819211614_atomic_outfit_post_creation.sql` makes selected-garment share + outfit post + tag creation transactional; app removes uploaded photo if RPC fails.
 - All Outfits member-wide; Fit-Twins Outfits filtered by canonical follows; latest visible Fit Report used for tags; likes do not feed/notify; Private transitions hide garment evidence while independent outfit post may remain.
 - `social_outfit_integration.test.sql`: **49/49**.
@@ -102,53 +100,113 @@ Dedicated Following Feed + Fit Twin activity notifications explicitly locked int
 - Comments remain outside V1 until moderation/reporting is intentionally designed.
 
 ### 5.5 Search/discovery verification — ✅ COMPLETE
-- Migration `20260819212753_canonical_search_discovery_rpcs.sql` adds authenticated SECURITY INVOKER production search RPCs rather than another catalog/index system.
-- `/search` now uses `search_catalog_products` and `search_members` for queried discovery.
-- Catalog search covers product name, canonical brand, brand aliases, manufacturer style number, product identifiers (SKU/UPC/barcode), retailer product ID/SKU, and listing title; results deduplicate to one canonical Product and return its canonical slug/brand.
-- Member search covers username/display name, excludes the current viewer, remains authenticated-member-only, and returns no raw measurements.
-- Search/People My Size → member profile → canonical follow → new Shared Fit activity → Following Feed + Fit Twin notification loop is permanently exercised.
+- Migration `20260819212753_canonical_search_discovery_rpcs.sql` adds authenticated production search RPCs using canonical identity rather than a parallel search catalog.
+- Catalog search covers product name, canonical brand, brand aliases, manufacturer style number, product identifiers, retailer identifiers, and listing title, deduplicated to canonical Product.
+- Member search covers username/display name, excludes the viewer, remains authenticated-member-only, and returns no raw measurements.
+- Search → member profile → follow → Shared Fit activity → Following Feed + Fit Twin notification loop is permanently exercised.
 - `search_discovery_integration.test.sql`: **35/35 assertions**.
-- Final corrected Phase 5.5 PR #30 / CI **`32304787008`** passed npm install, typecheck, recommendation calibration, production build, clean replay of all **30 migrations**, and every canonical database suite.
-- Supabase Security Advisor after Phase 5.5: **0 findings**.
+- Final corrected Phase 5.5 PR #30 / CI `32304787008` green; Security Advisor 0.
 
-**Phase 5 exit criterion: ✅ MET.** Following, Following Feed, notifications, existing social/outfit surfaces, and search/discovery all operate on canonical relationships/evidence with privacy boundaries intact.
+**Phase 5 exit criterion: ✅ MET.**
 
 ## PHASE 6 — REMOVE PROTOTYPE SURFACES & PREPARE DEPLOYMENT — ▶️ IN PROGRESS
 
 ### 6.1 Remove fake/prototype homepage state — ✅ COMPLETE
 - Removed fabricated member identities, demo garment activity and live-looking match percentages from `/`.
-- Homepage now uses clearly static capability/explainer content linked to the real canonical routes.
-- No fake user activity or match score is presented as live state.
+- Homepage uses static capability/explainer content linked to real canonical routes.
 
 ### 6.2 Remove dead prototype logic — ✅ COMPLETE
-- Removed `lib/mock-data.ts` after its final homepage usage was eliminated.
-- Removed obsolete standalone `lib/fit.ts`; production matching remains canonical in the database/RPC path rather than parallel TypeScript scoring logic.
-- README stale prototype claims were removed so repository documentation reflects the current canonical state.
-- Verification PR #32 / CI `32306676280` passed all canonical checks and was closed without merge because it contained only the verification marker.
+- Removed `lib/mock-data.ts` and obsolete standalone `lib/fit.ts`.
+- README stale prototype claims removed.
+- Verification PR #32 / CI `32306676280` passed canonical checks.
 
-### 6.3 Production configuration readiness — ▶️ IN PROGRESS
-- Canonical app requires `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and a production `NEXT_PUBLIC_SITE_URL`.
-- Supabase project `rlksidwniuoxoacumyaf` is **ACTIVE_HEALTHY** in `us-east-1`; project URL `https://rlksidwniuoxoacumyaf.supabase.co` and an enabled modern `sb_publishable_...` key are confirmed. Security Advisor remains 0 findings.
-- Canonical signup passes an **origin-only** `emailRedirectTo`; `/auth/confirm` performs server-side OTP verification and then sends confirmed users to onboarding by default.
-- Owner authorized the initial production deployment on 2026-08-19.
-- Vercel project `likesized` / `prj_ioYhiOjBNHDzPx2otiCY6XpNL3Um` exists and production domain `https://likesized.vercel.app` is active.
-- **Vercel environment configuration — ✅ COMPLETED BY OWNER:** Shared `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are linked to `likesized` for Production + Preview. Shared `NEXT_PUBLIC_SITE_URL=https://likesized.vercel.app` is linked to `likesized` for Production only.
-- **Vercel Git source — ✅ COMPLETED BY OWNER:** project is connected directly to canonical repo `likesized/Likesized`; owner scoped the Vercel GitHub installation to that repository rather than all repositories.
-- **Supabase Auth URL configuration — ✅ COMPLETED BY OWNER:** Site URL is `https://likesized.vercel.app`; redirect allowlist includes `http://localhost:3000/**` and `https://*-likesized-6817s-projects.vercel.app/**`.
-- **Supabase custom SMTP — ✅ CONFIGURED, DOMAIN VERIFICATION PENDING:** provider is Resend; sender is `noreply@likesized.com` / `LikeSized`; SMTP host is `smtp.resend.com`, port `465`, username `resend`; password is a dedicated Resend Sending-access API key stored only in Supabase. The originally exposed key was revoked and replaced before saving.
-- **Resend domain — ⏳ PENDING:** `likesized.com` was added to Resend and Vercel authorized Resend to create the required DNS records. Resend currently reports `Pending / Checking DNS` while Vercel DNS propagates.
-- **Supabase Confirm signup template — ✅ COMPLETED BY OWNER:** confirmation link now uses `{{ .RedirectTo }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`.
-- The pre-Git-link live production deployment `dpl_F7FaH6oeAt4RFh6qb5QvF6unZCAv` predates the origin-only auth correction and must not be treated as the final Phase 6.3 auth build.
-- This master-log update is intentionally the first canonical commit after the Vercel Git connection; it should trigger Vercel to deploy the current `main`, including auth commit `72bf20da511b63c9bb8f33887c8dafafc42d9c4c` and the final dashboard configuration.
-- **Still required before 6.3 is complete:** verify Resend domain becomes Verified; verify the Git-triggered Vercel production deployment reaches READY from current canonical `main`; run a real confirmation-email signup through `/auth/confirm` and confirm the authenticated onboarding session persists.
+### 6.3 Production configuration + auth readiness — ✅ COMPLETE
+Completed and verified:
+- Vercel project connected to canonical repo `likesized/Likesized`.
+- Production/Preview Supabase environment configuration connected.
+- `likesized.com` connected and used as the production site/auth destination.
+- Supabase Site URL and redirect allowlist configured for production and preview/local flows.
+- Resend custom SMTP configured for LikeSized and `likesized.com` verified.
+- Hosted confirmation template uses canonical `/auth/confirm` token-hash flow.
+- Real signup confirmation email flow was completed end-to-end and landed on authenticated LikeSized onboarding.
+- Password recovery/reset flow was completed end-to-end and returns the user to login with the password-updated confirmation.
+- Existing-account repeated signup behavior routes into account recovery while preserving neutral user-facing messaging.
+- Session behavior remains long-lived through Supabase refresh-token handling rather than an unnecessary custom timeout system.
 
-### 6.4 Responsive/accessibility review — QUEUED
-Run mobile/responsive/accessibility review across V1 primary flows and correct blockers in canonical source.
+Relevant completed commits include:
+- `72bf20da511b63c9bb8f33887c8dafafc42d9c4c` — align signup redirect with SSR confirmation route.
+- `aa90e9f64d414d284bdffe6772ce2def0d26e4c4` — record connected production configuration.
+- `9b85b082f0a8985e47a0f6e43aeb0b31c65c49b5` — production site URL set to likesized.com checkpoint.
+- `9007b8fef992e72d7e1236b097c425ad073432d1` + `625063a2432a74ad5a8c298c7ac07a1dd11d5fd8` — canonical password recovery flow.
+- `03bea6665ad828c3b58ad527f44cc29a61a21981` — existing signup recovery behavior.
 
-**Phase 6 exit:** no fake live state, no dead prototype path competing with canonical logic, production auth/environment configuration is ready, and primary V1 flows are responsive/accessibility-ready. A canonical production checkpoint is now deployed; later production updates remain owner-controlled.
+### 6.4 Responsive/accessibility + Fit Profile polish — ▶️ IN PROGRESS
+
+#### Completed canonical work
+- Canonical LikeSized brand assets wired into the site; header/logo updated.
+- Homepage brand/copy refreshed and multiple mobile spacing/readability passes completed.
+- Logged-out header account entry is **My Fit Profile** and routes through login.
+- Signed-in mobile header was compacted to a Menu control so the header no longer overflows.
+- Fit Profile headline changed to **Personalize LikeSized to fit your needs**.
+- Privacy copy changed to: **Your measurements stay 100% private and help LikeSized make smarter fit matches and recommendations. The more information you provide, the more personalized your results become.**
+- Precision section removed.
+- Core Fit Profile heading moved above profile controls.
+- Username UI label changed to **Display Name**.
+- Core helper copy changed to: **Add only what you know right now. More details lead to better fit matches and recommendations. You can always update your profile measurements anytime.**
+- Optional Advanced Measurements copy changed to: **Add more detailed measurements for even smarter fit matches. Fill in only what you know and come back anytime to add more or make changes.**
+- `?` measurement-help dialog added to all body-measurement fields.
+- Core/advanced display-name cleanup implemented, including Chest, Full Bust, High Bust, Natural Waist, Pants Waist, High Hip, Hips / Seat, Waist-to-Hip Length, Shoulder Width, Individual Shoulder Length, and Torso Length.
+- **Individual Shoulder Length** wording is locked and must remain exactly that unless owner changes it.
+- Overbust removed from active entry and excluded server-side during save.
+- High Bust guide copy rewritten to distinguish upper chest from Full Bust.
+- Imperial height entry standardized to **feet + whole inches dropdown (0–11)**, internally normalized to total inches.
+- Every other imperial length measurement standardized to **whole inches + fraction dropdown (0, ¼, ½, ¾)**.
+- Canonical hidden numeric value continues through the existing save path, e.g. `27 + ¼` → `27.25` inches.
+- Server-side validation enforces whole inches for height and quarter-inch increments for other imperial length measurements so malformed/manual requests cannot bypass the UI format.
+- Metric length entry remains centimeters; weight remains lb/kg numeric entry.
+- Current application-code production checkpoint containing these measurement-entry changes is `1c5e9763cdd6f5e96f5bb2e3e62e47e64d0f4dd2` and Vercel reports that production deployment READY.
+
+#### Completed-update ledger — 2026-08-20
+- `9499b4450033ab7a5b82d7e95e3944be576af8ad` — canonical public asset directory created.
+- `11971e7b84611db4b787ea3d36c0a6b1c19e1db5` / `72725c0058ad763713607e021965bc9212e0a27d` — canonical LikeSized header/brand assets staged and wired.
+- `d9f278897f156fb0a2c10c0de1c653af1fac4b50` through `fffe652e7a20b5681e70063bbb3f369471d4818f` — homepage brand/copy, spacing, mobile hero/proof-strip, grouping, and feature-card journey refinements.
+- `54c0d54d5e42378a5f4f20f4dfb2a5bee1f47a40` / `a4c8f4085ada0d6ec9347de96e0c839b082128c1` — logged-out mobile/header account entry completed as My Fit Profile.
+- `562ec8e52e598d9b13512f6204c403de1e32c363` — Fit Profile polish and measurement-help system added.
+- `65440c75457c599b2e9991ef1c048f5c3b022c47` — imperial Fit Profile measurement entry standardized.
+- `b34e6408190c9fdafde9a064744a56a1cae5d5b2` — canonical imperial measurement increment validation added.
+- `1c5e9763cdd6f5e96f5bb2e3e62e47e64d0f4dd2` — standardized measurement-control styling and current production checkpoint.
+
+#### Explicitly NOT complete — audit-confirmed 2026-08-20
+The following items must **not** be described as completed until canonical source and verification prove otherwise:
+
+1. **Approved measurement-guide image replacement.**
+   - Natural Waist, High Hip, Hips / Seat, and Waist-to-Hip Length are mapped to the waist/hip guide type, but the canonical renderer still produces the old coded graphic rather than the owner-approved shared four-measurement image.
+   - Torso Girth is mapped to its guide type, but the canonical renderer still produces the old inline SVG rather than the owner-approved front/back magenta image.
+   - General body measurement guides still use the old coded stick-figure `BodyDiagram` renderer rather than the approved unisex body silhouette.
+   - `public/` currently contains the brand assets only; approved measurement-guide assets are not yet canonical repository assets.
+   - Commit `d4ed1681aa683e4c26a7b9ba330e7e6c059c1d16` was an attempted guide update, but audit proved the approved artwork was not actually the resulting canonical implementation. It is **not** a completed approved-image replacement.
+   - Required fix: add the approved assets canonically, wire exact measurement-to-asset mappings, and delete obsolete fallback renderers so the old artwork cannot return.
+
+2. **Mobile menu auto-close behavior.**
+   - Current signed-in mobile menu is a plain `<details>` implementation.
+   - It does not automatically close after route navigation, outside tap, or Escape.
+   - Required fix: canonical mobile menu behavior must close on navigation, outside interaction, and Escape without creating parallel header implementations.
+
+3. **iPhone Safari form-focus zoom.**
+   - Global form controls do not yet have a mobile minimum 16px font size.
+   - Display Name and other small-font inputs can trigger Safari focus zoom that remains after entry.
+   - Required fix: mobile form inputs/selects/textareas must use at least 16px font sizing without disabling pinch zoom/accessibility.
+
+4. **Measurement-by-measurement review is not finished.**
+   - After the three implementation blockers above are corrected and verified, resume at **Individual Shoulder Length**.
+
+### 6.4 current verification rule
+No Phase 6.4 item is complete solely because artwork/code was generated or a commit message says it was applied. Completion requires the canonical source to contain the intended implementation and verification to confirm the correct behavior/result.
+
+**Phase 6 exit:** no fake live state, no dead prototype path competing with canonical logic, production auth/environment configuration is complete, and primary V1 flows are responsive/accessibility-ready with approved Fit Profile measurement guidance in canonical source.
 
 ## PHASE 7 — V1 BETA END-TO-END VERIFICATION — QUEUED
 Use a controlled representative population, smoke the full user loop, explicitly test privacy boundaries, rerun advisors, and require green CI plus browser smoke before beta-ready.
 
 ## Exact next action
-**PHASE 6.3 — verify the Git-triggered production deployment from the current canonical `main`, wait only for Resend `likesized.com` DNS verification to become Verified, then run the real confirmation-email → `/auth/confirm` → onboarding session test. Do not start Phase 6.4 before this verification passes.**
+**PHASE 6.4 — complete the three audit-confirmed blockers in canonical source without patches: (1) replace/remove the old measurement-guide renderers with the exact owner-approved assets and mappings, (2) make the signed-in mobile menu close correctly after navigation/outside interaction/Escape, and (3) prevent iPhone Safari input-focus zoom with accessible mobile form-control sizing. Verify the measurement save/load path still works. Do not deploy production without explicit owner authorization. After those fixes are verified, resume the measurement audit at Individual Shoulder Length.**

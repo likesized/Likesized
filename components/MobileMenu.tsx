@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "@/components/HeaderResponsive.module.css";
 
 type MobileMenuProps = {
@@ -11,6 +11,7 @@ type MobileMenuProps = {
 
 export function MobileMenu({ unreadCount }: MobileMenuProps) {
   const pathname = usePathname();
+  const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
 
   const closeMenu = () => setOpen(false);
@@ -19,8 +20,21 @@ export function MobileMenu({ unreadCount }: MobileMenuProps) {
     closeMenu();
   }, [pathname]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        closeMenu();
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [open]);
+
   return (
-    <div className={styles.mobileNav}>
+    <div className={styles.mobileNav} ref={menuRef}>
       <button
         type="button"
         className={styles.mobileMenuButton}

@@ -11,7 +11,6 @@ function evidence(overrides: Partial<RecommendationEvidence> = {}): Recommendati
     coveragePercent: 100,
     evidenceLevel: "exact_variant",
     attributeOverlap: 0,
-    wouldBuyAgain: null,
     ...overrides,
   };
 }
@@ -90,15 +89,6 @@ test("controlled Similar Garments overlap may break an otherwise equal size tie"
   assert.equal(result?.sizeKey, "L");
   assert.equal(result?.confidence, 22);
   assert.equal(result?.strongestEvidenceLevel, "similar_garments");
-});
-
-test("buy-again evidence may break an otherwise equal size tie", () => {
-  const result = recommendSize([
-    evidence({ sizeKey: "M", sizeLabel: "M", wouldBuyAgain: false }),
-    evidence({ sizeKey: "L", sizeLabel: "L", wouldBuyAgain: true }),
-  ]);
-  assert.equal(result?.sizeKey, "L");
-  assert.equal(result?.confidence, 33);
 });
 
 test("direction can make the same bad Fit Result stronger negative evidence without changing body Match", () => {

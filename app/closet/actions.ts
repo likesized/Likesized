@@ -265,17 +265,6 @@ function derivePrimaryMaterial(materials:ProductMaterialRow[]){
   return candidates[0]?.option??null;
 }
 
-async function recordMetadataEvidence(supabase:SupabaseClient,productId:string,userId:string,fieldKey:"garment_type"|"market_segment",valueText:string,sourceReference:string|null){
-  const {error}=await supabase.from("product_metadata_evidence").insert({product_id:productId,field_key:fieldKey,value_text:valueText,source_type:"member",source_status:"provisional",confidence:.55,source_reference:sourceReference,submitted_by:userId});
-  if(error&&error.code!=="23505")throw error;
-}
-async function recordAttributeEvidence(supabase:SupabaseClient,productId:string,userId:string,rows:{attribute_key:string;option_key:string}[],sourceReference:string|null){
-  for(const row of rows){const {error}=await supabase.from("product_attribute_evidence").insert({product_id:productId,...row,source_type:"member",source_status:"provisional",confidence:.55,source_reference:sourceReference,submitted_by:userId});if(error&&error.code!=="23505")throw error;}
-}
-async function recordMaterialEvidence(supabase:SupabaseClient,productId:string,userId:string,rows:ProductMaterialRow[],sourceReference:string|null){
-  for(const row of rows){const {error}=await supabase.from("product_material_evidence").insert({product_id:productId,...row,source_type:"member",source_status:"provisional",confidence:.55,source_reference:sourceReference,submitted_by:userId});if(error&&error.code!=="23505")throw error;}
-}
-
 export async function addGarment(formData: FormData) {
   const brandName = text(formData, "brand");
   const productName = text(formData, "product");
@@ -344,11 +333,6 @@ export async function addGarment(formData: FormData) {
     if(primaryMaterial&&!attributeRows.some((row)=>row.attribute_key==="primary_material"))attributeRows.push({attribute_key:"primary_material",option_key:primaryMaterial});
     const sourceReference=productUrl||identifier||styleNumber||"closet_log";
 
-    await recordMetadataEvidence(supabase,product.id,userId,"garment_type",garmentType,sourceReference);
-    await recordMetadataEvidence(supabase,product.id,userId,"market_segment",marketSegment,sourceReference);
-    await recordAttributeEvidence(supabase,product.id,userId,attributeRows,sourceReference);
-    await recordMaterialEvidence(supabase,product.id,userId,materialRows,sourceReference);
-
     const normalizedSizeId = await getNormalizedSize(supabase, structuredSizeLabel, sizeKind, sizingSystem);
     const identifierKind = identifier && /^\d{8}$|^\d{12,14}$/.test(normalizeIdentifier(identifier)) ? "upc" : "sku";
     const variantId = await getOrCreateVariant(supabase, product.id, normalizedSizeId, originalSizeLabel, colorLabel, product.market_segment, identifierKind === "sku" ? identifier || null : null);
@@ -372,6 +356,16 @@ export async function addGarment(formData: FormData) {
       const { error: metadataError } = await supabase.from("fit_reference_photos").insert({ user_id: userId, closet_item_id: closetItemId, storage_path: photoPath });
       if (metadataError) throw metadataError;
     }
+
+    const {error:evidenceError}=await supabase.rpc("record_member_product_evidence",{
+      p_product_id:product.id,
+      p_garment_type:garmentType,
+      p_market_segment:marketSegment,
+      p_attributes:attributeRows,
+      p_materials:materialRows,
+      p_source_reference:sourceReference,
+    });
+    if(evidenceError)throw evidenceError;
   } catch {
     if (photoPath) await supabase.storage.from("fit-reference-photos").remove([photoPath]);
     await supabase.from("closet_items").delete().eq("id", closetItemId).eq("user_id", userId);

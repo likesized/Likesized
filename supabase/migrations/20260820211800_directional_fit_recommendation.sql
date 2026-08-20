@@ -3,11 +3,7 @@
 -- of private measurement differences only to decide how strongly a wearer's physical
 -- Fit Result supports or opposes a size for the current viewer.
 
--- Fit Result is the required sizing signal. Remove the abandoned satisfaction-rating
--- experiment from the branch schema before this migration can ever reach production.
-drop function if exists public.get_product_fit_summary(uuid);
-alter table public.fit_reports drop column if exists fit_rating;
-
+-- Physical Fit Result is required on every new try-on observation.
 create or replace function private.require_complete_fit_report_intake()
 returns trigger
 language plpgsql
@@ -171,29 +167,7 @@ $$;
 revoke all on function public.get_product_evidence_candidates(uuid,uuid,integer) from public,anon;
 grant execute on function public.get_product_evidence_candidates(uuid,uuid,integer) to authenticated;
 
--- Exact-product physical Fit Result summary. The latest Shared observation per unique
--- wearer prevents repeat logging from inflating the distribution.
-create function public.get_product_fit_summary(p_product_id uuid)
-returns table(total_fit_count integer,too_small_count integer,snug_count integer,just_right_count integer,relaxed_count integer,too_big_count integer)
-language sql security invoker set search_path='' as $$
-with ranked as (
-  select fr.fit,row_number() over(partition by fr.user_id order by fr.created_at desc,fr.id desc) wearer_rank
-  from public.fit_reports fr join public.closet_items ci on ci.id=fr.closet_item_id
-  where fr.product_id=p_product_id and ci.visibility='shared'::public.closet_visibility
-), latest as (select fit from ranked where wearer_rank=1)
-select count(*)::integer,
-  count(*) filter(where fit='too_small'::public.fit_rating)::integer,
-  count(*) filter(where fit='snug'::public.fit_rating)::integer,
-  count(*) filter(where fit='just_right'::public.fit_rating)::integer,
-  count(*) filter(where fit='relaxed'::public.fit_rating)::integer,
-  count(*) filter(where fit='too_big'::public.fit_rating)::integer
-from latest;
-$$;
-revoke all on function public.get_product_fit_summary(uuid) from public,anon;
-grant execute on function public.get_product_fit_summary(uuid) to authenticated;
-
 comment on function private.directional_fit_support_from_pressure(public.fit_rating,numeric) is 'Maps private signed garment-relevant body direction plus physical Fit Result to size-recommendation support; does not alter Match percent.';
 comment on function private.calculate_directional_fit_support_for_product(uuid,uuid,public.fit_rating) is 'Auth-bound private directional recommendation helper. Raw and signed measurement deltas never leave private schema.';
 comment on function public.get_product_evidence_candidates(uuid,uuid,integer) is 'Auth-required Shared-only unique-wearer historical fit evidence with safe outcome-specific directional recommendation support; raw body direction remains private.';
-comment on function public.get_product_fit_summary(uuid) is 'Exact-product Shared physical Fit Result distribution, latest observation per unique wearer.';
 comment on function private.require_complete_fit_report_intake() is 'Requires a physical Fit Result on every new Fit Report.';

@@ -41,7 +41,7 @@ export async function Header() {
           </>
         ) : (
           <>
-            <Link href="/login">Sign in</Link>
+            <Link className="navButton" href="/login">Log in</Link>
             <Link className="navButton" href="/signup">Create account</Link>
           </>
         )}

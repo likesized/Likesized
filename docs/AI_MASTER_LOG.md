@@ -32,7 +32,7 @@ This is the **one and only LikeSized roadmap, status record, completed-work ledg
 - Prototype homepage data, `lib/mock-data.ts`, and obsolete standalone `lib/fit.ts` have been removed.
 - Vercel project: **`likesized`**, project ID `prj_ioYhiOjBNHDzPx2otiCY6XpNL3Um`, team `likesized-6817s-projects`.
 - Production domains include **`https://likesized.com`** and `https://likesized.vercel.app`.
-- Owner explicitly authorized the approved measurement-guide artwork promotion to production on 2026-08-20. This master records that authorization; live deployment verification remains pending until Vercel reaches READY on the promoted commit.
+- Owner explicitly authorized the approved measurement-guide artwork promotion to production on 2026-08-20. Live deployment verification remains pending until Vercel reaches READY on the promoted commit.
 
 # PHASES
 

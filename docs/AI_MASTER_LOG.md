@@ -97,13 +97,6 @@ Completed and verified:
 - Existing-account repeated signup behavior routes into account recovery while preserving neutral user-facing messaging.
 - Session behavior remains long-lived through Supabase refresh-token handling rather than an unnecessary custom timeout system.
 
-Relevant completed commits include:
-- `72bf20da511b63c9bb8f33887c8dafafc42d9c4c` — align signup redirect with SSR confirmation route.
-- `aa90e9f64d414d284bdffe6772ce2def0d26e4c4` — record connected production configuration.
-- `9b85b082f0a8985e47a0f6e43aeb0b31c65c49b5` — production site URL set to likesized.com checkpoint.
-- `9007b8fef992e72d7e1236b097c425ad073432d1` + `625063a2432a74ad5a8c298c7ac07a1dd11d5fd8` — canonical password recovery flow.
-- `03bea6665ad828c3b58ad527f44cc29a61a21981` — existing signup recovery behavior.
-
 ### 6.4 Responsive/accessibility + Fit Profile polish — ▶️ IN PROGRESS
 
 #### Completed canonical work
@@ -165,8 +158,6 @@ Reviewed/locked naming:
 
 Next measurement-name review resumes at **Individual Shoulder Length** after the current guide/mobile blockers are resolved.
 
-**Phase 6 exit:** no fake live state, no competing prototype implementation, auth/environment/account recovery ready, and primary V1 flows responsive/accessibility-ready.
-
 ## PHASE 7 — V1 BETA END-TO-END VERIFICATION — QUEUED
 Use a controlled representative population, smoke the full user loop, explicitly test privacy boundaries, rerun advisors, and require green CI plus browser smoke before beta-ready.
 
@@ -195,11 +186,8 @@ Use a controlled representative population, smoke the full user loop, explicitly
 - Audit confirmed the mobile-menu auto-close fix and iPhone input-zoom fix are **not complete**.
 
 # Exact next action
-Complete Phase 6.4 canonically in this order:
-1. Promote the owner-authorized approved measurement-guide implementation to `main`, verify Vercel production reaches READY, visually verify the approved body/waist-hip/torso-girth guides on the live Fit Profile, and update this master with that verified deployment checkpoint.
+1. Promote the owner-authorized approved measurement-guide implementation to `main`, verify Vercel production reaches READY, visually verify the approved guides on live Fit Profile, and log that verified deployment checkpoint here.
 2. Fix signed-in mobile Menu auto-close behavior.
 3. Fix iPhone Safari form-focus zoom with accessible 16px+ mobile form controls.
-4. Verify the Fit Profile save/load path still works with the standardized imperial entry system and no regressions were introduced.
-5. Update this master with each completed item in the same canonical change.
-6. Stop before any later Vercel production deployment unless the owner explicitly authorizes it.
-7. Resume the measurement-name audit at **Individual Shoulder Length**.
+4. Verify Fit Profile save/load remains correct.
+5. Resume measurement-name audit at **Individual Shoulder Length**.

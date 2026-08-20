@@ -34,6 +34,18 @@ alter table public.product_materials
   add column source_reference text,
   add column updated_at timestamptz not null default now();
 
+-- Extend the controlled fiber catalog so care-label composition is not forced into a
+-- generic Other bucket. Composition remains separate from construction and stretch.
+insert into public.materials(key,label) values
+  ('cashmere','Cashmere'),
+  ('silk','Silk'),
+  ('modal_lyocell','Modal / Lyocell / Tencel'),
+  ('acrylic','Acrylic'),
+  ('suede','Suede'),
+  ('fleece','Fleece'),
+  ('canvas','Canvas')
+on conflict(key) do update set label=excluded.label;
+
 create table public.product_metadata_evidence (
   id uuid primary key default gen_random_uuid(),
   product_id uuid not null references public.products(id) on delete cascade,
@@ -100,17 +112,18 @@ revoke all on public.product_metadata_evidence,public.product_attribute_evidence
 grant select,insert on public.product_metadata_evidence,public.product_attribute_evidence,public.product_material_evidence to authenticated;
 
 -- Catalog classification evidence never rewrites a Product from one member assertion.
--- Agreement with an existing provisional classification can promote it; disagreement
--- raises a review flag instead.
+-- A provisional Product is promoted only after two distinct members agree on BOTH its
+-- garment type and market segment with no conflicting member classification evidence.
 create or replace function private.apply_product_metadata_evidence()
 returns trigger
 language plpgsql security definer set search_path=''
 as $$
 declare
   v_current text;
-  v_agree integer;
-  v_conflict integer;
   v_status public.product_data_status;
+  v_type_agree integer:=0;
+  v_segment_agree integer:=0;
+  v_conflict integer:=0;
 begin
   select catalog_status into v_status from public.products where id=new.product_id;
   if new.field_key='garment_type' then
@@ -136,17 +149,22 @@ begin
     return new;
   end if;
 
-  select count(distinct submitted_by) into v_agree
-  from public.product_metadata_evidence
-  where product_id=new.product_id and field_key=new.field_key and value_text=new.value_text
-    and source_type='member'::public.product_data_source and source_status<>'rejected'::public.product_data_status;
-  select count(distinct submitted_by) into v_conflict
-  from public.product_metadata_evidence
-  where product_id=new.product_id and field_key=new.field_key and value_text<>new.value_text
-    and source_type='member'::public.product_data_source and source_status<>'rejected'::public.product_data_status;
+  select count(distinct e.submitted_by) into v_type_agree
+  from public.product_metadata_evidence e join public.products p on p.id=e.product_id
+  where e.product_id=new.product_id and e.field_key='garment_type' and e.value_text=p.garment_type_key
+    and e.source_type='member'::public.product_data_source and e.source_status<>'rejected'::public.product_data_status;
+  select count(distinct e.submitted_by) into v_segment_agree
+  from public.product_metadata_evidence e join public.products p on p.id=e.product_id
+  where e.product_id=new.product_id and e.field_key='market_segment' and e.value_text=p.market_segment::text
+    and e.source_type='member'::public.product_data_source and e.source_status<>'rejected'::public.product_data_status;
+  select count(*) into v_conflict
+  from public.product_metadata_evidence e join public.products p on p.id=e.product_id
+  where e.product_id=new.product_id and e.source_type='member'::public.product_data_source and e.source_status<>'rejected'::public.product_data_status
+    and ((e.field_key='garment_type' and e.value_text is distinct from p.garment_type_key)
+      or (e.field_key='market_segment' and e.value_text is distinct from p.market_segment::text));
 
   if v_conflict>0 then update public.products set catalog_review_needed=true where id=new.product_id; end if;
-  if v_agree>=2 and v_conflict=0 and v_status='provisional'::public.product_data_status then
+  if v_type_agree>=2 and v_segment_agree>=2 and v_conflict=0 and v_status='provisional'::public.product_data_status then
     update public.products set catalog_status='corroborated'::public.product_data_status where id=new.product_id;
   end if;
   return new;
@@ -163,6 +181,7 @@ language plpgsql security definer set search_path=''
 as $$
 declare
   v_existing public.product_attribute_values%rowtype;
+  v_has_existing boolean:=false;
   v_agree integer;
   v_conflict integer;
 begin
@@ -170,6 +189,7 @@ begin
 
   select * into v_existing from public.product_attribute_values
   where product_id=new.product_id and attribute_key=new.attribute_key;
+  v_has_existing:=found;
 
   if new.source_type in ('manufacturer'::public.product_data_source,'retailer'::public.product_data_source,'barcode_catalog'::public.product_data_source,'admin'::public.product_data_source,'system'::public.product_data_source)
      and new.source_status='verified'::public.product_data_status then
@@ -179,7 +199,7 @@ begin
     return new;
   end if;
 
-  if found and v_existing.source_status='verified'::public.product_data_status then
+  if v_has_existing and v_existing.source_status='verified'::public.product_data_status then
     if v_existing.option_key<>new.option_key then update public.products set catalog_review_needed=true where id=new.product_id; end if;
     return new;
   end if;
@@ -200,7 +220,7 @@ begin
     values(new.product_id,new.attribute_key,new.option_key,'member','corroborated',greatest(.80,new.confidence),new.source_reference,now())
     on conflict(product_id,attribute_key) do update set option_key=excluded.option_key,source_type=excluded.source_type,source_status=excluded.source_status,confidence=excluded.confidence,source_reference=excluded.source_reference,updated_at=now()
     where public.product_attribute_values.source_status<>'verified'::public.product_data_status;
-  elsif not found then
+  elsif not v_has_existing then
     insert into public.product_attribute_values(product_id,attribute_key,option_key,source_type,source_status,confidence,source_reference,updated_at)
     values(new.product_id,new.attribute_key,new.option_key,'member','provisional',least(new.confidence,.60),new.source_reference,now());
   elsif v_existing.option_key=new.option_key then
@@ -222,9 +242,11 @@ declare
   v_agree integer;
   v_avg numeric;
   v_existing public.product_materials%rowtype;
+  v_has_existing boolean:=false;
 begin
   if new.source_status='rejected'::public.product_data_status then return new; end if;
   select * into v_existing from public.product_materials where product_id=new.product_id and material_key=new.material_key;
+  v_has_existing:=found;
 
   if new.source_type in ('manufacturer'::public.product_data_source,'retailer'::public.product_data_source,'barcode_catalog'::public.product_data_source,'admin'::public.product_data_source,'system'::public.product_data_source)
      and new.source_status='verified'::public.product_data_status then
@@ -234,7 +256,7 @@ begin
     return new;
   end if;
 
-  if found and v_existing.source_status='verified'::public.product_data_status then return new; end if;
+  if v_has_existing and v_existing.source_status='verified'::public.product_data_status then return new; end if;
 
   select count(distinct submitted_by),avg(percentage) into v_agree,v_avg
   from public.product_material_evidence
@@ -243,10 +265,10 @@ begin
 
   if v_agree>=2 then
     insert into public.product_materials(product_id,material_key,percentage,source_type,source_status,confidence,source_reference,updated_at)
-    values(new.product_id,new.material_key,round(v_avg,2),'member','corroborated',.80,new.source_reference,now())
+    values(new.product_id,new.material_key,case when v_avg is null then null else round(v_avg,2) end,'member','corroborated',.80,new.source_reference,now())
     on conflict(product_id,material_key) do update set percentage=excluded.percentage,source_type=excluded.source_type,source_status=excluded.source_status,confidence=excluded.confidence,source_reference=excluded.source_reference,updated_at=now()
     where public.product_materials.source_status<>'verified'::public.product_data_status;
-  elsif not found then
+  elsif not v_has_existing then
     insert into public.product_materials(product_id,material_key,percentage,source_type,source_status,confidence,source_reference,updated_at)
     values(new.product_id,new.material_key,new.percentage,'member','provisional',least(new.confidence,.60),new.source_reference,now());
   end if;
@@ -255,6 +277,58 @@ end;
 $$;
 revoke all on function private.apply_product_material_evidence() from public,anon,authenticated;
 create trigger apply_product_material_evidence_after_insert after insert on public.product_material_evidence for each row execute function private.apply_product_material_evidence();
+
+-- One authenticated RPC records the member's product facts atomically and ignores
+-- repeat submissions from the same member/product field rather than counting them twice.
+create or replace function public.record_member_product_evidence(
+  p_product_id uuid,
+  p_garment_type text,
+  p_market_segment text,
+  p_attributes jsonb default '[]'::jsonb,
+  p_materials jsonb default '[]'::jsonb,
+  p_source_reference text default null
+) returns void
+language plpgsql security invoker set search_path=''
+as $$
+declare
+  v_user_id uuid:=auth.uid();
+  v_row jsonb;
+  v_attribute_key text;
+  v_option_key text;
+  v_material_key text;
+  v_percentage numeric;
+begin
+  if v_user_id is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  if not exists(select 1 from public.products where id=p_product_id) then raise exception 'Unknown Product'; end if;
+
+  insert into public.product_metadata_evidence(product_id,field_key,value_text,source_type,source_status,confidence,source_reference,submitted_by)
+  values(p_product_id,'garment_type',p_garment_type,'member','provisional',.55,p_source_reference,v_user_id)
+  on conflict(product_id,field_key,submitted_by) where submitted_by is not null do nothing;
+  insert into public.product_metadata_evidence(product_id,field_key,value_text,source_type,source_status,confidence,source_reference,submitted_by)
+  values(p_product_id,'market_segment',p_market_segment,'member','provisional',.55,p_source_reference,v_user_id)
+  on conflict(product_id,field_key,submitted_by) where submitted_by is not null do nothing;
+
+  for v_row in select value from jsonb_array_elements(coalesce(p_attributes,'[]'::jsonb)) loop
+    v_attribute_key:=nullif(btrim(v_row->>'attribute_key'),'');
+    v_option_key:=nullif(btrim(v_row->>'option_key'),'');
+    if v_attribute_key is null or v_option_key is null then raise exception 'Invalid product attribute evidence'; end if;
+    insert into public.product_attribute_evidence(product_id,attribute_key,option_key,source_type,source_status,confidence,source_reference,submitted_by)
+    values(p_product_id,v_attribute_key,v_option_key,'member','provisional',.55,p_source_reference,v_user_id)
+    on conflict(product_id,attribute_key,submitted_by) where submitted_by is not null do nothing;
+  end loop;
+
+  for v_row in select value from jsonb_array_elements(coalesce(p_materials,'[]'::jsonb)) loop
+    v_material_key:=nullif(btrim(v_row->>'material_key'),'');
+    v_percentage:=case when nullif(btrim(v_row->>'percentage'),'') is null then null else (v_row->>'percentage')::numeric end;
+    if v_material_key is null or (v_percentage is not null and (v_percentage<0 or v_percentage>100)) then raise exception 'Invalid product material evidence'; end if;
+    insert into public.product_material_evidence(product_id,material_key,percentage,source_type,source_status,confidence,source_reference,submitted_by)
+    values(p_product_id,v_material_key,v_percentage,'member','provisional',.55,p_source_reference,v_user_id)
+    on conflict(product_id,material_key,submitted_by) where submitted_by is not null do nothing;
+  end loop;
+end;
+$$;
+revoke all on function public.record_member_product_evidence(uuid,text,text,jsonb,jsonb,text) from public,anon;
+grant execute on function public.record_member_product_evidence(uuid,text,text,jsonb,jsonb,text) to authenticated;
 
 -- Exact known product resolution order for a new Closet log:
 -- explicit canonical Product -> UPC/barcode -> exact normalized URL -> Brand+Style ID.
@@ -417,6 +491,7 @@ comment on column public.products.catalog_status is 'Trust state for canonical p
 comment on table public.product_metadata_evidence is 'Immutable source/provenance evidence for garment type and market segment.';
 comment on table public.product_attribute_evidence is 'Immutable source/provenance evidence for controlled construction/fit attributes.';
 comment on table public.product_material_evidence is 'Immutable source/provenance evidence for fiber/material composition; independent from construction and stretch.';
+comment on function public.record_member_product_evidence(uuid,text,text,jsonb,jsonb,text) is 'Atomically records one member vote per product metadata field, controlled attribute and material without allowing duplicate votes.';
 comment on function public.resolve_catalog_product(uuid,text,text,text,text) is 'Existing Product resolver: explicit Product, UPC/barcode, normalized listing URL, then Brand+Style ID.';
 comment on function public.get_product_fit_summary(uuid) is 'Exact-product Shared community Fit Rating average and physical Fit Result distribution, latest observation per unique wearer.';
 comment on function private.product_match_measurements(uuid) is 'Target-product anthropometric model with product-attribute effects confidence-softened by catalog provenance.';

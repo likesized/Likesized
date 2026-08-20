@@ -1,5 +1,6 @@
 import type { EvidenceLevel } from "@/lib/domain";
 
+export type PreferredFit = "fitted" | "standard" | "relaxed";
 export type RecommendationEvidence = {
   sizeKey: string;
   sizeLabel: string;
@@ -26,6 +27,23 @@ const FIT_SUPPORT: Record<RecommendationEvidence["fit"], number> = {
   just_right: 1,
   relaxed: 0.72,
   too_big: -0.65,
+};
+const PREFERENCE_SUPPORT: Record<PreferredFit, Record<RecommendationEvidence["fit"], number>> = {
+  fitted: {
+    too_small: -0.65,
+    snug: 0.90,
+    just_right: 0.90,
+    relaxed: 0.35,
+    too_big: -0.65,
+  },
+  standard: FIT_SUPPORT,
+  relaxed: {
+    too_small: -0.65,
+    snug: 0.15,
+    just_right: 0.85,
+    relaxed: 1,
+    too_big: -0.65,
+  },
 };
 const EVIDENCE_WEIGHT: Record<EvidenceLevel, number> = {
   exact_variant: 1,
@@ -61,15 +79,21 @@ type Bucket = {
   strongestEvidenceLevel: EvidenceLevel;
 };
 
-function fitSupport(row: RecommendationEvidence) {
+function clampSupport(value:number){return Math.max(-1,Math.min(1,value));}
+function fitSupport(row: RecommendationEvidence, preference: PreferredFit) {
+  const baseline=FIT_SUPPORT[row.fit];
   const directional = row.directionalFitSupport;
-  if (typeof directional === "number" && Number.isFinite(directional)) {
-    return Math.max(-1, Math.min(1, directional));
-  }
-  return FIT_SUPPORT[row.fit];
+  const directionalSupport = typeof directional === "number" && Number.isFinite(directional)
+    ? clampSupport(directional)
+    : baseline;
+  const directionalDelta=directionalSupport-baseline;
+  // Preference changes which physically acceptable result is desirable. Too Small and
+  // Too Big remain negative in every preference. Direction remains a separate private
+  // modifier layered on top of that preference interpretation.
+  return clampSupport(PREFERENCE_SUPPORT[preference][row.fit]+directionalDelta);
 }
 
-export function recommendSize(evidence: RecommendationEvidence[]): SizeRecommendation | null {
+export function recommendSize(evidence: RecommendationEvidence[], preference:PreferredFit="standard"): SizeRecommendation | null {
   const eligible = evidence.filter(
     (row) =>
       row.sizeKey.trim() &&
@@ -92,9 +116,9 @@ export function recommendSize(evidence: RecommendationEvidence[]): SizeRecommend
       row.evidenceLevel === "similar_garments"
         ? Math.min(1.12, 1 + (row.attributeOverlap ?? 0) * 0.03)
         : 1;
-    // Fit Result is the only member opinion used to support or oppose a size.
-    // Preference/satisfaction signals such as Would Buy Again do not alter sizing.
-    const support = fitSupport(row);
+    // Physical Fit Result is the historical evidence. Current preferred fit changes
+    // desirability for this viewer only; it never changes body Match % or history.
+    const support = fitSupport(row,preference);
     const base = closeness * exactness * attributeBoost;
     const signed = base * support;
 

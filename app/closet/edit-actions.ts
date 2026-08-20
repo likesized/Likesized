@@ -44,11 +44,10 @@ export async function logFitObservation(formData:FormData){
   const id=text(formData,"closet_item_id");
   if(!UUID.test(id))redirect("/closet");
   const fit=text(formData,"fit");
-  const fitRating=Number(text(formData,"fit_rating"));
   const notes=text(formData,"fit_notes")||null;
   const buy=text(formData,"would_buy_again");
   const dimensions=fitDimensionRows(formData);
-  if(!FIT_RESULTS.has(fit)||!Number.isInteger(fitRating)||fitRating<1||fitRating>5||(notes&&notes.length>1000)||dimensions===null)redirect(itemPath(id,"error=invalid_observation"));
+  if(!FIT_RESULTS.has(fit)||(notes&&notes.length>1000)||dimensions===null)redirect(itemPath(id,"error=invalid_observation"));
   const wouldBuyAgain=buy==="yes"?true:buy==="no"?false:null;
   const {supabase,userId}=await auth(itemPath(id));
   const {data:item,error:itemError}=await supabase.from("closet_items").select("id,product_id,variant_id,size_label,normalized_size_id").eq("id",id).eq("user_id",userId).maybeSingle();
@@ -64,7 +63,6 @@ export async function logFitObservation(formData:FormData){
     normalized_size_id:item.normalized_size_id,
     fit_profile_version_id:versionId,
     fit,
-    fit_rating:fitRating,
     fit_notes:notes,
     would_buy_again:wouldBuyAgain,
   }).select("id").single();

@@ -282,12 +282,11 @@ export async function addGarment(formData: FormData) {
   const colorLabel = text(formData, "color_label") || null;
   let visibility = (text(formData, "visibility") === "shared" ? "shared" : "private") as ClosetVisibility;
   const fit = text(formData, "fit");
-  const fitRating = Number(text(formData,"fit_rating"));
   const fitNotes = text(formData, "fit_notes") || null;
   const wouldBuyAgainRaw = text(formData, "would_buy_again");
   const wearsCount = Number(text(formData, "wears_count") || "0");
 
-  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId&&!UUID.test(existingProductId)) || (requestedFamilyId&&!UUID.test(requestedFamilyId)) || !garmentType || !MARKET_SEGMENTS.has(marketSegment) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || !originalSizeLabel || originalSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !FIT_RESULTS.has(fit) || !Number.isInteger(fitRating) || fitRating<1 || fitRating>5 || !Number.isInteger(wearsCount) || wearsCount < 0 || wearsCount > 100000 || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000) || identifier.length>120 || (styleNumber&&styleNumber.length>100)) fail("invalid_fields");
+  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId&&!UUID.test(existingProductId)) || (requestedFamilyId&&!UUID.test(requestedFamilyId)) || !garmentType || !MARKET_SEGMENTS.has(marketSegment) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || !originalSizeLabel || originalSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !FIT_RESULTS.has(fit) || !Number.isInteger(wearsCount) || wearsCount < 0 || wearsCount > 100000 || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000) || identifier.length>120 || (styleNumber&&styleNumber.length>100)) fail("invalid_fields");
   if (productUrl) { try { normalizeProductUrl(productUrl); } catch { fail("invalid_fields"); } }
 
   const photoEntry = formData.get("photo");
@@ -340,7 +339,7 @@ export async function addGarment(formData: FormData) {
     const { error: closetError } = await supabase.from("closet_items").insert({ id: closetItemId, user_id: userId, product_id: product.id, variant_id: variantId, size_label: originalSizeLabel, normalized_size_id: normalizedSizeId, visibility, wears_count: wearsCount });
     if (closetError) throw closetError;
 
-    const { data: report, error: reportError } = await supabase.from("fit_reports").insert({ user_id: userId, closet_item_id: closetItemId, product_id: product.id, variant_id: variantId, fit_profile_version_id: fitProfileVersionId, size_label: originalSizeLabel, normalized_size_id: normalizedSizeId, fit, fit_rating:fitRating, fit_notes: fitNotes, would_buy_again: wouldBuyAgain }).select("id").single();
+    const { data: report, error: reportError } = await supabase.from("fit_reports").insert({ user_id: userId, closet_item_id: closetItemId, product_id: product.id, variant_id: variantId, fit_profile_version_id: fitProfileVersionId, size_label: originalSizeLabel, normalized_size_id: normalizedSizeId, fit, fit_notes: fitNotes, would_buy_again: wouldBuyAgain }).select("id").single();
     if (reportError || !report) throw reportError ?? new Error("Could not save fit report");
     if(dimensionRows.length){const {error:dimensionError}=await supabase.from("fit_report_dimensions").insert(dimensionRows.map((row)=>({fit_report_id:report.id,...row})));if(dimensionError)throw dimensionError;}
 

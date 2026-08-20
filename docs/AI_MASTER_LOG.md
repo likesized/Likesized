@@ -13,6 +13,8 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - Phase 6.3 auth/configuration: COMPLETE.
 - Phase 6.4 responsive/accessibility + Fit Profile polish: IN PROGRESS.
 - Measurement-guide implementation, binary repair, production deployment, and owner visual verification: COMPLETE.
+- Phase 6.4 mobile/measurement batch through Front Waist Length: MERGED TO CANONICAL `main` / PRODUCTION READY.
+- Current measurement-audit checkpoint: **Back Waist / Neck-to-Waist Length**.
 - Phase 6.5 V1 Product Surface + Navigation Audit: LOCKED / QUEUED immediately after Phase 6.4.
 
 ## Phase 6.4 canonical completed work
@@ -21,6 +23,8 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - Height uses feet + whole inches.
 - Other imperial length measurements use whole inches + 0/¼/½/¾ dropdowns.
 - Server validates height as whole inches and other imperial lengths in quarter-inch increments.
+- Mobile Menu auto-close behavior is implemented in canonical source and deployed; final functional verification remains before Phase 6.4 closes.
+- iPhone Safari form-focus zoom prevention is implemented in canonical source and deployed via 16px form-control text; final functional verification remains before Phase 6.4 closes.
 
 ## Phase 6.4 measurement audit — owner-locked decisions so far
 - **Individual Shoulder Length:** keep current name, description, how-to, and guide as-is.
@@ -28,6 +32,16 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - **Bust Point to Bust Point:** title capitalization standardized; how-to is “Measure straight across from the fullest point of one bust to the fullest point of the other while standing naturally.”
 - **Shoulder to Bust Point:** use a vertical measurement from the middle of the shoulder, where a bra strap naturally sits, down to the fullest part or nipple of the bust; guide aligned vertically.
 - **Front Waist Length:** description is “The distance from the high shoulder point to the natural waist along the front of the body.” How-to is “Start at the high shoulder point where the neck meets the shoulder. Measure down the front of the body, over the fullest part of the bust, to the natural waist.”
+- **Next measurement under audit:** Back Waist / Neck-to-Waist Length. No owner-approved wording change has been applied to it yet.
+
+## Phase 6.4 production checkpoint — 2026-08-20
+- Owner explicitly authorized this Phase 6.4 batch to be pushed to Vercel production.
+- Working PR #33 passed LikeSized CI before promotion.
+- PR #33 was squash-merged into canonical `main` as commit `a22e1732311050e6d4c6e0fd26a3708f67bcbbac`.
+- The production batch contains the canonical mobile Menu auto-close implementation, iPhone Safari focus-zoom prevention, and owner-approved measurement guidance through Front Waist Length.
+- Vercel production deployment `dpl_G9qQawDkjNto8HAEXGscK5kHoqUg` for commit `a22e1732311050e6d4c6e0fd26a3708f67bcbbac` reached READY with no alias error.
+- Production aliases include `likesized.com`, `likesized.vercel.app`, and the canonical main-branch aliases.
+- The measurement audit intentionally stops at **Back Waist / Neck-to-Waist Length** for the next owner review.
 
 ## Approved measurement-guide artwork — COMPLETE / LIVE / OWNER VERIFIED
 - Approved unisex body artwork is the base for normal measurement guides and remained valid.
@@ -43,10 +57,10 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - Binary verification rule remains locked: HTTP 200 alone is not sufficient for image assets. Verify deployed files are complete/decodable and match expected canonical bytes/hash.
 
 ## Phase 6.4 — remaining work
-1. Mobile Menu auto-close behavior.
-2. iPhone Safari form-focus zoom fix.
-3. Final Fit Profile save/load/edit regression verification.
-4. Continue and finish the remaining measurement-name/help audit after **Front Waist Length**.
+1. Continue and finish the remaining measurement-name/help audit beginning at **Back Waist / Neck-to-Waist Length**.
+2. Final Fit Profile save/load/edit regression verification.
+3. Final functional verification of the deployed mobile Menu auto-close behavior.
+4. Final functional verification of the deployed iPhone Safari form-focus zoom fix.
 5. Close Phase 6.4 only after the canonical source, verification result, and this master agree.
 
 # Phase 6.5 — V1 PRODUCT SURFACE + NAVIGATION AUDIT — LOCKED
@@ -390,4 +404,4 @@ Representative end-to-end verification must cover:
 - CI/database/security verification
 
 ## Exact next action
-Continue Phase 6.4 measurement-name/help audit with **Back Waist / Neck-to-Waist Length**, then finish the remaining measurements. After the measurement audit, verify Fit Profile save/load/edit regression behavior, confirm the mobile Menu and iPhone Safari fixes in Preview, synchronize this master with verified results, and close Phase 6.4 before beginning Phase 6.5.
+Continue Phase 6.4 measurement-name/help audit with **Back Waist / Neck-to-Waist Length**. Do not change that measurement until the owner approves its wording. Then finish the remaining measurements, run the Fit Profile save/load/edit regression check, perform final functional verification of the deployed mobile Menu and iPhone Safari fixes, synchronize verified results here, and close Phase 6.4 before beginning Phase 6.5.

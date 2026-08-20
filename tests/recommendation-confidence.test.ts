@@ -100,3 +100,26 @@ test("buy-again evidence may break an otherwise equal size tie", () => {
   assert.equal(result?.sizeKey, "L");
   assert.equal(result?.confidence, 33);
 });
+
+test("direction can make the same bad Fit Result stronger negative evidence without changing body Match", () => {
+  const weakerNegative = recommendSize([
+    evidence({ fit: "just_right" }),
+    evidence({ fit: "too_small", directionalFitSupport: -0.40 }),
+  ]);
+  const strongerNegative = recommendSize([
+    evidence({ fit: "just_right" }),
+    evidence({ fit: "too_small", directionalFitSupport: -0.90 }),
+  ]);
+  assert.equal(weakerNegative?.sizeKey, "M");
+  assert.equal(strongerNegative?.sizeKey, "M");
+  assert.ok((strongerNegative?.confidence ?? 100) < (weakerNegative?.confidence ?? 0));
+});
+
+test("directional Fit Result support can break an otherwise equal size tie", () => {
+  const result = recommendSize([
+    evidence({ sizeKey: "M", sizeLabel: "M", directionalFitSupport: 0.60 }),
+    evidence({ sizeKey: "L", sizeLabel: "L", directionalFitSupport: 0.90 }),
+  ]);
+  assert.equal(result?.sizeKey, "L");
+  assert.equal(result?.similarWearerCount, 2);
+});

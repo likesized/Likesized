@@ -41,12 +41,13 @@ This is the **one and only LikeSized roadmap, status record, phase checklist, an
 - CI runs npm ci, typecheck, production recommendation calibration, production build, fresh migration replay and all pgTAP suites.
 - Prototype homepage data, `lib/mock-data.ts`, and the obsolete standalone `lib/fit.ts` implementation have been removed from canonical source.
 - Phase 6.1/6.2 verification PR #32 / CI `32306676280` passed install, typecheck, recommendation calibration, production build, clean replay of all 30 migrations, and all canonical database tests; verification-only PR closed without merge.
-- Vercel project **`likesized`** now exists in team `likesized-6817s-projects` with project ID `prj_ioYhiOjBNHDzPx2otiCY6XpNL3Um`.
-- Production domain is **`https://likesized.vercel.app`**.
-- Live canonical production deployment is **`dpl_F7FaH6oeAt4RFh6qb5QvF6unZCAv`**. Its build checked out exact GitHub commit **`48f23518ac01b3dd7021f44e0d41bdd77ee44e15`**, then ran canonical `npm ci --include=dev` and `npm run build` with the production Supabase URL/publishable key and `NEXT_PUBLIC_SITE_URL=https://likesized.vercel.app` supplied to that build.
+- Vercel project **`likesized`** exists in team `likesized-6817s-projects` with project ID `prj_ioYhiOjBNHDzPx2otiCY6XpNL3Um`.
+- Production domain is **`https://likesized.vercel.app`**; owner also connected **`likesized.com`** in Vercel and SSL provisioning is in progress.
+- Live canonical production deployment before the final Phase 6.3 auth/config pass is **`dpl_F7FaH6oeAt4RFh6qb5QvF6unZCAv`**. Its build checked out exact GitHub commit **`48f23518ac01b3dd7021f44e0d41bdd77ee44e15`**, then ran canonical `npm ci --include=dev` and `npm run build` with the production Supabase URL/publishable key and `NEXT_PUBLIC_SITE_URL=https://likesized.vercel.app` supplied to that build.
 - The live canonical production build passed Next compile, TypeScript and generation of all 20 application routes; live `/` returned 200, unauthenticated `/people` entered the expected login/return flow, and Vercel reported no runtime errors in the first production smoke window.
 - Canonical commit **`72bf20da511b63c9bb8f33887c8dafafc42d9c4c`** corrected signup `emailRedirectTo` to pass only the request/site origin. This intentionally pairs with the hosted Supabase confirmation template using `{{ .RedirectTo }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`; `/auth/confirm` verifies the token server-side and defaults the successful destination to `/onboarding`.
-- The current master-log commits after the production checkpoint are repository/config bookkeeping plus the auth redirect correction; the auth correction is **not yet in the live production deployment**.
+- On 2026-08-19 the owner completed the Phase 6.3 dashboard configuration: Vercel shared environment variables were linked to the `likesized` project with Production/Preview scoping, Vercel Git was connected to `likesized/Likesized`, Supabase Site URL/redirect allowlist were configured, custom SMTP was configured through Resend, and the Confirm signup template was changed to the canonical `/auth/confirm` token-hash route.
+- Resend domain `likesized.com` is connected through Vercel DNS and is currently **Pending / Checking DNS**. SMTP credentials are stored only in Supabase/Resend and are not recorded in repository docs.
 
 # PHASES
 
@@ -128,17 +129,18 @@ Dedicated Following Feed + Fit Twin activity notifications explicitly locked int
 ### 6.3 Production configuration readiness — ▶️ IN PROGRESS
 - Canonical app requires `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and a production `NEXT_PUBLIC_SITE_URL`.
 - Supabase project `rlksidwniuoxoacumyaf` is **ACTIVE_HEALTHY** in `us-east-1`; project URL `https://rlksidwniuoxoacumyaf.supabase.co` and an enabled modern `sb_publishable_...` key are confirmed. Security Advisor remains 0 findings.
-- Canonical signup now passes an **origin-only** `emailRedirectTo`; `/auth/confirm` performs server-side OTP verification and then sends confirmed users to onboarding by default.
-- Hosted Supabase **Confirm signup** template must use `{{ .RedirectTo }}/auth/confirm?token_hash={{ .TokenHash }}&type=email` so production and preview confirmations enter the canonical server-side confirmation route.
+- Canonical signup passes an **origin-only** `emailRedirectTo`; `/auth/confirm` performs server-side OTP verification and then sends confirmed users to onboarding by default.
 - Owner authorized the initial production deployment on 2026-08-19.
 - Vercel project `likesized` / `prj_ioYhiOjBNHDzPx2otiCY6XpNL3Um` exists and production domain `https://likesized.vercel.app` is active.
-- Live production deployment `dpl_F7FaH6oeAt4RFh6qb5QvF6unZCAv` is READY. It predates the origin-only auth redirect correction and must not be treated as the final Phase 6.3 auth build.
-- **Vercel Production environment target:** set `NEXT_PUBLIC_SUPABASE_URL=https://rlksidwniuoxoacumyaf.supabase.co`, set the enabled modern publishable key as `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and set `NEXT_PUBLIC_SITE_URL=https://likesized.vercel.app`.
-- **Vercel Preview environment target:** set the same Supabase URL and publishable key, but intentionally **do not set `NEXT_PUBLIC_SITE_URL` for Preview**. The canonical signup helper then uses the preview request origin, preventing preview confirmation links from being forced back to production.
-- **Supabase Auth URL target:** Site URL = `https://likesized.vercel.app`; additional redirect allowlist must include `http://localhost:3000/**` and `https://*-likesized-6817s-projects.vercel.app/**`. Production should use the exact production Site URL rather than a wildcard.
-- **Git source target:** Vercel project must be linked/verified against canonical GitHub repo `likesized/Likesized`. Recent canonical GitHub commits expose no Vercel commit status through the available status API, so the long-term Git link remains unverified.
-- Current Vercel connector access can deploy/read the project but exposes no project environment-variable or Git-link mutation. Current Supabase connector exposes project/database/auth documentation but no hosted Auth URL/template mutation. The documented CLI/REST fallback is also unavailable in the current ChatGPT runtime because no reusable Vercel/Supabase management token is exposed there and outbound package/DNS access is unavailable. Do not claim these dashboard writes were completed.
-- **Still required before 6.3 is complete:** perform/verify the Vercel Production/Preview environment settings above; link/verify Vercel Git source; perform/verify Supabase Site URL, redirect allowlist and Confirm signup template; deploy the canonical auth correction with owner authorization; then run a real confirmation-email signup test through `/auth/confirm` and confirm onboarding session persistence.
+- **Vercel environment configuration — ✅ COMPLETED BY OWNER:** Shared `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are linked to `likesized` for Production + Preview. Shared `NEXT_PUBLIC_SITE_URL=https://likesized.vercel.app` is linked to `likesized` for Production only.
+- **Vercel Git source — ✅ COMPLETED BY OWNER:** project is connected directly to canonical repo `likesized/Likesized`; owner scoped the Vercel GitHub installation to that repository rather than all repositories.
+- **Supabase Auth URL configuration — ✅ COMPLETED BY OWNER:** Site URL is `https://likesized.vercel.app`; redirect allowlist includes `http://localhost:3000/**` and `https://*-likesized-6817s-projects.vercel.app/**`.
+- **Supabase custom SMTP — ✅ CONFIGURED, DOMAIN VERIFICATION PENDING:** provider is Resend; sender is `noreply@likesized.com` / `LikeSized`; SMTP host is `smtp.resend.com`, port `465`, username `resend`; password is a dedicated Resend Sending-access API key stored only in Supabase. The originally exposed key was revoked and replaced before saving.
+- **Resend domain — ⏳ PENDING:** `likesized.com` was added to Resend and Vercel authorized Resend to create the required DNS records. Resend currently reports `Pending / Checking DNS` while Vercel DNS propagates.
+- **Supabase Confirm signup template — ✅ COMPLETED BY OWNER:** confirmation link now uses `{{ .RedirectTo }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`.
+- The pre-Git-link live production deployment `dpl_F7FaH6oeAt4RFh6qb5QvF6unZCAv` predates the origin-only auth correction and must not be treated as the final Phase 6.3 auth build.
+- This master-log update is intentionally the first canonical commit after the Vercel Git connection; it should trigger Vercel to deploy the current `main`, including auth commit `72bf20da511b63c9bb8f33887c8dafafc42d9c4c` and the final dashboard configuration.
+- **Still required before 6.3 is complete:** verify Resend domain becomes Verified; verify the Git-triggered Vercel production deployment reaches READY from current canonical `main`; run a real confirmation-email signup through `/auth/confirm` and confirm the authenticated onboarding session persists.
 
 ### 6.4 Responsive/accessibility review — QUEUED
 Run mobile/responsive/accessibility review across V1 primary flows and correct blockers in canonical source.
@@ -149,4 +151,4 @@ Run mobile/responsive/accessibility review across V1 primary flows and correct b
 Use a controlled representative population, smoke the full user loop, explicitly test privacy boundaries, rerun advisors, and require green CI plus browser smoke before beta-ready.
 
 ## Exact next action
-**PHASE 6.3 — complete the one-time Vercel/Supabase dashboard writes exactly as specified above (or use a future connector/session that exposes those management writes), verify the Vercel Git link, then deploy canonical auth commit `72bf20da511b63c9bb8f33887c8dafafc42d9c4c` with owner authorization and run the real confirmation-email → `/auth/confirm` → onboarding session test. Do not start Phase 6.4 before this verification passes.**
+**PHASE 6.3 — verify the Git-triggered production deployment from the current canonical `main`, wait only for Resend `likesized.com` DNS verification to become Verified, then run the real confirmation-email → `/auth/confirm` → onboarding session test. Do not start Phase 6.4 before this verification passes.**

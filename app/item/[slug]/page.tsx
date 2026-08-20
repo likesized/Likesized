@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { EVIDENCE_LABELS, type EvidenceLevel } from "@/lib/domain";
-import { recommendSize, type RecommendationEvidence } from "@/lib/recommendation";
+import { recommendSize, type PreferredFit, type RecommendationEvidence } from "@/lib/recommendation";
 
 type Params=Promise<{slug:string}>;
 type SearchParams=Promise<Record<string,string|string[]|undefined>>;
@@ -19,6 +19,7 @@ function first(value:string|string[]|undefined){return Array.isArray(value)?valu
 function variantLabel(variant:VariantRecord){const normalized=one<NormalizedSize>(variant.normalized_size);return `Size ${normalized?.display_label||variant.size_label}${variant.color_label?` · ${variant.color_label}`:""}${variant.sku?` · SKU ${variant.sku}`:""}`;}
 function percent(count:number,total:number){return total?Math.round((count/total)*100):0;}
 const FIT_LABELS:Record<string,string>={too_small:"Too small",snug:"Snug",just_right:"Just right",relaxed:"Relaxed",too_big:"Too big"};
+const PREFERENCE_LABELS:Record<PreferredFit,string>={fitted:"Fitted",standard:"Standard",relaxed:"Relaxed"};
 
 export default async function ItemPage({params,searchParams}:{params:Params;searchParams:SearchParams}){
   const {slug}=await params;
@@ -41,6 +42,13 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
   if(!productData)notFound();
   const product=productData as ProductRecord;
   const brand=one<BrandRecord>(product.brand);
+
+  let fitPreference:PreferredFit="standard";
+  if(product.garment_type_key){
+    const {data:preferenceData,error:preferenceError}=await supabase.from("user_garment_fit_preferences").select("preference").eq("user_id",viewerId).eq("garment_type_key",product.garment_type_key).maybeSingle();
+    if(preferenceError)throw new Error("Could not load preferred fit.");
+    if(preferenceData?.preference==="fitted"||preferenceData?.preference==="relaxed")fitPreference=preferenceData.preference;
+  }
 
   const {data:variantData,error:variantError}=await supabase.from("product_variants").select("id,size_label,color_label,sku,normalized_size:normalized_sizes(display_label)").eq("product_id",product.id).order("size_label").order("color_label");
   if(variantError)throw new Error("Could not load product variants.");
@@ -83,10 +91,9 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
       coveragePercent:row.historical_coverage_percent,
       evidenceLevel:row.evidence_level,
       attributeOverlap:row.attribute_overlap,
-      wouldBuyAgain:row.would_buy_again,
       directionalFitSupport:row.directional_fit_support,
     };
-  }));
+  }),fitPreference);
 
   const bestLevel=ranked[0]?.evidence_level??null;
   const bestCount=bestLevel?ranked.filter((row)=>row.evidence_level===bestLevel).length:0;
@@ -96,7 +103,7 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
   return <main className="pageShell">
     <section className="itemHero"><div className="productImage">{placeholder}</div><div className="itemDetails"><span className="eyebrow">{brand?.name?.toUpperCase()||"BRAND"}{product.garment_type_key?` · ${product.garment_type_key.replaceAll("_"," ").toUpperCase()}`:""}</span><h1>{product.name}</h1><p>LikeSized keeps body Match % separate from physical Fit Result. A highly matched wearer reporting Too Small or Too Big is valuable evidence against that size—not a reason to lower the body Match.</p>
       {fitCount?<div className="tiny">Latest Shared physical fit per unique wearer: {percent(summary?.too_small_count??0,fitCount)}% Too small · {percent(summary?.snug_count??0,fitCount)}% Snug · {percent(summary?.just_right_count??0,fitCount)}% Just right · {percent(summary?.relaxed_count??0,fitCount)}% Relaxed · {percent(summary?.too_big_count??0,fitCount)}% Too big.</div>:<div className="tiny">No Shared physical fit observations for this exact product yet.</div>}
-      {recommendation?<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>{recommendation.sizeLabel}</strong><b>{recommendation.confidence}% confidence</b></div><div className="tiny">Based on {recommendation.similarWearerCount} unique relevant wearer{recommendation.similarWearerCount===1?"":"s"}. Strongest supporting tier: {EVIDENCE_LABELS[recommendation.strongestEvidenceLevel]}. LikeSized privately uses whether those wearers are slightly larger or smaller in garment-relevant dimensions to interpret their Fit Results; raw measurement differences are never shown.</div></>:<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>—</strong><b>Not enough relevant evidence yet</b></div><div className="tiny">No eligible shared historical fit evidence from sufficiently similar body snapshots yet.</div></>}
+      {recommendation?<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>{recommendation.sizeLabel}</strong><b>{recommendation.confidence}% confidence</b></div><div className="tiny">Personalized for your <b>{PREFERENCE_LABELS[fitPreference]}</b> fit preference. Based on {recommendation.similarWearerCount} unique relevant wearer{recommendation.similarWearerCount===1?"":"s"}. Strongest supporting tier: {EVIDENCE_LABELS[recommendation.strongestEvidenceLevel]}. LikeSized privately uses whether those wearers are slightly larger or smaller in garment-relevant dimensions to interpret their Fit Results; raw measurement differences are never shown.</div></>:<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>—</strong><b>Not enough relevant evidence yet</b></div><div className="tiny">Your {PREFERENCE_LABELS[fitPreference]} preference is ready to apply once enough eligible Shared historical fit evidence exists.</div></>}
       <div className="statsRow"><span><b>{ranked.length}</b> unique wearer{ranked.length===1?"":"s"}</span><span><b>{bestLevel?EVIDENCE_LABELS[bestLevel]:"—"}</b> strongest tier</span><span><b>{bestCount}</b> at strongest tier</span></div>
     </div></section>
 

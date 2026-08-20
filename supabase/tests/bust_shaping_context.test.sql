@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
-select plan(16);
+select plan(17);
 
 select is(
   (select coverage_weight from public.match_profile_measurements where profile_key='tops_default' and measurement_type_key='full_bust'),

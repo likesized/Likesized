@@ -1,0 +1,16 @@
+.signedInDesktop { display:flex; }
+.mobileNav { display:none; margin-left:auto; }
+.mobileMenu { position:relative; margin:0; padding:0; border:0; }
+.mobileMenu > summary { list-style:none; cursor:pointer; padding:10px 15px; border:1px solid var(--ink); border-radius:999px; font-size:13px; font-weight:900; background:transparent; }
+.mobileMenu > summary::-webkit-details-marker { display:none; }
+.mobileMenu[open] > summary { background:var(--ink); color:var(--white); }
+.mobileMenuPanel { position:absolute; right:0; top:calc(100% + 10px); width:min(280px, calc(100vw - 36px)); padding:10px; border:1px solid var(--line); border-radius:18px; background:var(--white); box-shadow:0 20px 60px rgba(18,18,18,.18); display:grid; gap:2px; }
+.mobileMenuPanel a, .mobileMenuPanel button { width:100%; display:flex; align-items:center; justify-content:space-between; padding:12px 13px; border:0; border-radius:11px; background:transparent; color:var(--ink); text-align:left; font-size:14px; font-weight:800; cursor:pointer; }
+.mobileMenuPanel a:hover, .mobileMenuPanel button:hover, .mobileMenuPanel a:focus-visible, .mobileMenuPanel button:focus-visible { background:var(--paper); outline:none; }
+.mobileMenuPanel form { width:100%; margin:4px 0 0; padding-top:6px; border-top:1px solid var(--line); }
+.notificationCount { min-width:22px; height:22px; padding:0 6px; display:inline-grid; place-items:center; border-radius:999px; background:var(--secondary); font-size:11px; }
+
+@media (max-width: 900px) {
+  .signedInDesktop { display:none !important; }
+  .mobileNav { display:flex; align-items:center; }
+}

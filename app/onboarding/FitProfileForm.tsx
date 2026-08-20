@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { saveFitProfile } from "@/app/onboarding/actions";
+import { MeasurementHelpDialog } from "@/app/onboarding/MeasurementHelp";
+import helpStyles from "@/app/onboarding/MeasurementHelp.module.css";
 
 type UnitSystem = "imperial" | "metric";
 type SizeReferenceType = "bra"|"shoe"|"shirt"|"pants"|"dress"|"other";
@@ -32,6 +34,7 @@ export function FitProfileForm({username,unitSystem:initialSystem,types,measurem
   const braRef=refs.get("bra");
   const shoeRef=refs.get("shoe");
   const [system,setSystem]=useState<UnitSystem>(initialSystem);
+  const [helpKey,setHelpKey]=useState<string|null>(null);
   const [values,setValues]=useState<Record<string,string>>(()=>Object.fromEntries(types.map((type)=>{
     const row=byKey.get(type.key);
     if(!row)return[type.key,""];
@@ -66,13 +69,24 @@ export function FitProfileForm({username,unitSystem:initialSystem,types,measurem
   const field=(type:MeasurementType)=>{
     const step=Number(system==="imperial"?type.manual_step_imperial:type.manual_step_metric);
     const suffix=targetUnit(type,system);
-    return <label key={type.key}>{type.label}<div><input name={`measurement_${type.key}`} type="number" inputMode="decimal" min="0" step={step} value={values[type.key]??""} onChange={(event)=>setValues((current)=>({...current,[type.key]:event.target.value}))}/><span>{suffix}</span></div></label>;
+    const inputId=`measurement_${type.key}`;
+    return <div key={type.key} className={helpStyles.measurementField}>
+      <div className={helpStyles.measurementLabelRow}>
+        <label htmlFor={inputId}>{type.label}</label>
+        <button type="button" className={helpStyles.helpButton} aria-label={`How to measure ${type.label}`} onClick={()=>setHelpKey(type.key)}>?</button>
+      </div>
+      <div className={helpStyles.measurementInputRow}>
+        <input id={inputId} name={`measurement_${type.key}`} type="number" inputMode="decimal" min="0" step={step} value={values[type.key]??""} onChange={(event)=>setValues((current)=>({...current,[type.key]:event.target.value}))}/>
+        <span>{suffix}</span>
+      </div>
+    </div>;
   };
 
   return <form className="fitForm" action={saveFitProfile}>
     {errorMessage?<div className="authMessage error">{errorMessage}</div>:null}
-    <div className="fieldPair"><label>Username<div><input name="username" type="text" defaultValue={username} minLength={3} maxLength={32} pattern="[A-Za-z0-9_]{3,32}" required /></div></label><label>Units<select name="unit_system" value={system} onChange={(event)=>changeSystem(event.target.value as UnitSystem)}><option value="imperial">Inches / pounds</option><option value="metric">Centimeters / kilograms</option></select></label></div>
-    <h2>Core Fit Profile</h2><p className="muted">Enter what you know. Missing measurements reduce coverage/confidence; they do not make matching fail.</p>
+    <h2>Core Fit Profile</h2>
+    <p className={helpStyles.coreIntro}>Add only what you know right now. More details lead to better fit matches and recommendations. You can always update your profile measurements anytime.</p>
+    <div className="fieldPair"><label>Display Name<div><input name="username" type="text" defaultValue={username} minLength={3} maxLength={32} pattern="[A-Za-z0-9_]{3,32}" required /></div></label><label>Units<select name="unit_system" value={system} onChange={(event)=>changeSystem(event.target.value as UnitSystem)}><option value="imperial">Inches / pounds</option><option value="metric">Centimeters / kilograms</option></select></label></div>
     <div className="fieldPair">{core.map(field)}</div>
     <details open={advanced.some((type)=>Boolean(values[type.key]))}><summary>Optional advanced measurements</summary><p className="muted">Bust, underbust, neck/collar, sleeve/arm, rise, thigh, torso and foot measurements live here as controlled types. Garment-specific prompts can ask for only what matters later.</p><div className="fieldPair optionalFields">{advanced.map(field)}</div></details>
 
@@ -102,5 +116,6 @@ export function FitProfileForm({username,unitSystem:initialSystem,types,measurem
 
     <div className="privacyNote"><b>History:</b> saving changed measurements or private size references creates a new private body-state version. Existing garment Fit Reports stay permanently tied to the version from when they were logged.</div>
     <button type="submit" className="primaryButton fullButton">Save Fit Profile →</button>
+    {helpKey?<MeasurementHelpDialog measurementKey={helpKey} onClose={()=>setHelpKey(null)}/>:null}
   </form>;
 }

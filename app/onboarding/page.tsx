@@ -21,11 +21,11 @@ export default async function OnboardingPage({searchParams}:{searchParams:Search
 
   const params=await searchParams;
   const error=first(params.error);
-  const errorMessage=error==="invalid_username"?"Choose a username with 3–32 letters, numbers, or underscores.":error==="username_taken"?"That username is already taken.":error==="invalid_measurements"?"Check your numeric measurements. Manual values are normalized to the precision defined for each measurement.":error==="invalid_size_references"?"Check your private size references. Bra and shoe references require a complete structured size when entered.":error==="save_failed"?"Your Fit Profile could not be saved.":null;
+  const errorMessage=error==="invalid_username"?"Choose a display name with 3–32 letters, numbers, or underscores.":error==="username_taken"?"That display name is already taken.":error==="invalid_measurements"?"Check your numeric measurements. Manual values are normalized to the precision defined for each measurement.":error==="invalid_size_references"?"Check your private size references. Bra and shoe references require a complete structured size when entered.":error==="save_failed"?"Your Fit Profile could not be saved.":null;
   const unitSystem=fitProfile?.preferred_unit_system==="metric"?"metric":"imperial";
 
   return <main className="onboardingShell">
-    <section className="onboardingIntro"><span className="eyebrow">FIT PROFILE</span><h1>{fitProfile?.completed_at?"Keep your fit data current.":"Start with the measurements clothing actually cares about."}</h1><p>Raw measurements and normally worn size references are private. LikeSized uses controlled measurement types and garment-specific weighting to return safe Fit Match percentages.</p><div className="privacyNote"><b>Precision:</b> ordinary manual body measurements use sensible increments—quarter-inch where designated—not meaningless decimal precision.</div></section>
+    <section className="onboardingIntro"><span className="eyebrow">FIT PROFILE</span><h1>Personalize LikeSized to fit your needs</h1><p>Your measurements stay 100% private and help LikeSized make smarter fit matches and recommendations. The more information you provide, the more personalized your results become.</p></section>
     <FitProfileForm username={profile?.username??""} unitSystem={unitSystem} types={(types??[]) as MeasurementType[]} measurements={(measurements??[]) as BodyMeasurement[]} sizeReferences={(sizeReferences??[]) as SizeReference[]} errorMessage={errorMessage}/>
   </main>;
 }

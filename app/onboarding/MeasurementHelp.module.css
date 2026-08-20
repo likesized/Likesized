@@ -1,0 +1,34 @@
+.measurementField { min-width:0; }
+.measurementLabelRow { display:flex; align-items:center; gap:7px; min-height:22px; }
+.measurementLabelRow label { margin:0; }
+.helpButton { width:20px; height:20px; border:1px solid var(--line); border-radius:50%; display:inline-grid; place-items:center; padding:0; background:var(--paper); color:var(--ink); font-size:12px; line-height:1; font-weight:900; cursor:pointer; }
+.helpButton:hover, .helpButton:focus-visible { border-color:var(--accent); color:var(--accent); outline:none; }
+.measurementInputRow { display:flex; align-items:center; gap:7px; margin-top:8px; }
+.measurementInputRow span { font-size:12px; color:var(--muted); }
+.coreIntro { margin:8px 0 22px; color:var(--muted); font-size:14px; line-height:1.5; }
+.helpDialog { width:min(760px, calc(100vw - 32px)); max-height:min(86vh, 760px); margin:auto; padding:0; border:0; border-radius:26px; background:var(--white); color:var(--ink); box-shadow:0 30px 100px rgba(18,18,18,.28); overflow:auto; }
+.helpDialog::backdrop { background:rgba(18,18,18,.55); backdrop-filter:blur(3px); }
+.helpDialogHeader { position:sticky; top:0; z-index:2; display:flex; align-items:flex-start; justify-content:space-between; gap:20px; padding:24px 24px 16px; background:rgba(255,253,248,.96); border-bottom:1px solid var(--line); }
+.helpEyebrow { display:block; margin-bottom:6px; font-size:11px; font-weight:900; letter-spacing:1.4px; color:var(--accent); }
+.helpDialogHeader h2 { margin:0; font-size:clamp(30px,5vw,46px); line-height:1; letter-spacing:-1.8px; }
+.closeButton { flex:0 0 auto; width:38px; height:38px; border:1px solid var(--line); border-radius:50%; padding:0; background:var(--paper); color:var(--ink); font-size:25px; line-height:1; cursor:pointer; }
+.helpDialogBody { display:grid; grid-template-columns:minmax(220px,.8fr) minmax(0,1.2fr); gap:28px; padding:24px; }
+.diagramCard { min-height:330px; display:grid; place-items:center; border:1px solid var(--line); border-radius:20px; background:var(--paper); overflow:hidden; }
+.diagramSvg { width:100%; max-width:270px; height:auto; padding:18px; color:var(--accent); }
+.bodyFigure { fill:none; stroke:var(--ink); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; opacity:.72; }
+.measurementGuide { fill:none; stroke:currentColor; stroke-width:5; stroke-linecap:round; stroke-linejoin:round; }
+.measurementGuide ellipse { stroke-dasharray:8 5; }
+.helpCopy { align-self:center; }
+.description { margin:0 0 22px; font-size:18px; line-height:1.45; font-weight:800; }
+.helpCopy h3 { margin:0 0 8px; font-size:15px; }
+.helpCopy p { margin:0; line-height:1.6; color:var(--muted); }
+.tip { margin-top:20px; padding:14px 16px; border-radius:14px; background:#f6e7ec; line-height:1.5; font-size:13px; }
+
+@media (max-width: 620px) {
+  .helpDialog { width:100vw; max-width:none; max-height:88vh; margin:auto 0 0; border-radius:24px 24px 0 0; }
+  .helpDialogHeader { padding:20px 18px 14px; }
+  .helpDialogBody { grid-template-columns:1fr; gap:18px; padding:18px; }
+  .diagramCard { min-height:240px; }
+  .diagramSvg { max-width:210px; padding:10px; }
+  .description { font-size:16px; }
+}

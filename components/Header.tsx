@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import styles from "@/components/HeaderResponsive.module.css";
 
 export async function Header() {
   const supabase = await createClient();
@@ -23,9 +24,10 @@ export async function Header() {
           height="682"
         />
       </Link>
-      <nav aria-label="Primary navigation">
-        {signedIn ? (
-          <>
+
+      {signedIn ? (
+        <>
+          <nav className={styles.signedInDesktop} aria-label="Primary navigation">
             <Link href="/search">Search</Link>
             <Link href="/people">People my size</Link>
             <Link href="/twins">Fit twins</Link>
@@ -38,11 +40,33 @@ export async function Header() {
             <form action="/auth/signout" method="post">
               <button className="navTextButton" type="submit">Sign out</button>
             </form>
-          </>
-        ) : (
+          </nav>
+
+          <div className={styles.mobileNav}>
+            <details className={styles.mobileMenu}>
+              <summary>Menu</summary>
+              <div className={styles.mobileMenuPanel} role="navigation" aria-label="Mobile navigation">
+                <Link href="/onboarding">Fit Profile</Link>
+                <Link href="/notifications">Notifications{unreadCount > 0 ? <span className={styles.notificationCount}>{unreadCount}</span> : null}</Link>
+                <Link href="/search">Search</Link>
+                <Link href="/people">People My Size</Link>
+                <Link href="/twins">Fit Twins</Link>
+                <Link href="/following">Following</Link>
+                <Link href="/outfits">Outfits</Link>
+                <Link href="/closet">Closet</Link>
+                <Link href="/settings">Settings</Link>
+                <form action="/auth/signout" method="post">
+                  <button type="submit">Sign out</button>
+                </form>
+              </div>
+            </details>
+          </div>
+        </>
+      ) : (
+        <nav aria-label="Primary navigation">
           <Link className="navButton" href="/login">My Fit Profile</Link>
-        )}
-      </nav>
+        </nav>
+      )}
     </header>
   );
 }

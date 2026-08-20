@@ -18,6 +18,11 @@ function text(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
 }
 
+function isCanonicalImperialLength(key: string, value: number) {
+  const multiplier = key === "height" ? 1 : 4;
+  return Math.abs(value * multiplier - Math.round(value * multiplier)) < 0.000001;
+}
+
 export async function saveFitProfile(formData: FormData) {
   const username = text(formData, "username");
   const unitSystem = text(formData, "unit_system") === "metric" ? "metric" : "imperial";
@@ -37,10 +42,15 @@ export async function saveFitProfile(formData: FormData) {
 
   const rows: Array<Record<string, unknown>> = [];
   for (const type of (typesData ?? []) as MeasurementType[]) {
+    if (type.key === "overbust") continue;
+
     const raw = text(formData, `measurement_${type.key}`);
     if (!raw) continue;
     const value = Number(raw);
     if (!Number.isFinite(value) || value <= 0) fail("invalid_measurements");
+    if (unitSystem === "imperial" && type.dimension === "length" && !isCanonicalImperialLength(type.key, value)) {
+      fail("invalid_measurements");
+    }
 
     rows.push({
       measurement_type_key: type.key,

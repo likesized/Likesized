@@ -32,7 +32,7 @@ This is the **one and only LikeSized roadmap, status record, completed-work ledg
 - Prototype homepage data, `lib/mock-data.ts`, and obsolete standalone `lib/fit.ts` have been removed.
 - Vercel project: **`likesized`**, project ID `prj_ioYhiOjBNHDzPx2otiCY6XpNL3Um`, team `likesized-6817s-projects`.
 - Production domains include **`https://likesized.com`** and `https://likesized.vercel.app`.
-- Owner explicitly authorized the approved measurement-guide artwork promotion to production on 2026-08-20. This branch/master update records that authorization; live deployment verification remains pending until Vercel reaches READY on the promoted commit.
+- Owner explicitly authorized the approved measurement-guide artwork promotion to production on 2026-08-20. This master records that authorization; live deployment verification remains pending until Vercel reaches READY on the promoted commit.
 
 # PHASES
 
@@ -136,8 +136,8 @@ Relevant completed commits include:
 - Obsolete inline generic body/stick-figure drawing, `WaistHipDiagram`, and `TorsoGirthDiagram` were removed from the implementation rather than retained as fallbacks.
 - Canonical asset paths are `public/measurement-guides/body-guide.webp`, `public/measurement-guides/waist-hip-guide.webp`, and `public/measurement-guides/torso-girth-guide.webp`.
 - Working implementation commit: `14c60617fc5ad391198f1f6ea64bf6bcc11d7644` (`Use approved measurement guide artwork`).
-- Vercel preview for that exact commit reached READY.
-- Owner explicitly authorized promotion of this exact implementation to production on 2026-08-20. Production READY/live verification is still pending and must be logged before this item is considered fully complete.
+- Vercel preview for that exact implementation reached READY.
+- Owner explicitly authorized promotion of this implementation to production on 2026-08-20. Production READY/live verification is still pending and must be logged before this item is considered fully complete.
 
 #### Known blockers / bugs — NOT COMPLETE
 - Signed-in mobile Menu still uses a plain `<details>` implementation and stays open after navigation unless manually closed.
@@ -191,7 +191,7 @@ Use a controlled representative population, smoke the full user loop, explicitly
 - Styled standardized measurement controls.
 - Production deployed application commit `1c5e9763cdd6f5e96f5bb2e3e62e47e64d0f4dd2` and reached READY.
 - Canonical master/repository policy synchronized at `fd347ab624322d7109f43014762f973801a04caa`.
-- Approved measurement-guide replacement implemented at `14c60617fc5ad391198f1f6ea64bf6bcc11d7644`; preview reached READY; owner has now explicitly authorized live promotion. Production verification remains pending.
+- Approved measurement-guide replacement implemented at `14c60617fc5ad391198f1f6ea64bf6bcc11d7644`; preview reached READY; owner explicitly authorized live promotion on 2026-08-20. Production verification remains pending.
 - Audit confirmed the mobile-menu auto-close fix and iPhone input-zoom fix are **not complete**.
 
 # Exact next action

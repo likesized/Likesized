@@ -12,8 +12,9 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 ## Current status — 2026-08-20
 - Phase 6.3 auth/configuration: COMPLETE.
 - Phase 6.4 responsive/accessibility + Fit Profile polish: IN PROGRESS.
-- Owner authorized live promotion of the approved measurement-guide implementation on 2026-08-20.
-- Production deployment `dpl_FTbuTkxWcgNFWqb9ZXA6uFP9zkfL` reached READY from canonical `main` commit `a9b2e6401b7bcb852d325bca55fe5c9406c70736`.
+- Owner authorized the live measurement-guide correction on 2026-08-20 after reporting broken waist/hip and Torso Girth images.
+- Diagnosis: the prior `waist-hip-guide.webp` and `torso-girth-guide.webp` binaries were truncated during upload even though their production URLs returned HTTP 200. The body guide was valid and remained unchanged.
+- Corrected complete WebP binaries have been locally decoded/validated and uploaded to GitHub with matching Git blob SHAs. Production verification of the correction is pending this commit/deployment.
 
 ## Phase 6.4 canonical completed work
 - Fit Profile copy/labels/help UI polished.
@@ -22,17 +23,16 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - Other imperial length measurements use whole inches + 0/¼/½/¾ dropdowns.
 - Server validates height as whole inches and other imperial lengths in quarter-inch increments.
 
-## Approved measurement-guide artwork — LIVE / DEPLOYMENT VERIFIED
-- Approved unisex body artwork is the base for normal measurement guides.
+## Approved measurement-guide artwork — CORRECTION IN PROGRESS
+- Approved unisex body artwork is the base for normal measurement guides and remained valid.
 - Approved shared waist/hip artwork is used for Natural Waist, High Hip, Hips / Seat, and Waist-to-Hip Length.
 - Approved front/back magenta artwork is used for Torso Girth.
-- Old coded body figure and old WaistHipDiagram / TorsoGirthDiagram implementations were removed rather than retained as fallbacks.
-- Canonical assets are `public/measurement-guides/body-guide.webp`, `public/measurement-guides/waist-hip-guide.webp`, and `public/measurement-guides/torso-girth-guide.webp`.
-- Implementation commit: `14c60617fc5ad391198f1f6ea64bf6bcc11d7644`.
-- Production promotion is live through canonical `main` commit `a9b2e6401b7bcb852d325bca55fe5c9406c70736`.
-- Vercel production deployment `dpl_FTbuTkxWcgNFWqb9ZXA6uFP9zkfL` reached READY with no build errors.
-- Live production requests for `body-guide.webp`, `waist-hip-guide.webp`, and `torso-girth-guide.webp` each returned HTTP 200 with `image/webp` content.
-- Owner visual confirmation of the rendered authenticated Fit Profile dialogs is still pending; do not change the approved artwork unless the owner requests a correction.
+- Old coded body figure and old WaistHipDiagram / TorsoGirthDiagram implementations remain removed; there are no fallback copies.
+- Canonical asset paths remain `public/measurement-guides/body-guide.webp`, `public/measurement-guides/waist-hip-guide.webp`, and `public/measurement-guides/torso-girth-guide.webp`.
+- Original implementation commit: `14c60617fc5ad391198f1f6ea64bf6bcc11d7644`.
+- Repair uses complete locally validated approved-image WebPs: waist/hip Git blob `207cef3553aacb70909d95427e5541be81f9782a`; Torso Girth Git blob `f8933270c7d75888a531587ecbf7eee31f5268e4`.
+- Binary verification rule: HTTP 200 alone is not sufficient for image assets. Verify the deployed file is a complete decodable WebP and that its expected byte length/hash matches the canonical binary.
+- Owner visual confirmation of the corrected rendered authenticated dialogs is pending after deployment.
 
 ## Not complete
 - Mobile Menu auto-close behavior.
@@ -41,8 +41,8 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - Measurement-name audit resumes at **Individual Shoulder Length**.
 
 ## Exact next action
-1. Owner visually reviews the live body, waist/hip, and Torso Girth measurement guides on `likesized.com`.
-2. If the approved artwork renders correctly, treat the visual guide replacement as fully owner-confirmed and proceed to the mobile Menu auto-close fix.
-3. Fix iPhone Safari form-focus zoom.
-4. Verify Fit Profile save/load.
-5. Resume measurement-name audit at **Individual Shoulder Length**.
+1. Deploy this authorized waist/hip + Torso Girth binary correction through canonical `main`.
+2. Verify Vercel production reaches READY with no build errors.
+3. Verify live waist/hip and Torso Girth responses are complete `image/webp` files with the expected corrected byte lengths, not merely HTTP 200.
+4. Record the verified deployment checkpoint here.
+5. Owner visually confirms the live dialogs, then continue with mobile Menu auto-close and iPhone input-zoom fixes.

@@ -11,9 +11,88 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 
 ## Current status — 2026-08-20
 - Phase 6.3 auth/configuration: COMPLETE.
-- Phase 6.4 responsive/accessibility + Fit Profile polish: IN PROGRESS.
+- Phase 6.4 responsive/accessibility + Fit Profile polish: IN PROGRESS / resumable after the active Fit Match audit.
 - Measurement-guide implementation, binary repair, production deployment, and owner visual verification: COMPLETE.
-- Phase 6.5 V1 Product Surface + Navigation Audit: LOCKED / QUEUED immediately after Phase 6.4.
+- Phase 6.5 V1 Product Surface + Navigation Audit: LOCKED / QUEUED after Phase 6.4.
+- **Active unmerged Fit Match audit:** source implementation through directional Fit Result evidence is COMPLETE + CI GREEN on feature branch; owner has not authorized merge/deploy.
+- **Current interactive next audit question:** #3 Personal Fit Preference.
+
+## UNMERGED FIT MATCH / GARMENT EVIDENCE CHECKPOINT — LOCKED
+Branch: `fit-match-engine-audit`
+PR: #36 — `Build confidence-aware garment-specific Fit Match engine`
+Production/main: **UNCHANGED**
+
+### Verified branch state
+- Feature branch contains **35 migrations**.
+- New canonical garment provenance migration: `20260820203500_garment_enrichment_provenance.sql`.
+- New directional recommendation migration: `20260820211800_directional_fit_recommendation.sql`.
+- Source verification commit `a305f021e72aaaff19901aa0b51c4e70dfb5e856` passed CI run **`32420828278`**:
+  - TypeScript passed.
+  - all **10** production recommendation calibration tests passed.
+  - production build passed.
+  - all **35** migrations replayed on a fresh local Supabase database.
+  - complete canonical pgTAP/database behavior suite passed.
+- Documentation commits after that source verification do not change runtime behavior.
+
+### Fit Result — final V1 decision
+- **There is no separate 1–5 star Fit Rating in the final branch design.**
+- **Fit Result is required** whenever a member logs a garment or later try-on:
+  - Too Small
+  - Snug
+  - Just Right
+  - Relaxed
+  - Too Big
+- The existing database enum name `public.fit_rating` is legacy/internal terminology for those physical Fit Result values. It is **not** a star/satisfaction rating.
+- Bad fits must be accepted and encouraged. A highly matched wearer reporting Too Small or Too Big is valuable evidence **against that size**.
+- A bad garment outcome does not reduce the wearer's body Match %. Body similarity and garment outcome remain separate.
+- Optional `Would Buy Again` may remain as product feedback, but it **does not influence size recommendation or recommendation confidence**.
+- Fit Result is the only member opinion used to support or oppose a size.
+
+### Directional body-difference decision
+- Body Match % remains symmetric garment-relevant body similarity.
+- Size recommendation privately uses the **direction** of viewer-vs-historical-wearer differences in the measurements relevant to the target garment.
+- Example: if a slightly smaller wearer reports Size M as Too Small, that is stronger negative evidence against M for a larger viewer.
+- Example: if a slightly larger wearer reports Size M as Too Big, that is stronger negative evidence against M for a smaller viewer.
+- Raw measurements, signed measurement deltas, and aggregate directional pressure are never exposed to clients.
+- Only a safe outcome-specific `directional_fit_support` scalar reaches the recommendation layer.
+- The public evidence RPC is auth-required and explicitly Shared-Closet-only; direct member access to the private directional helper is revoked.
+
+### Garment-information/provenance decision
+- Existing Product resolution order: explicit canonical Product → UPC/barcode → normalized Product URL → Brand + manufacturer Style ID → normalized Brand + Product fallback/new provisional Product.
+- SKU is not treated as globally unique Product identity.
+- Product facts use provenance states: provisional / corroborated / verified / rejected.
+- One member observation stays provisional; repeat submissions by the same member do not become multiple votes.
+- Two independent agreeing members can corroborate compatible Product metadata/attributes/materials.
+- Conflicts flag review instead of silently replacing stronger/verified facts.
+- Provisional attributes may softly refine matching but cannot act as fully verified construction truth.
+- Similar Garments requires corroborated/verified controlled attribute overlap rather than a one-member coincidence.
+- Fiber/material composition stays separate from construction and stretch.
+- Member garment evidence is recorded atomically only after the garment/fit log succeeds.
+
+### Actual garment measurements — OWNER DEFERRED
+- Do **not** build V1 around manufacturer physical garment measurements/specs.
+- LikeSized must work without acquiring actual garment dimensions across the clothing catalog.
+- Manufacturer/retailer garment dimensions can remain a future optional enrichment source if reliably available.
+- Generic brand body-size charts are not actual garment measurements/ease and must not be treated as such.
+
+### Deep Fit Match audit status
+1. Actual garment measurements/ease — **DEFERRED by owner; not V1 dependency.**
+2. Directional body differences — **IMPLEMENTED + VERIFIED.**
+3. Personal fit preference — **NEXT.**
+4. Derived body proportions — unresolved.
+5. Chest vs Full Bust / men's missing bust fields — substantially resolved; women-specific fitted-garment refinement remains possible.
+6. Measurement age/staleness — unresolved.
+7. Measurement provenance/reliability — engine substantially resolved; UX can still improve.
+8. Bra-specific advanced geometry — unresolved.
+9. Shoe-specific geometry — unresolved.
+10. Outerwear layering — unresolved.
+11. Stretch source/trust — provenance architecture substantially resolved; external source integration remains future work.
+12. Shrinkage/garment state — unresolved/future.
+13. Directional learning from Fit Result — **IMPLEMENTED through #2.**
+14. Fit Result vs Fit Rating — **RESOLVED: separate star rating dropped; Fit Result only.**
+15. Learned calibration from LikeSized data — unresolved/future.
+16. Bias / edge-body testing — unresolved.
+17. Match % / confidence UI semantics — unresolved.
 
 ## Phase 6.4 canonical completed work
 - Fit Profile copy/labels/help UI polished.
@@ -97,8 +176,7 @@ Audit/build:
 - garment cards/grid
 - product/brand
 - size
-- Fit Result
-- Fit Rating
+- **Fit Result**
 - image
 - Private / Shared state
 - search/filtering by useful garment fields
@@ -111,27 +189,32 @@ Audit/build:
 - preview how a Shared item appears to other members
 
 ### 6.5.6 Add Garment / garment-post flow
-One member-facing action: log one garment and tell LikeSized how it fits.
+One member-facing action: log one garment and tell LikeSized how it physically fits.
 
 Required user-facing information:
 - garment/product
 - size
-- **Fit Result**
-- **Fit Rating — 1–5 stars**
+- **Fit Result: Too Small / Snug / Just Right / Relaxed / Too Big**
 
 Optional where useful:
 - fit details/notes
 - photo
 - garment-specific controlled fit questions
-- Would Buy Again if retained after audit
+- Would Buy Again as non-sizing feedback if retained
 
-Privacy/share behavior must continue to respect the canonical Private/Shared and fit-photo rules.
+Rules:
+- Do not require a 1–5 star satisfaction rating.
+- Encourage logging bad fits; failure evidence is useful sizing data.
+- Privacy/share behavior must continue to respect the canonical Private/Shared and fit-photo rules.
 
-### 6.5.7 Fit Result vs Fit Rating — LOCKED distinction
-- **Fit Result** = physical fit outcome, e.g. Too Small / Snug / Just Right / Relaxed / Too Big.
-- **Fit Rating** = member’s personal 1–5 star satisfaction with that fit/experience.
-- These are separate signals. A deliberately snug garment can still receive five stars.
-- Any new database field must use a non-conflicting name such as `personal_rating` or `fit_satisfaction_rating`, rather than colliding with the existing fit-outcome enum terminology.
+### 6.5.7 Fit Result semantics — LOCKED
+- **Fit Result** describes the garment's physical outcome on that historical body state.
+- It is the required member-provided sizing outcome.
+- Too Small / Too Big are negative evidence for that size, not bad or invalid uploads.
+- Snug / Relaxed are directional outcomes and can mean different things for viewers slightly larger/smaller than the historical wearer.
+- Just Right is strong positive evidence, with directional difference still considered conservatively.
+- Fit Result never changes the historical wearer's body Match %.
+- No separate 1–5 Fit Rating is required or used by V1 sizing.
 
 ### 6.5.8 Fit Twin/member profile + Shared Closet
 Other-member profile should make Shared Closet the main garment evidence experience.
@@ -161,8 +244,7 @@ Show useful fit evidence without exposing raw body measurements:
 - brand/product
 - size worn
 - historical Match % to viewer for that try-on
-- Fit Result
-- Fit Rating
+- **Fit Result**
 - optional fit details
 
 Matching context rule remains locked:
@@ -189,8 +271,7 @@ Detail should support:
 - brand/product
 - size
 - historical Match %
-- Fit Result
-- Fit Rating
+- **Fit Result**
 - optional details
 - garment-specific fit evidence
 - relevant date/history
@@ -214,9 +295,10 @@ Rules:
 Useful row/card information may include:
 - historical Match %
 - size
-- Fit Rating
-- Fit Result
+- **Fit Result**
 - brief note/details
+
+A high Match + Too Small/Too Big must remain visible because it is valuable negative size evidence.
 
 ### 6.5.13 Canonical Product page audit
 Product page becomes the collective fit-evidence destination for that garment.
@@ -228,12 +310,13 @@ Audit/support:
 - viewer recommendation context
 - strongest historical matches
 - reported sizes
-- Fit Results
-- Fit Ratings
+- physical Fit Result distribution
 - evidence hierarchy
 - same-product Shared wearer evidence
 - retailer links
 - See All Fits destination
+
+Do not reintroduce a star-rating aggregate into the sizing surface without a new owner decision.
 
 ### 6.5.14 Retail links — LOCKED direction
 - Show **Shop This Item** when valid retailer listings are known.
@@ -301,12 +384,14 @@ Add a deliberate help surface before Beta.
 Must explain at minimum:
 - measurement privacy
 - Match % meaning
+- body Match vs physical Fit Result
+- why a highly matched person can report a bad fit
+- why bad fits are valuable recommendation evidence
 - current Fit Twin match vs historical garment match
 - People My Size
 - Fit Twins
 - Private vs Shared Closet
 - photo sharing behavior
-- Fit Result vs Fit Rating
 - Favorites
 - retailer links
 - why highly matched people may still choose different sizes
@@ -336,10 +421,9 @@ Primary member-facing vocabulary should be coherent and minimal:
 - Shared Closet
 - Favorites
 - Fit Profile
-- Fit Result
-- Fit Rating
+- **Fit Result**
 
-“Fit Report” may remain an internal engineering/database term but should not be presented as a second member-facing object separate from the garment.
+“Fit Report” may remain an internal engineering/database term but should not be presented as a second member-facing object separate from the garment. The legacy database type name `fit_rating` must not leak into user-facing terminology.
 
 ### 6.5.23 Preview verification before Phase 7
 Phase 6.5 is not complete until canonical source + verification + master agree.
@@ -351,7 +435,8 @@ Verify at minimum:
 - garment creation/edit/update
 - repeat try-on / history behavior
 - immutable historical body links
-- Fit Rating and Fit Result
+- required Fit Result, including bad-fit uploads
+- directional size recommendation behavior without exposing raw differences
 - Favorites
 - favorite-source privacy changes
 - Fit Twins and Activity
@@ -373,8 +458,9 @@ Representative end-to-end verification must cover:
 - garment/product discovery
 - Favorites
 - retailer links
-- My Closet garment logging
+- My Closet garment logging, including bad fits
 - later fit updates/history
+- directional recommendation behavior
 - Fit Twin Activity
 - Search
 - privacy boundaries
@@ -383,9 +469,10 @@ Representative end-to-end verification must cover:
 - CI/database/security verification
 
 ## Exact next action
-Continue Phase 6.4 in order:
-1. Fix mobile Menu auto-close behavior canonically.
-2. Fix iPhone Safari form-focus zoom canonically.
-3. Verify Fit Profile save/load/edit regression behavior.
-4. Resume measurement-name/help audit at **Individual Shoulder Length** and finish the remaining measurement audit.
-5. Close Phase 6.4, then begin Phase 6.5 at navigation/information architecture audit.
+Continue the active Fit Match deep audit one question at a time:
+1. **#3 Personal Fit Preference** — decide whether/how fitted/standard/relaxed preference should affect size recommendation without changing body Match %.
+2. Continue the remaining unresolved Fit Match audit questions in order.
+3. After the Fit Match audit is complete, resume the remaining Phase 6.4 tasks from Mobile Menu auto-close through measurement-name/help audit.
+4. Close Phase 6.4, then begin Phase 6.5 at navigation/information architecture audit.
+
+No merge to `main`, production migration, or production deployment is authorized by this checkpoint.

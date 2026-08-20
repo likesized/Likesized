@@ -20,6 +20,10 @@ type HelpItem = {
   guide: Guide;
 };
 
+const BODY_GUIDE_SRC = "/measurement-guides/body-guide.webp";
+const WAIST_HIP_GUIDE_SRC = "/measurement-guides/waist-hip-guide.webp";
+const TORSO_GIRTH_GUIDE_SRC = "/measurement-guides/torso-girth-guide.webp";
+
 const HELP: Record<string, HelpItem> = {
   height: { title: "Height", description: "Your full standing height.", how: "Stand barefoot on a flat floor with your back straight. Measure from the floor to the highest point of your head.", tip: "A wall and a flat book can make this easier.", guide: { kind: "body", mode: "line", x1: 42, y1: 24, x2: 42, y2: 278 } },
   weight: { title: "Weight", description: "Your current body weight.", how: "Use a scale on a hard, level surface and enter your current weight.", tip: "Light clothing and a consistent time of day give the most useful updates.", guide: { kind: "scale" } },
@@ -66,14 +70,9 @@ function ArrowDefs() {
 }
 
 function BodyDiagram({ guide, label }: { guide: BodyGuide; label: string }) {
-  return <svg className={styles.diagramSvg} viewBox="0 0 220 300" role="img" aria-label={`${label} measurement diagram`}>
+  return <svg className={`${styles.diagramSvg} ${styles.bodyDiagram}`} viewBox="0 0 220 300" role="img" aria-label={`${label} measurement diagram`}>
     <ArrowDefs />
-    <g className={styles.bodyFigure}>
-      <circle cx="110" cy="34" r="18" />
-      <path d="M110 52 L110 64 M91 67 C84 71 77 75 74 87 L64 128 C61 143 57 160 54 177 M129 67 C136 71 143 75 146 87 L156 128 C159 143 163 160 166 177 M92 66 C95 80 92 103 86 123 C82 137 82 154 87 178 L94 190 L92 278 M128 66 C125 80 128 103 134 123 C138 137 138 154 133 178 L126 190 L128 278 M94 190 C100 194 106 195 110 195 C114 195 120 194 126 190" />
-      <circle cx="54" cy="181" r="8" /><circle cx="166" cy="181" r="8" />
-      <path d="M86 123 Q110 136 134 123 M87 178 Q110 189 133 178 M86 123 Q80 113 78 99 M134 123 Q140 113 142 99 M90 279 Q87 285 94 286 H103 M130 279 Q133 285 126 286 H117" />
-    </g>
+    <image href={BODY_GUIDE_SRC} x="10" y="0" width="200" height="300" preserveAspectRatio="xMidYMid meet" />
     <g className={styles.measurementGuide}>
       {guide.mode === "circumference" ? <ellipse cx={guide.cx ?? 110} cy={guide.y} rx={guide.rx ?? 42} ry="7" /> : null}
       {guide.mode === "line" ? <line x1={guide.x1} y1={guide.y1} x2={guide.x2} y2={guide.y2} markerStart="url(#measure-arrow)" markerEnd="url(#measure-arrow)" /> : null}
@@ -83,61 +82,8 @@ function BodyDiagram({ guide, label }: { guide: BodyGuide; label: string }) {
   </svg>;
 }
 
-function WaistHipDiagram() {
-  return <svg className={`${styles.diagramSvg} ${styles.specialDiagram}`} viewBox="0 0 360 430" role="img" aria-label="Natural waist, high hip, full hip and waist-to-hip measurement diagram">
-    <defs>
-      <marker id="waist-hip-arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="#7c3aed" /></marker>
-    </defs>
-    <g className={styles.guideSilhouette}>
-      <circle cx="145" cy="42" r="25" />
-      <path d="M145 67 L145 84 M111 89 Q145 75 179 89 C185 108 185 128 178 148 C172 165 171 187 178 209 C183 229 183 250 177 270 L166 292 L163 405 M179 91 L209 170 L218 235 M111 91 L81 170 L72 235 M124 292 L127 405 M108 148 Q145 161 182 148 M102 209 Q145 226 188 209 M98 270 Q145 291 192 270" />
-      <circle cx="70" cy="244" r="11" /><circle cx="220" cy="244" r="11" />
-    </g>
-    <g className={styles.waistGuides}>
-      <ellipse cx="145" cy="166" rx="48" ry="8" className={styles.naturalWaistLine}/>
-      <ellipse cx="145" cy="205" rx="57" ry="9" className={styles.highHipLine}/>
-      <ellipse cx="145" cy="252" rx="67" ry="10" className={styles.fullHipLine}/>
-      <line x1="224" y1="166" x2="224" y2="252" className={styles.waistHipLengthLine} markerStart="url(#waist-hip-arrow)" markerEnd="url(#waist-hip-arrow)"/>
-      <line x1="193" y1="166" x2="233" y2="166" className={styles.guideDash}/><line x1="205" y1="252" x2="233" y2="252" className={styles.guideDash}/>
-    </g>
-    <g className={styles.guideLabels}>
-      <text x="12" y="159" className={styles.naturalWaistText}>Natural Waist</text>
-      <text x="12" y="202" className={styles.highHipText}>High Hip</text>
-      <text x="12" y="250" className={styles.fullHipText}>Hips / Seat</text>
-      <text x="238" y="205" className={styles.waistHipText}>Waist-to-Hip</text>
-      <text x="238" y="221" className={styles.waistHipSubtext}>vertical length</text>
-    </g>
-    <g className={styles.waistLegend}>
-      <text x="18" y="335">Natural Waist — narrowest part of the waist</text>
-      <text x="18" y="360">High Hip — upper hip below the natural waist</text>
-      <text x="18" y="385">Hips / Seat — fullest part of hips and seat</text>
-      <text x="18" y="410">Waist-to-Hip — vertical distance to full hip line</text>
-    </g>
-  </svg>;
-}
-
-function TorsoGirthDiagram() {
-  return <svg className={`${styles.diagramSvg} ${styles.specialDiagram}`} viewBox="0 0 420 500" role="img" aria-label="Torso girth front and back measurement diagram">
-    <g className={styles.torsoOutline}>
-      <g transform="translate(25 18)">
-        <ellipse cx="92" cy="42" rx="28" ry="34" />
-        <path d="M92 76 L92 95 M61 99 Q92 85 123 99 C129 121 128 145 121 171 C117 187 117 210 123 236 L111 260 L108 447 M61 101 L39 177 L31 254 M123 101 L145 177 L153 254 M73 260 L76 447 M67 171 Q92 184 117 171 M64 236 Q92 250 120 236" />
-        <circle cx="29" cy="263" r="8" /><circle cx="155" cy="263" r="8" />
-      </g>
-      <g transform="translate(208 18)">
-        <ellipse cx="92" cy="42" rx="28" ry="34" />
-        <path d="M92 76 L92 95 M61 99 Q92 85 123 99 C129 121 128 145 121 171 C117 187 117 210 123 236 L111 260 L108 447 M61 101 L39 177 L31 254 M123 101 L145 177 L153 254 M73 260 L76 447 M67 171 Q92 184 117 171 M64 236 Q92 250 120 236" />
-        <circle cx="29" cy="263" r="8" /><circle cx="155" cy="263" r="8" />
-      </g>
-    </g>
-    <g className={styles.torsoGuides}>
-      <path d="M95 116 C109 163 121 217 116 278" />
-      <path d="M300 278 C298 224 309 164 326 116" />
-    </g>
-    <g className={styles.torsoLabels}>
-      <text x="76" y="486">FRONT</text><text x="277" y="486">BACK</text>
-    </g>
-  </svg>;
+function ApprovedGuideImage({ src, alt, variant }: { src: string; alt: string; variant: "waist" | "torso" }) {
+  return <img className={`${styles.approvedGuideImage} ${variant === "waist" ? styles.waistGuideImage : styles.torsoGuideImage}`} src={src} alt={alt} />;
 }
 
 function FootDiagram({ axis, label }: { axis: "length" | "width"; label: string }) {
@@ -158,8 +104,8 @@ function ScaleDiagram({ label }: { label: string }) {
 }
 
 function MeasurementDiagram({ item }: { item: HelpItem }) {
-  if (item.guide.kind === "waistHip") return <WaistHipDiagram />;
-  if (item.guide.kind === "torsoGirth") return <TorsoGirthDiagram />;
+  if (item.guide.kind === "waistHip") return <ApprovedGuideImage src={WAIST_HIP_GUIDE_SRC} alt="Natural Waist, High Hip, Full Hip / Seat, and Waist-to-Hip measurement guide" variant="waist" />;
+  if (item.guide.kind === "torsoGirth") return <ApprovedGuideImage src={TORSO_GIRTH_GUIDE_SRC} alt="Front and back body diagram showing the torso-girth measurement path from shoulder, through the crotch, and back to the shoulder" variant="torso" />;
   if (item.guide.kind === "foot") return <FootDiagram axis={item.guide.axis} label={item.title} />;
   if (item.guide.kind === "scale") return <ScaleDiagram label={item.title} />;
   return <BodyDiagram guide={item.guide} label={item.title} />;

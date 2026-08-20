@@ -18,27 +18,13 @@
 .helpDialogBody { display:grid; grid-template-columns:minmax(220px,.8fr) minmax(0,1.2fr); gap:28px; padding:24px; }
 .diagramCard { min-height:330px; display:grid; place-items:center; border:1px solid var(--line); border-radius:20px; background:var(--paper); overflow:hidden; }
 .diagramSvg { width:100%; max-width:270px; height:auto; padding:18px; color:var(--accent); }
-.specialDiagram { max-width:340px; padding:10px; }
+.bodyDiagram { max-width:250px; }
 .bodyFigure { fill:none; stroke:var(--ink); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; opacity:.72; }
 .measurementGuide { fill:none; stroke:currentColor; stroke-width:5; stroke-linecap:round; stroke-linejoin:round; }
 .measurementGuide ellipse { stroke-dasharray:8 5; }
-.guideSilhouette { fill:none; stroke:#292929; stroke-width:4; stroke-linecap:round; stroke-linejoin:round; opacity:.9; }
-.waistGuides ellipse { fill:none; stroke-width:8; }
-.naturalWaistLine { stroke:#f5c928; }
-.highHipLine { stroke:#21c9ca; }
-.fullHipLine { stroke:#ef5aa1; }
-.waistHipLengthLine { stroke:#7c3aed; stroke-width:6; }
-.guideDash { stroke:#7c3aed; stroke-width:2; stroke-dasharray:4 4; }
-.guideLabels text { font-size:13px; font-weight:900; }
-.naturalWaistText { fill:#8d6d00; }
-.highHipText { fill:#087e80; }
-.fullHipText { fill:#aa2367; }
-.waistHipText { fill:#6d28d9; font-size:12px!important; }
-.waistHipSubtext { fill:#6d28d9; font-size:10px!important; font-weight:700!important; }
-.waistLegend text { fill:#5f5f5f; font-size:10.5px; font-weight:700; }
-.torsoOutline { fill:none; stroke:#888; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
-.torsoGuides { fill:none; stroke:#ec16df; stroke-width:9; stroke-linecap:round; }
-.torsoLabels { fill:#777; font-size:11px; font-weight:900; letter-spacing:1.4px; }
+.approvedGuideImage { display:block; width:100%; height:auto; object-fit:contain; padding:8px; }
+.waistGuideImage { max-width:520px; max-height:560px; }
+.torsoGuideImage { max-width:460px; max-height:560px; }
 .helpCopy { align-self:center; }
 .description { margin:0 0 22px; font-size:18px; line-height:1.45; font-weight:800; }
 .helpCopy h3 { margin:0 0 8px; font-size:15px; }
@@ -52,7 +38,10 @@
   .helpDialogBody { grid-template-columns:1fr; gap:18px; padding:18px; }
   .diagramCard { min-height:240px; }
   .diagramSvg { max-width:210px; padding:10px; }
-  .specialDiagram { max-width:290px; }
+  .bodyDiagram { max-width:200px; }
+  .approvedGuideImage { padding:4px; }
+  .waistGuideImage { max-width:390px; max-height:520px; }
+  .torsoGuideImage { max-width:350px; max-height:500px; }
   .description { font-size:16px; }
   .imperialMeasurementRow { flex-wrap:nowrap; }
   .imperialMeasurementRow input { flex-basis:100px; }

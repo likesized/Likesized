@@ -9,6 +9,7 @@ export type RecommendationEvidence = {
   evidenceLevel: EvidenceLevel;
   attributeOverlap?: number;
   wouldBuyAgain: boolean | null;
+  directionalFitSupport?: number | null;
 };
 
 export type SizeRecommendation = {
@@ -61,6 +62,14 @@ type Bucket = {
   strongestEvidenceLevel: EvidenceLevel;
 };
 
+function fitSupport(row: RecommendationEvidence) {
+  const directional = row.directionalFitSupport;
+  if (typeof directional === "number" && Number.isFinite(directional)) {
+    return Math.max(-1, Math.min(1, directional));
+  }
+  return FIT_SUPPORT[row.fit];
+}
+
 export function recommendSize(evidence: RecommendationEvidence[]): SizeRecommendation | null {
   const eligible = evidence.filter(
     (row) =>
@@ -85,9 +94,11 @@ export function recommendSize(evidence: RecommendationEvidence[]): SizeRecommend
         ? Math.min(1.12, 1 + (row.attributeOverlap ?? 0) * 0.03)
         : 1;
     const rebuy = row.wouldBuyAgain === true ? 1.08 : row.wouldBuyAgain === false ? 0.85 : 1;
-    const fitSupport = FIT_SUPPORT[row.fit];
+    // Direction never changes body Match %. It only changes how this wearer's physical
+    // Fit Result supports or opposes the size for the current viewer.
+    const support = fitSupport(row);
     const base = closeness * exactness * attributeBoost;
-    const signed = base * fitSupport * rebuy;
+    const signed = base * support * rebuy;
 
     const bucket = buckets.get(row.sizeKey) ?? {
       sizeKey: row.sizeKey,
@@ -109,7 +120,7 @@ export function recommendSize(evidence: RecommendationEvidence[]): SizeRecommend
     bucket.score += signed;
     bucket.positive += Math.max(0, signed);
     bucket.negative += Math.max(0, -signed);
-    if (fitSupport > 0) bucket.positivePotential += base * rebuy;
+    if (support > 0) bucket.positivePotential += base * rebuy;
     bucket.matchWeight += base;
     bucket.weightedMatch += row.matchScore * base;
     bucket.evidenceWeight += closeness;

@@ -8,7 +8,6 @@ export type RecommendationEvidence = {
   coveragePercent?: number | null;
   evidenceLevel: EvidenceLevel;
   attributeOverlap?: number;
-  wouldBuyAgain: boolean | null;
   directionalFitSupport?: number | null;
 };
 
@@ -93,12 +92,11 @@ export function recommendSize(evidence: RecommendationEvidence[]): SizeRecommend
       row.evidenceLevel === "similar_garments"
         ? Math.min(1.12, 1 + (row.attributeOverlap ?? 0) * 0.03)
         : 1;
-    const rebuy = row.wouldBuyAgain === true ? 1.08 : row.wouldBuyAgain === false ? 0.85 : 1;
-    // Direction never changes body Match %. It only changes how this wearer's physical
-    // Fit Result supports or opposes the size for the current viewer.
+    // Fit Result is the only member opinion used to support or oppose a size.
+    // Preference/satisfaction signals such as Would Buy Again do not alter sizing.
     const support = fitSupport(row);
     const base = closeness * exactness * attributeBoost;
-    const signed = base * support * rebuy;
+    const signed = base * support;
 
     const bucket = buckets.get(row.sizeKey) ?? {
       sizeKey: row.sizeKey,
@@ -120,7 +118,7 @@ export function recommendSize(evidence: RecommendationEvidence[]): SizeRecommend
     bucket.score += signed;
     bucket.positive += Math.max(0, signed);
     bucket.negative += Math.max(0, -signed);
-    if (support > 0) bucket.positivePotential += base * rebuy;
+    if (support > 0) bucket.positivePotential += base;
     bucket.matchWeight += base;
     bucket.weightedMatch += row.matchScore * base;
     bucket.evidenceWeight += closeness;

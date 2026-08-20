@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import styles from "@/app/closet/closet.module.css";
 import { createClient } from "@/lib/supabase/server";
 
 type SearchParams=Promise<Record<string,string|string[]|undefined>>;
@@ -40,11 +41,11 @@ export default async function ClosetPage({searchParams}:{searchParams:SearchPara
     <div className="pageTitle rowTitle"><div><span className="eyebrow">MY CLOSET</span><h1>Teach LikeSized what fits you.</h1></div><Link className="primaryButton" href="/closet/add">+ Add garment</Link></div>
     {added?<div className="authMessage">Garment added to your Closet.</div>:null}{deleted?<div className="authMessage">Garment and its fit history removed.</div>:null}
     <div className="profileStrength"><div><strong>Fit evidence strength</strong><span>{garmentCount} garment{garmentCount===1?"":"s"} logged{remaining>0?` · Add ${remaining} more for stronger recommendations`:" · Strong V1 fit history"}</span></div><div className="meter"><span style={{width:`${strength}%`}}/></div><b>{strength}%</b></div>
-    {items.length?<div className="tableLike">{items.map((item)=>{const product=one<ProductView>(item.product);const brand=one<BrandView>(product?.brand);const report=latestReportByItem.get(item.id);const photo=signedPhotos.get(item.id);return <div className="closetRow" key={item.id}>
+    {items.length?<div className="tableLike">{items.map((item)=>{const product=one<ProductView>(item.product);const brand=one<BrandView>(product?.brand);const report=latestReportByItem.get(item.id);const photo=signedPhotos.get(item.id);return <div className={`closetRow ${styles.row}`} key={item.id}>
       {photo?<img className="garmentPhoto" src={photo} alt="Fit reference"/>:<div className="garmentThumb">{(brand?.name||"?").slice(0,1).toUpperCase()}</div>}
       <div className="closetMain"><span className="muted">{brand?.name||"Brand"}</span><strong>{product?.name||"Garment"}</strong><span>{CATEGORY_LABELS[product?.category||""]||"Other"}{product?.garment_type_key?` · ${product.garment_type_key.replaceAll("_"," ")}`:""}</span></div>
-      <div><span className="muted">SIZE</span><strong>{item.size_label}</strong></div><div><span className="muted">LATEST FIT</span><strong>{FIT_LABELS[report?.fit||""]||"—"}</strong></div><div><span className="muted">VISIBILITY</span><strong>{item.visibility==="shared"?"Shared":"Private"}</strong></div>
-      <div className="authActions"><Link className="textLink" href={`/closet/${item.id}/edit`}>Edit →</Link>{product?<Link className="textLink closetViewLink" href={`/item/${product.slug}${item.variant_id?`?variant=${encodeURIComponent(item.variant_id)}`:""}`}>Product →</Link>:null}</div>
-    </div>;})}</div>:<div className="emptyState"><span className="eyebrow">YOUR CLOSET IS EMPTY</span><h2>Start with something you already know fits.</h2><p>Log the product, original size and fit. Choose Shared only when you want other members to browse the fit evidence; uploading a Fit Photo automatically shares that item.</p><Link className="primaryButton" href="/closet/add">Add my first garment →</Link></div>}
+      <div className={styles.sizeCell}><span className="muted">SIZE</span><strong>{item.size_label}</strong></div><div className={styles.fitCell}><span className="muted">LATEST FIT</span><strong>{FIT_LABELS[report?.fit||""]||"—"}</strong></div><div className={styles.visibilityCell}><span className="muted">VISIBILITY</span><strong>{item.visibility==="shared"?"Shared":"Private"}</strong></div>
+      <div className={`authActions ${styles.actions}`}><Link className="textLink" href={`/closet/${item.id}/edit`}>Edit →</Link>{product?<Link className="textLink closetViewLink" href={`/item/${product.slug}${item.variant_id?`?variant=${encodeURIComponent(item.variant_id)}`:""}`}>Product →</Link>:null}</div>
+    </div>;})}</div>:<div className="emptyState"><span className="eyebrow">YOUR CLOSET IS EMPTY</span><h2>Start with something you already know fits—or doesn’t.</h2><p>Log the product, original size and required physical Fit Result. Bad fits are useful evidence too: Too Small and Too Big help LikeSized steer similar bodies away from the wrong size.</p><Link className="primaryButton" href="/closet/add">Add my first garment →</Link></div>}
   </main>;
 }

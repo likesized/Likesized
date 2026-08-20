@@ -12,10 +12,11 @@ type Dimension={garment_type_key:string;dimension_key:string;label:string;sort_o
 type Response={dimension_key:string;response_key:string;label:string;sort_order:number};
 type AttributeDefinition={key:string;label:string;category:string|null;sort_order:number};
 type AttributeOption={attribute_key:string;option_key:string;label:string;sort_order:number};
+type Material={key:string;label:string};
 
 function normalize(value:string){return value.trim().toLowerCase().replace(/[^a-z0-9]+/g,"");}
 
-export function CatalogGarmentFields({brands,products,families,garmentTypes,dimensions,responses,attributeDefinitions,attributeOptions}:{brands:Brand[];products:Product[];families:ProductFamily[];garmentTypes:GarmentType[];dimensions:Dimension[];responses:Response[];attributeDefinitions:AttributeDefinition[];attributeOptions:AttributeOption[]}){
+export function CatalogGarmentFields({brands,products,families,garmentTypes,dimensions,responses,attributeDefinitions,attributeOptions,materials}:{brands:Brand[];products:Product[];families:ProductFamily[];garmentTypes:GarmentType[];dimensions:Dimension[];responses:Response[];attributeDefinitions:AttributeDefinition[];attributeOptions:AttributeOption[];materials:Material[]}){
   const [brand,setBrand]=useState("");
   const [product,setProduct]=useState("");
   const [garmentType,setGarmentType]=useState("");
@@ -43,7 +44,7 @@ export function CatalogGarmentFields({brands,products,families,garmentTypes,dime
   },[brand,brands,existingProductId,families,garmentType,marketSegment]);
 
   const selectedCategory=useMemo(()=>garmentTypes.find((item)=>item.key===garmentType)?.category??null,[garmentType,garmentTypes]);
-  const relevantAttributes=useMemo(()=>attributeDefinitions.filter((definition)=>definition.category===null||definition.category===selectedCategory).sort((a,b)=>a.sort_order-b.sort_order),[attributeDefinitions,selectedCategory]);
+  const relevantAttributes=useMemo(()=>attributeDefinitions.filter((definition)=>definition.key!=="primary_material"&&(definition.category===null||definition.category===selectedCategory)).sort((a,b)=>a.sort_order-b.sort_order),[attributeDefinitions,selectedCategory]);
   const optionsByAttribute=useMemo(()=>{
     const map=new Map<string,AttributeOption[]>();
     for(const option of attributeOptions){const list=map.get(option.attribute_key)??[];list.push(option);map.set(option.attribute_key,list);}
@@ -66,11 +67,12 @@ export function CatalogGarmentFields({brands,products,families,garmentTypes,dime
 
   return <>
     <input type="hidden" name="existing_product_id" value={existingProductId}/>
+    <div className="privacyNote"><b>Find the exact garment first.</b> LikeSized resolves a known Product by exact catalog selection, then UPC/barcode, product URL, Brand + Style ID, and finally normalized Brand + Product name. Unknown garments become provisional catalog records instead of unverified permanent truth.</div>
     <div className="fieldPair">
       <label>Brand
         <input name="brand" list="brand-options" maxLength={120} placeholder="Levi's" value={brand} onChange={(event)=>{clearExact();setFamilyId("");setBrand(event.target.value);}} required/>
         <datalist id="brand-options">{brands.map((item)=><option value={item.name} key={item.id}/>)}</datalist>
-        <span className="fieldHelp">Start with an existing brand when possible. New punctuation/case variants still normalize to the same canonical brand.</span>
+        <span className="fieldHelp">Start with an existing brand when possible. Punctuation and case normalize to the same canonical brand.</span>
       </label>
       <label>Product / style
         <input name="product" maxLength={180} placeholder="541 Athletic Taper" value={product} onChange={(event)=>{clearExact();setProduct(event.target.value);}} required/>
@@ -82,15 +84,32 @@ export function CatalogGarmentFields({brands,products,families,garmentTypes,dime
         <option value="">Choose an exact existing product if this is it</option>
         {matches.map((item)=><option value={item.id} key={item.id}>{item.brand_name} · {item.name}{item.manufacturer_style_number?` · Style ${item.manufacturer_style_number}`:""} · {item.market_segment}</option>)}
       </select>
-      <span className="fieldHelp">Choosing a match reuses its exact Product ID and fills its canonical identity fields.</span>
+      <span className="fieldHelp">Choosing a match reuses its exact Product ID. Verified catalog facts are not rewritten by this Closet log.</span>
     </label>:null}
-    {existingProductId?<div className="privacyNote"><b>Existing canonical product selected.</b> This Closet log will reuse that exact product record. Editing any identity field below clears the exact selection and returns to normalized search/create.</div>:null}
+    {existingProductId?<div className="privacyNote"><b>Existing canonical product selected.</b> Identity fields come from that Product. Construction/material answers below are submitted as evidence and cannot overwrite verified facts from one member.</div>:null}
+
+    <div className="fieldPair">
+      <label>Manufacturer style / Style ID
+        <input name="style_number" maxLength={100} placeholder="Optional" value={styleNumber} onChange={(event)=>{clearExact();setStyleNumber(event.target.value);}}/>
+        <span className="fieldHelp">A Brand + Style ID can resolve an existing Product even when the product name was entered differently.</span>
+      </label>
+      <label>UPC / barcode / SKU
+        <input name="identifier" maxLength={120} inputMode="numeric" placeholder="Scan or enter if available"/>
+        <span className="fieldHelp">Numeric UPC/barcodes are the strongest automatic identifier. A SKU is stored, but is not treated as globally unique.</span>
+      </label>
+    </div>
+    <label>Product URL <span className="muted inlineMuted">optional</span>
+      <input name="product_url" type="url" maxLength={1000} placeholder="https://brand-or-retailer.com/product/..."/>
+      <span className="fieldHelp">A known normalized product URL can resolve the canonical Product before LikeSized creates anything new.</span>
+    </label>
+
     <div className="fieldPair">
       <label>Garment type
         <select name="garment_type" value={garmentType} onChange={(event)=>{clearExact();setFamilyId("");setGarmentType(event.target.value);}} required>
           <option value="" disabled>Select garment type</option>
           {garmentTypes.map((type)=><option value={type.key} key={type.key}>{type.label}</option>)}
         </select>
+        <span className="fieldHelp">Garment type establishes the safe base measurement path even when no other product details are known.</span>
       </label>
       <label>Market / cut segment
         <select name="market_segment" value={marketSegment} onChange={(event)=>{clearExact();setFamilyId("");setMarketSegment(event.target.value);}}>
@@ -99,18 +118,19 @@ export function CatalogGarmentFields({brands,products,families,garmentTypes,dime
         <span className="fieldHelp">Describes the garment sizing/cut system—not your gender identity.</span>
       </label>
     </div>
+
     {!existingProductId?<label>Same fit / cut family <span className="muted inlineMuted">optional</span>
       <select name="product_family_id" value={familyId} onChange={(event)=>setFamilyId(event.target.value)}>
         <option value="">Start a new fit family for this product</option>
         {compatibleFamilies.map((family)=><option value={family.id} key={family.id}>{family.brand_name} · {family.name}</option>)}
       </select>
-      <span className="fieldHelp">Only join an existing family when this is genuinely the same fit/cut released under another non-fit-critical style, color, wash, or release. If you are unsure, leave this on a new fit family.</span>
+      <span className="fieldHelp">Only join an existing family when this is genuinely the same fit/cut released under another non-fit-critical style, color, wash, or release.</span>
     </label>:null}
-    {!existingProductId&&garmentType&&relevantAttributes.length?<fieldset className="fitDimensionFields"><legend>Product construction details</legend><p className="fieldHelp">Optional controlled catalog details help LikeSized find genuinely similar garments. These are attached only if this becomes a new canonical Product; an existing Product is never rewritten by this Closet log.</p><div className="fieldPair">{relevantAttributes.map((definition)=><label key={definition.key}>{definition.label}<select name={`product_attribute__${definition.key}`} defaultValue=""><option value="">Not specified</option>{(optionsByAttribute.get(definition.key)??[]).map((option)=><option value={option.option_key} key={option.option_key}>{option.label}</option>)}</select></label>)}</div></fieldset>:null}
+
+    {garmentType&&materials.length?<fieldset className="fitDimensionFields"><legend>Fiber / material composition</legend><p className="fieldHelp">Use the care label when available. Fiber composition is stored separately from knit/woven construction and stretch because they affect fit differently. Percentages are optional.</p><div className="fieldPair">{[1,2,3].map((slot)=><div className="fieldPair" key={slot}><label>Material {slot}<select name={`product_material__${slot}__key`} defaultValue=""><option value="">Not specified</option>{materials.map((material)=><option value={material.key} key={material.key}>{material.label}</option>)}</select></label><label>Percent <span className="muted inlineMuted">optional</span><input name={`product_material__${slot}__percentage`} type="number" min="0" max="100" step="0.1" inputMode="decimal" placeholder="e.g. 98"/></label></div>)}</div></fieldset>:null}
+
+    {garmentType&&relevantAttributes.length?<fieldset className="fitDimensionFields"><legend>Product construction details</legend><p className="fieldHelp">Only answer what you know. New member-entered details are provisional and influence matching softly until corroborated or verified; unknown details are never guessed.</p><div className="fieldPair">{relevantAttributes.map((definition)=><label key={definition.key}>{definition.label}<select name={`product_attribute__${definition.key}`} defaultValue=""><option value="">Not specified</option>{(optionsByAttribute.get(definition.key)??[]).map((option)=><option value={option.option_key} key={option.option_key}>{option.label}</option>)}</select></label>)}</div></fieldset>:null}
+
     <FitDimensionFields garmentType={garmentType} dimensions={dimensions} responses={responses}/>
-    <label>Manufacturer style / Style ID
-      <input name="style_number" maxLength={100} placeholder="Optional" value={styleNumber} onChange={(event)=>{clearExact();setStyleNumber(event.target.value);}}/>
-      <span className="fieldHelp">If you choose an existing catalog match, its known Style ID is filled automatically.</span>
-    </label>
   </>;
 }

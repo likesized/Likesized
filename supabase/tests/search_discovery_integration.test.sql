@@ -80,7 +80,7 @@ select is((select id from public.search_members('Alex Example',24) limit 1),'fc5
 select is((select count(*) from public.search_members('search_viewer',24)),0::bigint,'member search excludes the current viewer');
 select is((select count(*) from public.search_members('nobody-here',24)),0::bigint,'unmatched member query returns no profiles');
 select is((select id from public.search_members('aLeX eXaMpLe',24) limit 1),'fc500000-0000-4000-8000-000000000002'::uuid,'member search is case-insensitive');
-select is((select count(*) from public.get_fit_matches('overall',100) where user_id='fc500000-0000-4000-8000-000000000002'::uuid),1::bigint,'discovered member is also reachable through People My Size current matching');
+select is((select count(*) from public.get_fit_matches('overall',100) where user_id='fc500000-0000-4000-8000-000000000002'::uuid),0::bigint,'member search does not bypass minimum Fit Match evidence requirements');
 select is((select count(*) from public.profiles where id='fc500000-0000-4000-8000-000000000002'::uuid),1::bigint,'signed-in member can open discovered member profile');
 select is((select count(*) from public.body_measurements where user_id='fc500000-0000-4000-8000-000000000002'::uuid),0::bigint,'member discovery does not grant raw body measurement access');
 select lives_ok($$insert into public.follows(follower_id,followed_id) values('fc500000-0000-4000-8000-000000000001'::uuid,'fc500000-0000-4000-8000-000000000002'::uuid)$$,'discovered member can be saved through canonical Fit Twin follow relationship');

@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-const FIT_RATINGS=new Set(["too_small","snug","just_right","relaxed","too_big"]);
+const FIT_RESULTS=new Set(["too_small","snug","just_right","relaxed","too_big"]);
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const FIT_DIMENSION_PREFIX="fit_dimension__";
 function text(formData:FormData,name:string){return String(formData.get(name)??"").trim();}
@@ -47,7 +47,7 @@ export async function logFitObservation(formData:FormData){
   const notes=text(formData,"fit_notes")||null;
   const buy=text(formData,"would_buy_again");
   const dimensions=fitDimensionRows(formData);
-  if(!FIT_RATINGS.has(fit)||(notes&&notes.length>1000)||dimensions===null)redirect(itemPath(id,"error=invalid_observation"));
+  if(!FIT_RESULTS.has(fit)||(notes&&notes.length>1000)||dimensions===null)redirect(itemPath(id,"error=invalid_observation"));
   const wouldBuyAgain=buy==="yes"?true:buy==="no"?false:null;
   const {supabase,userId}=await auth(itemPath(id));
   const {data:item,error:itemError}=await supabase.from("closet_items").select("id,product_id,variant_id,size_label,normalized_size_id").eq("id",id).eq("user_id",userId).maybeSingle();

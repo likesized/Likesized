@@ -13,7 +13,7 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
   if (!claimsData?.claims?.sub) redirect("/login?next=/closet/add");
-  const [{ data: garmentTypes }, { data: brands }, { data: products }, { data: families }, { data: mappings }, { data: definitions }, { data: responses }, {data:attributeDefinitions},{data:attributeOptions}] = await Promise.all([
+  const [{ data: garmentTypes }, { data: brands }, { data: products }, { data: families }, { data: mappings }, { data: definitions }, { data: responses }, {data:attributeDefinitions},{data:attributeOptions},{data:materials}] = await Promise.all([
     supabase.from("garment_types").select("key, label, category").eq("active", true).order("sort_order"),
     supabase.from("brands").select("id, name").order("name").limit(300),
     supabase.from("products").select("id,name,brand_id,garment_type_key,market_segment,manufacturer_style_number,brand:brands(name)").order("name").limit(300),
@@ -23,6 +23,7 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
     supabase.from("fit_dimension_responses").select("dimension_key,response_key,label,sort_order").order("sort_order"),
     supabase.from("garment_attribute_definitions").select("key,label,category,sort_order").order("sort_order"),
     supabase.from("garment_attribute_options").select("attribute_key,option_key,label,sort_order").order("sort_order"),
+    supabase.from("materials").select("key,label").order("label"),
   ]);
   const labelByKey=new Map((definitions??[]).map((item)=>[item.key,item.label]));
   const dimensions=(mappings??[]).map((item)=>({...item,label:labelByKey.get(item.dimension_key)??item.dimension_key}));
@@ -45,17 +46,16 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
   }));
   const params = await searchParams;
   const error = first(params.error);
-  const errorMessage = error === "invalid_fields" ? "Check the controlled garment details and try again." : error === "invalid_photo" ? "Fit photo must be JPEG, PNG, or WebP and no larger than 8 MB." : error === "save_failed" ? "That garment could not be saved." : null;
+  const errorMessage = error === "invalid_fields" ? "Check the controlled garment details and required Fit Result, then try again." : error === "invalid_photo" ? "Fit photo must be JPEG, PNG, or WebP and no larger than 8 MB." : error === "save_failed" ? "That garment could not be saved." : null;
 
   return <main className="pageShell addGarmentShell">
-    <div className="pageTitle rowTitle"><div><span className="eyebrow">MY CLOSET · ADD GARMENT</span><h1>Log what you actually wear.</h1><p>Search existing catalog data first; LikeSized only creates a canonical record when needed.</p></div><Link className="secondaryButton" href="/closet">Back to Closet</Link></div>
+    <div className="pageTitle rowTitle"><div><span className="eyebrow">MY CLOSET · ADD GARMENT</span><h1>Log what you actually wear.</h1><p>LikeSized resolves known garments first and keeps unknown product details provisional until the catalog evidence is corroborated.</p></div><Link className="secondaryButton" href="/closet">Back to Closet</Link></div>
     <form className="garmentForm" action={addGarment}>
       {errorMessage ? <div className="authMessage error">{errorMessage}</div> : null}
-      <CatalogGarmentFields brands={brands??[]} products={catalogProducts} families={catalogFamilies} garmentTypes={garmentTypes??[]} dimensions={dimensions} responses={responses??[]} attributeDefinitions={attributeDefinitions??[]} attributeOptions={attributeOptions??[]}/>
+      <CatalogGarmentFields brands={brands??[]} products={catalogProducts} families={catalogFamilies} garmentTypes={garmentTypes??[]} dimensions={dimensions} responses={responses??[]} attributeDefinitions={attributeDefinitions??[]} attributeOptions={attributeOptions??[]} materials={materials??[]}/>
       <GarmentSizeFields />
-      <label>SKU / UPC / barcode<input name="identifier" maxLength={120} placeholder="Optional identifier" /></label>
-      <div className="fieldPair"><label>Product URL<input name="product_url" type="url" maxLength={1000} placeholder="https://..." /></label><label>Color / variant<input name="color_label" maxLength={80} placeholder="Optional" /></label></div>
-      <div className="fieldPair"><label>Closet visibility<select name="visibility" defaultValue="private"><option value="private">Private</option><option value="shared">Shared with LikeSized members</option></select></label><label>Overall fit<select name="fit" defaultValue="" required><option value="" disabled>Select fit</option><option value="too_small">Too small</option><option value="snug">Snug</option><option value="just_right">Just right</option><option value="relaxed">Relaxed</option><option value="too_big">Too big</option></select></label></div>
+      <label>Color / variant<input name="color_label" maxLength={80} placeholder="Optional" /></label>
+      <div className="fieldPair"><label>Closet visibility<select name="visibility" defaultValue="private"><option value="private">Private</option><option value="shared">Shared with LikeSized members</option></select></label><label>Overall fit<select name="fit" defaultValue="" required><option value="" disabled>Select physical fit</option><option value="too_small">Too small</option><option value="snug">Snug</option><option value="just_right">Just right</option><option value="relaxed">Relaxed</option><option value="too_big">Too big</option></select><span className="fieldHelp">Required. Log bad fits too—Too Small and Too Big are valuable evidence against that size.</span></label></div>
       <div className="fieldPair"><label>Would you buy it again?<select name="would_buy_again" defaultValue="unsure"><option value="yes">Yes</option><option value="no">No</option><option value="unsure">Not sure</option></select></label><label>Times worn<input name="wears_count" type="number" min="0" max="100000" step="1" defaultValue="0" /></label></div>
       <label>Add a Fit Photo — Optional<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><span className="fieldHelp"><b>Fit photos are shared with LikeSized members as real-world fit references. Don’t upload a photo you don’t want other members to see.</b></span></label>
       <label>Fit notes <span className="muted inlineMuted">optional</span><textarea name="fit_notes" maxLength={1000} rows={5} placeholder="Roomy in the thighs, right at the waist..." /></label>

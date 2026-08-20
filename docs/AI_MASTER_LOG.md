@@ -14,6 +14,8 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - Phase 6.4 responsive/accessibility + Fit Profile polish: IN PROGRESS.
 - Measurement-guide implementation, binary repair, production deployment, and owner visual verification: COMPLETE.
 - Phase 6.4 mobile/measurement batch through Front Waist Length: MERGED TO CANONICAL `main` / PRODUCTION READY.
+- Owner production verification found the first Mobile Menu auto-close implementation did **not** close the menu after navigation. That implementation failed functional verification and was replaced in canonical source.
+- Corrected React-controlled Mobile Menu implementation is deployed to production; final owner functional re-verification is still required before it is marked complete.
 - Current measurement-audit checkpoint: **Back Waist / Neck-to-Waist Length**.
 - Phase 6.5 V1 Product Surface + Navigation Audit: LOCKED / QUEUED immediately after Phase 6.4.
 
@@ -23,7 +25,7 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - Height uses feet + whole inches.
 - Other imperial length measurements use whole inches + 0/¼/½/¾ dropdowns.
 - Server validates height as whole inches and other imperial lengths in quarter-inch increments.
-- Mobile Menu auto-close behavior is implemented in canonical source and deployed; final functional verification remains before Phase 6.4 closes.
+- Mobile Menu now uses a single canonical React-controlled open state rather than native `<details>` state. Selecting any navigation link explicitly closes the controlled state, and pathname changes also reset it. The correction is deployed; owner functional re-verification remains before completion.
 - iPhone Safari form-focus zoom prevention is implemented in canonical source and deployed via 16px form-control text; final functional verification remains before Phase 6.4 closes.
 
 ## Phase 6.4 measurement audit — owner-locked decisions so far
@@ -38,9 +40,14 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - Owner explicitly authorized this Phase 6.4 batch to be pushed to Vercel production.
 - Working PR #33 passed LikeSized CI before promotion.
 - PR #33 was squash-merged into canonical `main` as commit `a22e1732311050e6d4c6e0fd26a3708f67bcbbac`.
-- The production batch contains the canonical mobile Menu auto-close implementation, iPhone Safari focus-zoom prevention, and owner-approved measurement guidance through Front Waist Length.
+- That production batch contained the first Mobile Menu auto-close implementation, iPhone Safari focus-zoom prevention, and owner-approved measurement guidance through Front Waist Length.
 - Vercel production deployment `dpl_G9qQawDkjNto8HAEXGscK5kHoqUg` for commit `a22e1732311050e6d4c6e0fd26a3708f67bcbbac` reached READY with no alias error.
-- Production aliases include `likesized.com`, `likesized.vercel.app`, and the canonical main-branch aliases.
+- Owner functional verification then showed the first Mobile Menu auto-close implementation still left the menu open after navigation; it was therefore not accepted as complete.
+- Corrective PR #34 replaced native `<details>` open-state handling with the canonical React-controlled Mobile Menu state and changed no parallel/duplicate implementation files.
+- PR #34 passed LikeSized CI and its Vercel preview reached READY.
+- PR #34 was squash-merged into canonical `main` as commit `599904e09a885120448dcea354a5784c8fae398e`.
+- Vercel production deployment `dpl_7Dwb4hJ7YSexqHZKCnddwaXcF9mr` for commit `599904e09a885120448dcea354a5784c8fae398e` reached READY with no alias error and owns `likesized.com`, `likesized.vercel.app`, and the canonical main-branch aliases.
+- The corrected Mobile Menu remains pending owner functional re-verification on production; do not mark it functionally complete until that verification succeeds.
 - The measurement audit intentionally stops at **Back Waist / Neck-to-Waist Length** for the next owner review.
 
 ## Approved measurement-guide artwork — COMPLETE / LIVE / OWNER VERIFIED
@@ -59,7 +66,7 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 ## Phase 6.4 — remaining work
 1. Continue and finish the remaining measurement-name/help audit beginning at **Back Waist / Neck-to-Waist Length**.
 2. Final Fit Profile save/load/edit regression verification.
-3. Final functional verification of the deployed mobile Menu auto-close behavior.
+3. Owner functional re-verification of the corrected deployed Mobile Menu auto-close behavior.
 4. Final functional verification of the deployed iPhone Safari form-focus zoom fix.
 5. Close Phase 6.4 only after the canonical source, verification result, and this master agree.
 
@@ -404,4 +411,4 @@ Representative end-to-end verification must cover:
 - CI/database/security verification
 
 ## Exact next action
-Continue Phase 6.4 measurement-name/help audit with **Back Waist / Neck-to-Waist Length**. Do not change that measurement until the owner approves its wording. Then finish the remaining measurements, run the Fit Profile save/load/edit regression check, perform final functional verification of the deployed mobile Menu and iPhone Safari fixes, synchronize verified results here, and close Phase 6.4 before beginning Phase 6.5.
+Continue Phase 6.4 measurement-name/help audit with **Back Waist / Neck-to-Waist Length**. Do not change that measurement until the owner approves its wording. Then finish the remaining measurements, run the Fit Profile save/load/edit regression check, obtain owner functional confirmation that the corrected production Mobile Menu now closes after navigation, verify the iPhone Safari focus-zoom correction, synchronize verified results here, and close Phase 6.4 before beginning Phase 6.5.

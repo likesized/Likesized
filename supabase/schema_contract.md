@@ -3,20 +3,20 @@
 ## Canonical source-of-truth rule — LOCKED
 GitHub `likesized/Likesized` is the single canonical source of truth for database architecture and executable history. Ordered SQL in `supabase/migrations/` is the authoritative replay/deployment history. `supabase/schema.sql` and `supabase/storage.sql` are reference/current-state aids only.
 
-The Fit Match audit branch contains **35 migrations** from `20260819132934_initial_likesized_schema.sql` through `20260820211800_directional_fit_recommendation.sql`. The newest garment/matching migrations are `20260820203500_garment_enrichment_provenance.sql` and `20260820211800_directional_fit_recommendation.sql`. These branch migrations are not production-applied until owner-authorized merge/deployment.
+The Fit Match audit branch contains **36 migrations** from `20260819132934_initial_likesized_schema.sql` through `20260820215500_garment_fit_preferences.sql`. The newest garment/matching migrations are `20260820203500_garment_enrichment_provenance.sql`, `20260820211800_directional_fit_recommendation.sql`, and `20260820215500_garment_fit_preferences.sql`. These branch migrations are not production-applied until owner-authorized merge/deployment.
 
 Do not rewrite applied production migrations. While an unmerged feature branch is still being audited, keep its new migration history canonical rather than preserving abandoned parallel concepts. Future production database changes are new ordered executable migrations. No alternate current-state schema files, patch migrations, fixed/v2 copies, or parallel database implementations.
 
 ## Locked current-state contract
 - `profiles`: completed member identity readable to authenticated LikeSized members only; anonymous SELECT revoked.
-- `fit_profiles`, `body_measurements`, `user_size_references`: current Fit Profile shell plus owner-private raw body/size-reference state.
-- Immutable Fit Profile version tables preserve historical body state privately.
+- `fit_profiles`, `body_measurements`, `user_size_references`, `user_garment_fit_preferences`: current Fit Profile settings plus owner-private raw body/size-reference/preference state.
+- Immutable Fit Profile version tables preserve historical body state privately. Current preferred-fit settings are intentionally **not** part of immutable body snapshots.
 - `fit_reports.fit_profile_version_id`: immutable try-on body-state association; multiple observations may exist per Closet item.
 - **Fit Result is the required physical sizing signal for every new Fit Report.** Allowed outcomes are Too Small, Snug, Just Right, Relaxed, and Too Big.
 - The existing PostgreSQL enum is historically named `public.fit_rating`, but it is the **physical Fit Result enum**, not a 1–5 satisfaction/star rating. Do not infer a separate star-rating feature from the internal enum name.
 - There is **no separate 1–5 Fit Rating field in the final branch schema**. The discarded satisfaction-rating experiment is not part of the canonical migration history.
 - Bad fits are first-class evidence. Too Small and Too Big reports remain valid and useful instead of being filtered out or treated as low-quality submissions.
-- Optional preference/satisfaction feedback such as `would_buy_again` does **not** alter the size recommendation. Fit Result is the only member opinion used to support or oppose a size.
+- Optional product feedback such as `would_buy_again` does **not** alter the size recommendation. Preferred Fit is a separate explicit viewer-personalization layer described below.
 - `fit_report_dimensions`: controlled garment-specific responses with DB garment/dimension validation.
 - Every canonical `measurement_types` row has a positive default tolerance. Fit Profile body fields are canonical measurements rather than free-text comparison inputs.
 - Fit Match similarity uses a smooth tolerance curve: exact measurements = 1.0 similarity, half the configured tolerance = 0.5, and one full tolerance = 0.0625. There is no hard similarity cliff at the tolerance boundary.
@@ -42,7 +42,20 @@ Do not rewrite applied production migrations. While an unmerged feature branch i
 - `public.get_product_evidence_candidates(...)` returns only the safe `directional_fit_support` scalar alongside historical evidence. It never returns raw measurements, signed deltas, or directional pressure.
 - The evidence RPC uses a narrow SECURITY DEFINER boundary only because the directional helper is intentionally non-public. It explicitly requires authentication and explicitly restricts candidate evidence to **Shared** Closet items.
 - Direct authenticated access to the private directional helper remains revoked.
-- Recommendation calibration uses Match closeness, evidence specificity, controlled Similar Garments overlap, coverage quality, Fit Result support/conflict and sample strength. **Would Buy Again and other satisfaction/preference fields do not break size ties or change recommendation confidence.**
+- Recommendation calibration uses Match closeness, evidence specificity, controlled Similar Garments overlap, coverage quality, Fit Result support/conflict and sample strength. **Would Buy Again and satisfaction fields do not break size ties or change recommendation confidence.** Preferred Fit is the deliberate personalization exception below and operates only on the viewer's interpretation of physically acceptable Fit Results.
+
+## Preferred Fit personalization contract — LOCKED
+- `public.garment_fit_preference` is controlled to **Fitted / Standard / Relaxed**.
+- `public.user_garment_fit_preferences` is owner-private and keyed by `(user_id, garment_type_key)`, so a member can prefer a fitted T-shirt, relaxed hoodie, standard jeans, etc. without one global preference distorting every garment.
+- **Missing preference row means Standard.** Standard is stored sparsely and is the neutral default.
+- Preferred Fit is saved through the canonical `public.save_fit_profile(...)` transaction together with current measurements and private size references.
+- Preferred Fit is a **current personalization setting**, not historical body state. Preference-only edits do not create a new immutable Fit Profile body version and do not rewrite historical Fit Reports.
+- Preferred Fit does **not** change Overall/Tops/Bottoms/Product Match %, does not change who counts as a body Match, and is not used to match people who share the same style preference.
+- It is applied only after body similarity, historical Fit Result, evidence hierarchy, and private directional body differences have been established.
+- Fitted makes **Snug** more desirable than it is under Standard; Relaxed makes **Relaxed** more desirable; Standard keeps **Just Right** as the strongest neutral target.
+- **Too Small and Too Big remain negative evidence for every preference.** They are physical failures, not valid preferred-fit choices.
+- Directional support remains layered on top of preference interpretation, so a Snug result can still become stronger/weaker evidence based on whether the viewer is larger or smaller in garment-relevant dimensions.
+- Product recommendation UI may disclose the applied preference label (for example, `Fitted`) but never raw body differences or another member's private preferences.
 
 ## Garment identity and enrichment provenance contract — LOCKED
 - A new Closet log resolves existing canonical Product identity before creating a Product.
@@ -80,7 +93,7 @@ Do not rewrite applied production migrations. While an unmerged feature branch i
 - `outfit_likes` has one like per `(post_id,user_id)`; only the liker may insert/delete their own like; post deletion cascades likes.
 - `public.create_outfit_post(uuid,text,text,uuid[])` remains the current canonical transaction until the queued V1 Outfit removal is implemented through an ordered migration/source update.
 - `public.search_catalog_products(text,integer)` is authenticated-only SECURITY INVOKER catalog discovery. It searches canonical Product names, canonical Brand names, Brand aliases, manufacturer style numbers, `product_identifiers` (including SKU/UPC/barcode), retailer product IDs/SKUs and retailer listing titles; punctuation/case normalization is applied internally and results deduplicate to one canonical Product with its canonical slug/brand display identity.
-- `public.search_members(text,integer)` is authenticated-only SECURITY INVOKER member discovery over member-readable username/display name. It excludes `auth.uid()`, is case-insensitive and returns only member identity fields—never raw measurements/private size references. Searchability does not bypass minimum Fit Match evidence requirements.
+- `public.search_members(text,integer)` is authenticated-only SECURITY INVOKER member discovery over member-readable username/display name. It excludes `auth.uid()`, is case-insensitive and returns only member identity fields—never raw measurements/private size references/preferences. Searchability does not bypass minimum Fit Match evidence requirements.
 - Search RPCs do not expose the intentionally non-public general normalizer helper functions and do not create a duplicate search catalog, member index or follow system.
 
 ## Canonical verification contract
@@ -99,14 +112,17 @@ Key suites include:
 - `similar_garment_attributes.test.sql` — **10 assertions**
 - `product_evidence_full_hierarchy.test.sql` — **18 assertions**
 - `garment_enrichment_and_directional_fit.test.sql` — **27 assertions** covering provenance, corroboration, exact Product resolution, required physical Fit Result, no star-rating column, directional bad-fit calibration, and Shared unique-wearer physical-fit aggregation
+- `garment_fit_preferences.test.sql` — **14 assertions** covering private per-garment preferences, Standard sparse default, atomic Fit Profile saving, preference-only body-history stability, invalid preference rejection, and owner-only privacy
 - `fit_twin_follow_foundation.test.sql` — **14 assertions**
 - `following_feed_activity.test.sql` — **25 assertions**
 - `fit_twin_activity_notifications.test.sql` — **48 assertions**
 - `social_outfit_integration.test.sql` — **49 assertions**
 - `search_discovery_integration.test.sql` — **35 assertions** covering catalog/member discovery, privacy boundaries, minimum-match evidence behavior, canonical follow creation, and searched-member Shared activity reaching Following Feed + Fit Twin notifications.
 
-`tests/recommendation-confidence.test.ts` calls production `recommendSize()` directly with **10 calibration cases**, including coverage-without-double-penalty behavior and directional Fit Result evidence. Preference/satisfaction feedback is intentionally absent from the sizing formula.
+`tests/recommendation-confidence.test.ts` now defines **13 calibration cases**, including coverage-without-double-penalty behavior, directional Fit Result evidence, Fitted-vs-Standard recommendation behavior, Relaxed-vs-Standard behavior, and the invariant that Too Small/Too Big remain negative for every preference.
 
-Fit Match audit CI run **`32420828278`** on branch source commit `a305f021e72aaaff19901aa0b51c4e70dfb5e856` passed npm install, TypeScript, all **10** recommendation calibration cases, production build, fresh replay of all **35 branch migrations**, and the complete canonical pgTAP suite. The branch remains non-production until the owner explicitly authorizes merge/deployment.
+Last full Fit Match audit CI run **`32420828278`** on branch source commit `a305f021e72aaaff19901aa0b51c4e70dfb5e856` passed npm install, TypeScript, all **10 then-current** recommendation calibration cases, production build, fresh replay of all **35 then-current branch migrations**, and the complete canonical pgTAP suite.
 
-Do not add fixed measurement columns back to `fit_profiles`; blend current-person scores with historical garment evidence; count repeated observations as multiple wearers; fuzzy-group Product Families; expose raw or signed body differences through product/social/search/notification surfaces; allow Private Closet evidence into recommendations; allow anonymous member/follow/feed/notification discovery; reintroduce a separate 1–5 Fit Rating into the sizing workflow without a new owner decision; use Would Buy Again as a sizing signal; make V1 depend on manufacturer garment measurements; reintroduce a private fit-photo state; add Fit Twin activity email/phone push without an explicit future decision; reintroduce non-atomic outfit auto-sharing; create a second catalog/member/follow system for search; or create a second Fit Match formula outside the canonical profile → garment-type → product-attribute → directional Fit Result pipeline.
+The new Preferred Fit source through commit `2a75bf75e46e72654a4f952191f05c44ca2a3d7b` has a successful Vercel build status, but a new full GitHub CI migration replay/pgTAP run has **not** started while PR #36 remains non-mergeable/diverged from `main`. Do not describe the 36th migration as fully CI-verified until that branch state is reconciled and the complete run passes. The branch remains non-production until the owner explicitly authorizes merge/deployment.
+
+Do not add fixed measurement columns back to `fit_profiles`; blend current-person scores with historical garment evidence; count repeated observations as multiple wearers; fuzzy-group Product Families; expose raw or signed body differences through product/social/search/notification surfaces; expose another member's preferred-fit settings; use Preferred Fit to change body Match % or select Fit Twins; allow Too Small/Too Big as personal preference values; allow Private Closet evidence into recommendations; allow anonymous member/follow/feed/notification discovery; reintroduce a separate 1–5 Fit Rating into the sizing workflow without a new owner decision; use Would Buy Again as a sizing signal; make V1 depend on manufacturer garment measurements; reintroduce a private fit-photo state; add Fit Twin activity email/phone push without an explicit future decision; reintroduce non-atomic outfit auto-sharing; create a second catalog/member/follow system for search; or create a second Fit Match formula outside the canonical profile → garment-type → product-attribute → directional Fit Result → Preferred Fit recommendation pipeline.

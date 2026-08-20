@@ -40,10 +40,7 @@ export async function Header() {
             </form>
           </>
         ) : (
-          <>
-            <Link className="navButton" href="/login">Log in</Link>
-            <Link className="navButton" href="/signup">Create account</Link>
-          </>
+          <Link className="navButton" href="/login">My Fit Profile</Link>
         )}
       </nav>
     </header>

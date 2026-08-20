@@ -7,11 +7,14 @@ import helpStyles from "@/app/onboarding/MeasurementHelp.module.css";
 
 type UnitSystem = "imperial" | "metric";
 type SizeReferenceType = "bra"|"shoe"|"shirt"|"pants"|"dress"|"other";
+type PreferredFit = "fitted"|"standard"|"relaxed";
 export type MeasurementType = { key:string; label:string; core:boolean; measurement_group:string; dimension:"length"|"weight"; manual_step_imperial:number|string; manual_step_metric:number|string; sort_order:number };
 export type BodyMeasurement = { measurement_type_key:string; entered_value:number|string; entered_unit:string };
 export type SizeReference = { reference_type:SizeReferenceType; original_size_label:string; sizing_system:string|null; band_size:number|string|null; cup_designation:string|null; shoe_size:number|string|null };
+export type GarmentTypePreferenceOption = { key:string; label:string; category:string; sort_order:number };
+export type GarmentFitPreference = { garment_type_key:string; preference:PreferredFit };
 
-type Props={username:string;unitSystem:UnitSystem;types:MeasurementType[];measurements:BodyMeasurement[];sizeReferences:SizeReference[];errorMessage:string|null};
+type Props={username:string;unitSystem:UnitSystem;types:MeasurementType[];measurements:BodyMeasurement[];sizeReferences:SizeReference[];garmentTypes:GarmentTypePreferenceOption[];fitPreferences:GarmentFitPreference[];errorMessage:string|null};
 
 const BRA_CUPS=["AA","A","B","C","D","DD","DDD","E","F","FF","G","GG","H","HH","I","J","JJ","K"];
 const BRA_SYSTEMS=["US","UK","EU"];
@@ -36,6 +39,7 @@ const DISPLAY_LABELS:Record<string,string>={
   individual_shoulder_length:"Individual Shoulder Length",
   torso_body_length:"Torso Length",
 };
+const CATEGORY_LABELS:Record<string,string>={tops:"Tops",bottoms:"Bottoms",dresses:"Dresses",outerwear:"Outerwear",shoes:"Shoes",other:"Other"};
 
 function displayLabel(type:MeasurementType){return DISPLAY_LABELS[type.key]??type.label;}
 function targetUnit(type:MeasurementType,system:UnitSystem){return type.dimension==="weight"?(system==="imperial"?"lb":"kg"):(system==="imperial"?"in":"cm");}
@@ -68,10 +72,15 @@ function heightParts(raw:string){
   return{feet:String(Math.floor(total/12)),inches:String(total%12)};
 }
 
-export function FitProfileForm({username,unitSystem:initialSystem,types,measurements,sizeReferences,errorMessage}:Props){
+export function FitProfileForm({username,unitSystem:initialSystem,types,measurements,sizeReferences,garmentTypes,fitPreferences,errorMessage}:Props){
   const visibleTypes=types.filter((type)=>type.key!=="overbust");
   const byKey=new Map(measurements.map((row)=>[row.measurement_type_key,row]));
   const refs=new Map(sizeReferences.map((row)=>[row.reference_type,row]));
+  const preferenceByType=new Map(fitPreferences.map((row)=>[row.garment_type_key,row.preference]));
+  const garmentGroups=garmentTypes.reduce<Record<string,GarmentTypePreferenceOption[]>>((groups,item)=>{
+    (groups[item.category]??=[]).push(item);
+    return groups;
+  },{});
   const braRef=refs.get("bra");
   const shoeRef=refs.get("shoe");
   const [system,setSystem]=useState<UnitSystem>(initialSystem);
@@ -188,6 +197,16 @@ export function FitProfileForm({username,unitSystem:initialSystem,types,measurem
     <div className="fieldPair">{core.map(field)}</div>
     <details open={advanced.some((type)=>Boolean(values[type.key]))}><summary>Optional advanced measurements</summary><p className="muted">Add more detailed measurements for even smarter fit matches. Fill in only what you know and come back anytime to add more or make changes.</p><div className="fieldPair optionalFields">{advanced.map(field)}</div></details>
 
+    <details open={fitPreferences.length>0}>
+      <summary>Preferred fit by garment type — private</summary>
+      <p className="muted">Tell LikeSized how you like each kind of garment to feel. This never changes your body Match %. It only helps translate similar wearers’ Fit Results into the size you are most likely to prefer. Standard is used whenever you leave a garment type unchanged.</p>
+      <div className="privacyNote"><b>Preference is not a failed fit.</b> Fitted, Standard, and Relaxed describe what you like. Too Small and Too Big remain required physical Fit Results on garment logs and are always negative sizing evidence.</div>
+      {Object.entries(garmentGroups).map(([category,items])=><div key={category}>
+        <h3>{CATEGORY_LABELS[category]??category}</h3>
+        <div className="fieldPair optionalFields">{items.map((item)=><label key={item.key}>{item.label}<select name={`fit_preference__${item.key}`} defaultValue={preferenceByType.get(item.key)??"standard"}><option value="fitted">Fitted</option><option value="standard">Standard</option><option value="relaxed">Relaxed</option></select></label>)}</div>
+      </div>)}
+    </details>
+
     <details open={sizeReferences.length>0}>
       <summary>Normally worn sizes — private reference only</summary>
       <p className="muted">These optional references stay private with your Fit Profile and its historical versions. They provide sizing context; they are not exposed to other members and do not replace body-measurement matching.</p>
@@ -212,7 +231,7 @@ export function FitProfileForm({username,unitSystem:initialSystem,types,measurem
       </div>
     </details>
 
-    <div className="privacyNote"><b>History:</b> saving changed measurements or private size references creates a new private body-state version. Existing garment Fit Reports stay permanently tied to the version from when they were logged.</div>
+    <div className="privacyNote"><b>History:</b> saving changed measurements or private size references creates a new private body-state version. Existing garment Fit Reports stay permanently tied to the version from when they were logged. Preferred fit stays a current private personalization setting; changing it does not rewrite historical body states or Match percentages.</div>
     <button type="submit" className="primaryButton fullButton">Save Fit Profile →</button>
     {helpKey?<MeasurementHelpDialog measurementKey={helpKey} onClose={()=>setHelpKey(null)}/>:null}
   </form>;

@@ -1,0 +1,42 @@
+name: Rebuild measurement guide binaries
+
+on:
+  push:
+    branches: [fix/high-res-measurement-guides]
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repair branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Rebuild and verify binary guides
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f .binary-upload/READY ]; then
+            echo "Binary chunks are not complete yet; nothing to rebuild."
+            exit 0
+          fi
+
+          cat .binary-upload/torso-* | base64 --decode > public/measurement-guides/torso-girth-guide.webp
+          cat .binary-upload/waist-* | base64 --decode > public/measurement-guides/waist-hip-guide.webp
+
+          test "$(wc -c < public/measurement-guides/torso-girth-guide.webp)" -eq 224606
+          test "$(wc -c < public/measurement-guides/waist-hip-guide.webp)" -eq 261182
+          echo "559a5431d14e96928e4bb8be165a31a9789574c1c58fb9e755ae3df2527e9fee  public/measurement-guides/torso-girth-guide.webp" | sha256sum --check
+          echo "$(cat .binary-upload/waist.sha256)  public/measurement-guides/waist-hip-guide.webp" | sha256sum --check
+
+          git config user.name "likesized-binary-rebuild"
+          git config user.email "likesized@outlook.com"
+          git add -- public/measurement-guides/torso-girth-guide.webp public/measurement-guides/waist-hip-guide.webp
+          git rm -r -- .binary-upload .github/workflows/rebuild-measurement-guides.yml
+          git commit -m "Restore full-resolution measurement guide binaries"
+          git push origin HEAD:fix/high-res-measurement-guides

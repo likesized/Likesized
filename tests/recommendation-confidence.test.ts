@@ -113,3 +113,30 @@ test("directional Fit Result support can break an otherwise equal size tie", () 
   assert.equal(result?.sizeKey, "L");
   assert.equal(result?.similarWearerCount, 2);
 });
+
+test("Fitted preference can favor a snug size without changing Match scores", () => {
+  const rows = [
+    evidence({ sizeKey: "M", sizeLabel: "M", fit: "snug", matchScore: 100 }),
+    evidence({ sizeKey: "L", sizeLabel: "L", fit: "just_right", matchScore: 99 }),
+  ];
+  assert.equal(recommendSize(rows, "standard")?.sizeKey, "L");
+  assert.equal(recommendSize(rows, "fitted")?.sizeKey, "M");
+  assert.equal(rows[0].matchScore, 100);
+  assert.equal(rows[1].matchScore, 99);
+});
+
+test("Relaxed preference can favor a relaxed size over an otherwise stronger Just Right option", () => {
+  const rows = [
+    evidence({ sizeKey: "M", sizeLabel: "M", fit: "just_right", matchScore: 99 }),
+    evidence({ sizeKey: "L", sizeLabel: "L", fit: "relaxed", matchScore: 100 }),
+  ];
+  assert.equal(recommendSize(rows, "standard")?.sizeKey, "M");
+  assert.equal(recommendSize(rows, "relaxed")?.sizeKey, "L");
+});
+
+test("Too Small and Too Big remain negative for every fit preference", () => {
+  assert.equal(recommendSize([evidence({ fit: "too_small" })], "fitted"), null);
+  assert.equal(recommendSize([evidence({ fit: "too_small" })], "relaxed"), null);
+  assert.equal(recommendSize([evidence({ fit: "too_big" })], "fitted"), null);
+  assert.equal(recommendSize([evidence({ fit: "too_big" })], "relaxed"), null);
+});

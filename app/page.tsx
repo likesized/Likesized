@@ -10,7 +10,7 @@ const capabilities = [
   },
   {
     eyebrow: "SHOP THEIR CLOSET",
-    title: "Browse the clothes your best matches actually wear.",
+    title: "Browse the clothes your matches actually wear.",
     description: "See what worked for them.",
     href: "/search",
     link: "Get Inspired →",
@@ -28,7 +28,10 @@ export default function Home() {
   return (
     <main>
       <section className="hero">
-        <div className="eyebrow">REAL PEOPLE. SMARTER MATCHING. BETTER FIT.</div>
+        <div className="eyebrow heroEyebrow">
+          <span className="heroEyebrowLine">REAL PEOPLE. SMARTER MATCHING.</span>{" "}
+          <span className="heroEyebrowLine">BETTER FIT.</span>
+        </div>
         <h1>
           <span className="heroLine heroLinePrimary">Find your Fit Twin.</span>
           <span className="heroLine">Find your fit.</span>

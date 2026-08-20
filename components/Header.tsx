@@ -16,14 +16,14 @@ export async function Header() {
     <header className="header">
       <Link className="brand" href="/" aria-label="LikeSized home">
         <img
+          className="brandLogo"
           src="/brand/likesized-logo.png"
           alt="LikeSized"
           width="2048"
           height="682"
-          style={{ width: "clamp(132px, 16vw, 188px)", height: "auto", display: "block" }}
         />
       </Link>
-      <nav>
+      <nav aria-label="Primary navigation">
         {signedIn ? (
           <>
             <Link href="/search">Search</Link>

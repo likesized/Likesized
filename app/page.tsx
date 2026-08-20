@@ -3,24 +3,24 @@ import Link from "next/link";
 const capabilities = [
   {
     eyebrow: "PEOPLE MY SIZE",
-    title: "Find bodies that match yours.",
-    description: "Compare current Fit Profiles overall, for tops, or for bottoms without exposing anyone's raw measurements.",
+    title: "Discover people shaped like you.",
+    description: "Ranked by what matters most.",
     href: "/people",
-    link: "Browse Fit Matches →",
+    link: "See My Fit Twins →",
   },
   {
-    eyebrow: "PRODUCT EVIDENCE",
-    title: "Shop from real fit history.",
-    description: "See what sizes worked for similar body states, with exact product evidence first and broader fit evidence only when needed.",
+    eyebrow: "SHOP THEIR CLOSET",
+    title: "Browse the clothes your best matches actually wear.",
+    description: "See what worked for them.",
     href: "/search",
-    link: "Search products →",
+    link: "Get Inspired →",
   },
   {
-    eyebrow: "FIT TWINS",
-    title: "Keep learning from useful matches.",
-    description: "Save useful Fit Matches, then follow their future Shared garments, Fit Reports, and outfits through your Following Feed.",
+    eyebrow: "STAY CONNECTED",
+    title: "Keep up with your favorite Fit Twins.",
+    description: "Follow what they wear, share, and recommend.",
     href: "/following",
-    link: "Open Following Feed →",
+    link: "Make Shopping Easier →",
   },
 ];
 
@@ -28,17 +28,17 @@ export default function Home() {
   return (
     <main>
       <section className="hero">
-        <div className="eyebrow">CLOTHES. REAL BODIES. ACTUAL FIT.</div>
-        <h1>See what fits<br />people built like you.</h1>
-        <p>Stop guessing from model photos and vague reviews. LikeSized matches people using private garment-relevant Fit Profiles, then shows real-world size and fit evidence from Shared clothing history.</p>
+        <div className="eyebrow">REAL PEOPLE. SMARTER MATCHING. BETTER FIT.</div>
+        <h1>Find your Fit Twin.<br />Find your fit.</h1>
+        <p>Match with people who have a body like yours. See the brands they wear, the sizes they buy, and what actually works on them.</p>
         <div className="heroActions">
-          <Link className="primaryButton" href="/onboarding">Build my Fit Profile</Link>
-          <Link className="secondaryButton" href="/people">Browse matches</Link>
+          <Link className="primaryButton" href="/onboarding">Create My Fit Profile</Link>
+          <Link className="secondaryButton" href="#how-it-works">See How It Works</Link>
         </div>
         <div className="proofStrip">
-          <span><b>Private by default</b> raw body measurements</span>
-          <span><b>Garment-specific</b> current matching</span>
-          <span><b>Historical</b> real-world fit evidence</span>
+          <span><b>Your measurements stay private</b></span>
+          <span><b>Matches change by clothing type</b></span>
+          <span><b>Real people. Real size history.</b></span>
         </div>
       </section>
 
@@ -46,7 +46,7 @@ export default function Home() {
         <div className="sectionHeading">
           <div>
             <span className="eyebrow">WHAT LIKESIZED DOES</span>
-            <h2>Fit evidence, not a demo score.</h2>
+            <h2>Ranks your closest body matches, then shows you what they actually wear.</h2>
           </div>
           <Link href="/search" className="textLink">Search LikeSized →</Link>
         </div>
@@ -66,14 +66,14 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="howItWorks section">
+      <section className="howItWorks section" id="how-it-works">
         <span className="eyebrow">THE LOOP</span>
-        <h2>Every Shared fit report makes the answer better.</h2>
+        <h2>The more people share, the smarter LikeSized gets.</h2>
         <div className="steps">
-          <div><b>01</b><h3>Build your Fit Profile</h3><p>Enter the private measurements and size references clothing actually depends on.</p></div>
-          <div><b>02</b><h3>Find useful matches</h3><p>Compare current bodies overall, for tops, or for bottoms and save the people whose fit experience helps you.</p></div>
-          <div><b>03</b><h3>Log real fit</h3><p>Add clothing you own, the exact size identity, and how it actually fits. Each observation stays tied to the body state from that try-on.</p></div>
-          <div><b>04</b><h3>Shop with evidence</h3><p>Use canonical product history and similar-body evidence instead of relying on generic reviews alone.</p></div>
+          <div><b>01</b><h3>Build your profile</h3><p>Tell us about your size and measurements.</p></div>
+          <div><b>02</b><h3>Find your matches</h3><p>Get ranked matches based on the measurements that matter most for each garment type.</p></div>
+          <div><b>03</b><h3>Share what works (and what doesn’t)</h3><p>Help others learn from your real experience.</p></div>
+          <div><b>04</b><h3>Shop with better answers</h3><p>Use personalized insights from people like you to make smarter choices and get the fit right the first time.</p></div>
         </div>
       </section>
     </main>

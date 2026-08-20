@@ -3,8 +3,8 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 
 export const metadata: Metadata = {
-  title: "LikeSized — See what fits people built like you",
-  description: "Real clothing fit data from people with measurements like yours.",
+  title: "LikeSized — Find your Fit Twin. Find your fit.",
+  description: "Match with people who have a body like yours and learn what brands, sizes, and clothes work for them.",
   icons: {
     icon: "/brand/likesized-icon.png",
     shortcut: "/brand/likesized-icon.png",

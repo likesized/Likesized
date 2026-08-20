@@ -14,25 +14,27 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - Phase 6.4 responsive/accessibility + Fit Profile polish: IN PROGRESS / resumable after the active Fit Match audit.
 - Measurement-guide implementation, binary repair, production deployment, and owner visual verification: COMPLETE.
 - Phase 6.5 V1 Product Surface + Navigation Audit: LOCKED / QUEUED after Phase 6.4.
-- **Active unmerged Fit Match audit:** source implementation through directional Fit Result evidence is COMPLETE + CI GREEN on feature branch; owner has not authorized merge/deploy.
-- **Current interactive next audit question:** #3 Personal Fit Preference.
+- **Active unmerged Fit Match audit:** source implementation now includes directional Fit Result evidence plus private garment-specific Preferred Fit personalization. Directional core was fully CI-verified; the new Preferred Fit delta has a successful branch/Vercel build but full GitHub CI is pending because PR #36 remains non-mergeable/diverged from `main`.
+- **Current interactive next audit question after Preferred Fit verification:** #4 Derived Body Proportions.
 
 ## UNMERGED FIT MATCH / GARMENT EVIDENCE CHECKPOINT — LOCKED
 Branch: `fit-match-engine-audit`
 PR: #36 — `Build confidence-aware garment-specific Fit Match engine`
 Production/main: **UNCHANGED**
 
-### Verified branch state
-- Feature branch contains **35 migrations**.
-- New canonical garment provenance migration: `20260820203500_garment_enrichment_provenance.sql`.
-- New directional recommendation migration: `20260820211800_directional_fit_recommendation.sql`.
-- Source verification commit `a305f021e72aaaff19901aa0b51c4e70dfb5e856` passed CI run **`32420828278`**:
+### Branch state
+- Feature branch contains **36 migrations**.
+- Canonical garment provenance migration: `20260820203500_garment_enrichment_provenance.sql`.
+- Canonical directional recommendation migration: `20260820211800_directional_fit_recommendation.sql`.
+- Canonical Preferred Fit migration: `20260820215500_garment_fit_preferences.sql`.
+- Last full source verification commit `a305f021e72aaaff19901aa0b51c4e70dfb5e856` passed CI run **`32420828278`**:
   - TypeScript passed.
-  - all **10** production recommendation calibration tests passed.
+  - all **10 then-current** production recommendation calibration tests passed.
   - production build passed.
-  - all **35** migrations replayed on a fresh local Supabase database.
+  - all **35 then-current** migrations replayed on a fresh local Supabase database.
   - complete canonical pgTAP/database behavior suite passed.
-- Documentation commits after that source verification do not change runtime behavior.
+- Preferred Fit source through `2a75bf75e46e72654a4f952191f05c44ca2a3d7b` has a successful Vercel build status.
+- A new full GitHub CI migration replay/pgTAP run has **not** started on the Preferred Fit head while PR #36 is non-mergeable/diverged from `main`. Do not mark migration #36 fully CI-verified until that run exists and passes.
 
 ### Fit Result — final V1 decision
 - **There is no separate 1–5 star Fit Rating in the final branch design.**
@@ -46,7 +48,6 @@ Production/main: **UNCHANGED**
 - Bad fits must be accepted and encouraged. A highly matched wearer reporting Too Small or Too Big is valuable evidence **against that size**.
 - A bad garment outcome does not reduce the wearer's body Match %. Body similarity and garment outcome remain separate.
 - Optional `Would Buy Again` may remain as product feedback, but it **does not influence size recommendation or recommendation confidence**.
-- Fit Result is the only member opinion used to support or oppose a size.
 
 ### Directional body-difference decision
 - Body Match % remains symmetric garment-relevant body similarity.
@@ -56,6 +57,26 @@ Production/main: **UNCHANGED**
 - Raw measurements, signed measurement deltas, and aggregate directional pressure are never exposed to clients.
 - Only a safe outcome-specific `directional_fit_support` scalar reaches the recommendation layer.
 - The public evidence RPC is auth-required and explicitly Shared-Closet-only; direct member access to the private directional helper is revoked.
+
+### Preferred Fit personalization — OWNER LOCKED
+- Preferred Fit is a **private Fit Profile setting by garment type**, not one global preference.
+- Controlled choices are:
+  - **Fitted**
+  - **Standard**
+  - **Relaxed**
+- Examples: a member can prefer Fitted T-shirts, Relaxed hoodies, Standard jeans, etc.
+- Missing preference means **Standard**; Standard is the neutral default and is stored sparsely.
+- Preferences live in canonical owner-private `user_garment_fit_preferences` keyed by member + garment type.
+- Fit Profile save now accepts measurements, private normally-worn size references, and Preferred Fit settings in the same canonical database transaction.
+- Preferred Fit is current personalization, not historical body state. A preference-only edit does **not** create a new immutable body version and never rewrites old Fit Reports.
+- Preferred Fit does **not** change Match %, who qualifies as a Fit Twin/body Match, or how bodies are compared.
+- It is applied only when LikeSized translates historical physical Fit Results into the viewer's recommended size.
+- **Fitted** raises the desirability of Snug evidence.
+- **Standard** keeps Just Right as the strongest neutral target.
+- **Relaxed** raises the desirability of Relaxed evidence.
+- **Too Small and Too Big remain negative for every preference.** They are failed physical fits and cannot be selected as preferred-fit values.
+- Private directional body differences remain layered underneath this personalization, so the same Snug/Relaxed outcome can carry different strength depending on how the viewer differs from the historical wearer.
+- Product page recommendation copy may show the viewer's applied preference label but never raw body differences or another member's private preference.
 
 ### Garment-information/provenance decision
 - Existing Product resolution order: explicit canonical Product → UPC/barcode → normalized Product URL → Brand + manufacturer Style ID → normalized Brand + Product fallback/new provisional Product.
@@ -78,8 +99,8 @@ Production/main: **UNCHANGED**
 ### Deep Fit Match audit status
 1. Actual garment measurements/ease — **DEFERRED by owner; not V1 dependency.**
 2. Directional body differences — **IMPLEMENTED + VERIFIED.**
-3. Personal fit preference — **NEXT.**
-4. Derived body proportions — unresolved.
+3. Personal fit preference — **IMPLEMENTED IN CANONICAL SOURCE; VERCEL BUILD GREEN; FULL CI PENDING because PR #36 is currently non-mergeable/diverged from main.**
+4. Derived body proportions — **NEXT conceptual audit question after #3 verification.**
 5. Chest vs Full Bust / men's missing bust fields — substantially resolved; women-specific fitted-garment refinement remains possible.
 6. Measurement age/staleness — unresolved.
 7. Measurement provenance/reliability — engine substantially resolved; UX can still improve.
@@ -207,7 +228,7 @@ Rules:
 - Encourage logging bad fits; failure evidence is useful sizing data.
 - Privacy/share behavior must continue to respect the canonical Private/Shared and fit-photo rules.
 
-### 6.5.7 Fit Result semantics — LOCKED
+### 6.5.7 Fit Result + Preferred Fit semantics — LOCKED
 - **Fit Result** describes the garment's physical outcome on that historical body state.
 - It is the required member-provided sizing outcome.
 - Too Small / Too Big are negative evidence for that size, not bad or invalid uploads.
@@ -215,6 +236,8 @@ Rules:
 - Just Right is strong positive evidence, with directional difference still considered conservatively.
 - Fit Result never changes the historical wearer's body Match %.
 - No separate 1–5 Fit Rating is required or used by V1 sizing.
+- **Preferred Fit** is the viewer's private current garment-type preference: Fitted / Standard / Relaxed.
+- Preferred Fit changes recommendation desirability only; it does not alter body matching or historical Fit Result data.
 
 ### 6.5.8 Fit Twin/member profile + Shared Closet
 Other-member profile should make Shared Closet the main garment evidence experience.
@@ -239,7 +262,7 @@ Shared Closet:
 - no empty/useless filters
 
 ### 6.5.9 Shared Closet garment cards
-Show useful fit evidence without exposing raw body measurements:
+Show useful fit evidence without exposing raw body measurements or private fit preferences:
 - image
 - brand/product
 - size worn
@@ -308,6 +331,7 @@ Audit/support:
 - product/variant image
 - Favorite heart
 - viewer recommendation context
+- viewer's applied Preferred Fit label when relevant
 - strongest historical matches
 - reported sizes
 - physical Fit Result distribution
@@ -385,6 +409,7 @@ Must explain at minimum:
 - measurement privacy
 - Match % meaning
 - body Match vs physical Fit Result
+- Preferred Fit and why it changes size recommendation without changing Match %
 - why a highly matched person can report a bad fit
 - why bad fits are valuable recommendation evidence
 - current Fit Twin match vs historical garment match
@@ -401,7 +426,7 @@ Help/FAQ can live in the account/menu/support hierarchy rather than requiring a 
 
 ### 6.5.21 Remaining product-surface audit
 Audit all remaining V1 surfaces for terminology, privacy, usability, responsiveness, and hierarchy:
-- Fit Profile
+- Fit Profile, including private per-garment Preferred Fit controls
 - Settings
 - Notifications
 - homepage
@@ -422,6 +447,7 @@ Primary member-facing vocabulary should be coherent and minimal:
 - Favorites
 - Fit Profile
 - **Fit Result**
+- **Preferred Fit**
 
 “Fit Report” may remain an internal engineering/database term but should not be presented as a second member-facing object separate from the garment. The legacy database type name `fit_rating` must not leak into user-facing terminology.
 
@@ -436,6 +462,8 @@ Verify at minimum:
 - repeat try-on / history behavior
 - immutable historical body links
 - required Fit Result, including bad-fit uploads
+- private garment-specific Preferred Fit save/edit/default behavior
+- Preferred Fit recommendation changes without Match % changes
 - directional size recommendation behavior without exposing raw differences
 - Favorites
 - favorite-source privacy changes
@@ -451,7 +479,7 @@ Begin only after Phase 6.5 is complete.
 
 Representative end-to-end verification must cover:
 - signup/auth
-- Fit Profile
+- Fit Profile + garment-specific Preferred Fit
 - Discover / People My Size
 - saving Fit Twins
 - Shared Closet browsing
@@ -460,7 +488,7 @@ Representative end-to-end verification must cover:
 - retailer links
 - My Closet garment logging, including bad fits
 - later fit updates/history
-- directional recommendation behavior
+- directional + preference-aware recommendation behavior
 - Fit Twin Activity
 - Search
 - privacy boundaries
@@ -469,10 +497,10 @@ Representative end-to-end verification must cover:
 - CI/database/security verification
 
 ## Exact next action
-Continue the active Fit Match deep audit one question at a time:
-1. **#3 Personal Fit Preference** — decide whether/how fitted/standard/relaxed preference should affect size recommendation without changing body Match %.
-2. Continue the remaining unresolved Fit Match audit questions in order.
-3. After the Fit Match audit is complete, resume the remaining Phase 6.4 tasks from Mobile Menu auto-close through measurement-name/help audit.
-4. Close Phase 6.4, then begin Phase 6.5 at navigation/information architecture audit.
+1. Preferred Fit implementation is canonical in `fit-match-engine-audit`; do **not** merge/sync `main` or production solely to force CI without owner authorization.
+2. When the branch is authorized/reconciled enough for PR CI to run, require full TypeScript + recommendation calibration + build + fresh migration replay + pgTAP before marking migration #36 verified.
+3. Continue the deep Fit Match audit at **#4 Derived Body Proportions** when the owner chooses to proceed.
+4. After the Fit Match audit is complete, resume the remaining Phase 6.4 tasks from Mobile Menu auto-close through measurement-name/help audit.
+5. Close Phase 6.4, then begin Phase 6.5 at navigation/information architecture audit.
 
 No merge to `main`, production migration, or production deployment is authorized by this checkpoint.

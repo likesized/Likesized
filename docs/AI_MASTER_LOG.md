@@ -22,6 +22,13 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - Other imperial length measurements use whole inches + 0/¼/½/¾ dropdowns.
 - Server validates height as whole inches and other imperial lengths in quarter-inch increments.
 
+## Phase 6.4 measurement audit — owner-locked decisions so far
+- **Individual Shoulder Length:** keep current name, description, how-to, and guide as-is.
+- **Torso Girth:** keep current name, description, how-to, tip, and approved guide as-is.
+- **Bust Point to Bust Point:** title capitalization standardized; how-to is “Measure straight across from the fullest point of one bust to the fullest point of the other while standing naturally.”
+- **Shoulder to Bust Point:** use a vertical measurement from the middle of the shoulder, where a bra strap naturally sits, down to the fullest part or nipple of the bust; guide aligned vertically.
+- **Front Waist Length:** description is “The distance from the high shoulder point to the natural waist along the front of the body.” How-to is “Start at the high shoulder point where the neck meets the shoulder. Measure down the front of the body, over the fullest part of the bust, to the natural waist.”
+
 ## Approved measurement-guide artwork — COMPLETE / LIVE / OWNER VERIFIED
 - Approved unisex body artwork is the base for normal measurement guides and remained valid.
 - Approved shared waist/hip artwork is used for Natural Waist, High Hip, Hips / Seat, and Waist-to-Hip Length.
@@ -39,7 +46,7 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 1. Mobile Menu auto-close behavior.
 2. iPhone Safari form-focus zoom fix.
 3. Final Fit Profile save/load/edit regression verification.
-4. Resume measurement-name/help audit at **Individual Shoulder Length** and finish the remaining measurement audit.
+4. Continue and finish the remaining measurement-name/help audit after **Front Waist Length**.
 5. Close Phase 6.4 only after the canonical source, verification result, and this master agree.
 
 # Phase 6.5 — V1 PRODUCT SURFACE + NAVIGATION AUDIT — LOCKED
@@ -383,9 +390,4 @@ Representative end-to-end verification must cover:
 - CI/database/security verification
 
 ## Exact next action
-Continue Phase 6.4 in order:
-1. Fix mobile Menu auto-close behavior canonically.
-2. Fix iPhone Safari form-focus zoom canonically.
-3. Verify Fit Profile save/load/edit regression behavior.
-4. Resume measurement-name/help audit at **Individual Shoulder Length** and finish the remaining measurement audit.
-5. Close Phase 6.4, then begin Phase 6.5 at navigation/information architecture audit.
+Continue Phase 6.4 measurement-name/help audit with **Back Waist / Neck-to-Waist Length**, then finish the remaining measurements. After the measurement audit, verify Fit Profile save/load/edit regression behavior, confirm the mobile Menu and iPhone Safari fixes in Preview, synchronize this master with verified results, and close Phase 6.4 before beginning Phase 6.5.

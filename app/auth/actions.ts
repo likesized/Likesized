@@ -21,6 +21,15 @@ async function siteUrl() {
   return host ? `${protocol}://${host}` : "http://localhost:3000";
 }
 
+async function sendPasswordReset(email: string) {
+  const supabase = await createClient();
+  const origin = await siteUrl();
+
+  return supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: origin,
+  });
+}
+
 export async function login(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
@@ -59,6 +68,16 @@ export async function signup(formData: FormData) {
     },
   });
 
+  const alreadyRegistered =
+    error?.code === "user_already_exists" ||
+    error?.message === "User already registered" ||
+    (data.user?.identities !== undefined && data.user.identities.length === 0);
+
+  if (alreadyRegistered) {
+    await sendPasswordReset(email);
+    redirect("/check-email");
+  }
+
   if (error) {
     redirect("/signup?error=signup_failed");
   }
@@ -70,4 +89,44 @@ export async function signup(formData: FormData) {
   }
 
   redirect("/check-email");
+}
+
+export async function requestPasswordReset(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim();
+
+  if (!email) {
+    redirect("/forgot-password?error=missing_email");
+  }
+
+  await sendPasswordReset(email);
+  redirect("/check-email");
+}
+
+export async function updatePassword(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  if (password.length < 8 || password !== confirmPassword) {
+    redirect("/reset-password?error=invalid_password");
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    redirect("/reset-password?error=invalid_session");
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    redirect("/reset-password?error=update_failed");
+  }
+
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  redirect("/login?message=password_updated");
 }

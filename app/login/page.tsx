@@ -10,6 +10,7 @@ function first(value: string | string[] | undefined) {
 export default async function LoginPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   const error = first(params.error);
+  const message = first(params.message);
   const next = first(params.next) ?? "/people";
 
   const errorMessage =
@@ -19,6 +20,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
         ? "That email and password combination did not work."
         : null;
 
+  const successMessage =
+    message === "password_updated"
+      ? "Your password has been updated. Sign in with your new password."
+      : null;
+
   return (
     <main className="authShell">
       <section className="authCard">
@@ -26,6 +32,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
         <h1>Sign in to LikeSized.</h1>
         <p>Get back to your Fit Profile, closet, and people built like you.</p>
 
+        {successMessage ? <div className="authMessage">{successMessage}</div> : null}
         {errorMessage ? <div className="authMessage error">{errorMessage}</div> : null}
 
         <form className="authForm" action={login}>
@@ -46,6 +53,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
           <button className="primaryButton fullButton" type="submit">Sign in</button>
         </form>
 
+        <p className="authFootnote">
+          <Link href="/forgot-password">Forgot your password?</Link>
+        </p>
         <p className="authFootnote">
           New here? <Link href="/signup">Create an account</Link>.
         </p>

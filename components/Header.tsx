@@ -5,17 +5,23 @@ export async function Header() {
   const supabase = await createClient();
   const { data: claimsData, error } = await supabase.auth.getClaims();
   const signedIn = !error && Boolean(claimsData?.claims?.sub);
-  let unreadCount=0;
-  if(signedIn){
-    const {data}=await supabase.rpc("get_fit_twin_notification_unread_count");
-    unreadCount=typeof data==="number"?data:Number(data??0);
+  let unreadCount = 0;
+
+  if (signedIn) {
+    const { data } = await supabase.rpc("get_fit_twin_notification_unread_count");
+    unreadCount = typeof data === "number" ? data : Number(data ?? 0);
   }
 
   return (
     <header className="header">
-      <Link className="brand" href="/">
-        <span className="brandMark">LS</span>
-        <span>LikeSized</span>
+      <Link className="brand" href="/" aria-label="LikeSized home">
+        <img
+          src="/brand/likesized-logo.png"
+          alt="LikeSized"
+          width="2048"
+          height="682"
+          style={{ width: "clamp(132px, 16vw, 188px)", height: "auto", display: "block" }}
+        />
       </Link>
       <nav>
         {signedIn ? (
@@ -27,7 +33,7 @@ export async function Header() {
             <Link href="/outfits">Outfits</Link>
             <Link href="/closet">Closet</Link>
             <Link href="/settings">Settings</Link>
-            <Link className="navButton" href="/notifications">Notifications{unreadCount>0?` (${unreadCount})`:""}</Link>
+            <Link className="navButton" href="/notifications">Notifications{unreadCount > 0 ? ` (${unreadCount})` : ""}</Link>
             <Link className="navButton" href="/onboarding">Fit profile</Link>
             <form action="/auth/signout" method="post">
               <button className="navTextButton" type="submit">Sign out</button>

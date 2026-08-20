@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
-select plan(22);
+select plan(23);
 
 select is(
   (select count(*) from public.measurement_types where default_tolerance_canonical is null or default_tolerance_canonical<=0),

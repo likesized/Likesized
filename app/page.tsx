@@ -49,7 +49,10 @@ export default function Home() {
         <div className="sectionHeading">
           <div>
             <span className="eyebrow">WHAT LIKESIZED DOES</span>
-            <h2>Makes shopping personal to your body.</h2>
+            <h2 className="sectionTitle">
+              <span className="sectionTitleLine">Makes shopping personal</span>
+              <span className="sectionTitleLine">to your body.</span>
+            </h2>
           </div>
           <Link href="/search" className="textLink">Search LikeSized →</Link>
         </div>
@@ -71,7 +74,10 @@ export default function Home() {
 
       <section className="howItWorks section" id="how-it-works">
         <span className="eyebrow">THE LOOP</span>
-        <h2>The more you share, the smarter LikeSized gets.</h2>
+        <h2 className="loopTitle">
+          <span className="loopTitleLine">The more you share,</span>
+          <span className="loopTitleLine">the smarter LikeSized gets.</span>
+        </h2>
         <div className="steps">
           <div><b>01</b><h3>Build your profile</h3><p>Tell us about your size and measurements.</p></div>
           <div><b>02</b><h3>Find your matches</h3><p>Get ranked matches based on the measurements that matter most for each garment type.</p></div>

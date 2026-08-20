@@ -31,8 +31,8 @@ jobs:
 
           test "$(wc -c < public/measurement-guides/torso-girth-guide.webp)" -eq 224606
           test "$(wc -c < public/measurement-guides/waist-hip-guide.webp)" -eq 261182
-          echo "559a5431d14e96928e4bb8be165a31a9789574c1c58fb9e755ae3df2527e9fee  public/measurement-guides/torso-girth-guide.webp" | sha256sum --check
-          echo "$(cat .binary-upload/waist.sha256)  public/measurement-guides/waist-hip-guide.webp" | sha256sum --check
+          echo "3c90aef22fca867ee43a3778c1556ac2b0e4fc0193b5fc8def3105ce86ff33fb  public/measurement-guides/torso-girth-guide.webp" | sha256sum --check
+          echo "49c8391e8a76268fa6acc983e724622dd05a74af41879e315774ecf83811dcf0  public/measurement-guides/waist-hip-guide.webp" | sha256sum --check
 
           git config user.name "likesized-binary-rebuild"
           git config user.email "likesized@outlook.com"

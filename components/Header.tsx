@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MobileMenu } from "@/components/MobileMenu";
 import { createClient } from "@/lib/supabase/server";
 import styles from "@/components/HeaderResponsive.module.css";
 
@@ -42,25 +43,7 @@ export async function Header() {
             </form>
           </nav>
 
-          <div className={styles.mobileNav}>
-            <details className={styles.mobileMenu}>
-              <summary>Menu</summary>
-              <div className={styles.mobileMenuPanel} role="navigation" aria-label="Mobile navigation">
-                <Link href="/onboarding">Fit Profile</Link>
-                <Link href="/notifications">Notifications{unreadCount > 0 ? <span className={styles.notificationCount}>{unreadCount}</span> : null}</Link>
-                <Link href="/search">Search</Link>
-                <Link href="/people">People My Size</Link>
-                <Link href="/twins">Fit Twins</Link>
-                <Link href="/following">Following</Link>
-                <Link href="/outfits">Outfits</Link>
-                <Link href="/closet">Closet</Link>
-                <Link href="/settings">Settings</Link>
-                <form action="/auth/signout" method="post">
-                  <button type="submit">Sign out</button>
-                </form>
-              </div>
-            </details>
-          </div>
+          <MobileMenu unreadCount={unreadCount} />
         </>
       ) : (
         <nav aria-label="Primary navigation">

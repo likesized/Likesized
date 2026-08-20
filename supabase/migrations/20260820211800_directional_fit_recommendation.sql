@@ -103,7 +103,9 @@ end;
 $$;
 revoke all on function private.calculate_directional_fit_support_for_product(uuid,uuid,public.fit_rating) from public,anon,authenticated;
 
--- Add only the outcome-specific support value to the existing safe evidence RPC.
+-- Add only the outcome-specific support value to the safe evidence RPC. SECURITY DEFINER
+-- is required so the wrapper can call the non-public directional helper. The query therefore
+-- enforces authentication and Shared Closet visibility explicitly instead of relying on RLS.
 -- The underlying directional pressure and raw measurement deltas remain private.
 drop function public.get_product_evidence_candidates(uuid,uuid,integer);
 create function public.get_product_evidence_candidates(
@@ -130,10 +132,12 @@ returns table(
   directional_fit_support numeric
 )
 language sql
-security invoker
+security definer
 set search_path=''
 as $$
-with target as (
+with viewer as (
+ select auth.uid() user_id
+), target as (
  select p.*,case when p_variant_id is not null and exists(select 1 from public.product_variants pv where pv.id=p_variant_id and pv.product_id=p.id) then p_variant_id else null::uuid end target_variant_id from public.products p where p.id=p_product_id
 ), candidates as (
  select fr.id fit_report_id,fr.user_id,fr.closet_item_id,fr.product_id evidence_product_id,fr.variant_id evidence_variant_id,fr.fit_profile_version_id,fr.size_label original_size_label,fr.normalized_size_id,fr.fit,fr.would_buy_again,fr.created_at observed_at,ep.brand_id,ep.product_family_id,ep.garment_type_key,ep.category,
@@ -143,8 +147,13 @@ with target as (
      and ea.source_status in ('corroborated'::public.product_data_status,'verified'::public.product_data_status)
      and ta.confidence>=.75 and ea.confidence>=.75) attribute_overlap,
  t.brand_id target_brand_id,t.product_family_id target_family_id,t.garment_type_key target_garment_type,t.category target_category,t.target_variant_id
- from public.fit_reports fr join public.products ep on ep.id=fr.product_id cross join target t
- where fr.product_id=p_product_id or (t.product_family_id is not null and ep.product_family_id=t.product_family_id) or (t.garment_type_key is not null and ep.garment_type_key=t.garment_type_key) or ep.category=t.category
+ from public.fit_reports fr
+ join public.closet_items ci on ci.id=fr.closet_item_id and ci.visibility='shared'::public.closet_visibility
+ join public.products ep on ep.id=fr.product_id
+ cross join target t
+ cross join viewer v
+ where v.user_id is not null
+   and (fr.product_id=p_product_id or (t.product_family_id is not null and ep.product_family_id=t.product_family_id) or (t.garment_type_key is not null and ep.garment_type_key=t.garment_type_key) or ep.category=t.category)
 ), scored as (
  select c.*,hm.match_score snapshot_match_score,hm.coverage_percent snapshot_coverage_percent,
    private.calculate_directional_fit_support_for_product(c.fit_profile_version_id,p_product_id,c.fit) resolved_directional_fit_support,
@@ -185,6 +194,6 @@ grant execute on function public.get_product_fit_summary(uuid) to authenticated;
 
 comment on function private.directional_fit_support_from_pressure(public.fit_rating,numeric) is 'Maps private signed garment-relevant body direction plus physical Fit Result to size-recommendation support; does not alter Match percent.';
 comment on function private.calculate_directional_fit_support_for_product(uuid,uuid,public.fit_rating) is 'Auth-bound private directional recommendation helper. Raw and signed measurement deltas never leave private schema.';
-comment on function public.get_product_evidence_candidates(uuid,uuid,integer) is 'Unique-wearer historical fit evidence with safe outcome-specific directional recommendation support; raw body direction remains private.';
+comment on function public.get_product_evidence_candidates(uuid,uuid,integer) is 'Auth-required Shared-only unique-wearer historical fit evidence with safe outcome-specific directional recommendation support; raw body direction remains private.';
 comment on function public.get_product_fit_summary(uuid) is 'Exact-product Shared physical Fit Result distribution, latest observation per unique wearer.';
 comment on function private.require_complete_fit_report_intake() is 'Requires a physical Fit Result on every new Fit Report.';

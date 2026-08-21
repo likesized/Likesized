@@ -24,7 +24,7 @@ test("server upload enforces optimized WebP size boundaries", () => {
 
 test("both outfit feeds request feed-sized paths with fallback support", () => {
   const outfits = readFileSync(new URL("../app/outfits/page.tsx", import.meta.url), "utf8");
-  const following = readFileSync(new URL("../app/following/page.tsx", import.meta.url), "utf8");
+  const circle = readFileSync(new URL("../app/circle/page.tsx", import.meta.url), "utf8");
   assert.match(outfits, /outfitFeedPhotoPath\(post\.photo_url\)/);
-  assert.match(following, /outfitFeedPhotoPath\(row\.outfit_photo_path!\)/);
+  assert.match(circle, /outfitFeedPhotoPath\(row\.outfit_photo_path!\)/);
 });

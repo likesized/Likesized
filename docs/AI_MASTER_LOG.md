@@ -9,19 +9,21 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - Every completed task/update must be logged here; a task is not complete until canonical source and this master match the verified final state.
 - Do not deploy production or update `main` when that can trigger production unless the owner explicitly authorizes it.
 
-## Current status — 2026-08-20
+## Current status — 2026-08-21
 - Phase 6.3 auth/configuration: COMPLETE.
 - Phase 6.4 responsive/accessibility + Fit Profile polish: IN PROGRESS.
-- The owner has completed and locked the full Fit Profile measurement-name/help wording audit. The approved source batch is on PR #37 and is pending final CI/preview/production verification before this portion is called live.
-- The owner explicitly authorized finishing this Fit Profile batch, merging it, and pushing it through Vercel production.
-- The final crotch artwork is one single owner-approved PNG used by both **Crotch Depth** and **Total Crotch Length**. The owner manually added `public/measurement-guides/crotch-guide.png` to canonical `main` in commit `c120691db0f1ae94186d27547ad6027b9a9735f7`; PR #37 wiring points both help entries to that same path.
-- The **Normally worn sizes — private reference only** UI and the Fit Profile **History** notice are owner-removed for V1. Existing private size-reference records are retained behind the scenes and are not silently deleted when measurements are saved.
-- The former Fit Profile **Display Name** label is now **Username**. Username remains 3–32 letters/numbers/underscores, no spaces, case-insensitively unique, and may be changed later.
-- Owner locked a 30-day reservation for a member's previous username after a change. Supabase migration `20260821033107_reserve_previous_usernames` is applied to the connected LikeSized project and its exact SQL is recorded in the canonical migration file on PR #37.
-- Mobile Menu navigation-close behavior is owner-verified working on production.
-- Outside-click/tap close is deployed but still pending final owner functional confirmation.
-- iPhone Safari form-focus zoom prevention is deployed but still pending final functional verification.
-- Phase 6.5 V1 Product Surface + Navigation Audit: LOCKED / QUEUED immediately after Phase 6.4.
+- The Fit Profile measurement-name/help wording audit is COMPLETE / OWNER LOCKED and is live on production.
+- The final combined `public/measurement-guides/crotch-guide.png` is owner-verified working on production for both **Crotch Depth** and **Total Crotch Length** and must not be altered, split, converted, recompressed, redrawn, or substituted.
+- The **Normally worn sizes — private reference only** UI and the Fit Profile **History** notice are removed for V1. Existing private size-reference records remain preserved behind the scenes.
+- Username is initial-setup-only on Fit Profile. After setup, Fit Profile does not display or edit username; username changes live in Account Settings. Username remains 3–32 letters/numbers/underscores, no spaces, case-insensitively unique, with the locked 30-day reservation for a member's previous username.
+- Body measurements no longer have anatomical plausibility hard stops. LikeSized accepts any valid positive measurement in the supported unit/precision format without labeling a body or value unusual.
+- Fit Profile uses a **Review → Confirm & Save** flow. On edits, Review Changes distinguishes Added, Changed, and Removed measurements before persistence.
+- On mobile revisits, the large Fit Profile onboarding hero collapses to a short update header; the full hero remains for first-time setup.
+- On mobile, Review Changes uses two compact measurement cards per row and entering review scrolls to the top after the review view renders.
+- **Owner mobile verification — 2026-08-21:** the current Fit Profile mobile flow is confirmed working on production, including save/load/edit, revisit behavior, review/confirm behavior, removal visibility, compact revisit hero, two-column review layout, and review scroll-to-top behavior.
+- **Desktop Fit Profile verification is intentionally unfinished** because the owner cannot test desktop right now. Do not mark Phase 6.4 complete until desktop is tested.
+- Mobile Menu navigation-close behavior is owner-verified working on production. Outside-click/tap close remains separately pending unless the owner explicitly confirms it.
+- Phase 6.5 V1 Product Surface + Navigation Audit: LOCKED / QUEUED immediately after Phase 6.4 is actually complete.
 - **Owner decision — 2026-08-20:** Outfits remain in V1. The prior Phase 6.5 instruction to remove Outfits is superseded. Existing canonical Outfit code/data are preserved, and the final V1 Outfits / Fits social-layer audit is scheduled after the Closet/Product/Favorites foundation and before Fit Twin Activity.
 
 ## Phase 6.4 canonical completed work / locked source decisions
@@ -30,15 +32,21 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - Height uses feet + whole inches.
 - Other imperial length measurements use whole inches + 0/¼/½/¾ dropdowns.
 - Server validates height as whole inches and other imperial lengths in quarter-inch increments.
-- Mobile Menu uses a single canonical React-controlled open state rather than native `<details>` state. Selecting any navigation link closes it, pathname changes close it, and the latest canonical implementation also closes it on any click/tap outside the menu. Navigation-close is owner-verified; outside-click remains pending owner functional confirmation.
-- iPhone Safari form-focus zoom prevention is implemented in canonical source and deployed via 16px form-control text; final functional verification remains before Phase 6.4 closes.
-- **Username** replaces the misleading user-facing **Display Name** label on Fit Profile. The underlying canonical identity remains `profiles.username`; no parallel identity field was introduced.
+- Mobile Menu uses a single canonical React-controlled open state rather than native `<details>` state. Selecting any navigation link closes it, pathname changes close it, and the latest canonical implementation also closes it on any click/tap outside the menu. Navigation-close is owner-verified; outside-click remains pending explicit owner functional confirmation.
+- iPhone Safari form controls use 16px text to prevent focus zoom; the owner has confirmed the current Fit Profile mobile experience works on production. Desktop remains separately pending.
+- Username is required during initial Fit Profile setup only. Once setup exists, username disappears from Fit Profile and future username changes are owned by Account Settings.
+- The underlying canonical identity remains `profiles.username`; no parallel identity field was introduced.
 - Username format remains `[A-Za-z0-9_]{3,32}`, no spaces. Existing `profiles_username_ci_uq` continues to enforce case-insensitive current ownership.
-- Username changes are allowed. Relationships/matches/follows/Closet/history remain attached to UUIDs and therefore continue through a username change.
+- Username changes are allowed in Account Settings. Relationships/matches/follows/Closet/history remain attached to UUIDs and therefore continue through a username change.
 - Previous usernames are reserved to the same account for 30 days after a normalized username change. A member may reclaim their own reserved username during that period; another member may not claim it until expiration. Reservations are private/internal and do not create a public username-history surface.
 - The normally-worn-size form surface is removed from V1 because actual body measurements plus product-specific size/fit evidence are the useful fit inputs. The dormant schema is retained for forward compatibility.
 - Fit Profile saves preserve any pre-existing `user_size_references` unchanged even though the fields are no longer displayed, preventing accidental historical-data deletion.
 - The user-facing Fit Profile History note is removed; immutable historical Fit Report/body snapshot architecture remains intact internally.
+- Anatomical measurement min/max plausibility hard stops are removed. Measurement persistence still requires technically valid positive values, valid units, and the locked input precision/format.
+- Fit Profile persistence is two-step: **Review Fit Profile / Review Changes → Confirm & Save**. Nothing is saved merely by entering the review state.
+- Review Changes keeps a previously saved measurement visible when the user clears it and labels that change **Removed**; newly supplied values are **Added** and edited existing values are **Changed**.
+- Existing-profile mobile visits use the compact revisit hero; first-time setup keeps the full onboarding hero.
+- Mobile Review Changes is a two-column compact card grid and transition into review scrolls to the top after render.
 
 ## Phase 6.4 measurement audit — COMPLETE / OWNER LOCKED
 Canonical owner-approved wording is implemented in `app/onboarding/MeasurementHelp.tsx`. Key locked decisions:
@@ -67,7 +75,7 @@ Canonical owner-approved wording is implemented in `app/onboarding/MeasurementHe
 - **Foot Length:** heel to longest toe while standing with full weight on foot. Tip: measure both feet and use the larger measurement.
 - **Foot Width:** widest part of forefoot / ball of foot while standing with full weight on foot. Tip: measure both feet and use the larger measurement.
 
-## Phase 6.4 production checkpoint — 2026-08-20
+## Phase 6.4 production checkpoint — 2026-08-21
 - Owner explicitly authorized the Phase 6.4 mobile/measurement batches promoted during this session.
 - Working PR #33 passed LikeSized CI before promotion.
 - PR #33 was squash-merged into canonical `main` as commit `a22e1732311050e6d4c6e0fd26a3708f67bcbbac`.
@@ -83,11 +91,16 @@ Canonical owner-approved wording is implemented in `app/onboarding/MeasurementHe
 - PR #35 implemented that behavior in the existing canonical `components/MobileMenu.tsx` only; no patch/fixed/v2/temp or parallel implementation files were introduced.
 - PR #35 passed LikeSized CI and its Vercel preview reached READY.
 - PR #35 was squash-merged into canonical `main` as commit `3a6e3ac81b78d830c5f45cc7d608729f6b230055` after explicit owner authorization.
-- Vercel production deployment `dpl_JBRpLEd2qE5ynsYAazTdJrFJBZWC` for commit `3a6e3ac81b78d830c5f45cc7d608729f6b230055` reached READY with no alias error and owns `likesized.com`, `likesized.vercel.app`, and the canonical main-branch aliases.
-- Outside-click/tap behavior remains pending owner functional confirmation; do not mark that behavior complete until confirmed.
-- Owner manually added the final combined crotch guide to canonical `main` as `public/measurement-guides/crotch-guide.png` in commit `c120691db0f1ae94186d27547ad6027b9a9735f7`.
-- Supabase migration `20260821033107_reserve_previous_usernames` was applied successfully to project `rlksidwniuoxoacumyaf`; source is recorded in `supabase/migrations/20260821033107_reserve_previous_usernames.sql` on PR #37.
-- PR #37 is the active Fit Profile completion batch and is owner-authorized for production promotion after CI/preview verification.
+- Vercel production deployment `dpl_JBRpLEd2qE5ynsYAazTdJrFJBZWC` for commit `3a6e3ac81b78d830c5f45cc7d608729f6b230055` reached READY with no alias error.
+- Outside-click/tap behavior remains pending explicit owner functional confirmation.
+- Owner manually added the final combined crotch guide to canonical `main` as `public/measurement-guides/crotch-guide.png`; the owner later verified the exact final combined image working on production for both crotch measurements. Do not reopen or alter that artwork unless explicitly requested.
+- Supabase migration `20260821033107_reserve_previous_usernames` was applied successfully to project `rlksidwniuoxoacumyaf`; its exact SQL remains recorded in canonical migrations.
+- PR #37 completed the Fit Profile wording/artwork/UI batch and was merged to `main` as `e51ff485d9572ed62f4ccee5d260a1094dd6fd62`; its production deployment reached READY.
+- PR #38 removed anatomical plausibility hard stops, introduced Review → Confirm & Save, hid username from Fit Profile after initial setup, and made Account Settings the username-change surface. It passed CI, merged to `main` as `cc359d1d5411d56025d4b775c63778d754442556`, and its production deployment reached READY.
+- The owner verified Fit Profile resave/load/edit behavior works on mobile after PR #38.
+- PR #39 added the compact mobile revisit hero and made removed measurements visible during Review Changes. It passed CI, merged to `main` as `7fc58f72f0d3dfe72ee438a7b466c323b8b21d03`, and production deployment `dpl_8pTmEL7b5kawpd9PmHkFNnysrQEj` reached READY.
+- PR #40 added the two-column compact mobile Review Changes layout and reliable post-render scroll-to-top behavior. It passed full LikeSized CI including typecheck, build, fresh migration replay, and canonical database behavior tests; merged to `main` as `3f7273d361cf16a00cf5daad73ce988c59ecb52f`; production deployment `dpl_5K95KGbY82qiphEbGkfxMoiZ4WAa` reached READY with the production aliases.
+- Owner then confirmed all currently targeted Fit Profile mobile behavior is working on production. Desktop verification remains deliberately pending.
 
 ## Approved measurement-guide artwork
 - Approved unisex body artwork is the base for normal measurement guides.
@@ -102,15 +115,13 @@ Canonical owner-approved wording is implemented in `app/onboarding/MeasurementHe
 - Corrected Torso Girth Git blob: `f8933270c7d75888a531587ecbf7eee31f5268e4`.
 - Shared-artwork repair commit `c9de2165280ff7b13591eb64665774394af932a9` deployed through Vercel production deployment `dpl_2zn8KbfppxY8CkMKZ7JsdPEFH5qv`, which reached READY with no build errors.
 - Existing live shared-artwork verification confirmed corrected canonical binaries, and the owner confirmed those rendered measurement guides work.
-- The new combined crotch image is owner-approved and present on `main`; final rendered production verification is still required after PR #37 wiring is promoted.
+- The final combined crotch image is owner-verified working on production and is locked against alteration unless explicitly requested.
 - Binary verification rule remains locked: HTTP 200 alone is not sufficient for image assets. Verify deployed files are complete/decodable and match the intended canonical asset.
 
 ## Phase 6.4 — remaining work
-1. Complete PR #37 CI/preview verification, promote the owner-authorized Fit Profile completion batch to canonical `main`, and verify Vercel production rendering including the combined crotch guide.
-2. Final Fit Profile save/load/edit regression verification after promotion, including username change behavior and preservation of dormant private size-reference data.
-3. Owner functional confirmation that outside-click/tap closes the deployed Mobile Menu.
-4. Final functional verification of the deployed iPhone Safari form-focus zoom fix.
-5. Close Phase 6.4 only after the canonical source, verification result, and this master agree.
+1. **Desktop Fit Profile verification remains unfinished by owner choice for now because desktop access is unavailable.** When desktop is available, verify the production Fit Profile layout, edit/review/confirm/save flow, Added/Changed/Removed presentation, and revisit treatment.
+2. Obtain explicit owner functional confirmation for outside-click/tap Mobile Menu close if it has not already been separately tested.
+3. Close Phase 6.4 only after desktop verification, any remaining menu confirmation, canonical source, production behavior, and this master all agree.
 
 # Phase 6.5 — V1 PRODUCT SURFACE + NAVIGATION AUDIT — LOCKED
 
@@ -484,4 +495,4 @@ Representative end-to-end verification must cover:
 - CI/database/security verification
 
 ## Exact next action
-Finish PR #37 CI/preview verification, merge the owner-authorized Fit Profile completion batch to canonical `main`, verify the production Fit Profile and combined crotch guide, then run the final save/load/edit regression and outstanding owner functional checks before closing Phase 6.4 and beginning Phase 6.5.
+Pause Phase 6.4 closeout until the owner has desktop access. When desktop is available, run the final production Fit Profile desktop verification and any still-unconfirmed outside-click/tap Mobile Menu check; then synchronize this master and close Phase 6.4 before beginning Phase 6.5.1.

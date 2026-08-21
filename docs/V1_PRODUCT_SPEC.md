@@ -345,6 +345,13 @@ The owner later explicitly corrected the garment card to use a **Wishlist** cont
 - Existing legacy outfit-photo paths remain readable; new optimized paths must not break older posts.
 - Both files remain in the private, authenticated-member-readable `outfit-photos` bucket with owner-only writes/deletes.
 
+## Public homepage — LOCKED
+
+- The public homepage remains useful without registration and includes the FAQ inline; public visitors must not need an account or an unfinished Help route to read it.
+- Homepage section order after the hero is **The Loop → What LikeSized Does → Help / FAQ**.
+- The three capability calls to action are **Find My Matches → / Shop Smarter → / Get Inspired →**.
+- Public Fit Twin, Following, Match, Fit Result, and privacy explanations must agree with the canonical product definitions and must not expose raw measurements.
+
 # 14. Data-quality rule
 
 **Controlled when possible. Normalize when necessary. Free text only when useful.**

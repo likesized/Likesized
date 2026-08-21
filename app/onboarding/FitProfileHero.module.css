@@ -1,0 +1,33 @@
+.mobileTitle {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  :global(.onboardingIntro).revisit {
+    padding: 30px 7vw;
+    min-height: 0;
+  }
+
+  :global(.onboardingIntro).revisit .desktopTitle,
+  :global(.onboardingIntro).revisit .revisitDescription {
+    display: none;
+  }
+
+  :global(.onboardingIntro).revisit .mobileTitle {
+    display: block;
+    font-size: clamp(34px, 9vw, 44px);
+    line-height: .95;
+    letter-spacing: -2px;
+  }
+
+  :global(.onboardingIntro).revisit :global(.eyebrow) {
+    margin-bottom: 8px;
+  }
+}
+
+@media (max-width: 560px) {
+  :global(.onboardingIntro).revisit {
+    padding-top: 26px;
+    padding-bottom: 26px;
+  }
+}

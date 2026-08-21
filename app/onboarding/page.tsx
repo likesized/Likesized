@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { FitProfileForm, type BodyMeasurement, type MeasurementType } from "@/app/onboarding/FitProfileForm";
+import heroStyles from "@/app/onboarding/FitProfileHero.module.css";
 import { createClient } from "@/lib/supabase/server";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -25,7 +26,12 @@ export default async function OnboardingPage({searchParams}:{searchParams:Search
   const isInitialSetup=!fitProfile?.completed_at;
 
   return <main className="onboardingShell">
-    <section className="onboardingIntro"><span className="eyebrow">FIT PROFILE</span><h1>Personalize LikeSized to fit your needs</h1><p>Your measurements stay 100% private and help LikeSized make smarter fit matches and recommendations. The more information you provide, the more personalized your results become.</p></section>
+    <section className={`onboardingIntro ${isInitialSetup?"":heroStyles.revisit}`}>
+      <span className="eyebrow">FIT PROFILE</span>
+      <h1 className={isInitialSetup?undefined:heroStyles.desktopTitle}>Personalize LikeSized to fit your needs</h1>
+      {!isInitialSetup?<h1 className={heroStyles.mobileTitle}>Update your Fit Profile</h1>:null}
+      <p className={isInitialSetup?undefined:heroStyles.revisitDescription}>Your measurements stay 100% private and help LikeSized make smarter fit matches and recommendations. The more information you provide, the more personalized your results become.</p>
+    </section>
     <FitProfileForm username={profile?.username??""} isInitialSetup={isInitialSetup} unitSystem={unitSystem} types={(types??[]) as MeasurementType[]} measurements={(measurements??[]) as BodyMeasurement[]} errorMessage={errorMessage}/>
   </main>;
 }

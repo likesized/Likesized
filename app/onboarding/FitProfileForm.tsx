@@ -34,7 +34,19 @@ export function FitProfileForm({username,isInitialSetup,unitSystem:initialSystem
   const [usernameDraft,setUsernameDraft]=useState(username);
   const [values,setValues]=useState<Record<string,string>>(()=>Object.fromEntries(visibleTypes.map((type)=>{const row=byKey.get(type.key);if(!row)return[type.key,""];const to=targetUnit(type,initialSystem);return[type.key,String(roundStep(convert(Number(row.entered_value),row.entered_unit,to),stepFor(type,initialSystem)))];})));
 
-  const reviewRows=useMemo(()=>visibleTypes.flatMap((type)=>{const raw=values[type.key];if(!raw)return[];const currentCanonical=canonical(type,Number(raw),targetUnit(type,system));const original=byKey.get(type.key);const originalCanonical=original?canonical(type,Number(original.entered_value),original.entered_unit):null;return[{key:type.key,label:displayLabel(type),value:reviewValue(type,raw,system),changed:originalCanonical===null||Math.abs(currentCanonical-originalCanonical)>0.0001}];}),[values,system,visibleTypes,byKey]);
+  const reviewRows=useMemo(()=>visibleTypes.flatMap((type)=>{
+    const raw=values[type.key];
+    const original=byKey.get(type.key);
+    if(!raw){
+      if(!isInitialSetup&&original)return[{key:type.key,label:displayLabel(type),value:"Removed",status:null}];
+      return[];
+    }
+    const currentCanonical=canonical(type,Number(raw),targetUnit(type,system));
+    const originalCanonical=original?canonical(type,Number(original.entered_value),original.entered_unit):null;
+    const changed=originalCanonical===null||Math.abs(currentCanonical-originalCanonical)>0.0001;
+    const status=isInitialSetup?null:!original?"Added":changed?"Changed":null;
+    return[{key:type.key,label:displayLabel(type),value:reviewValue(type,raw,system),status}];
+  }),[values,system,visibleTypes,byKey,isInitialSetup]);
 
   function setMeasurementValue(key:string,value:string){setValues((current)=>({...current,[key]:value}));}
   function setImperialLength(key:string,wholeRaw:string,fractionRaw:string){if(wholeRaw===""){setMeasurementValue(key,"");return;}const whole=Number(wholeRaw),fraction=Number(fractionRaw);if(!Number.isFinite(whole)||!Number.isFinite(fraction)){setMeasurementValue(key,"");return;}setMeasurementValue(key,String(whole+fraction));}
@@ -53,7 +65,7 @@ export function FitProfileForm({username,isInitialSetup,unitSystem:initialSystem
     {reviewing?<>
       <p className={helpStyles.coreIntro}>Review what you entered. Nothing is saved until you confirm.</p>
       {isInitialSetup?<div className="evidence"><div><strong>Username</strong><span>{usernameDraft}</span></div></div>:null}
-      <div className="evidenceList">{reviewRows.map((row)=><div className="evidence" key={row.key}><div><strong>{row.label}</strong><span>{row.value}{!isInitialSetup&&row.changed?" · Changed":""}</span></div></div>)}</div>
+      <div className="evidenceList">{reviewRows.map((row)=><div className="evidence" key={row.key}><div><strong>{row.label}</strong><span>{row.value}{row.status?` · ${row.status}`:""}</span></div></div>)}</div>
       <input type="hidden" name="username" value={isInitialSetup?usernameDraft:""}/><input type="hidden" name="unit_system" value={system}/>{visibleTypes.map((type)=><input key={type.key} type="hidden" name={`measurement_${type.key}`} value={values[type.key]??""}/>)}
       <div className="buttonRow"><button type="button" className="secondaryButton" onClick={()=>setReviewing(false)}>← Back to Edit</button><button type="submit" className="primaryButton">Confirm & Save</button></div>
     </>:<>

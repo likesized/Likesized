@@ -68,6 +68,15 @@ h2 { font-size:clamp(35px,5vw,62px); line-height:.95; letter-spacing:-2.4px; mar
 .steps h3 { font-size:22px; margin:26px 0 10px; line-height:1.15; }
 .stepAside { display:block; margin-top:5px; font-size:.74em; line-height:1.1; }
 .steps p { max-width:320px; margin:0 auto; color:#b8b6b0; line-height:1.5; font-size:14px; }
+.faqSection { border-top:1px solid var(--line); }
+.faqIntro { max-width:700px; margin:18px 0 34px; color:var(--muted); font-size:17px; line-height:1.55; }
+.faqGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; align-items:start; }
+.faqItem { margin:0; padding:22px 24px; border:1px solid var(--line); border-radius:18px; background:var(--white); }
+.faqItem summary { list-style:none; display:flex; justify-content:space-between; gap:18px; align-items:center; font-size:17px; }
+.faqItem summary::-webkit-details-marker { display:none; }
+.faqItem summary::after { content:"+"; color:var(--accent); font-size:24px; line-height:1; }
+.faqItem[open] summary::after { content:"−"; }
+.faqItem p { margin:16px 0 0; color:var(--muted); line-height:1.6; }
 .pageTitle { max-width:900px; margin-bottom:35px; }
 .pageTitle h1 { font-size:clamp(44px,6vw,76px); letter-spacing:-3.5px; }
 .pageTitle p { max-width:720px; font-size:17px; line-height:1.5; color:var(--muted); }
@@ -151,6 +160,7 @@ summary { cursor:pointer; font-weight:900; }
   .sectionTitleLine + .sectionTitleLine::before, .loopTitleLine + .loopTitleLine::before { content:" "; }
   .cardGrid { grid-template-columns:1fr; }
   .steps { grid-template-columns:1fr 1fr; }
+  .faqGrid { grid-template-columns:1fr; }
   .steps > div:nth-child(odd) { border-left:1px solid rgba(255,255,255,.2); }
   .onboardingShell, .itemHero { grid-template-columns:1fr; }
   .onboardingIntro, .fitForm { padding:55px 7vw; }

@@ -499,7 +499,7 @@ Status: **COMPLETE / DEPLOYED / VERIFIED**.
 
 # POST-RECOVERY CORRECTION — PUBLIC HOMEPAGE CONTENT
 
-Status: **IMPLEMENTED ON BRANCH / VERIFICATION PENDING**.
+Status: **VERIFIED ON BRANCH / OWNER PROMOTION AUTHORIZATION PENDING**.
 
 - Active branch: `fix-public-homepage-content`.
 - The third capability CTA is owner-approved as **Get Inspired →**, restoring the three-card rhythm: Find My Matches / Shop Smarter / Get Inspired.
@@ -507,6 +507,7 @@ Status: **IMPLEMENTED ON BRANCH / VERIFICATION PENDING**.
 - A substantive five-question FAQ is restored directly on the public homepage, with no registration or missing Help route required.
 - FAQ wording preserves canonical privacy, garment-specific Match, Fit Result, Fit Twin, and Following definitions.
 - CI includes `tests/public-homepage-content.test.ts` to prevent recurrence.
+- Branch head `1b2212eee821015d642d13f88fbbefb63e97c84d` passed CI run **#364** end-to-end.
 
 ## Exact next action
-Verify the public-homepage correction branch. After owner-authorized promotion and production verification, resume/finalize **Phase 6.5.2 Browse** as the single active implementation line using real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains separate.
+Wait for explicit owner authorization to promote verified PR #45 to `main`/production. After promotion and production verification, resume/finalize **Phase 6.5.2 Browse** as the single active implementation line using real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains separate.

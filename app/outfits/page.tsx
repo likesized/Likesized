@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { likeOutfit, unlikeOutfit } from "@/app/outfits/actions";
+import { outfitFeedPhotoPath } from "@/lib/outfit-photo-paths";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./outfits.module.css";
 
@@ -71,7 +72,7 @@ export default async function OutfitsPage({searchParams}:{searchParams:SearchPar
   for(const like of likes){likeCountByPost.set(like.post_id,(likeCountByPost.get(like.post_id)??0)+1);if(like.user_id===viewerId)likedByViewer.add(like.post_id);}
 
   const signedPhotoByPost=new Map<string,string>();
-  await Promise.all(posts.map(async(post)=>{const {data}=await supabase.storage.from("outfit-photos").createSignedUrl(post.photo_url,60*60);if(data?.signedUrl)signedPhotoByPost.set(post.id,data.signedUrl);}));
+  await Promise.all(posts.map(async(post)=>{const feedPath=outfitFeedPhotoPath(post.photo_url);let {data}=await supabase.storage.from("outfit-photos").createSignedUrl(feedPath,60*60);if(!data?.signedUrl&&feedPath!==post.photo_url){({data}=await supabase.storage.from("outfit-photos").createSignedUrl(post.photo_url,60*60));}if(data?.signedUrl)signedPhotoByPost.set(post.id,data.signedUrl);}));
   const returnTo=feed==="following"?"/outfits?feed=following":"/outfits";
 
   return <main className="pageShell">

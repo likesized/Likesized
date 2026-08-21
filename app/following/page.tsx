@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { outfitFeedPhotoPath } from "@/lib/outfit-photo-paths";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./following.module.css";
 
@@ -52,7 +53,9 @@ export default async function FollowingPage(){
 
   const signedOutfitByPost=new Map<string,string>();
   await Promise.all(feed.filter((row)=>row.outfit_post_id&&row.outfit_photo_path).map(async(row)=>{
-    const {data}=await supabase.storage.from("outfit-photos").createSignedUrl(row.outfit_photo_path!,60*30);
+    const feedPath=outfitFeedPhotoPath(row.outfit_photo_path!);
+    let {data}=await supabase.storage.from("outfit-photos").createSignedUrl(feedPath,60*30);
+    if(!data?.signedUrl&&feedPath!==row.outfit_photo_path){({data}=await supabase.storage.from("outfit-photos").createSignedUrl(row.outfit_photo_path!,60*30));}
     if(data?.signedUrl)signedOutfitByPost.set(row.outfit_post_id!,data.signedUrl);
   }));
 

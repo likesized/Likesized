@@ -477,5 +477,22 @@ The owner cleared the recovery freeze on **2026-08-21**, PR #43 was promoted to 
 - PR **#43** merged into canonical `main` as **`426881a57d859be8bd9bf1382d358cc238a3d58e`** after the clearance commit passed CI run **#355** end-to-end.
 - Vercel production deployment **`dpl_Cmuonko9HpHrfGTaCZMYwwbHPLmF`** for that exact merge commit reached **READY**.
 
+# POST-RECOVERY CORRECTION — OUTFIT PHOTO PIPELINE
+
+Status: **VERIFIED / OWNER AUTHORIZED FOR CANONICAL PROMOTION**.
+
+- Active branch: `optimize-outfit-photo-pipeline`.
+- New outfit intake still accepts JPEG, PNG, or WebP up to 8 MB for normal phone-photo usability.
+- The original file is not uploaded. Browser processing creates:
+  - `display.webp`: maximum 1600×2000 and 600 KB;
+  - `feed.webp`: maximum 800×1000 and 220 KB.
+- The server accepts only those capped optimized WebP outputs and removes partial uploads on failure.
+- Outfit and Following feeds request `feed.webp`; legacy posts fall back to their existing stored path.
+- Storage remains private/member-readable with owner-only writes/deletes.
+- CI includes `tests/outfit-photo-pipeline.test.ts`.
+- Branch head `ad05b5541947972bf83dbc499c0c11b6204f6b43` passed CI run **#358** end-to-end: canonical integrity, typecheck, focused application tests, production build, full fresh migration replay, and database behavior/privacy tests.
+- No Fit Match cache or matching-engine change is included.
+- On **2026-08-21**, the owner explicitly authorized PR #44 for `main`/production promotion after CI #359 passed.
+
 ## Exact next action
-Resume/finalize **Phase 6.5.2 Browse** as the single active implementation line, using the owner-locked canonical Browse design and real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains a separate action and is not implied by freeze clearance.
+Promote owner-authorized PR #44 to `main`/production, verify the resulting deployment, then resume/finalize **Phase 6.5.2 Browse** as the single active implementation line using real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains separate.

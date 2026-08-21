@@ -40,6 +40,9 @@ jobs:
         if: ${{ hashFiles('tests/fit-match-audit-ui.test.ts') != '' }}
         run: node --test tests/fit-match-audit-ui.test.ts
 
+      - name: Outfit photo pipeline safeguards
+        run: node --test tests/outfit-photo-pipeline.test.ts
+
       - name: Build
         run: npm run build
 

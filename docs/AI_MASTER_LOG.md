@@ -3,14 +3,14 @@
 ## Sole master-guide rule — LOCKED
 This is the one canonical roadmap, status record, owner-decision ledger, recovery/salvage ledger, completed-work ledger, deployment ledger, and AI handoff. Repository policy lives in `AI_REPOSITORY_RULES.md`.
 
-# CANONICAL RECOVERY — VERIFIED / OWNER CLEARED FOR CANONICAL PROMOTION
+# CANONICAL RECOVERY — COMPLETE / FEATURE FREEZE CLEARED
 
-Owner approved canonical recovery on **2026-08-21** after a full repository audit found severe source-of-truth drift. Recovery source is technically verified. On **2026-08-21**, after CI run **#354** completed successfully, the owner explicitly cleared the recovery freeze and authorized PR #43 to promote the verified recovery line to `main`/production. New feature work resumes only after that canonical promotion completes and its resulting `main` checks are verified.
+Owner approved canonical recovery on **2026-08-21** after a full repository audit found severe source-of-truth drift. The recovered source passed CI runs **#354** and **#355**. The owner then explicitly cleared the recovery freeze and authorized PR #43 for `main`/production. PR #43 merged to canonical `main` as **`426881a57d859be8bd9bf1382d358cc238a3d58e`**, and Vercel production deployment **`dpl_Cmuonko9HpHrfGTaCZMYwwbHPLmF`** reached **READY**. Feature work may resume in the locked roadmap order.
 
 ## Recovery baseline
 - Production/canonical baseline at recovery start: `main` commit **`e997a217e8fa6f33df4f84a7f18f581e1ac7de3c`** — `Finish Settings mobile cleanup (#42)`.
 - Recovery branch: **`canonical-recovery-2026-08-21`**, created directly from that exact main commit.
-- The owner explicitly authorized promotion of the verified recovery line through PR #43 on **2026-08-21** after CI #354 passed.
+- The owner explicitly authorized promotion of the verified recovery line through PR #43 on **2026-08-21** after CI #354 passed; the updated clearance commit then passed CI #355 before merge.
 - Preserved branches/PR #36 remain untouched until the owner-facing final salvage report is delivered and cleanup is separately undertaken.
 
 ## Preserved recovery sources
@@ -385,7 +385,7 @@ The prior mobile preview is **NOT ACCEPTED**. Owner found blocking issues includ
 - Outfit likes contribute to Style Likes; garment/product likes do not.
 
 # PHASE / ROADMAP ORDER AFTER RECOVERY
-The owner cleared the recovery freeze on **2026-08-21**. After PR #43 is promoted to `main` and the resulting canonical checks are verified:
+The owner cleared the recovery freeze on **2026-08-21**, PR #43 was promoted to `main`, and production reached READY. Continue in this order:
 1. Resume/finalize Phase 6.5.2 Browse canonical implementation + owner mobile review.
 2. Immediately perform the intentionally deferred Phase 6.4 desktop Fit Profile verification.
 3. Phase 6.5.3 Following + Fit Twins social hub/terminology cleanup.
@@ -416,8 +416,9 @@ The owner cleared the recovery freeze on **2026-08-21**. After PR #43 is promote
 # PRODUCTION / DEPLOYMENT RECORD
 
 ## Current production baseline
-- current `main`: `e997a217e8fa6f33df4f84a7f18f581e1ac7de3c`.
-- audit identified Vercel production deployment for that Settings head: `dpl_4SzuLvPSku4wqNgADq1bQK6EjM2X`.
+- current canonical recovery promotion on `main`: `426881a57d859be8bd9bf1382d358cc238a3d58e`.
+- Vercel production deployment for that exact commit: `dpl_Cmuonko9HpHrfGTaCZMYwwbHPLmF` — **READY**.
+- pre-recovery Settings baseline was `e997a217e8fa6f33df4f84a7f18f581e1ac7de3c`, deployed as `dpl_4SzuLvPSku4wqNgADq1bQK6EjM2X`.
 - Settings mobile cleanup included Display Name retention, Discoverability paragraph removal, live 300-character bio counter, tighter profile form spacing, and mobile Settings card fixes.
 - That completed production work was not synchronized into the old master; this recovery record corrects the omission.
 
@@ -453,7 +454,7 @@ The owner cleared the recovery freeze on **2026-08-21**. After PR #43 is promote
 9. Full recovery branch typecheck/build/migration replay/database tests: **PASS** on completed salvage-ledger commit **`4cf9ea2ddff4d8ed26821c3c9501ede2e976185a`**, CI run **#353**.
 10. Owner receives final salvage report: **PASS**; delivered in the recovery handoff before freeze clearance.
 11. Obsolete branch/PR cleanup: **NOT STARTED**; allowed only after final report and should be treated as a separate cleanup action.
-12. Production promotion: **OWNER AUTHORIZED / IN PROGRESS THROUGH PR #43**. Authorization was given explicitly on **2026-08-21** after CI #354 passed.
+12. Production promotion: **PASS**. Owner-authorized PR #43 merged as `426881a57d859be8bd9bf1382d358cc238a3d58e`; Vercel production deployment `dpl_Cmuonko9HpHrfGTaCZMYwwbHPLmF` reached READY.
 
 ## Recovery progress — 2026-08-21
 - **RECOVERED:** canonical documentation hierarchy, migration documentation, CI canonical-integrity guard, CODEOWNERS, and recovery PR checklist.
@@ -473,8 +474,8 @@ The owner cleared the recovery freeze on **2026-08-21**. After PR #43 is promote
 - **VERIFIED CHECKPOINT:** master classification commit **`3f44a832cde628331cb759a8a3b89c87b36bbad0`** passed CI run **#352**.
 - **FINAL TECHNICAL RECOVERY VERIFICATION:** completed salvage-ledger commit **`4cf9ea2ddff4d8ed26821c3c9501ede2e976185a`** passed CI run **#353**: canonical integrity, exact dependency install, typecheck, recommendation confidence calibration, Fit Match UI semantics, Next.js production build, pinned Supabase setup, fresh full migration replay, and canonical database behavior tests.
 - Legacy database RPC/table/test identifiers containing `fit_twin` remain known internal naming debt pending a safe ordered migration/compatibility audit; they do not authorize stale user-facing semantics.
-- PR **#43** is owner-authorized for canonical promotion after completed CI run **#354** passed every gate.
-- Production/main remain on the pre-recovery baseline until PR #43 is merged; after merge, verify the resulting `main` CI/deployment before beginning Phase 6.5.2.
+- PR **#43** merged into canonical `main` as **`426881a57d859be8bd9bf1382d358cc238a3d58e`** after the clearance commit passed CI run **#355** end-to-end.
+- Vercel production deployment **`dpl_Cmuonko9HpHrfGTaCZMYwwbHPLmF`** for that exact merge commit reached **READY**.
 
 ## Exact next action
-Promote owner-authorized PR #43 to `main`, then verify the resulting canonical `main` CI and production deployment. After successful promotion verification, resume Phase 6.5.2 Browse as the single active implementation line. Destructive old-branch/PR cleanup remains a separate action and is not implied by freeze clearance.
+Resume/finalize **Phase 6.5.2 Browse** as the single active implementation line, using the owner-locked canonical Browse design and real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains a separate action and is not implied by freeze clearance.

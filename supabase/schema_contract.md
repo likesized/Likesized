@@ -3,56 +3,82 @@
 ## Canonical source-of-truth rule — LOCKED
 GitHub `likesized/Likesized` is the single canonical source of truth for database architecture and executable history. Ordered SQL in `supabase/migrations/` is the authoritative replay/deployment history. `supabase/schema.sql` and `supabase/storage.sql` are reference/current-state aids only.
 
-The canonical directory contains all **30 migrations** recorded by the connected project, from `20260819132934_initial_likesized_schema.sql` through `20260819212753_canonical_search_discovery_rpcs.sql`.
-
 Do not rewrite applied migrations. Future database changes are new ordered executable migrations. No alternate current-state schema files, patch migrations, fixed/v2 copies, or parallel database implementations.
+
+This file describes **database behavior**, not product-roadmap order. Product meaning is owned by `docs/V1_PRODUCT_SPEC.md` and owner decisions/status by `docs/AI_MASTER_LOG.md`. Legacy table/function/test names may remain after a product terminology change; when they do, this contract must call that out explicitly instead of treating the old name as current product semantics.
 
 ## Locked current-state contract
 - `profiles`: completed member identity readable to authenticated LikeSized members only; anonymous SELECT revoked.
 - `fit_profiles`, `body_measurements`, `user_size_references`: current Fit Profile shell plus owner-private raw body/size-reference state.
-- immutable Fit Profile version tables: owner-private historical body state.
-- `fit_reports.fit_profile_version_id`: immutable try-on body-state association; multiple reports may exist per Closet item.
-- `fit_report_dimensions`: controlled garment-specific responses with DB garment/dimension validation.
-- current-person matching RPCs return safe current scores/coverage only; historical product/Fit Report matching uses immutable snapshots.
-- product evidence is unique-wearer capped and ranked Exact Variant 1 → Exact Product 2 → Product Family 3 → Similar Garments 4 → Brand + Garment Type 5 → Category Fit 6.
-- Product Fit Families are intentional same-fit/cut groups with compatibility enforcement; Similar Garments uses controlled construction/material attributes.
+- Immutable Fit Profile version tables preserve owner-private historical body state.
+- `fit_reports.fit_profile_version_id` preserves immutable try-on body-state association; multiple reports may exist per Closet item.
+- `fit_report_dimensions` stores controlled garment-specific responses with DB garment/dimension validation.
+- Current-person matching RPCs return safe current scores/coverage only; historical Product/Fit Report matching uses immutable snapshots.
+- Product evidence is unique-wearer capped and ranked **Exact Variant 1 → Exact Product 2 → Product Family 3 → Similar Garments 4 → Brand + Garment Type 5 → Category Fit 6**.
+- Product Fit Families are intentional compatible same-fit/cut groups. Recommendation/product evidence must not fuzzy-group unrelated Products.
 - Private Closet items remain owner-only; Shared items/reports are member-readable under RLS. Fit/reference photos may exist only while the Closet item is Shared.
-- `follows`: canonical Fit Twin relationship. Signed-in LikeSized members may read the community follow graph; only `auth.uid() = follower_id` may insert/delete. Anonymous users have no SELECT grant.
-- `private.following_activity_events`: private canonical Following Feed ledger with only `closet_shared`, `fit_report_added`, and `outfit_posted`. Authenticated clients have no direct table access; likes never create activity.
-- Shared→Private removes garment activity; re-share creates fresh share activity from the latest Fit Report; source deletion cascades activity.
-- `public.get_following_feed(integer,timestamptz)` is a SECURITY INVOKER wrapper over a private auth-bound helper that re-checks current canonical follows and source visibility/existence and never returns raw body data.
-- Fit Twin notification preferences, per-follow mutes, and recipient notification rows live in private tables. Missing global preference means ON by default. Notification fanout uses canonical Following Feed activity and only current eligible followers.
-- Global notification off, per-Twin mute and unfollow suppress future notifications only; they do not modify the Following Feed or erase still-valid prior notifications. Re-enable/refollow does not backfill missed activity; unfollow clears the relationship-specific mute.
-- Notification rows reference canonical activity with cascade, so source privacy/deletion removes corresponding existing notifications. Public notification functions are SECURITY INVOKER wrappers over narrow private auth-bound helpers. V1 sends no Fit Twin activity email or phone push.
-- `outfit_posts` are authenticated-member-readable social posts. `outfit_post_items` are readable only while linked Closet evidence is Shared. A garment may later become Private without deleting the independent outfit post.
+
+## Following vs Fit Twin — product semantics over legacy naming
+- `follows` is the **canonical Following relationship**: `follower_id → followed_id`.
+- Signed-in LikeSized members may read the community follow graph; only `auth.uid() = follower_id` may insert/delete their own relationship. Anonymous users have no SELECT grant.
+- **`follows` does not mean “Fit Twin.”** Fit Twin is a system-derived strong-match designation from current-person matching and is not stored as a second social relationship graph.
+- Do not create a `fit_twin_follow`, saved-Fit-Twin table, or other duplicate relationship system.
+- Existing migrations, private tables, functions or tests containing `fit_twin` in their names are **legacy implementation naming** from the earlier product model. Until the dedicated social cleanup migrates/renames them safely, their relationship semantics are Following-based; the old identifier does not make followed members Fit Twins.
+
+## Following activity / Style Feed foundation
+- `private.following_activity_events` is the private canonical followed-person activity ledger with `closet_shared`, `fit_report_added`, and `outfit_posted` source events.
+- Authenticated clients have no direct table access; likes never create activity.
+- Shared→Private removes garment activity; re-share creates fresh share activity from the latest eligible Fit Report; source deletion cascades activity.
+- `public.get_following_feed(integer,timestamptz)` is a SECURITY INVOKER wrapper over a private auth-bound helper that re-checks current follows and current source visibility/existence and never returns raw body data.
+- Product/UI terminology for this content is **Style Feed** according to the current master. Eligibility is driven by Following; Fit Twin status alone does not subscribe content.
+
+## Followed-person notification foundation
+- Existing notification preference/mute/recipient tables and functions may retain Fit-Twin-era names until the dedicated canonical cleanup.
+- Their relationship basis is the existing `follows` graph; they must not create a second Fit Twin graph.
+- Missing global preference currently means ON by default under the existing implementation.
+- Global notification off, per-person mute and unfollow suppress future eligible notifications only; they do not alter Style Feed history or create backfill on re-enable/refollow.
+- Unfollow clears relationship-specific mute state where the current implementation requires it.
+- Source privacy/deletion must remove notification exposure tied to unavailable content.
+- Public notification functions are narrow SECURITY INVOKER wrappers over private auth-bound helpers.
+- V1 sends no followed-person activity email or phone push unless a later owner decision changes that.
+
+## Outfit foundation
+- `outfit_posts` are authenticated-member-readable social posts.
+- `outfit_post_items` are readable only while linked Closet evidence is Shared.
 - `outfit_likes` has one like per `(post_id,user_id)`; only the liker may insert/delete their own like; post deletion cascades likes.
-- `public.create_outfit_post(uuid,text,text,uuid[])` is the canonical SECURITY INVOKER transaction requiring an authenticated completed member, owner-scoped photo path, 1–6 unique owned Closet garments and Fit Report evidence for each; it atomically shares selected garments, creates the outfit and creates tag links. Any DB failure rolls back sharing/post/tag state. The app removes the prior uploaded photo if the transaction fails.
-- `public.search_catalog_products(text,integer)` is authenticated-only SECURITY INVOKER catalog discovery. It searches canonical Product names, canonical Brand names, Brand aliases, manufacturer style numbers, `product_identifiers` (including SKU/UPC/barcode), retailer product IDs/SKUs and retailer listing titles; punctuation/case normalization is applied internally and results deduplicate to one canonical Product with its canonical slug/brand display identity.
-- `public.search_members(text,integer)` is authenticated-only SECURITY INVOKER member discovery over member-readable username/display name. It excludes `auth.uid()`, is case-insensitive and returns only member identity fields—never raw measurements/private size references.
-- Search RPCs do not expose the intentionally non-public general normalizer helper functions and do not create a duplicate search catalog, member index or follow system.
+- `public.create_outfit_post(uuid,text,text,uuid[])` is the canonical SECURITY INVOKER transaction requiring an authenticated completed member, owner-scoped photo path, 1–6 unique owned Closet garments and Fit Report evidence for each; it atomically shares selected garments, creates the Outfit and creates tag links.
+- Outfit Likes contribute to creator Style Likes at the product layer; garment/product Likes are a separate concept.
+- Fit Twin status alone must not drive Outfit subscription; followed-person Outfit activity comes through the Following/Style Feed relationship.
+
+## Search foundation
+- `public.search_catalog_products(text,integer)` is authenticated-only SECURITY INVOKER catalog discovery over canonical Product/Brand/identifier/listing data.
+- Product results deduplicate to one canonical Product rather than one result per wearer/Fit Report.
+- `public.search_members(text,integer)` is authenticated-only SECURITY INVOKER member discovery over member-readable username/display name, excludes the current viewer, and returns no raw measurements/private size references.
+- Search RPCs do not create a duplicate catalog, duplicate member index, duplicate social graph or raw-data exposure path.
+
+## Recommendation / Help Me Size It foundation
+- Production `lib/recommendation.ts::recommendSize()` is the single current application recommendation-confidence implementation.
+- Current evidence levels are `exact_variant`, `exact_product`, `product_family`, `similar_garments`, `brand_garment_type`, and `category_fit`.
+- Brand sizing tendency is therefore derived from accumulated LikeSized evidence at **Brand + Garment Type** level; there is no separate generic database of unsupported “Brand X runs small/large” claims.
+- **Help Me Size It must reuse this canonical recommendation architecture.** No separate fallback sizing engine/table is authorized.
+- Recommendation output must remain confidence-gated; absence of sufficient evidence must result in no recommendation rather than a fabricated size.
+
+## Fit Result / retired star UI
+- The controlled `fit_reports.fit` outcome remains current evidence for Too Small / Snug / Just Right / Relaxed / Too Big.
+- **There is no current V1 1–5-star Fit Rating user interface.** Dormant/legacy schema created during earlier rating work must not be treated as a live product requirement merely because it still exists.
+- Do not drop historical fields/data during unrelated work. Any schema cleanup/rename is a deliberate migration with tests.
+- Existing `would_buy_again` evidence may remain available to the recommendation engine until its dedicated product audit; it is not a public star-rating replacement by default.
+
+## Material / stretch implementation debt
+- Existing schema/migrations may contain garment construction/material/stretch attribute definitions created before the current product decision.
+- Current V1 product rule is: reliable manufacturer/product-source material may remain background data; members do not enter/verify it and it is not a Browse filter.
+- **Current V1 does not collect, classify or infer stretch.** Existing stretch-related schema rows are dormant/legacy support until deliberately cleaned; do not expose them merely because the columns/options exist.
 
 ## Canonical verification contract
-CI replays the complete migration directory on a disposable local Supabase database, runs production recommendation calibration, production build, and pgTAP under `supabase/tests/`.
+CI must replay the complete current migration directory on a disposable local Supabase database and run relevant production recommendation, build, privacy and pgTAP suites.
 
-Key suites include:
-- `fit_profile_behavior.test.sql`
-- `fit_profile_privacy_rls.test.sql`
-- `fit_profile_history_integrity.test.sql`
-- `people_my_size_matching.test.sql`
-- `fit_report_dimensions.test.sql`
-- `closet_integration_privacy.test.sql` — **32 assertions**
-- `product_evidence_variant_targeting.test.sql` — **12 assertions**
-- `product_family_evidence.test.sql` — **11 assertions**
-- `similar_garment_attributes.test.sql` — **10 assertions**
-- `product_evidence_full_hierarchy.test.sql` — **18 assertions**
-- `fit_twin_follow_foundation.test.sql` — **14 assertions**
-- `following_feed_activity.test.sql` — **25 assertions**
-- `fit_twin_activity_notifications.test.sql` — **48 assertions**
-- `social_outfit_integration.test.sql` — **49 assertions**
-- `search_discovery_integration.test.sql` — **35 assertions** covering product/brand/alias/style/SKU/UPC/retailer/listing-title discovery, member username/display-name discovery, self/raw-data privacy boundaries, People My Size reachability, canonical follow creation, and searched-member Shared activity reaching Following Feed + Fit Twin notifications.
+Core suites currently include Fit Profile behavior/privacy/history, People My Size matching, Fit Report dimensions, Closet privacy, product evidence hierarchy/variant/family/similar-garment behavior, Following/feed/notification behavior, Outfit integration and Search discovery tests.
 
-`tests/recommendation-confidence.test.ts` calls production `recommendSize()` directly with **9 calibration cases**.
+When product semantics change without an immediate database rename (for example Following vs legacy Fit-Twin identifiers), tests may temporarily retain old filenames/function names for migration compatibility, but their assertions and this contract must reflect the current intended behavior. Rename/refactor them only in the dedicated canonical cleanup; do not duplicate them.
 
-Final Phase 5 corrected CI **`32304787008`** passed npm install, typecheck, recommendation calibration, production build, fresh replay of all **30 migrations**, and every canonical database suite. Supabase Security Advisor after Phase 5.5: **0 findings**.
-
-Do not add fixed measurement columns back to `fit_profiles`; blend current-person scores with historical garment evidence; count repeated observations as multiple wearers; fuzzy-group Product Families; expose raw body data through social/search/notifications; allow anonymous member/follow/feed/notification discovery; reintroduce a private fit-photo state; add Fit Twin activity email/phone push without an explicit future decision; reintroduce non-atomic outfit auto-sharing; or create a second catalog/member/follow system for search.
+Do not add fixed measurement columns back to `fit_profiles`; blend current-person scores with historical garment evidence; count repeated observations as multiple wearers; expose raw body data through social/search/notifications; allow anonymous member/follow/feed/notification discovery; reintroduce a private fit-photo state; create a second sizing engine; create a second social graph; or infer current product semantics from a stale legacy identifier.

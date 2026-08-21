@@ -1,6 +1,20 @@
 import Link from "next/link";
+import BrowsePreview from "./BrowsePreview";
 
 export default function BrowsePage() {
+  const isPreview=process.env.VERCEL_ENV==="preview";
+
+  if(isPreview){
+    return <main className="pageShell">
+      <div className="pageTitle">
+        <span className="eyebrow">DISCOVER</span>
+        <h1>Browse</h1>
+        <p>Discover garments, outfits, and people without losing your place.</p>
+      </div>
+      <BrowsePreview/>
+    </main>;
+  }
+
   return (
     <main className="pageShell">
       <div className="pageTitle">

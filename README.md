@@ -2,78 +2,92 @@
 
 V1 application for **LikeSized — See what fits people built like you.**
 
-## Canonical rule
-GitHub `likesized/Likesized` is the source of truth. No patch/fixed/v2/backup/parallel implementations. Database history and product status must remain canonical in-repo.
+## Canonical source-of-truth roles
+- `AI_REPOSITORY_RULES.md` — repository/source-of-truth policy.
+- `docs/AI_MASTER_LOG.md` — sole roadmap, status, owner-decision, recovery/salvage, deployment and AI-handoff record.
+- `docs/V1_PRODUCT_SPEC.md` — current product/fit architecture.
+- `supabase/schema_contract.md` — current database behavior/privacy contract and explicit implementation debt.
+- `supabase/migrations/` — executable ordered database history.
+- `README.md` — summary only; never a competing decision source.
 
-## Project planning
-`docs/AI_MASTER_LOG.md` is the **sole master guide, roadmap, status record and AI handoff**. README does not define build order.
+If the canonical docs disagree, stop feature work and reconcile them. Do not resurrect an old LOCKED decision from another branch/file.
 
-Reference documents:
-- `AI_REPOSITORY_RULES.md` — repository policy.
-- `docs/V1_PRODUCT_SPEC.md` — authoritative product/fit architecture.
-- `supabase/schema_contract.md` — database behavior/privacy contract.
+## Recovery status
+A canonical recovery is active on `canonical-recovery-2026-08-21`, based exactly on production `main` commit `e997a217e8fa6f33df4f84a7f18f581e1ac7de3c`.
 
-## What is implemented
-- Supabase auth with protected routes
-- Privacy-first RLS and least-privilege Data API grants
-- Extensible private Fit Profile using controlled normalized body measurements
-- Private normally-worn size references saved atomically with Fit Profile measurements and historical versions
-- Immutable private Fit Profile versions for historical try-on state
-- Garment-specific People My Size matching with safe derived scores
-- Canonical brands/products, Product Fit Families, variants, retailer listings and normalized identifiers
-- Controlled garment taxonomy, construction/material attributes and garment-specific Fit Report dimensions
-- Original garment-size preservation plus structured normalized size identity
-- Private and Shared Closet architecture
-- Closet edit/remove controls that preserve immutable fit history; repeat try-ons create new observations
-- Optional member-shared fit/reference photos in a non-public Storage bucket
-- Fully exercised evidence hierarchy from Exact Variant through Category Fit
-- Historical garment evidence matched to the body snapshot from that try-on, unique-wearer capped for recommendations
-- Production recommendation-confidence calibration in CI
-- Fit Twins/following and member Shared Fit History
-- Community-public-to-members Fit Twin/follow graph with owner-only relationship changes
-- Dedicated Following Feed for Shared Closet additions, Fit Reports and outfits
-- In-app Fit Twin activity notifications with global and per-Twin controls
-- Outfit posting, likes, All/Fit-Twins feeds and outfit-photo storage
-- Canonical product/brand/member search and discovery
-- Public homepage with static product-capability content; no fabricated live people, activity or match percentages
+Feature work is frozen while owner-approved work from `fit-match-engine-audit` / PR #36 and the Phase 6.5 branches is reconciled into one line. Those source branches must not be deleted until the master salvage ledger classifies every meaningful file/decision.
 
-## Current pre-beta boundaries
-- The connected Supabase database has no deliberate real/test user population; repeatable verification uses disposable local Supabase CI.
-- Prototype homepage data and the obsolete standalone prototype fit scorer have been removed from canonical source.
-- Production deployment configuration and responsive/accessibility review remain Phase 6 work.
-- Production must not be deployed until the owner explicitly authorizes it.
+No production deployment is authorized merely because recovery work exists or a PR is ready.
 
-## Authoritative fit rules
-Raw current and historical body measurements are owner-only. Current Fit Twin scores are current-body to current-body; garment evidence uses the immutable historical snapshot attached to each Fit Report. Do not blend the two.
+## Current product meaning
 
-## Closet history rule
-Changing current body measurements or logging a new try-on never rewrites an old Fit Report. Closet edit controls change current sharing/wear-count settings. A new fit experience creates a new observation tied to the current immutable body snapshot. Deleting a Closet item is explicit and removes that item's fit history; canonical product catalog records remain.
+### Following vs Fit Twin
+**Following and Fit Twin are different.**
 
-## Storage
-- `fit-reference-photos`: non-public; authenticated members may read shared references; only the owner writes/deletes.
-- `outfit-photos`: non-public/member-readable; owner-only writes.
-- Legacy `closet-photos`: retired/empty with no application access policies.
+- Following = user-controlled social relationship stored in canonical `follows`.
+- Fit Twin = system-generated strong current-person match designation.
+- A member may follow anyone regardless of Match %.
+- A Fit Twin does not have to be followed.
+- Style Feed is driven by Following.
+- Public relationship count is Followers, not Fit Twins.
+- `Save as Fit Twin`, `Saved Fit Twin`, and `Remove Fit Twin` are obsolete member-facing semantics.
+- Legacy route/function/database names containing `fit_twin` are implementation debt, not product meaning.
 
-**Fit-photo rule:** upload is optional. If uploaded, it is shared with authenticated LikeSized members. There is no private fit-photo mode.
+### Fit Result
+- Fit Result = Too Small / Snug / Just Right / Relaxed / Too Big.
+- There is **no current V1 1–5-star Fit Rating UI**.
+- A legacy DB type named `fit_rating` may store those physical outcomes, but that identifier does not authorize star/satisfaction UI.
 
-## Product evidence
-Exact evidence is preferred. Fallback hierarchy: Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit. Recommendation aggregation uses at most one strongest observation per unique wearer.
+### Matching
+- current-person body matching and historical garment-evidence matching are separate contexts;
+- historical garment evidence remains attached to the immutable body state from that try-on;
+- PR #36 contains owner-approved confidence-aware, directional, Preferred Fit, derived-proportion, chest/full-bust, measurement-freshness, garment-condition and edge-case matching work that is being deliberately recovered into the single canonical line rather than blindly merged.
 
-## Fit Twins
-A Fit Twin is a Fit Match the user deliberately saves/follows; no universal percentage cutoff is invented. Signed-in LikeSized members may see the community follow graph, while only the follower controls their own relationship. Member profile headers show current match scores separately from historical Shared Fit History.
+### Recommendation evidence
+Current hierarchy:
+**Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit**.
 
-## Key routes
-- `/` — public home
-- `/signup`, `/login` — auth
-- `/onboarding` — private versioned Fit Profile
-- `/search` — canonical product/member discovery
-- `/people` — People My Size
-- `/people/[username]` — member/Fit Twin profile and Shared Fit History
-- `/twins` — saved Fit Twins
-- `/following` — Following Feed
-- `/notifications` — Fit Twin activity notifications
-- `/closet`, `/closet/add`, `/closet/[id]/edit` — Closet
-- `/item/[slug]` — product evidence/recommendation
-- `/outfits`, `/outfits/new` — outfits, likes and All/Fit-Twins feeds
+Help Me Size It is a fallback only when strong normal matched-wearer evidence is insufficient. It reuses the canonical recommendation engine and never invents a second sizing engine.
 
-For exact current status and the next phase, read `docs/AI_MASTER_LOG.md`.
+`Would Buy Again` does not influence size recommendation/confidence under the owner-locked Fit Match audit.
+
+### Garment metadata boundaries
+- one controlled taxonomy shared by Browse + New Fit Report;
+- Material may exist only as reliable manufacturer/background data and is not a member filter/input;
+- Stretch is not an active V1 member input/classification/filter;
+- Color remains garment Browse/search data;
+- jeans/pants need controlled leg-shape/cut and rise handling reconciled into the one taxonomy before implementation resumes.
+
+### Browse
+Current owner-approved direction includes:
+- Garments | Outfits;
+- My Fit Matches | All;
+- 75%+ My Fit Matches eligibility;
+- separate 85%+ Fit Alert threshold;
+- one canonical product result rather than duplicate wearer/Fit Report search rows;
+- compact mobile search suggestions;
+- true full-screen opaque mobile mini-browser;
+- image fallback instead of blank cards;
+- product, wearer, Like, Wishlist and fallback Notify interactions must not swallow one another.
+
+Garment card correction:
+- heart = Like;
+- wishlist control = wishlist/save action;
+- Notify is not an always-visible action when useful Fit Matches exist; it belongs to the insufficient/no-useful-fit-evidence fallback state;
+- no stars.
+
+The exact Wishlist ↔ LikeLocker ↔ Gift List relationship is intentionally unresolved until the owner confirms it. Do not create duplicate save systems by assumption.
+
+### LikeSized Gift Lists
+Roadmap-locked. Reuse canonical Product + canonical sizing/confidence systems; owner-controlled sharing; raw measurements never exposed; random member search never reveals another member's recommended size.
+
+### Outfits
+Outfits remain in V1. Earlier removal direction is superseded.
+
+## Database rule
+`supabase/migrations/` is the executable database history. Do not hard-code a migration count in documentation. `supabase/schema.sql` is retired as an alternate schema source and must not be used to reconstruct current architecture.
+
+## Verification
+Canonical CI must run the integrity/drift check before typecheck/build/database replay. Full recovery is not complete until canonical integrity, TypeScript, build, fresh migration replay and database behavior/privacy tests pass on the reconciled branch.
+
+For exact recovery status, preserved source SHAs, owner decisions and next action, read `docs/AI_MASTER_LOG.md`.

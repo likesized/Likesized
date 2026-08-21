@@ -1,42 +1,28 @@
 # LikeSized ordered migrations
 
 ## Canonical rule — LOCKED
-GitHub `likesized/Likesized` is the single source of truth. Every migration file in this directory contains the executable SQL needed to reproduce that migration. Never replace migration SQL with a pointer to the hosted database, a prose-only summary, a fixed/v2 copy, or a parallel schema implementation.
+Every SQL file in this directory is part of the ordered executable database history used to reproduce LikeSized database state.
 
-The connected Supabase project is the deployed instance and execution ledger. **Database replay/deployment history is this ordered directory.** `supabase/schema.sql` and `supabase/storage.sql` are reference/current-state aids only.
+- The authoritative migration set is **the ordered files actually present in this directory**.
+- Do **not** hard-code a total migration count in canonical documentation. The count changes as legitimate ordered migrations are added.
+- Applied migrations are immutable. Future DB changes use new ordered migrations.
+- Never replace migration SQL with prose, a pointer to the hosted database, a fixed/v2 copy, or an alternate schema file.
+- `supabase/schema.sql` is retired and is not a current-state schema source.
+- The connected Supabase project is an execution/deployment ledger; the repository migration directory is the replay source.
 
-## Complete V1 migration sequence
-1. `20260819132934_initial_likesized_schema.sql` — original V1 schema, RLS, grants and first current-body matching engine.
-2. `20260819132948_fit_rating_relaxed_value.sql` — adds `relaxed` fit.
-3. `20260819133114_index_relationships_and_streamline_profile_read.sql` — relationship indexes/profile reads.
-4. `20260819134229_private_closet_photo_storage.sql` — original Closet photo storage bootstrap.
-5. `20260819135959_harden_public_table_privileges.sql` — least-privilege API grants.
-6. `20260819140445_member_readable_outfit_photo_storage.sql` — outfit photo storage.
-7. `20260819141225_outfit_likes.sql` — outfit likes.
-8. `20260819144032_authoritative_v1_fit_garment_architecture.sql` — normalized body/product/size/garment/Fit Report architecture.
-9. `20260819144343_authoritative_v1_architecture_constraints.sql` — architecture constraints/helper privileges.
-10. `20260819150022_immutable_fit_profile_versions.sql` — immutable historical body states.
-11. `20260819150923_historical_fit_evidence_unique_wearers.sql` — historical evidence and unique-wearer cap.
-12. `20260819151101_atomic_fit_profile_version_saves.sql` — atomic current Fit Profile save.
-13. `20260819152030_harden_fit_profile_version_rpcs.sql` — hardened profile/version RPC boundary.
-14. `20260819152056_index_authoritative_v1_relationships.sql` — authoritative relationship indexes.
-15. `20260819164005_atomic_fit_profile_size_references.sql` — atomic measurements + private size references.
-16. `20260819165124_profile_identity_constraints.sql` — profile identity bounds.
-17. `20260819165756_member_only_profile_identity.sql` — authenticated-member-only identity.
-18. `20260819170808_inline_private_size_reference_normalization.sql` — private reference normalization within save RPC.
-19. `20260819173357_qualify_current_match_profile_owner.sql` — current matcher replay fix.
-20. `20260819174045_restore_current_match_helper_execute.sql` — narrow safe matcher-helper execution path.
-21. `20260819183601_enforce_fit_report_dimension_garment_type.sql` — garment/dimension DB guard.
-22. `20260819190312_enforce_shared_fit_photo_invariant.sql` — Shared-only fit-photo invariant.
-23. `20260819191518_validate_product_evidence_variant_target.sql` — Exact Variant ownership validation.
-24. `20260819192804_enforce_product_family_compatibility.sql` — Product Fit Family compatibility.
-25. `20260819194010_controlled_primary_material_and_attribute_category.sql` — controlled material/category attributes.
-26. `20260819202515_following_feed_activity_foundation.sql` — canonical Following Feed activity ledger and safe activity output.
-27. `20260819202851_harden_following_feed_rpc_boundary.sql` — private auth-bound feed helper behind a public SECURITY INVOKER wrapper.
-28. `20260819205518_fit_twin_activity_notifications.sql` — default-on in-app Fit Twin notification preferences/mutes/recipient rows sourced from canonical feed activity.
-29. `20260819211614_atomic_outfit_post_creation.sql` — atomic selected-garment sharing + outfit post/tag creation so failed outfit posts cannot leave Private garments Shared.
-30. `20260819212753_canonical_search_discovery_rpcs.sql` — authenticated SECURITY INVOKER catalog/member discovery over canonical product/brand/alias/style/identifier/retailer/listing identity and member-readable username/display name, with canonical Product deduplication and no raw Fit Profile exposure.
+## Recovery rule — 2026-08-21
+Canonical recovery is active. PR #36 (`fit-match-engine-audit`) contains owner-approved migrations that must be deliberately salvaged into the recovery line and independently replayed/tested before being considered recovered. Their existence on the old branch does not mean they were applied to production.
 
-The first seven files were recovered from `supabase_migrations.schema_migrations` during the 2026-08-19 canonical audit and verified byte-for-byte against the deployed migration ledger before being committed. Migrations 16–30 are stored under the exact versions recorded by the deployed Supabase ledger.
+The exact preserved PR #36 migration filenames and salvage status live in `docs/AI_MASTER_LOG.md`.
 
-Future database changes are new ordered executable migrations in this same directory. Update `docs/V1_PRODUCT_SPEC.md`, `docs/AI_MASTER_LOG.md`, and `supabase/schema_contract.md` when architecture or locked behavior changes.
+## Naming debt
+Some older migration filenames/types/functions contain `fit_twin` or `fit_rating` terminology from earlier product semantics. Do not infer current product meaning from those legacy identifiers:
+- `follows` now means Following; Fit Twin is system-derived.
+- legacy `fit_rating` naming may store physical Fit Result values; current V1 has no 1–5-star Fit Rating UI.
+
+Any rename must be a deliberate forward migration/refactor with tests; never rewrite applied history to cosmetically rename old files.
+
+## Verification
+CI must replay the complete current directory on a fresh disposable Supabase database and run the canonical pgTAP/database behavior/privacy suite.
+
+Whenever a DB/product decision changes, synchronize `docs/AI_MASTER_LOG.md`, `docs/V1_PRODUCT_SPEC.md`, and `supabase/schema_contract.md` in the same canonical change where applicable.

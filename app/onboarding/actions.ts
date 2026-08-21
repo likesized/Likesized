@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 
 type MeasurementType = { key:string; dimension:"length"|"weight" };
 type ExistingSizeReference = { reference_type:"bra"|"shoe"|"shirt"|"pants"|"dress"|"other"; original_size_label:string; sizing_system:string|null; band_size:number|string|null; cup_designation:string|null; shoe_size:number|string|null };
+const FIT_PREFERENCE_PREFIX="fit_preference__";
+const FIT_PREFERENCES=new Set(["fitted","standard","relaxed"]);
 
 function fail(code:string):never{redirect(`/onboarding?error=${encodeURIComponent(code)}`);}
 function text(formData:FormData,name:string){return String(formData.get(name)??"").trim();}
@@ -38,12 +40,34 @@ export async function saveFitProfile(formData:FormData){
     const value=Number(raw);
     if(!Number.isFinite(value)||value<=0)fail("invalid_measurements");
     if(unitSystem==="imperial"&&type.dimension==="length"&&!isCanonicalImperialLength(type.key,value))fail("invalid_measurements");
-    rows.push({measurement_type_key:type.key,entered_value:value,entered_unit:type.dimension==="weight"?(unitSystem==="imperial"?"lb":"kg"):(unitSystem==="imperial"?"in":"cm"),source:"manual",method:type.dimension==="weight"?"scale":"tape"});
+    rows.push({measurement_type_key:type.key,entered_value:value,entered_unit:type.dimension==="weight"?(unitSystem==="imperial"?"lb":"kg"):(unitSystem==="imperial"?"in":"cm"),confirm_unchanged:text(formData,`confirm_measurement__${type.key}`)==="1"});
   }
   if(!rows.length)fail("invalid_measurements");
 
+  // The normally-worn-size UI is retired in current V1. Preserve any existing private
+  // reference records unchanged when Fit Profile measurements/preferences are saved.
   const sizeReferences=((existingSizeReferences??[]) as ExistingSizeReference[]).map((row)=>({reference_type:row.reference_type,original_size_label:row.original_size_label,sizing_system:row.sizing_system,band_size:row.band_size,cup_designation:row.cup_designation,shoe_size:row.shoe_size}));
-  const {error}=await supabase.rpc("save_fit_profile",{p_username:username,p_unit_system:unitSystem,p_measurements:rows,p_size_references:sizeReferences});
-  if(error){if(error.code==="23505")fail("username_taken");if(error.code==="22023")fail("invalid_measurements");fail("save_failed");}
+
+  const fitPreferences:Array<Record<string,string>>=[];
+  let invalidFitPreference=false;
+  formData.forEach((rawValue,fieldName)=>{
+    if(!fieldName.startsWith(FIT_PREFERENCE_PREFIX))return;
+    const garmentTypeKey=fieldName.slice(FIT_PREFERENCE_PREFIX.length);
+    const preference=String(rawValue).trim();
+    if(!/^[a-z0-9_]+$/.test(garmentTypeKey)||!FIT_PREFERENCES.has(preference)){invalidFitPreference=true;return;}
+    if(preference!=="standard")fitPreferences.push({garment_type_key:garmentTypeKey,preference});
+  });
+  if(invalidFitPreference)fail("invalid_fit_preferences");
+
+  const {error}=await supabase.rpc("save_fit_profile",{p_username:username,p_unit_system:unitSystem,p_measurements:rows,p_size_references:sizeReferences,p_fit_preferences:fitPreferences});
+  if(error){
+    if(error.code==="23505")fail("username_taken");
+    if(error.code==="22023"){
+      const message=error.message.toLowerCase();
+      if(message.includes("fit preference"))fail("invalid_fit_preferences");
+      fail("invalid_measurements");
+    }
+    fail("save_failed");
+  }
   redirect("/people?profile=saved");
 }

@@ -3,7 +3,17 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, auth;
 
-select plan(14);
+select plan(16);
+
+-- The safe public wrapper remains callable, while the product-aware raw helper stays private.
+select ok(
+  has_function_privilege('authenticated','public.get_fit_report_snapshot_matches(uuid[])','EXECUTE'),
+  'authenticated users can call the safe historical snapshot Match wrapper'
+);
+select ok(
+  not has_function_privilege('authenticated','private.calculate_snapshot_match_for_product(uuid,uuid)','EXECUTE'),
+  'authenticated users cannot directly execute the private product-aware snapshot Match helper'
+);
 
 -- Two disposable members: wearer A changes body state; viewer B stays at A's original state.
 insert into auth.users (id, aud, role, email, created_at, updated_at)
@@ -18,7 +28,9 @@ select public.save_fit_profile(
   'history_a','imperial'::public.unit_system,
   '[
     {"measurement_type_key":"height","entered_value":70,"entered_unit":"in","source":"manual","method":"tape"},
-    {"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"}
+    {"measurement_type_key":"chest_circumference","entered_value":40,"entered_unit":"in","source":"manual","method":"tape"},
+    {"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"},
+    {"measurement_type_key":"shoulder_width","entered_value":18,"entered_unit":"in","source":"manual","method":"tape"}
   ]'::jsonb,
   '[]'::jsonb
 );
@@ -31,7 +43,9 @@ select public.save_fit_profile(
   'history_b','imperial'::public.unit_system,
   '[
     {"measurement_type_key":"height","entered_value":70,"entered_unit":"in","source":"manual","method":"tape"},
-    {"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"}
+    {"measurement_type_key":"chest_circumference","entered_value":40,"entered_unit":"in","source":"manual","method":"tape"},
+    {"measurement_type_key":"natural_waist","entered_value":32,"entered_unit":"in","source":"manual","method":"tape"},
+    {"measurement_type_key":"shoulder_width","entered_value":18,"entered_unit":"in","source":"manual","method":"tape"}
   ]'::jsonb,
   '[]'::jsonb
 );
@@ -79,7 +93,8 @@ select is(
 );
 reset role;
 
--- From B's perspective, A initially matches the same current body state.
+-- From B's perspective, A initially matches the same qualified current body state.
+-- Exact shared values do not imply 100 when relevant coverage is still incomplete.
 set local role authenticated;
 set local request.jwt.claim.sub = '55555555-5555-4555-8555-555555555555';
 set local request.jwt.claim.role = 'authenticated';
@@ -87,7 +102,7 @@ create temporary table phase15_scores(initial_score integer, changed_score integ
 insert into phase15_scores(initial_score)
 select match_score from public.get_fit_matches('overall',100)
 where user_id='44444444-4444-4444-8444-444444444444'::uuid;
-select is((select initial_score from phase15_scores),100,'identical current partial bodies produce a 100 current-person match');
+select is((select initial_score from phase15_scores),85,'identical qualified partial current bodies are confidence-discounted to the calibrated Overall score');
 reset role;
 
 -- A changes current body state substantially; this must create v2 without touching report v1.
@@ -98,7 +113,9 @@ select public.save_fit_profile(
   'history_a','imperial'::public.unit_system,
   '[
     {"measurement_type_key":"height","entered_value":70,"entered_unit":"in","source":"manual","method":"tape"},
-    {"measurement_type_key":"natural_waist","entered_value":44,"entered_unit":"in","source":"manual","method":"tape"}
+    {"measurement_type_key":"chest_circumference","entered_value":40,"entered_unit":"in","source":"manual","method":"tape"},
+    {"measurement_type_key":"natural_waist","entered_value":44,"entered_unit":"in","source":"manual","method":"tape"},
+    {"measurement_type_key":"shoulder_width","entered_value":18,"entered_unit":"in","source":"manual","method":"tape"}
   ]'::jsonb,
   '[]'::jsonb
 );
@@ -164,12 +181,12 @@ select ok(
 );
 select is(
   (select historical_match_score from public.get_fit_report_snapshot_matches(array['99999999-9999-4999-8999-999999999999'::uuid]) limit 1),
-  100,
-  'old garment historical match still compares viewer to old version 1 snapshot'
+  92,
+  'old garment historical match retains the calibrated exact partial score against version 1'
 );
 select ok(
-  (select historical_match_score from public.get_fit_report_snapshot_matches(array['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid]) limit 1) < 100,
-  'new garment observation historical match reflects changed version 2 body'
+  (select historical_match_score from public.get_fit_report_snapshot_matches(array['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid]) limit 1) < 92,
+  'new garment observation historical match is lower after the version 2 body change'
 );
 select is(
   (select count(distinct fit_profile_version_id) from public.fit_reports where closet_item_id='88888888-8888-4888-8888-888888888888'::uuid),

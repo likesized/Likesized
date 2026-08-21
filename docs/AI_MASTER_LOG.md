@@ -18,6 +18,7 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - Owner additionally required the open Mobile Menu to close when clicking/tapping anywhere outside it. That refinement is merged to canonical `main` and deployed production READY; final owner functional confirmation of outside-click behavior remains pending.
 - Current measurement-audit checkpoint: **Back Waist / Neck-to-Waist Length**.
 - Phase 6.5 V1 Product Surface + Navigation Audit: LOCKED / QUEUED immediately after Phase 6.4.
+- **Owner decision — 2026-08-20:** Outfits remain in V1. The prior Phase 6.5 instruction to remove Outfits is superseded. Existing canonical Outfit code/data are preserved, and the final V1 Outfits / Fits social-layer audit is scheduled after the Closet/Product/Favorites foundation and before Fit Twin Activity.
 
 ## Phase 6.4 canonical completed work
 - Fit Profile copy/labels/help UI polished.
@@ -99,7 +100,7 @@ Target hierarchy:
 - Settings
 - Help / FAQ
 
-Current separate top-level concepts Search, People My Size, Following, and Outfits must be audited against this hierarchy rather than automatically retained as peer menu items.
+Current separate top-level concepts Search, People My Size, Following, and Outfits must be audited against this hierarchy rather than automatically retained as peer menu items. Outfits remain a V1 feature, but whether the member-facing destination is named **Outfits**, **Fits**, lives within Discover, or receives another placement is decided here and in the dedicated Outfit social-layer audit rather than assumed from the legacy navigation.
 
 ### 6.5.2 Discover hub
 Discover owns finding products and people.
@@ -117,12 +118,12 @@ Fit Twins are saved/followed people.
 - “Following” should not remain a competing top-level product concept if it can live cleanly as Fit Twin Activity.
 - Reuse the canonical `follows` relationship; no parallel social model.
 
-### 6.5.4 Remove the V1 Outfits concept
-- LikeSized V1 is about individual articles of clothing, not full-outfit posts composed from multiple garments.
-- Remove Outfits from the user-facing navigation and audit/remove the current V1 outfit-post surface.
-- Remove/supersede outfit activity from feeds/notifications/docs where appropriate.
-- Do not rewrite applied migrations. If database cleanup is required, use a new ordered canonical migration.
-- Update product/spec/schema documentation so V1 no longer presents full-outfit posting as a feature.
+### 6.5.4 Preserve V1 Outfits; defer final social-layer audit
+- **Supersedes the prior decision to remove Outfits from V1.**
+- Preserve the existing canonical Outfit implementation, migrations, storage behavior, likes, and Closet-item linking while the underlying garment/product experience is audited.
+- Do not create a parallel Outfit implementation or alternate social graph.
+- Do not expand Outfits yet; the dedicated V1 Outfit/Fits social-layer audit occurs after Favorites so it can build on the final Closet, garment-detail, Product, Fit Twin, privacy, and save behavior.
+- Existing Outfit behavior must continue to respect raw-measurement privacy and the canonical `follows` relationship.
 
 ### 6.5.5 My Closet audit/redesign
 **My Closet = all individual garments the member has logged and how they fit.**
@@ -180,7 +181,7 @@ Header/context:
 Primary content:
 - Shared Closet
 - Activity
-- no Outfits tab in V1
+- Outfit/profile presentation is finalized in 6.5.18 rather than removed in advance.
 
 Shared Closet:
 - only intentionally Shared garments
@@ -313,15 +314,42 @@ Useful content:
 - Shop
 - remove Favorite
 
-### 6.5.18 Fit Twin Activity audit
-Activity should focus on garment evidence:
+### 6.5.18 V1 Outfits / Fits social-layer audit — LOCKED POSITION
+Outfits are the social wrapper around LikeSized garment fit evidence, not a disconnected generic social feed.
+
+Audit/finalize:
+- one Outfit post is composed from existing owned Closet garments rather than duplicating product/fit data
+- require an Outfit photo and 1–6 unique owned Closet garments with fit evidence unless the owner later changes that limit
+- caption
+- likes
+- whether Save Outfit belongs in V1
+- garment tags showing useful product, size, Fit Result/Fit Rating, and viewer-relevant historical match context without exposing raw measurements
+- click garment tag → canonical garment/Product detail
+- current person/Fit Twin match context must remain distinct from each garment’s immutable historical match context
+- member profile Outfit presentation
+- member-wide discovery versus Fit-Twin-focused Outfit discovery
+- ranking should prioritize body/fit relevance before generic popularity; exact ranking formula is audited here rather than assumed
+- privacy behavior when a tagged garment becomes Private or is deleted
+- Outfit activity integration with Fit Twins and notifications
+- creator/influencer usefulness, including making body-relevant creators discoverable through fit similarity rather than follower count alone
+- creator-facing aggregate concepts such as Fit Twin count / close-fit audience may be considered, but raw member body measurements remain private and no advanced brand dashboard is required for V1
+- no V1 DMs, Stories, Reels/video feed, creator payouts, sponsorship marketplace, or other broad social-network expansion unless separately owner-approved
+- reuse canonical `follows`, Closet, Product, Fit Report/history, storage, and Outfit tables; no parallel social model
+
+Naming/navigation rule:
+- **Outfit** remains the content object unless owner changes it.
+- The destination may ultimately be labeled **Fits**, **Outfits**, or placed inside Discover based on the 6.5.1/6.5.18 audit; no naming change is locked merely by preserving the feature.
+
+### 6.5.19 Fit Twin Activity audit
+Activity should focus on useful fit evidence:
 - newly Shared garment
 - new/retried fit observation on an existing garment
-- click through to the actual garment/detail evidence
+- new Outfit post when allowed by the final 6.5.18 rules
+- click through to the actual garment/detail or Outfit evidence
 
-Current person-to-person Fit Match may appear as relationship context, while the garment evidence remains tied to its historical body snapshot.
+Current person-to-person Fit Match may appear as relationship context, while garment evidence remains tied to its historical body snapshot.
 
-### 6.5.19 Search audit
+### 6.5.20 Search audit
 After the new hierarchy exists:
 - search canonical products/brands/identifiers
 - search members
@@ -329,7 +357,7 @@ After the new hierarchy exists:
 - member results open member Shared Closet/profile
 - keep Search distinct from People My Size algorithmic discovery
 
-### 6.5.20 Help / FAQ
+### 6.5.21 Help / FAQ
 Add a deliberate help surface before Beta.
 
 Must explain at minimum:
@@ -342,13 +370,14 @@ Must explain at minimum:
 - photo sharing behavior
 - Fit Result vs Fit Rating
 - Favorites
+- Outfits/Fits social behavior after 6.5.18 is finalized
 - retailer links
 - why highly matched people may still choose different sizes
 - why historical evidence remains attached to the body state from the original try-on
 
 Help/FAQ can live in the account/menu/support hierarchy rather than requiring a major primary-navigation slot.
 
-### 6.5.21 Remaining product-surface audit
+### 6.5.22 Remaining product-surface audit
 Audit all remaining V1 surfaces for terminology, privacy, usability, responsiveness, and hierarchy:
 - Fit Profile
 - Settings
@@ -361,7 +390,7 @@ Audit all remaining V1 surfaces for terminology, privacy, usability, responsiven
 - logged-out states
 - profile/account editing
 
-### 6.5.22 Terminology cleanup
+### 6.5.23 Terminology cleanup
 Primary member-facing vocabulary should be coherent and minimal:
 - Discover
 - People My Size
@@ -372,10 +401,11 @@ Primary member-facing vocabulary should be coherent and minimal:
 - Fit Profile
 - Fit Result
 - Fit Rating
+- final Outfit/Fits terminology locked by the preceding navigation/social audit
 
 “Fit Report” may remain an internal engineering/database term but should not be presented as a second member-facing object separate from the garment.
 
-### 6.5.23 Preview verification before Phase 7
+### 6.5.24 Preview verification before Phase 7
 Phase 6.5 is not complete until canonical source + verification + master agree.
 
 Verify at minimum:
@@ -389,10 +419,11 @@ Verify at minimum:
 - Favorites
 - favorite-source privacy changes
 - Fit Twins and Activity
+- Outfit/Fits creation, privacy, garment links, likes, profile/discovery placement, and Fit Twin integration
 - same-product top matched wearers
 - retailer links
 - Search / People My Size distinction
-- no unintended legacy Outfit surface
+- no unintended duplicate/legacy social surface
 - CI, migration replay, privacy/security tests as relevant
 
 # Phase 7 — V1 BETA END-TO-END VERIFICATION — QUEUED
@@ -409,6 +440,7 @@ Representative end-to-end verification must cover:
 - retailer links
 - My Closet garment logging
 - later fit updates/history
+- Outfits/Fits social flow
 - Fit Twin Activity
 - Search
 - privacy boundaries

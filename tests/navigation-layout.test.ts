@@ -24,6 +24,7 @@ test("mobile menu keeps grouped sections and closes safely", () => {
 });
 
 test("grouped navigation styles exist at desktop and mobile breakpoints", () => {
+  assert.match(css, /\.desktopMenu \{[^}]*margin:0;[^}]*padding:0;[^}]*border:0;/);
   assert.match(css, /\.desktopMenuPanel/);
   assert.match(css, /\.mobileSectionLabel/);
   assert.match(css, /@media \(max-width: 900px\)/);

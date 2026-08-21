@@ -21,11 +21,13 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - On mobile revisits, the large Fit Profile onboarding hero collapses to a short update header; the full hero remains for first-time setup.
 - On mobile, Review Changes uses two compact measurement cards per row and entering review scrolls to the top after the review view renders.
 - **Owner mobile verification — 2026-08-21:** the current Fit Profile mobile flow is confirmed working on production, including save/load/edit, revisit behavior, review/confirm behavior, removal visibility, compact revisit hero, two-column review layout, and review scroll-to-top behavior.
-- **Desktop Fit Profile verification is intentionally unfinished** because the owner cannot test desktop right now. Do not mark Phase 6.4 complete until desktop is tested.
+- **Desktop Fit Profile verification is intentionally unfinished.** Do not mark Phase 6.4 complete until desktop is tested. Owner sequence is now locked: finish Phase 6.5.2 Browse first, then immediately perform the deferred desktop Fit Profile verification, then continue to Phase 6.5.3.
 - Mobile Menu navigation-close and outside-click/tap close are owner-verified working on production.
-- By explicit owner direction, Phase 6.5.1 Navigation / Information Architecture is ACTIVE while desktop Fit Profile verification remains deferred. Do not falsely mark Phase 6.4 fully complete.
 - **Owner decision — 2026-08-20:** Outfits remain in V1. The prior Phase 6.5 instruction to remove Outfits is superseded. Existing canonical Outfit code/data are preserved.
-- **Owner decision — 2026-08-21:** the V1 navigation/IA, Browse structure, LikeLocker concept, Style Feed placement, unified Closet + Outfit placement, and garment taxonomy decisions below are LOCKED for the current 6.5.1 working branch. No production push has been authorized for this work.
+- **Phase 6.5.1 Navigation / IA:** the grouped navigation work is implemented on the working line and has been previewed, but no production push is authorized. The social-group wording described below is reopened by the Following vs. Fit Twins decision and must be corrected during 6.5.3 rather than treated as final.
+- **Phase 6.5.2 Browse:** DESIGN AUDIT COMPLETE / IMPLEMENTATION + OWNER PREVIEW IN PROGRESS. The current zero-cost Vercel demo on `phase-6-5-2-browse-preview` is preview-only and unverified; it is not the canonical finished Browse implementation and must be folded back into normal canonical Browse source before completion. Production remains untouched.
+- **Owner decision — 2026-08-21 (Following vs. Fit Twins):** prior language equating Fit Twins with saved/followed people is superseded. **Following is a user-controlled social relationship. Fit Twin is a system-generated designation based on match quality.** A person can be followed regardless of Match %, and a Fit Twin does not have to be followed. Reuse the single canonical `follows` social relationship; do not create a second Fit Twin social graph. Exact Fit Twin threshold remains intentionally unresolved until the matching model is finalized and validated.
+- **Owner decision — 2026-08-21 (LikeSized Gift Lists):** **LikeSized Gift Lists** is added to the canonical product roadmap. The differentiator is a user-approved list of wanted garments where LikeSized also provides a confidence-gated recommended size for the list owner without exposing body measurements. Gift Lists must reuse canonical Product, Fit Profile, matching/recommendation/confidence, retailer, auth, and privacy systems rather than duplicating them. It is positioned after the LikeLocker foundation/view as **6.5.17A** so current Browse and foundational work are not derailed.
 
 ## Phase 6.4 canonical completed work / locked source decisions
 - Fit Profile copy/labels/help UI polished.
@@ -120,8 +122,8 @@ Canonical owner-approved wording is implemented in `app/onboarding/MeasurementHe
 - Binary verification rule remains locked: HTTP 200 alone is not sufficient for image assets. Verify deployed files are complete/decodable and match the intended canonical asset.
 
 ## Phase 6.4 — remaining work
-1. **Desktop Fit Profile verification remains unfinished by owner choice for now because desktop access is unavailable.** When desktop is available, verify the production Fit Profile layout, edit/review/confirm/save flow, Added/Changed/Removed presentation, and revisit treatment.
-2. Phase 6.5 work may proceed on its working branch by owner direction, but Phase 6.4 itself stays open until desktop verification is complete.
+1. **Desktop Fit Profile verification remains unfinished by owner choice.** Finish Browse first, then verify the production Fit Profile desktop layout, edit/review/confirm/save flow, Added/Changed/Removed presentation, and revisit treatment before beginning 6.5.3.
+2. Phase 6.5 Browse work may proceed on its safe preview/working branch, but Phase 6.4 itself stays open until desktop verification is complete.
 
 # Phase 6.5 — V1 PRODUCT SURFACE + NAVIGATION AUDIT — LOCKED
 
@@ -135,26 +137,27 @@ Canonical owner-approved wording is implemented in `app/onboarding/MeasurementHe
 
 ## Phase 6.5 sequence — LOCKED
 
-### 6.5.1 Navigation / information architecture audit — ACTIVE
+### 6.5.1 Navigation / information architecture audit — DESIGN/BRANCH WORK COMPLETE; SOCIAL LABEL REOPENED
 Simplify overlapping top-level destinations before polishing individual pages.
 
-#### Owner-locked navigation hierarchy
+#### Navigation hierarchy — locked except social-group wording reopened by 2026-08-21 Following/Fit Twin decision
 The LikeSized logo is Home; there is no separate Home menu item.
 
 **Notifications**
 - Notifications are not a normal menu row.
 - Use a persistent notification bell in the header with unread badge when applicable.
 - Mobile header target: LikeSized logo | notification bell | Menu.
-- Desktop header target: LikeSized logo | DISCOVER dropdown | FIT TWINS dropdown | MY CLOSET dropdown | notification bell | ACCOUNT dropdown.
+- Desktop header target: LikeSized logo | DISCOVER dropdown | current social dropdown | MY CLOSET dropdown | notification bell | ACCOUNT dropdown.
 
 **DISCOVER** — non-clickable section heading on mobile; dropdown trigger on desktop
 - Browse
 - People My Size
 - LikeLocker
 
-**FIT TWINS** — non-clickable section heading on mobile; dropdown trigger on desktop
-- My Fit Twins
-- Style Feed
+**SOCIAL GROUP — FINAL LABEL TO BE OWNER-AUDITED IN 6.5.3**
+- The current branch/preview still uses **FIT TWINS → My Fit Twins / Style Feed**. That wording is no longer final because the old meaning “Fit Twins = saved/followed people” is superseded.
+- Prefer one combined Following/Fit Twins hub rather than disconnected pages. Exact final group and destination name is deliberately not invented here; resolve it in 6.5.3.
+- Style Feed remains a destination, but its subscription source is Following, not automatic Fit Twin status.
 
 **MY CLOSET** — non-clickable section heading on mobile; dropdown trigger on desktop
 - My Closet
@@ -168,43 +171,33 @@ The LikeSized logo is Home; there is no separate Home menu item.
 - Sign Out
 
 Behavior/rules:
-- **Following** is not a separate member-facing destination/term. Reuse canonical `follows` internally.
-- **Fit Twins = saved/followed people.**
+- **Following** is a valid user-facing social action/state/filter and is stored in canonical `follows`.
+- **Fit Twin** is a system-generated/derived strong-match designation from LikeSized match data. It is not a saved/followed relationship and must not be manually assigned by a member.
+- Do not create a `fit_twin_follow`, saved-Fit-Twin, or other second social graph. One `follows` relationship is the social graph; match data determines Fit Twin status.
+- Valid person states include **Following · Fit Twin · 96% Match**, **Following · 63% Match**, and **Fit Twin · 98% Match** with a separate Follow action.
+- A Fit Twin threshold must remain configurable/unlocked until the final matching model is validated.
+- Person action wording that currently says **Save as Fit Twin**, **Saved Fit Twin**, or **Remove Fit Twin** is superseded by **Follow / Following / Unfollow**. Fit Twin appears as a badge/designation only when the system qualifies the match.
+- **Style Feed eligibility is driven by Following.** A high-match Fit Twin who is not followed does not automatically enter the member’s Style Feed.
+- Per-person Notify remains separate from Follow. When the notification interaction is finalized, preserve the existing principle that notification subscription cannot create a second relationship graph; person alerts attach to the followed member relationship/settings.
 - **LikeLocker = saved fashion content**, including saved canonical products/garments and saved outfits. It is not for people.
-- User-facing Favorites terminology is superseded by LikeLocker/save language; internal schema may remain until its dedicated data audit.
+- User-facing Favorites terminology remains superseded by LikeLocker/save language for fashion content.
 - Outfits do not have a standalone top-level navigation destination.
 - Other members' outfit discovery lives inside Browse.
-- Fit-Twin/followed-person outfit activity lives in Style Feed.
+- Followed-person outfit activity lives in Style Feed.
 - The member's own outfits live mixed with garments inside My Closet, filterable there by **All / Garments / Outfits**.
 - Mobile keeps the current compact right-side dropdown interaction rather than becoming a full-screen drawer. Because the grouped menu is taller, use max-height + internal scrolling on shorter phones while preserving large destination tap targets and existing close-on-navigation/outside-tap behavior.
-- No production deployment of 6.5.1 navigation work without explicit owner authorization.
+- No production deployment of Phase 6.5 work without explicit owner authorization.
 
-#### Browse information architecture — OWNER LOCKED
+#### Browse information architecture — OWNER LOCKED; detailed 6.5.2 rules supersede earlier Browse direction where they conflict
 - Browse is one dynamic page, not separate garment and outfit pages.
-- Search bar at top.
+- Search bar at top and can search **garments, outfits, and people** across the full available LikeSized universe rather than only the current My Fit Matches scope.
 - Primary content switch: **Garments | Outfits**.
-- Default: **Garments → All**.
-- Filter controls change dynamically with the selected content type.
-- A personalized carousel sits below the filter menu and updates whenever filters change.
-- Ranking should combine fit relevance/closeness, recency, and LikeLocker save/popularity signal; do not rely on global popularity alone.
-- User-facing popularity language should use **Most Saved**, **Popular Near Your Fit**, **Popular With People Like You**, etc., not Favorites.
-- Normal Browse results continue below the carousel.
-- People My Size remains a separate destination because it is body-match discovery rather than garment/outfit discovery.
-
-Garment filter structure:
-- **Category → Type → Style** is the locked controlled taxonomy hierarchy.
-- Style is a controlled multi-select tag layer; one garment may have multiple style tags.
-- **Brand → Model / Product Line** is a second persistent cascading filter pair whenever model data is reliably known.
-- Brand is a first-class visible V1 filter and should be searchable/multi-select where practical.
-- Model/Product Line appears/populates after Brand selection when reliable model data exists, using recognizable member-facing model names such as **Levi's → 501 Original**, not opaque retailer SKUs.
-- Category/Type/Style and Brand/Model changes update both the personalized carousel and the normal result set.
-- Manufacturer style/model numbers, UPC/GTIN, retailer SKUs, and other identifiers may support canonical product matching behind the scenes but are not all exposed as member-facing filter labels.
-
-Material/stretch:
-- **Material composition is background catalog data only in V1.** Store it on the canonical product/variant only when it comes from reliable manufacturer/product-source information.
-- Never ask a member to enter or verify material composition in V1.
-- Do not expose material as a Browse filter in V1. Preserve reliable manufacturer-supplied material data for possible future use.
-- **Do not collect/classify stretch in V1.** No stretch question, no stretch filter, no inferred stretch value, and no attempt to standardize it from fabric composition at this time.
+- A fresh Browse visit defaults to **Garments + My Fit Matches**. Garments and Outfits each remember their own scope/search/filter/sort state during the active Browse session; a new visit returns to My Fit Matches.
+- Each side has **My Fit Matches | All**. All intentionally includes Shared content whether it is a close fit or not because non-close Fit Reports can still be useful evidence.
+- Personalized carousel sits below filters and updates when filters change.
+- Garment filters use **Category → Type → Style → Brand → Model**, plus standardized garment-only Color where available. Outfit filters use **Type → Season**.
+- Category/Type are never silently relaxed. Strict user-selected filters stay strict. Only fit eligibility can widen within My Fit Matches, and **See Similar Results** must tell the user which one filter would be relaxed before applying it.
+- Material composition remains reliable background catalog data only; no member material entry/verification and no V1 material filter. Do not collect/classify stretch in V1.
 
 #### V1 garment taxonomy — OWNER LOCKED
 Top-level Garment categories:
@@ -295,7 +288,7 @@ Top-level Garment categories:
 Taxonomy implementation rule:
 - Browse and New Fit Report must share the same canonical controlled garment taxonomy. Do not create parallel category/type/style systems.
 
-#### Outfit Browse labels — OWNER LOCKED direction
+#### Outfit Browse labels — OWNER LOCKED
 Outfit creation does not reclassify attached garments; garments already carry their garment taxonomy from Closet/Fit Report.
 
 Outfit-level controlled labels:
@@ -303,28 +296,126 @@ Outfit-level controlled labels:
 - **Season:** Spring, Summer, Fall, Winter, Year-Round.
 - Browse Outfits can filter by these outfit-level labels; garment taxonomy remains inherited from the attached Closet garments.
 
-### 6.5.2 Browse / Discover hub
-Discover owns finding garments/outfits and people without duplicating People My Size.
-- **Browse** = intentional garment/outfit discovery and search.
-- **People My Size** = algorithmic body-match discovery using Overall / Tops / Bottoms matching.
-- **LikeLocker** = private saved fashion content.
-- Search within Browse should recognize canonical products, brands, models/product lines, and identifiers where useful.
-- Avoid duplicate discovery experiences.
+### 6.5.2 Browse / Discover hub — DESIGN AUDIT COMPLETE / IMPLEMENTATION + OWNER PREVIEW ACTIVE
+The rules in this section are the current owner-locked Browse truth and supersede earlier Browse bullets where there is a conflict.
 
-### 6.5.3 Fit Twins hub
-Fit Twins are saved/followed people.
-- **My Fit Twins** = saved people.
-- **Style Feed** = social/fit activity from Fit Twins/people the member follows.
-- A member who follows nobody has no personalized Style Feed content; design the empty state later.
-- “Following” must not remain a competing member-facing destination/term.
-- Reuse the canonical `follows` relationship; no parallel social model.
+#### Scope, eligibility, ranking, batches
+- Fresh Browse defaults to **My Fit Matches**, not All.
+- **Garments → My Fit Matches:** requires **75%+ garment-specific historical Match** for the featured/relevant Fit Report.
+- **Outfits → My Fit Matches:** requires **75%+ current Overall Match** to the outfit creator.
+- My Fit Matches widening tiers are **90–99% → 85–89% → 80–84% → 75–79%**. Stronger tiers are exhausted first.
+- Inside each tier: **Match % → unseen/freshness → recency → likes/popularity**. Fit remains dominant.
+- Below 75% never silently enters My Fit Matches. When exhausted, show **You’ve reached the end of your Fit Matches** with **Browse All Garments →** / **Browse All Outfits →**.
+- **All** shows the full Shared garment/outfit inventory regardless of fit eligibility; weak/non-close evidence remains available and must not be mislabeled as a personalized recommendation.
+- **Popular = likes + recency** (“hot now”). **Most Liked = raw lifetime likes**. Newest remains available. My Fit Matches defaults to Best Match.
+- Popular carousels use the same likes+recency concept with light diversity so one brand/canonical garment/creator does not dominate when similarly strong alternatives exist. Diversity affects carousel presentation, not the underlying Popular results.
+- Carousel size: **8**. Initial normal results: **24**. **Keep Browsing** adds **24**.
+- Carousel items count as seen for the active Browse session and are skipped from the immediate results below. Seen history is shared when switching My Fit Matches ↔ All for the same content type, so scope toggling does not immediately recycle cards.
+- Unseen content is boosted; recently shown content is down-ranked; repeats return only after stronger unseen inventory thins.
+
+#### Search
+- One Browse search bar searches **Garments, Outfits, and People**.
+- Search is not restricted by My Fit Matches. A specific product/person/outfit can be found even when it is not a close match.
+- Search should recognize canonical brand/product/model names and useful product identity data; people search uses member identity without exposing private Fit Profile measurements.
+- Search results distinguish content type so garment, outfit, and person results do not masquerade as one object type.
+- Clicking a search result enters the same Browse mini-browser/detail behavior as clicking the equivalent normal Browse card; returning/closing preserves the Browse/search state unless the user intentionally enters a full-page destination.
+
+#### Strict filters and See Similar Results
+- User-selected filters never silently change.
+- Category and Type are never relaxed.
+- **See Similar Results** appears when strict results are zero or exhausted and proposes the smallest useful single relaxation before the user accepts it.
+- Model is the first relaxation candidate when appropriate; Style/Color/Brand are considered contextually one at a time afterward.
+- Accepting the proposal visibly updates the actual filter and reranks from the top. Previously seen content stays down-ranked; newly eligible/unseen content is prioritized.
+
+#### Garment cards and evidence
+- Browse uses one canonical product card rather than duplicate cards for each wearer/colorway.
+- Garment card: image; Brand + Model/Product Line; garment name/type; **Worn by Display Name** with small profile photo; no @ handle in the wearer line; garment-specific Match prominent in My Fit Matches; Overall Match as secondary context where useful; featured wearer Fit Result/Fit Rating; garment Like count; Save + Notify.
+- Display Name is primary social presentation; username is fallback only when no Display Name.
+- Current person match and historical garment-evidence match stay separate: current Overall/Tops/Bottoms = viewer current ↔ wearer current; garment Match = viewer current ↔ wearer immutable try-on snapshot.
+- Browse image priority: wearer’s Shared fit photo → canonical/product/retail image where valid → garment-type-specific LikeSized fallback.
+- Likes belong to the **canonical garment/product**, not the Fit Report or wearer. **Fit Reports have no Like action/count.**
+- Save/Like/Notify are separate concepts. Save goes to private LikeLocker. Garment Notify automatically ensures the canonical garment is saved; turning Notify off leaves it saved; removing the save turns Notify off.
+- Fit Alert qualification remains **85%+ garment-specific Match** with enough relevant measurements for a legitimate score. The 85% alert threshold does not widen with Browse.
+- First qualifying report on a saved zero-evidence product gets stronger first-report wording; later alerts are new close-fit report wording.
+
+#### Garments → All behavior
+- In All, cards are product-first/non-personalized. Every Shared garment can appear even if no wearer is a close match.
+- Opening an All garment preserves the product-first context. Show the representative/latest Shared Fit as evidence and show **Closest Fit Match** separately when one exists rather than pretending that evidence is the personalized recommendation.
+- Specific product search must not dead-end: close match exists → matched wearer; reports exist but no close match → **No close-fit reports for you yet** plus report/size evidence and Notify/View Full Details; no reports → **No fits posted yet** plus Notify.
+
+#### Garment mini-browser / quick detail
+- Clicking product area opens **Garment Quick-Detail**; clicking wearer identity opens **Wearer Mini Profile**; Save/Notify actions do not trigger either.
+- Browse uses an overlay/mini-browser: mobile full-screen-style detail, desktop large centered panel. Internal **Back** moves through overlay history; **X/Close** returns to the exact original Browse state/scroll.
+- Quick detail stays streamlined: larger image, Brand/Model/name, type/style/color, featured wearer and size, garment-specific Match, Overall context, Fit Result, Fit Rating, garment Like, Save, Notify. **No Shop link in quick-detail.**
+- **View Full Product Details** is the intentional full-page jump for aggregate evidence, retailer links, fit distributions/sizes, broader wearer pool, etc.
+- **View More Fit Reports (X)** stays inside the mini-browser first and opens a compact same-product Fit Report list ranked closest matches first while still allowing weaker reports. Fit Reports themselves are not liked/saved objects.
+- Contextual entry points from an Outfit, wearer Shared Closet, or Style Feed preserve that specific person’s Fit Report even if the viewer match is weak; they do not swap in another wearer. Browse product-first discovery is the exception.
+- Saving/Notify from any garment quick-detail always targets the canonical Product, not the individual Fit Report.
+
+#### Wearer Mini Profile
+- Compact overlay, not a full profile: profile photo + Display Name, short Bio, current Overall/Tops/Bottoms Match, Follow/Following + Notify, system Fit Twin badge where applicable, and 3 most recent Shared posts total mixed chronologically across garments/outfits.
+- Each recent post is clickable into the appropriate mini-detail. **View Their Closet** is the intentional full member Closet/profile transition.
+- Person relationship wording must follow the new social architecture: Following is user-controlled; Fit Twin is derived. Do not use “Save as Fit Twin.”
+
+#### Outfit cards, detail, and Style Preview
+- Outfit card is a specific Shared member Outfit with its actual Outfit photo. No product-photo substitute.
+- Card: creator Display Name/photo, Outfit Type/Season where useful, current Overall Match as secondary context, Outfit Like count, Save to LikeLocker. No outfit Notify bell; outfits do not generate item-level saved-outfit alerts.
+- Outfit All simply removes fit eligibility; it does not change the post/creator shown.
+- Outfit mini-detail: larger Outfit photo, creator identity, Overall Match, Type + Season, optional creator caption directly under photo, Outfit Like + like count, Save to LikeLocker, tagged garment cards below photo, **See More Styles from [Display Name]**, and **View Full Outfit Details**. Posted date belongs in full details, not mini-detail.
+- Tagged garments appear in the creator’s original tagged order and show garment image, Brand/Model/name, size worn, viewer garment-specific Match; tapping one opens contextual Garment Quick-Detail anchored to that creator’s Fit Report.
+- **Style Preview** is creator/outfit-specific: photo + Display Name; Overall/Tops/Bottoms Match; Follow/Following + Notify; system Fit Twin badge where applicable; 3 most recent Shared outfits as photo-only tiles; **View Their Closet** CTA. No Save control on tiny outfit tiles.
+- Like and Save are separate. Outfit Likes contribute to creator **Style Likes**; garment Likes do not.
+- **Hide this person’s outfits** is an outfit-only reversible mute shared by Browse Outfits and Style Feed. It does not hide their garment Fit Reports, unfollow them, alter Fit Twin designation, or block them.
+
+#### Creator/social proof in Browse/profile surfaces
+- Public social proof uses **Followers** for the stored follow graph and **Style Likes** for cumulative Likes received across Shared Outfits.
+- Prior wording that treated “Fit Twin count” as follower count is superseded. Fit Twin remains a system match designation, not a follower metric.
+- Fit relevance stays visually primary. Example presentation: **94% Overall Match · 2.4K Followers · 18.7K Style Likes**, plus Fit Twin badge if the system qualifies that viewer↔creator match.
+
+#### Empty states
+- No Fit Profile: explain My Fit Matches needs a Fit Profile; offer **Create Fit Profile** + **Browse All**.
+- Fit Profile but no qualifying 75%+ results: **No Fit Matches yet** + Browse All Garments/Outfits.
+- Strict filters with zero results: **No results with these filters** + **Clear Filters**. Never silently loosen.
+- All inventory exhausted: **You’ve reached the end**.
+
+#### Current preview status
+- The zero-cost Vercel Browse demo is for owner UX testing only. Demo data/state must never reach production.
+- The preview-only `BrowsePreview.tsx` / `browsePreview.module.css` implementation is not the long-term canonical feature source. Before Browse can be marked complete, useful behavior must be folded into the normal canonical Browse implementation and the parallel preview implementation removed in the same cleanup.
+
+### 6.5.3 Following + Fit Twins social hub — OWNER-LOCKED ARCHITECTURE; IMPLEMENT AFTER BROWSE + DEFERRED DESKTOP FIT PROFILE CHECK
+This section supersedes the old rule “Fit Twins are saved/followed people.”
+
+Core model:
+- **Following = user-controlled.** A member may follow someone for style, outfits, Closet, brands, useful Fit Reports, or any other reason regardless of body match.
+- **Fit Twin = system-generated.** LikeSized determines the designation from match quality; members do not manually declare someone a Fit Twin.
+- **One social graph:** canonical `follows` stores the intentional relationship. Fit Twin is computed/derived from match data and must not create another relationship table.
+- The existing public `fit_matches` data and private/current matching functions are match infrastructure, not a second social graph. `get_fit_matches` already derives current scores from the private matching engine.
+- Current schema needs **no new social table now**. Later 6.5.3 cleanup should rename/reframe misleading application/API copy such as `followFitTwin`, `unfollowFitTwin`, “Saved Fit Twin,” and Fit-Twin-named notification helpers so the stored relationship is clearly Following. Do this through canonical source/migrations without duplicating data.
+
+Valid states/displays:
+- **Following · Fit Twin · 96% Match** = user follows them and system also considers them a strong match.
+- **Following · 63% Match** = followed for content/style, not a Fit Twin.
+- **Fit Twin · 98% Match** + **Follow** = system strong match not yet followed.
+- Match % remains visible where useful. Exact Fit Twin threshold remains unresolved/configurable until matching model validation.
+
+Combined destination direction:
+- Prefer one combined member-facing hub/page rather than separate disconnected Following and Fit Twins pages.
+- Potential filters/sorts owned by 6.5.3: **Best Fit Match, Fit Twins, Following, Recently Active**, with style/outfit activity filtering later where useful.
+- Exact final page/nav group name is still an owner UI decision; do not invent it merely to preserve the old “My Fit Twins” label.
+- **People My Size** remains algorithmic match discovery.
+- **Following/Fit Twins hub** manages intentional connections and system Twin context.
+- **Style Feed** is content from people the member follows. Fit Twin status alone never auto-subscribes someone’s content.
+
+Privacy:
+- Following never exposes another member’s exact measurements, private Fit Profile, private Closet items, or Gift Lists.
+- Fit Twin designation exposes only approved safe match context, never raw measurements.
 
 ### 6.5.4 Preserve V1 Outfits; final social-layer audit later
 - **Supersedes the prior decision to remove Outfits from V1.**
 - Preserve the existing canonical Outfit implementation, migrations, storage behavior, likes, and Closet-item linking while the underlying garment/product experience is audited.
 - Do not create a parallel Outfit implementation or alternate social graph.
 - Outfits are composed from existing owned Closet garments; garment classification is never re-entered at Outfit creation.
-- Other-member Outfit browsing lives in Browse; Fit-Twin-focused Outfit activity lives in Style Feed; owned Outfits live inside My Closet.
+- Other-member Outfit browsing lives in Browse; followed-person Outfit activity lives in Style Feed; owned Outfits live inside My Closet.
 - Existing Outfit behavior must continue to respect raw-measurement privacy and the canonical `follows` relationship.
 
 ### 6.5.5 My Closet audit/redesign
@@ -408,15 +499,22 @@ Privacy/share behavior must continue to respect the canonical Private/Shared and
 - These are separate signals. A deliberately snug garment can still receive five stars.
 - Any new database field must use a non-conflicting name such as `personal_rating` or `fit_satisfaction_rating`, rather than colliding with the existing fit-outcome enum terminology.
 
-### 6.5.8 Fit Twin/member profile + Shared Closet
+### 6.5.8 Member profile + Shared Closet
 Other-member profile should make Shared Closet the main garment evidence experience.
 
 Header/context:
 - avatar/name
-- follow control
+- **Follow / Following** control
+- system **Fit Twin** badge when the viewer↔member match qualifies
 - current Overall Match %
 - current Tops Match %
 - current Bottoms Match %
+- public **Followers** count
+- public **Style Likes** count (cumulative likes received across Shared Outfits)
+
+Rules:
+- Follower count must never be labeled Fit Twins.
+- Fit relevance stays primary; follower/Style Like social proof stays secondary.
 
 Primary content:
 - Shared Closet
@@ -521,13 +619,15 @@ Audit/support:
 
 ### 6.5.15 LikeLocker / saved fashion content — LOCKED
 - **LikeLocker = save fashion content.**
-- **Fit Twin = save a person.**
+- **Following = follow a person.**
+- **Fit Twin = a system-derived match designation, not a save action.**
 - LikeLocker is private in V1 unless a later owner decision explicitly changes that.
 - LikeLocker can hold saved canonical products/garments and saved Outfits.
 - Do not create a separate user-facing Favorites destination alongside LikeLocker.
 - No notification to another member merely because their Shared fit led to a product save.
-- No Fit Twin/Style Feed event merely for saving a product.
+- No Follow/Style Feed event merely for saving a product.
 - One saved canonical product per user/product; Outfit save uniqueness should follow the analogous canonical object rule.
+- A LikeLocker save is never automatically placed on a Gift List. Gift List inclusion/sharing is separately and explicitly controlled by the owner.
 
 Save behavior should be available wherever useful, including:
 - Browse cards/results
@@ -558,12 +658,55 @@ Useful product content:
 - View Fits
 - Shop
 - remove from LikeLocker
+- explicit **Add to Gift List** entry point may be added when Gift Lists are implemented; saving alone never shares the item.
 
 Useful Outfit content:
 - Outfit image
 - creator/context where still available
 - attached garment links/evidence according to privacy rules
 - remove from LikeLocker
+
+### 6.5.17A LikeSized Gift Lists — ROADMAP-LOCKED CONCEPT / IMPLEMENTATION GATE
+**Core concept name currently recorded as: LikeSized Gift Lists.** Secondary UI names such as My Gift List, Gift-Safe Picks, Share My Sizes, and Gift Guide for Me are not locked without owner approval.
+
+Roadmap placement:
+- Place Gift Lists here, after canonical Product/Retail links/LikeLocker foundations are audited, because the feature depends on those systems plus the fit recommendation/confidence model.
+- Do not interrupt current Browse, Fit Profile verification, Fit Twins/Following, Closet, Product, Fit Report, or matching foundations to build Gift Lists early.
+- At this checkpoint, audit final V1 scope/timing and implement only against the canonical systems; the product concept remains on the roadmap even if some sharing/commerce enhancements are deferred.
+
+Core product principle:
+- This is not a generic wishlist. The value is: **“Here is a list of clothes I want, and LikeSized already figured out which size you should buy me.”**
+- Gift buyer experience should be simple: open approved list → see item → see recommended size → see confidence → follow retailer/product link → purchase.
+- Gift buyer never needs access to the owner’s raw measurements.
+
+Canonical reuse / architecture:
+- Reference existing canonical Product/variant records; do not duplicate product records into the list.
+- Existing Fit Profile remains the source of private body information.
+- Reuse the existing/current fit intelligence and eventual size-recommendation/confidence logic. **Do not create a separate gift sizing engine.**
+- Valid recommendation inputs can include garment-relevant private measurements, product/brand sizing, Fit Twin/matched-wearer evidence, product-level Fit Reports, reliable garment measurements, preferred fit, garment category, and other approved matching inputs.
+- Exact recommendation confidence threshold is intentionally unresolved until the final confidence model is validated. Below threshold, show **Not enough fit data to confidently recommend a size** rather than fabricating certainty.
+- Potential **Gift-Safe Picks** high-confidence filter remains configurable/future until the confidence model is validated.
+- Do not permanently duplicate recommended size as product truth if it should be recalculated for the owner’s current Fit Profile. Audit caching/versioning only if performance/history requires it.
+
+Owner-controlled sharing/privacy:
+- The user must explicitly choose which products enter a Gift List. Private LikeLocker saves, Closet items, likes, browsing, and behavior never auto-publish.
+- Approved sharing concepts: **opt-in Public/Profile Gift List**, **shareable private/tokenized link**, and **email-only/selected-recipient sharing**.
+- Approved shared pages should be viewable by non-members when the owner chose that sharing mode; non-members still cannot access private LikeSized data.
+- The owner can remove items and revoke sharing. Link disable/regeneration/expiration are valid future controls but do not need to be overbuilt initially.
+- Critical privacy rule: LikeSized must not expose a member’s recommended size because a random person searched for that member. Correct flow is **owner shares approved product → LikeSized may reveal the recommendation for that approved product**. Following a member does not grant access.
+- Size recommendation itself is controlled user information because it can indirectly reflect private body/fit data. Exact body measurements remain private.
+- Shared explanation should reveal only purchase-useful information such as recommended size, confidence, and optional preferred-fit wording—not bust/waist/torso measurements.
+
+Gift List item/useful display concepts:
+- product image, product name, Brand, retailer, product/purchase URL, reliable price if available, selected/preferred color/style when applicable, recommended size, confidence, purchase link.
+- A Gift List stores relationships/sharing state/order/optional note rather than copies of entire Product records.
+- Conceptual future relationships may resemble gift lists + gift-list items + sharing/token records, but exact table/schema names are **not locked** until implementation audit.
+
+Acquisition/commerce:
+- Shared Gift List pages/emails may contain a tasteful acquisition CTA such as inviting the recipient to create their own Fit Profile; final marketing wording is not locked.
+- Affiliate/commerce links may be used when permitted, but commission must never affect fit recommendation/ranking.
+- Feature works year-round and can receive seasonal positioning; final seasonal copy is not locked.
+- Future **Gift Guide for Me** may draft suggestions from the member’s own approved signals, but the member must approve products before anything becomes shareable.
 
 ### 6.5.18 V1 Outfits social-layer audit — LOCKED POSITION
 Outfits are the social wrapper around LikeSized garment fit evidence, not a disconnected generic social feed.
@@ -580,30 +723,33 @@ Audit/finalize:
 - current person/Fit Twin match context must remain distinct from each garment’s immutable historical match context
 - member profile Outfit presentation
 - member-wide Outfit discovery lives in Browse
-- Fit-Twin/followed-person Outfit activity lives in Style Feed
-- ranking should prioritize body/fit relevance before generic popularity; exact ranking formula is audited here rather than assumed
+- followed-person Outfit activity lives in Style Feed; Fit Twin status alone does not subscribe a creator
+- ranking should prioritize body/fit relevance before generic popularity where the selected mode is fit-personalized; exact ranking formula follows the locked Browse rules rather than generic follower count
 - privacy behavior when a tagged garment becomes Private or is deleted
-- Outfit activity integration with Fit Twins and notifications
-- creator/influencer usefulness, including making body-relevant creators discoverable through fit similarity rather than follower count alone
-- creator-facing aggregate concepts such as Fit Twin count / close-fit audience may be considered, but raw member body measurements remain private and no advanced brand dashboard is required for V1
+- Outfit activity integration with Following/Fit Twin context and notifications
+- creator/influencer usefulness: public **Followers** + **Style Likes** are valid social proof while match relevance stays primary; do not label follower count as Fit Twins
 - no V1 DMs, Stories, Reels/video feed, creator payouts, sponsorship marketplace, or other broad social-network expansion unless separately owner-approved
-- reuse canonical `follows`, Closet, Product, Fit Report/history, storage, and Outfit tables; no parallel social model
+- reuse canonical `follows`, match engine, Closet, Product, Fit Report/history, storage, and Outfit tables; no parallel social model
 
 ### 6.5.19 Style Feed audit
-Style Feed should focus on useful content from Fit Twins/people the member follows:
-- newly Shared garment
+Style Feed focuses on useful content from **people the member follows**:
+- newly Shared garment/Fit Report
 - new/retried fit observation on an existing garment
 - new Outfit post
 - click through to the actual garment/detail or Outfit evidence
 
-Current person-to-person Fit Match may appear as relationship context, while garment evidence remains tied to its historical body snapshot.
+Rules:
+- Fit Twin status can appear as relationship/match context, but being a Fit Twin does not automatically place someone in Style Feed.
+- Current person-to-person Match may appear as relationship context, while garment evidence remains tied to its historical body snapshot.
+- Outfit-only **Hide this person’s outfits** mute applies here consistently with Browse and does not unfollow, block, hide garment Fit Reports, or alter Fit Twin designation.
 
 ### 6.5.20 Browse search audit
 After the new hierarchy exists:
 - search canonical products/brands/models/identifiers within Browse
-- search/member discovery behavior must not duplicate People My Size
-- product results support LikeLocker saves
-- member results, where supported, open member Shared Closet/profile
+- search Garments, Outfits, and People without restricting search to the current My Fit Matches scope
+- search/member discovery behavior must not duplicate People My Size algorithmic matching
+- product results support LikeLocker saves and canonical garment Likes where applicable
+- member results open the member mini-profile/Shared Closet path and use **Follow/Following** plus derived Fit Twin badge rather than “Save Fit Twin”
 - keep intentional Search/Browse behavior distinct from People My Size algorithmic discovery
 
 ### 6.5.21 Help / FAQ
@@ -612,9 +758,9 @@ Add a deliberate help surface before Beta.
 Must explain at minimum:
 - measurement privacy
 - Match % meaning
-- current Fit Twin match vs historical garment match
+- current person match vs historical garment match
 - People My Size
-- Fit Twins
+- **Following vs Fit Twin:** Following is chosen by the member; Fit Twin is system-determined from match quality
 - Private vs Shared Closet
 - photo sharing behavior
 - Fit Result vs Fit Rating
@@ -623,6 +769,7 @@ Must explain at minimum:
 - retailer links
 - why highly matched people may still choose different sizes
 - why historical evidence remains attached to the body state from the original try-on
+- if Gift Lists are implemented for V1, explain that recommended gift sizes are shared only through owner-approved Gift List mechanisms and raw measurements are never revealed
 
 Help/FAQ can live in the ACCOUNT menu/support hierarchy rather than requiring a major primary-navigation slot.
 
@@ -638,6 +785,7 @@ Audit all remaining V1 surfaces for terminology, privacy, usability, responsiven
 - mobile layouts
 - logged-out states
 - profile/account editing
+- profile-photo upload/replace/remove and avatar fallback
 
 Admin/moderation requirement:
 - LikeSized needs an authorized admin/moderation surface before Beta; do not expose it as an ordinary member account feature.
@@ -650,8 +798,8 @@ Admin/moderation requirement:
 Primary member-facing vocabulary should be coherent and minimal:
 - Browse
 - People My Size
-- Fit Twins
-- My Fit Twins
+- **Following / Followers** for the intentional social relationship/count
+- **Fit Twin / Fit Twins** only for system-derived strong match status/filter
 - Style Feed
 - My Closet
 - LikeLocker
@@ -660,8 +808,9 @@ Primary member-facing vocabulary should be coherent and minimal:
 - Fit Rating
 - Outfit
 - New Fit Report as the approved garment-create action label
+- LikeSized Gift Lists as the current roadmap concept name; secondary UI naming remains owner-unlocked
 
-Do not surface Following or Favorites as competing member-facing destination names.
+Do not use **Save as Fit Twin**, **Saved Fit Twin**, **Remove Fit Twin**, or Fit Twin count as follower-language. Do not surface Favorites as a competing fashion-save destination.
 
 ### 6.5.24 Preview verification before Phase 7
 Phase 6.5 is not complete until canonical source + verification + master agree.
@@ -671,7 +820,8 @@ Verify at minimum:
 - multiple users
 - Private vs Shared
 - grouped navigation + persistent notification bell
-- Browse Garments/Outfits behavior and filters
+- Browse Garments/Outfits behavior, **My Fit Matches | All**, filters, search, Popular/Most Liked ranking, batching, and mini-browser state preservation
+- 75% My Fit Matches threshold/tiering and separate 85% garment Fit Alert threshold
 - Category → Type → Style taxonomy
 - Brand → Model filtering
 - garment creation/edit/update
@@ -681,15 +831,18 @@ Verify at minimum:
 - repeat try-on / history behavior
 - immutable historical body links
 - Fit Rating and Fit Result
+- garment Likes on canonical Product; no Fit Report Likes
+- Outfit Likes + Style Likes; Followers not mislabeled as Fit Twins
 - LikeLocker product/outfit saves
 - save-source privacy changes
-- Fit Twins and Style Feed
+- Following vs Fit Twin independent states, one `follows` graph, Fit Twin computed designation, and Style Feed driven by Following
 - Outfit creation, privacy, inherited garment links/taxonomy, likes, Browse placement, Style Feed integration, and LikeLocker save behavior
 - same-product top matched wearers
 - retailer links
 - People My Size distinction
 - admin classification-review and content-moderation paths
 - no unintended duplicate/legacy social surface
+- if Gift Lists are included in V1 implementation: owner-only sharing initiation, non-member approved view, recommended-size confidence gating, no raw measurements, revoke/share behavior, and no automatic LikeLocker/Closet exposure
 - CI, migration replay, privacy/security tests as relevant
 
 # Phase 7 — V1 BETA END-TO-END VERIFICATION — QUEUED
@@ -699,7 +852,8 @@ Representative end-to-end verification must cover:
 - signup/auth
 - Fit Profile
 - Browse / People My Size
-- saving Fit Twins
+- Following people independently of Fit Twin status
+- system-derived Fit Twin status independently of Following
 - Shared Closet browsing
 - garment/product discovery
 - LikeLocker
@@ -708,12 +862,13 @@ Representative end-to-end verification must cover:
 - New Fit Report garment logging
 - later fit updates/history
 - Outfits social flow
-- Style Feed
+- Style Feed from followed members
 - privacy boundaries
 - recommendation behavior
+- Gift Lists if approved/implemented for V1
 - admin/moderation basics
 - mobile UX
 - CI/database/security verification
 
 ## Exact next action
-Continue **Phase 6.5.1 Navigation / information architecture** on branch `phase-6-5-1-navigation-ia`. The owner-approved IA and taxonomy decisions above are now the source for implementation. Next return to the actual 6.5.1 navigation work rather than expanding the future New Fit Report design further. Desktop Fit Profile verification remains intentionally deferred and does not authorize a production push.
+Continue **Phase 6.5.2 Browse owner preview/testing** on the safe preview line and collect the owner’s UI/behavior corrections. Do not treat the preview-only component as the finished canonical implementation. After Browse is accepted, fold the accepted behavior into the normal canonical Browse source and remove the parallel preview implementation, verify the result, and then perform the owner-deferred **desktop Fit Profile verification** before beginning **6.5.3 Following + Fit Twins social hub**. Gift Lists remain parked at 6.5.17A and must not derail the current sequence. No production push is authorized.

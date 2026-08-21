@@ -9,7 +9,14 @@ type BodyGuide =
   | { kind: "body"; mode: "polyline"; points: string }
   | { kind: "body"; mode: "loop" };
 
-type Guide = BodyGuide | { kind: "foot"; axis: "length" | "width" } | { kind: "scale" } | { kind: "waistHip" } | { kind: "torsoGirth" };
+type Guide =
+  | BodyGuide
+  | { kind: "foot"; axis: "length" | "width" }
+  | { kind: "scale" }
+  | { kind: "waistHip" }
+  | { kind: "torsoGirth" }
+  | { kind: "crotchDepth" }
+  | { kind: "crotchLength" };
 
 type HelpItem = {
   title: string;
@@ -23,6 +30,8 @@ type HelpItem = {
 const BODY_GUIDE_SRC = "/measurement-guides/body-guide.webp";
 const WAIST_HIP_GUIDE_SRC = "/measurement-guides/waist-hip-guide.webp";
 const TORSO_GIRTH_GUIDE_SRC = "/measurement-guides/torso-girth-guide.webp";
+const CROTCH_DEPTH_GUIDE_SRC = "/measurement-guides/crotch-depth-guide.webp";
+const TOTAL_CROTCH_LENGTH_GUIDE_SRC = "/measurement-guides/total-crotch-length-guide.webp";
 
 const HELP: Record<string, HelpItem> = {
   height: { title: "Height", description: "Your full standing height.", how: "Stand barefoot on a flat floor with your back straight. Measure from the floor to the highest point of your head.", tip: "A wall and a flat book can make this easier.", guide: { kind: "body", mode: "line", x1: 42, y1: 24, x2: 42, y2: 278 } },
@@ -46,23 +55,23 @@ const HELP: Record<string, HelpItem> = {
   front_waist_length: { title: "Front Waist Length", description: "The distance from the shoulder at the base of the neck to the natural waist along the front of the body.", how: "Start where the neck meets the shoulder. Measure down the front of the body, passing over the fullest part of the bust, to the natural waist.", guide: { kind: "body", mode: "polyline", points: "140,64 128,104 128,136" } },
   back_waist_length: { title: "Back Waist Length", description: "The distance from the base of the neck to the natural waist along the center back.", how: "Start at the prominent bone at the base of the neck. Measure straight down the center of the back to the natural waist.", guide: { kind: "body", mode: "line", x1: 110, y1: 58, x2: 110, y2: 136 } },
   shoulder_to_waist: { title: "Shoulder to Waist", description: "The distance from the outer shoulder point to the natural waist.", how: "Start at the outer shoulder point where a sleeve seam would sit. Measure down the side of the torso to the natural waist, following the body.", guide: { kind: "body", mode: "line", x1: 148, y1: 71, x2: 147, y2: 136 } },
-  across_back_width: { title: "Across-back width", description: "The width across the upper back between the arm creases.", how: "Measure horizontally across the back from one rear arm crease to the other, keeping the tape straight.", guide: { kind: "body", mode: "line", x1: 82, y1: 89, x2: 138, y2: 89 } },
-  across_front_chest_width: { title: "Across-front / chest width", description: "The width across the upper front chest between the arm creases.", how: "Measure horizontally across the front from one arm crease to the other, above the fullest part of the bust or chest.", guide: { kind: "body", mode: "line", x1: 83, y1: 91, x2: 137, y2: 91 } },
-  arm_sleeve_length: { title: "Body arm / sleeve length", description: "The length from the shoulder point to the wrist.", how: "With the arm slightly bent, measure from the shoulder point down the outside of the arm, over the elbow, to the wrist.", guide: { kind: "body", mode: "polyline", points: "148,72 169,126 163,180" } },
-  bicep_upper_arm: { title: "Bicep / upper arm circumference", description: "The circumference around the fullest part of the upper arm.", how: "Let the arm hang relaxed and wrap the tape around the fullest part of the upper arm.", guide: { kind: "body", mode: "circumference", y: 107, cx: 162, rx: 15 } },
-  elbow_circumference: { title: "Elbow circumference", description: "The circumference around the elbow area.", how: "Bend the elbow slightly and measure around the fullest part of the elbow.", guide: { kind: "body", mode: "circumference", y: 137, cx: 169, rx: 13 } },
-  wrist_circumference: { title: "Wrist circumference", description: "The circumference around the wrist.", how: "Wrap the tape around the wrist at the wrist bone where a cuff or watch would naturally sit.", guide: { kind: "body", mode: "circumference", y: 178, cx: 163, rx: 10 } },
-  neck_collar_circumference: { title: "Neck / collar circumference", description: "The circumference around the base of the neck where a collar sits.", how: "Wrap the tape around the base of the neck, keeping it comfortable rather than tight.", tip: "For shirt-collar fit, leave roughly one finger of ease under the tape.", guide: { kind: "body", mode: "circumference", y: 58, cx: 110, rx: 18 } },
-  thigh_circumference: { title: "Thigh circumference", description: "The circumference around the fullest part of the upper thigh.", how: "Stand naturally and wrap the tape around the fullest part of one upper thigh. Keep it level.", guide: { kind: "body", mode: "circumference", y: 205, cx: 91, rx: 20 } },
-  knee_circumference: { title: "Knee circumference", description: "The circumference around the knee.", how: "Stand relaxed and measure around the center and fullest part of the knee.", guide: { kind: "body", mode: "circumference", y: 237, cx: 92, rx: 14 } },
-  calf_circumference: { title: "Calf circumference", description: "The circumference around the fullest part of the calf.", how: "Wrap the tape around the widest part of the calf while standing naturally.", guide: { kind: "body", mode: "circumference", y: 258, cx: 92, rx: 15 } },
-  outseam: { title: "Outseam", description: "The outside-leg length from the waist or waistband to the bottom of the leg.", how: "Measure straight down the outside of the leg from the normal waistband position to the preferred hem or the floor.", guide: { kind: "body", mode: "line", x1: 155, y1: 150, x2: 155, y2: 278 } },
-  front_rise: { title: "Front rise", description: "The distance from the front waistband position to the crotch point.", how: "Start at the center front where the waistband sits and measure down through the legs to the crotch point.", guide: { kind: "body", mode: "line", x1: 110, y1: 150, x2: 110, y2: 190 } },
-  back_rise: { title: "Back rise", description: "The distance from the back waistband position to the crotch point.", how: "Start at the center back where the waistband sits and measure down to the crotch point, following the body.", guide: { kind: "body", mode: "polyline", points: "120,150 126,172 110,190" } },
-  crotch_depth: { title: "Crotch depth", description: "The vertical distance from the waist to the seated surface.", how: "Sit upright on a firm, flat chair and measure vertically from the side of the natural waist down to the chair surface.", guide: { kind: "body", mode: "line", x1: 156, y1: 136, x2: 156, y2: 190 } },
-  total_crotch_length: { title: "Total crotch length", description: "The full measurement from front waist through the crotch to back waist.", how: "Start at the center front waist, run the tape through the legs and crotch, and continue to the center back waist.", guide: { kind: "body", mode: "loop" } },
-  foot_length: { title: "Foot length", description: "The distance from the back of the heel to the longest toe.", how: "Stand with weight on the foot and measure from the back of the heel to the tip of the longest toe.", tip: "Measure both feet and use the larger measurement.", guide: { kind: "foot", axis: "length" } },
-  foot_width: { title: "Foot width", description: "The width across the widest part of the forefoot.", how: "Stand with weight on the foot and measure straight across the widest part of the ball of the foot.", tip: "Measure both feet and use the larger measurement.", guide: { kind: "foot", axis: "width" } },
+  across_back_width: { title: "Across-Back Width", description: "The horizontal width across the upper back between the rear arm creases.", how: "Measure straight across the upper back from one rear arm crease to the other. Keep the tape level and do not wrap it around the body.", guide: { kind: "body", mode: "line", x1: 82, y1: 89, x2: 138, y2: 89 } },
+  across_front_chest_width: { title: "Across-Front Chest Width", description: "The horizontal width across the upper front of the chest between the front arm creases.", how: "Measure straight across the upper chest from one front arm crease to the other, above the fullest part of the bust or chest. Keep the tape level and do not wrap it around the body.", guide: { kind: "body", mode: "line", x1: 83, y1: 91, x2: 137, y2: 91 } },
+  arm_sleeve_length: { title: "Arm / Sleeve Length", description: "The distance from the outer shoulder point to the wrist along the outside of the arm.", how: "Start at the outer shoulder point where a sleeve seam would sit. With the arm slightly bent, measure down the outside of the arm, over the elbow, to the wrist.", guide: { kind: "body", mode: "polyline", points: "148,72 169,126 163,180" } },
+  bicep_upper_arm: { title: "Upper Arm Circumference", description: "The circumference around the fullest part of the upper arm.", how: "Let your arm hang relaxed at your side. Wrap the tape around the fullest part of the upper arm, keeping it level and snug without pulling tight.", guide: { kind: "body", mode: "circumference", y: 107, cx: 162, rx: 15 } },
+  elbow_circumference: { title: "Elbow Circumference", description: "The circumference around the fullest part of the elbow.", how: "Bend the elbow slightly. Wrap the tape around the fullest part of the elbow, keeping it snug without pulling tight.", guide: { kind: "body", mode: "circumference", y: 137, cx: 169, rx: 13 } },
+  wrist_circumference: { title: "Wrist Circumference", description: "The circumference around the wrist at the wrist bone.", how: "Wrap the tape around the wrist at the wrist bone where a watch or cuff would naturally sit. Keep it snug without pulling tight.", guide: { kind: "body", mode: "circumference", y: 178, cx: 163, rx: 10 } },
+  neck_collar_circumference: { title: "Neck / Collar Circumference", description: "The circumference around the base of the neck where a shirt collar naturally sits.", how: "Wrap the tape around the base of the neck at collar level. Keep the tape level and comfortably snug without pulling tight.", tip: "For shirt-collar fit, leave about one finger of space under the tape.", guide: { kind: "body", mode: "circumference", y: 58, cx: 110, rx: 18 } },
+  thigh_circumference: { title: "Thigh Circumference", description: "The circumference around the fullest part of the upper thigh.", how: "Stand naturally with your weight evenly distributed. Wrap the tape around the fullest part of one upper thigh, keeping it level and snug without pulling tight.", guide: { kind: "body", mode: "circumference", y: 205, cx: 91, rx: 20 } },
+  knee_circumference: { title: "Knee Circumference", description: "The circumference around the fullest part of the knee.", how: "Stand relaxed with the leg straight. Wrap the tape around the fullest part of the knee, keeping it level and snug without pulling tight.", guide: { kind: "body", mode: "circumference", y: 237, cx: 92, rx: 14 } },
+  calf_circumference: { title: "Calf Circumference", description: "The circumference around the fullest part of the calf.", how: "Stand naturally and wrap the tape around the widest part of the calf. Keep it level and snug without pulling tight.", guide: { kind: "body", mode: "circumference", y: 258, cx: 92, rx: 15 } },
+  outseam: { title: "Outseam", description: "The outside-leg length from the normal waistband position to the desired pant hem.", how: "Start at the side of the body where your pants waistband normally sits. Measure straight down the outside of the leg to the desired hem or the floor.", guide: { kind: "body", mode: "line", x1: 155, y1: 150, x2: 155, y2: 278 } },
+  front_rise: { title: "Front Rise", description: "The distance from the center front waistband to the point between the legs where the front and back seams meet.", how: "Start at the center front where your pants waistband normally sits. Measure down along the front of the body to the point between the legs where the front and back seams meet.", guide: { kind: "body", mode: "line", x1: 110, y1: 150, x2: 110, y2: 190 } },
+  back_rise: { title: "Back Rise", description: "The distance from the center back waistband to the point between the legs where the front and back seams meet.", how: "Start at the center back where your pants waistband normally sits. Measure down along the body to the point between the legs where the front and back seams meet.", guide: { kind: "body", mode: "polyline", points: "120,150 126,172 110,190" } },
+  crotch_depth: { title: "Crotch Depth", description: "The vertical distance from the natural waist to the surface you are sitting on.", how: "Sit upright on a firm, flat chair. Measure straight down from the side of your natural waist to the chair surface.", guide: { kind: "crotchDepth" } },
+  total_crotch_length: { title: "Total Crotch Length", description: "The full distance from the center front waist, through the legs, to the center back waist.", how: "Start at the center front of your natural waist. Run the tape down through the legs and up to the center back of your natural waist, following the body.", guide: { kind: "crotchLength" } },
+  foot_length: { title: "Foot Length", description: "The distance from the back of the heel to the tip of the longest toe.", how: "Stand with your full weight on the foot. Measure straight from the back of the heel to the tip of the longest toe.", tip: "Measure both feet and use the larger measurement.", guide: { kind: "foot", axis: "length" } },
+  foot_width: { title: "Foot Width", description: "The width across the widest part of the forefoot.", how: "Stand with your full weight on the foot. Measure straight across the widest part of the ball of the foot.", tip: "Measure both feet and use the larger measurement.", guide: { kind: "foot", axis: "width" } },
 };
 
 function ArrowDefs() {
@@ -82,8 +91,9 @@ function BodyDiagram({ guide, label }: { guide: BodyGuide; label: string }) {
   </svg>;
 }
 
-function ApprovedGuideImage({ src, alt, variant }: { src: string; alt: string; variant: "waist" | "torso" }) {
-  return <img className={`${styles.approvedGuideImage} ${variant === "waist" ? styles.waistGuideImage : styles.torsoGuideImage}`} src={src} alt={alt} />;
+function ApprovedGuideImage({ src, alt, variant }: { src: string; alt: string; variant: "waist" | "torso" | "crotch" }) {
+  const variantClass = variant === "waist" ? styles.waistGuideImage : variant === "torso" ? styles.torsoGuideImage : styles.crotchGuideImage;
+  return <img className={`${styles.approvedGuideImage} ${variantClass}`} src={src} alt={alt} />;
 }
 
 function FootDiagram({ axis, label }: { axis: "length" | "width"; label: string }) {
@@ -106,6 +116,8 @@ function ScaleDiagram({ label }: { label: string }) {
 function MeasurementDiagram({ item }: { item: HelpItem }) {
   if (item.guide.kind === "waistHip") return <ApprovedGuideImage src={WAIST_HIP_GUIDE_SRC} alt="Natural Waist, High Hip, Full Hip / Seat, and Waist-to-Hip measurement guide" variant="waist" />;
   if (item.guide.kind === "torsoGirth") return <ApprovedGuideImage src={TORSO_GIRTH_GUIDE_SRC} alt="Front and back body diagram showing the torso-girth measurement path from shoulder, through the crotch, and back to the shoulder" variant="torso" />;
+  if (item.guide.kind === "crotchDepth") return <ApprovedGuideImage src={CROTCH_DEPTH_GUIDE_SRC} alt="Side-view seated figure for measuring Crotch Depth" variant="crotch" />;
+  if (item.guide.kind === "crotchLength") return <ApprovedGuideImage src={TOTAL_CROTCH_LENGTH_GUIDE_SRC} alt="Side-view standing figure for measuring Total Crotch Length" variant="crotch" />;
   if (item.guide.kind === "foot") return <FootDiagram axis={item.guide.axis} label={item.title} />;
   if (item.guide.kind === "scale") return <ScaleDiagram label={item.title} />;
   return <BodyDiagram guide={item.guide} label={item.title} />;

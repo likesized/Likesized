@@ -60,8 +60,7 @@ export async function saveFitProfile(formData: FormData) {
       entered_unit: type.dimension === "weight"
         ? (unitSystem === "imperial" ? "lb" : "kg")
         : (unitSystem === "imperial" ? "in" : "cm"),
-      source: "manual",
-      method: type.dimension === "weight" ? "scale" : "tape",
+      confirm_unchanged: text(formData, `confirm_measurement__${type.key}`) === "1",
     });
   }
 
@@ -73,47 +72,26 @@ export async function saveFitProfile(formData: FormData) {
   const braSystem = text(formData, "size_ref_bra_system").toUpperCase();
   if (braBandRaw || braCup) {
     const band = Number(braBandRaw);
-    if (!braBandRaw || !braCup || !["US", "UK", "EU"].includes(braSystem) || !Number.isFinite(band) || band <= 0) {
-      fail("invalid_size_references");
-    }
-    sizeReferences.push({
-      reference_type: "bra",
-      original_size_label: `${band}${braCup}`,
-      sizing_system: braSystem,
-      band_size: band,
-      cup_designation: braCup,
-    });
+    if (!braBandRaw || !braCup || !["US", "UK", "EU"].includes(braSystem) || !Number.isFinite(band) || band <= 0) fail("invalid_size_references");
+    sizeReferences.push({ reference_type: "bra", original_size_label: `${band}${braCup}`, sizing_system: braSystem, band_size: band, cup_designation: braCup });
   }
 
   const shoeRaw = text(formData, "size_ref_shoe_size");
   const shoeSystem = text(formData, "size_ref_shoe_system").toUpperCase();
   if (shoeRaw) {
     const shoeSize = Number(shoeRaw);
-    if (!["US", "UK", "EU", "JP"].includes(shoeSystem) || !Number.isFinite(shoeSize) || shoeSize <= 0) {
-      fail("invalid_size_references");
-    }
-    sizeReferences.push({
-      reference_type: "shoe",
-      original_size_label: String(shoeSize),
-      sizing_system: shoeSystem,
-      shoe_size: shoeSize,
-    });
+    if (!["US", "UK", "EU", "JP"].includes(shoeSystem) || !Number.isFinite(shoeSize) || shoeSize <= 0) fail("invalid_size_references");
+    sizeReferences.push({ reference_type: "shoe", original_size_label: String(shoeSize), sizing_system: shoeSystem, shoe_size: shoeSize });
   }
 
   const simpleReferences: Array<[SizeReferenceType, string]> = [
-    ["shirt", "size_ref_shirt"],
-    ["pants", "size_ref_pants"],
-    ["dress", "size_ref_dress"],
-    ["other", "size_ref_other"],
+    ["shirt", "size_ref_shirt"], ["pants", "size_ref_pants"], ["dress", "size_ref_dress"], ["other", "size_ref_other"],
   ];
   for (const [referenceType, fieldName] of simpleReferences) {
     const label = text(formData, fieldName);
     if (!label) continue;
     if (label.length > 60) fail("invalid_size_references");
-    sizeReferences.push({
-      reference_type: referenceType,
-      original_size_label: label,
-    });
+    sizeReferences.push({ reference_type: referenceType, original_size_label: label });
   }
 
   const fitPreferences: Array<Record<string, string>> = [];
@@ -126,9 +104,7 @@ export async function saveFitProfile(formData: FormData) {
       invalidFitPreference = true;
       return;
     }
-    if (preference !== "standard") {
-      fitPreferences.push({ garment_type_key: garmentTypeKey, preference });
-    }
+    if (preference !== "standard") fitPreferences.push({ garment_type_key: garmentTypeKey, preference });
   });
   if (invalidFitPreference) fail("invalid_fit_preferences");
 

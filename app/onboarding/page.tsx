@@ -14,8 +14,8 @@ export default async function OnboardingPage({searchParams}:{searchParams:Search
   const [{data:profile},{data:fitProfile},{data:types},{data:measurements},{data:sizeReferences},{data:garmentTypes},{data:fitPreferences}]=await Promise.all([
     supabase.from("profiles").select("username").eq("id",userId).maybeSingle(),
     supabase.from("fit_profiles").select("preferred_unit_system,completed_at").eq("user_id",userId).maybeSingle(),
-    supabase.from("measurement_types").select("key,label,core,measurement_group,dimension,manual_step_imperial,manual_step_metric,sort_order").order("sort_order"),
-    supabase.from("body_measurements").select("measurement_type_key,entered_value,entered_unit").eq("user_id",userId),
+    supabase.from("measurement_types").select("key,label,core,measurement_group,dimension,manual_step_imperial,manual_step_metric,sort_order,reconfirm_after_days").order("sort_order"),
+    supabase.from("body_measurements").select("measurement_type_key,entered_value,entered_unit,confirmed_at").eq("user_id",userId),
     supabase.from("user_size_references").select("reference_type,original_size_label,sizing_system,band_size,cup_designation,shoe_size").eq("user_id",userId),
     supabase.from("garment_types").select("key,label,category,sort_order").eq("active",true).order("sort_order"),
     supabase.from("user_garment_fit_preferences").select("garment_type_key,preference").eq("user_id",userId),

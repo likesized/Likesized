@@ -8,8 +8,8 @@ import helpStyles from "@/app/onboarding/MeasurementHelp.module.css";
 type UnitSystem = "imperial" | "metric";
 type SizeReferenceType = "bra"|"shoe"|"shirt"|"pants"|"dress"|"other";
 type PreferredFit = "fitted"|"standard"|"relaxed";
-export type MeasurementType = { key:string; label:string; core:boolean; measurement_group:string; dimension:"length"|"weight"; manual_step_imperial:number|string; manual_step_metric:number|string; sort_order:number };
-export type BodyMeasurement = { measurement_type_key:string; entered_value:number|string; entered_unit:string };
+export type MeasurementType = { key:string; label:string; core:boolean; measurement_group:string; dimension:"length"|"weight"; manual_step_imperial:number|string; manual_step_metric:number|string; reconfirm_after_days:number|string; sort_order:number };
+export type BodyMeasurement = { measurement_type_key:string; entered_value:number|string; entered_unit:string; confirmed_at:string|null };
 export type SizeReference = { reference_type:SizeReferenceType; original_size_label:string; sizing_system:string|null; band_size:number|string|null; cup_designation:string|null; shoe_size:number|string|null };
 export type GarmentTypePreferenceOption = { key:string; label:string; category:string; sort_order:number };
 export type GarmentFitPreference = { garment_type_key:string; preference:PreferredFit };
@@ -26,6 +26,7 @@ const INCH_FRACTIONS=[
   {value:"0.75",label:"¾"},
 ];
 const HEIGHT_INCHES=Array.from({length:12},(_,index)=>index);
+const DAY_MS=86_400_000;
 const DISPLAY_LABELS:Record<string,string>={
   chest_circumference:"Chest",
   full_bust:"Full Bust",
@@ -70,6 +71,18 @@ function heightParts(raw:string){
   const total=Math.max(0,Math.round(Number(raw)));
   if(!Number.isFinite(total))return{feet:"",inches:"0"};
   return{feet:String(Math.floor(total/12)),inches:String(total%12)};
+}
+function needsReconfirm(type:MeasurementType,row:BodyMeasurement|undefined){
+  if(!row?.confirmed_at)return false;
+  const confirmedAt=Date.parse(row.confirmed_at);
+  const days=Number(type.reconfirm_after_days);
+  if(!Number.isFinite(confirmedAt)||!Number.isFinite(days)||days<=0)return false;
+  return Date.now()-confirmedAt>=days*DAY_MS;
+}
+function confirmedLabel(raw:string|null){
+  if(!raw)return "an earlier date";
+  const value=new Date(raw);
+  return Number.isNaN(value.getTime())?"an earlier date":value.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});
 }
 
 export function FitProfileForm({username,unitSystem:initialSystem,types,measurements,sizeReferences,garmentTypes,fitPreferences,errorMessage}:Props){
@@ -134,6 +147,15 @@ export function FitProfileForm({username,unitSystem:initialSystem,types,measurem
 
   const core=visibleTypes.filter((row)=>row.core);
   const advanced=visibleTypes.filter((row)=>!row.core);
+  const reconfirm=(type:MeasurementType)=>{
+    const row=byKey.get(type.key);
+    if(!needsReconfirm(type,row))return null;
+    return <div className={helpStyles.reconfirmNote}>
+      <strong>Remeasure recommended.</strong>
+      <span>Last confirmed {confirmedLabel(row?.confirmed_at??null)}. If this measurement still matches your body, you can confirm it without re-entering the number.</span>
+      <label className={helpStyles.confirmUnchanged}><input type="checkbox" name={`confirm_measurement__${type.key}`} value="1"/>Confirm unchanged</label>
+    </div>;
+  };
   const field=(type:MeasurementType)=>{
     const suffix=targetUnit(type,system);
     const inputId=`measurement_${type.key}`;
@@ -155,6 +177,7 @@ export function FitProfileForm({username,unitSystem:initialSystem,types,measurem
           </select>
           <span>in</span>
         </div>
+        {reconfirm(type)}
       </div>;
     }
 
@@ -173,6 +196,7 @@ export function FitProfileForm({username,unitSystem:initialSystem,types,measurem
           </select>
           <span>in</span>
         </div>
+        {reconfirm(type)}
       </div>;
     }
 
@@ -186,6 +210,7 @@ export function FitProfileForm({username,unitSystem:initialSystem,types,measurem
         <input id={inputId} name={`measurement_${type.key}`} type="number" inputMode="decimal" min="0" step={step} value={values[type.key]??""} onChange={(event)=>setMeasurementValue(type.key,event.target.value)}/>
         <span>{suffix}</span>
       </div>
+      {reconfirm(type)}
     </div>;
   };
 
@@ -231,7 +256,7 @@ export function FitProfileForm({username,unitSystem:initialSystem,types,measurem
       </div>
     </details>
 
-    <div className="privacyNote"><b>History:</b> saving changed measurements or private size references creates a new private body-state version. Existing garment Fit Reports stay permanently tied to the version from when they were logged. Preferred fit stays a current private personalization setting; changing it does not rewrite historical body states or Match percentages.</div>
+    <div className="privacyNote"><b>History:</b> saving changed measurements or private size references creates a new private body-state version. Confirming an unchanged measurement refreshes its confidence date without creating a new body-state version. Existing garment Fit Reports stay permanently tied to the version from when they were logged. Preferred fit stays a current private personalization setting; changing it does not rewrite historical body states or Match percentages.</div>
     <button type="submit" className="primaryButton fullButton">Save Fit Profile →</button>
     {helpKey?<MeasurementHelpDialog measurementKey={helpKey} onClose={()=>setHelpKey(null)}/>:null}
   </form>;

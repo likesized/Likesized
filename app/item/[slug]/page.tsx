@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { EVIDENCE_LABELS, type EvidenceLevel } from "@/lib/domain";
-import { recommendSize, type PreferredFit, type RecommendationEvidence } from "@/lib/recommendation";
+import { recommendSize, recommendationConfidenceLabel, type PreferredFit, type RecommendationEvidence } from "@/lib/recommendation";
 
 type Params=Promise<{slug:string}>;
 type SearchParams=Promise<Record<string,string|string[]|undefined>>;
@@ -63,9 +63,6 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
   if(candidateError)throw new Error("Could not load product fit evidence.");
   if(summaryError)throw new Error("Could not load product fit summary.");
   const summary=(Array.isArray(summaryData)?summaryData[0]:summaryData) as ProductFitSummary|null;
-
-  // Match % remains garment-specific body similarity. A bad physical Fit Result never
-  // downgrades the person's Match %. It becomes evidence against that size instead.
   const candidates=((candidateData??[]) as Candidate[]).filter((row)=>row.user_id!==viewerId);
   const ranked=[...candidates].sort((a,b)=>a.evidence_rank-b.evidence_rank||b.historical_match_score-a.historical_match_score||b.historical_coverage_percent-a.historical_coverage_percent||b.attribute_overlap-a.attribute_overlap);
 
@@ -76,23 +73,13 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
   if(profileIds.length){const {data}=await supabase.from("profiles").select("id,username,display_name").in("id",profileIds);profiles=(data??[]) as Profile[];}
   if(productIds.length){const {data}=await supabase.from("products").select("id,name,slug,brand:brands(name)").in("id",productIds);evidenceProducts=(data??[]) as EvidenceProduct[];}
   if(sizeIds.length){const {data}=await supabase.from("normalized_sizes").select("id,normalized_key,display_label").in("id",sizeIds);sizes=(data??[]) as SizeRow[];}
-
   const profileById=new Map(profiles.map((row)=>[row.id,row]));
   const productById=new Map(evidenceProducts.map((row)=>[row.id,row]));
   const sizeById=new Map(sizes.map((row)=>[row.id,row]));
 
   const recommendation=recommendSize(ranked.map((row)=>{
     const normalized=row.normalized_size_id?sizeById.get(row.normalized_size_id):null;
-    return{
-      sizeKey:normalized?.normalized_key||`raw:${row.original_size_label.trim().toUpperCase()}`,
-      sizeLabel:normalized?.display_label||row.original_size_label,
-      fit:row.fit,
-      matchScore:row.historical_match_score,
-      coveragePercent:row.historical_coverage_percent,
-      evidenceLevel:row.evidence_level,
-      attributeOverlap:row.attribute_overlap,
-      directionalFitSupport:row.directional_fit_support,
-    };
+    return{sizeKey:normalized?.normalized_key||`raw:${row.original_size_label.trim().toUpperCase()}`,sizeLabel:normalized?.display_label||row.original_size_label,fit:row.fit,matchScore:row.historical_match_score,coveragePercent:row.historical_coverage_percent,evidenceLevel:row.evidence_level,attributeOverlap:row.attribute_overlap,directionalFitSupport:row.directional_fit_support};
   }),fitPreference);
 
   const bestLevel=ranked[0]?.evidence_level??null;
@@ -101,9 +88,9 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
   const fitCount=summary?.total_fit_count??0;
 
   return <main className="pageShell">
-    <section className="itemHero"><div className="productImage">{placeholder}</div><div className="itemDetails"><span className="eyebrow">{brand?.name?.toUpperCase()||"BRAND"}{product.garment_type_key?` · ${product.garment_type_key.replaceAll("_"," ").toUpperCase()}`:""}</span><h1>{product.name}</h1><p>LikeSized keeps body Match % separate from physical Fit Result. A highly matched wearer reporting Too Small or Too Big is valuable evidence against that size—not a reason to lower the body Match.</p>
-      {fitCount?<div className="tiny">Latest Shared physical fit per unique wearer: {percent(summary?.too_small_count??0,fitCount)}% Too small · {percent(summary?.snug_count??0,fitCount)}% Snug · {percent(summary?.just_right_count??0,fitCount)}% Just right · {percent(summary?.relaxed_count??0,fitCount)}% Relaxed · {percent(summary?.too_big_count??0,fitCount)}% Too big.</div>:<div className="tiny">No Shared physical fit observations for this exact product yet.</div>}
-      {recommendation?<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>{recommendation.sizeLabel}</strong><b>{recommendation.confidence}% confidence</b></div><div className="tiny">Personalized for your <b>{PREFERENCE_LABELS[fitPreference]}</b> fit preference. Based on {recommendation.similarWearerCount} unique relevant wearer{recommendation.similarWearerCount===1?"":"s"}. Strongest supporting tier: {EVIDENCE_LABELS[recommendation.strongestEvidenceLevel]}. LikeSized privately uses whether those wearers are slightly larger or smaller in garment-relevant dimensions to interpret their Fit Results; raw measurement differences are never shown.</div></>:<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>—</strong><b>Not enough relevant evidence yet</b></div><div className="tiny">Your {PREFERENCE_LABELS[fitPreference]} preference is ready to apply once enough eligible Shared historical fit evidence exists.</div></>}
+    <section className="itemHero"><div className="productImage">{placeholder}</div><div className="itemDetails"><span className="eyebrow">{brand?.name?.toUpperCase()||"BRAND"}{product.garment_type_key?` · ${product.garment_type_key.replaceAll("_"," ").toUpperCase()}`:""}</span><h1>{product.name}</h1><p>LikeSized keeps body Match % separate from physical Fit Result. Match % describes garment-relevant body similarity; it is not the probability that this garment will fit.</p>
+      {fitCount?<div className="tiny">Latest Shared normal-condition physical fit per unique wearer: {percent(summary?.too_small_count??0,fitCount)}% Too small · {percent(summary?.snug_count??0,fitCount)}% Snug · {percent(summary?.just_right_count??0,fitCount)}% Just right · {percent(summary?.relaxed_count??0,fitCount)}% Relaxed · {percent(summary?.too_big_count??0,fitCount)}% Too big.</div>:<div className="tiny">No Shared normal-condition physical fit observations for this exact product yet.</div>}
+      {recommendation?<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>{recommendation.sizeLabel}</strong><b>{recommendationConfidenceLabel(recommendation.confidence)}</b></div><div className="tiny">Personalized for your <b>{PREFERENCE_LABELS[fitPreference]}</b> fit preference. Based on {recommendation.similarWearerCount} similar wearer{recommendation.similarWearerCount===1?"":"s"}. Strongest supporting tier: {EVIDENCE_LABELS[recommendation.strongestEvidenceLevel]}.</div></>:<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>—</strong><b>Not enough relevant evidence yet</b></div><div className="tiny">Your {PREFERENCE_LABELS[fitPreference]} preference is ready to apply once enough eligible Shared historical fit evidence exists.</div></>}
       <div className="statsRow"><span><b>{ranked.length}</b> unique wearer{ranked.length===1?"":"s"}</span><span><b>{bestLevel?EVIDENCE_LABELS[bestLevel]:"—"}</b> strongest tier</span><span><b>{bestCount}</b> at strongest tier</span></div>
     </div></section>
 
@@ -112,7 +99,7 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
       {variants.length?<form className="garmentForm" method="get"><label>Variant to evaluate<select name="variant" defaultValue={selectedVariant?.id??""}><option value="">All variants — Exact Product target</option>{variants.map((variant)=><option value={variant.id} key={variant.id}>{variantLabel(variant)}</option>)}</select><span className="fieldHelp">Exact Variant evidence ranks first. If there is not enough, LikeSized still falls back through Exact Product, Product Family, Similar Garments, Brand + Garment Type, and Category Fit.</span></label><button className="secondaryButton" type="submit">Update evidence target</button></form>:<div className="privacyNote"><b>No logged variants yet.</b> Recommendations currently use Exact Product and broader fallback evidence until variant-level data exists.</div>}
     </section>
 
-    <section className="section"><div className="sectionHeading"><div><span className="eyebrow">BEST EVIDENCE FIRST</span><h2>How this—or the closest relevant garments—fit bodies like yours</h2><p>A high Match with a bad physical Fit Result stays visible because that failure is useful evidence, not a reason to pretend the bodies were less similar.</p></div></div>
+    <section className="section"><div className="sectionHeading"><div><span className="eyebrow">BEST EVIDENCE FIRST</span><h2>How this—or the closest relevant garments—fit bodies like yours</h2><p>A high Match with a bad physical Fit Result stays useful evidence. Garments flagged Shrunk, Stretched out, or Altered / Tailored stay in personal history but are excluded from normal-product recommendations.</p></div></div>
       {ranked.length?<div className="evidenceList">{ranked.slice(0,30).map((row)=>{
         const profile=profileById.get(row.user_id);
         const sourceProduct=productById.get(row.evidence_product_id);
@@ -120,7 +107,7 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
         const normalized=row.normalized_size_id?sizeById.get(row.normalized_size_id):null;
         return <div className="evidence" key={row.fit_report_id}>
           <div className="avatar small">{(profile?.display_name||profile?.username||"F").slice(0,1).toUpperCase()}</div>
-          <div><strong>{profile?.display_name||profile?.username||"LikeSized member"}</strong><span>{row.historical_match_score}% match to your current body when this was worn · {row.historical_coverage_percent}% measurement coverage</span></div>
+          <div><strong>{profile?.display_name||profile?.username||"LikeSized member"}</strong><span>{row.historical_match_score}% match · {row.historical_coverage_percent}% measurement coverage</span></div>
           <div><span>Evidence</span><strong>{EVIDENCE_LABELS[row.evidence_level]}</strong></div>
           <div><span>Garment</span><strong>{sourceBrand?.name?`${sourceBrand.name} · `:""}{sourceProduct?.name||"Garment"}</strong></div>
           <div><span>Size</span><strong>{normalized?.display_label||row.original_size_label}</strong></div>

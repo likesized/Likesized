@@ -7,15 +7,16 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - GitHub `likesized/Likesized` is the canonical source of truth.
 - No patch/fixed/v2/backup/temp files or parallel implementations.
 - Every completed task/update must be logged here; a task is not complete until canonical source and this master match the verified final state.
+- **Local build/test is the default verification path. Do not use Vercel preview/build/deployment without explicit owner approval.**
 - Do not deploy production or update `main` when that can trigger production unless the owner explicitly authorizes it.
 
 ## Current status — 2026-08-20
 - Phase 6.3 auth/configuration: COMPLETE.
-- Phase 6.4 responsive/accessibility + Fit Profile polish: IN PROGRESS / resumable after the active Fit Match audit.
+- Phase 6.4 responsive/accessibility + Fit Profile polish: IN PROGRESS / resumable after the active Fit Match audit implementation checkpoint.
 - Measurement-guide implementation, binary repair, production deployment, and owner visual verification: COMPLETE.
 - Phase 6.5 V1 Product Surface + Navigation Audit: LOCKED / QUEUED after Phase 6.4.
-- **Active unmerged Fit Match audit:** source implementation now includes directional Fit Result evidence, private garment-specific Preferred Fit personalization, bounded private garment-specific derived body-proportion refinement, and explicit Product-context Chest-vs-Full-Bust handling. Directional core was fully CI-verified; later audit deltas remain pending full GitHub CI because PR #36 is non-mergeable/diverged from `main`.
-- **Current interactive next audit question:** #6 Measurement age/staleness.
+- **Deep 17-question Fit Match audit: OWNER DECISIONS COMPLETE.** The branch source now consolidates the approved V1 decisions through measurement freshness/manual-only intake, observation-level garment condition, UI semantics, and edge-body tests while preserving the previously implemented directional, Preferred Fit, derived-proportion, bust-context, shoe, outerwear, and stretch architecture.
+- **Verification status:** local Node recommendation/UI tests and TS/TSX transpile checks pass. Fresh PostgreSQL/Supabase migration replay + pgTAP, full project typecheck, and Next production build are still pending because this runtime does not have the required local database/project dependency environment. Do not describe the new consolidation as fully verified yet.
 
 ## UNMERGED FIT MATCH / GARMENT EVIDENCE CHECKPOINT — LOCKED
 Branch: `fit-match-engine-audit`
@@ -23,22 +24,27 @@ PR: #36 — `Build confidence-aware garment-specific Fit Match engine`
 Production/main: **UNCHANGED**
 
 ### Branch state
-- Feature branch contains **38 migrations**.
+- Feature branch contains **40 migrations** after the audit-consolidation checkpoint.
 - Canonical garment provenance migration: `20260820203500_garment_enrichment_provenance.sql`.
 - Canonical directional recommendation migration: `20260820211800_directional_fit_recommendation.sql`.
 - Canonical Preferred Fit migration: `20260820215500_garment_fit_preferences.sql`.
 - Canonical Derived Proportions migration: `20260820221000_derived_body_proportion_refinement.sql`.
 - Canonical Chest-vs-Full-Bust migration: `20260820222100_bust_shaping_context.sql`.
+- Canonical audit-consolidation migration: `20260820234000_fit_match_audit_consolidation.sql`.
+- Canonical garment-condition migration: `20260820235000_garment_condition_evidence.sql`.
 - Last full source verification commit `a305f021e72aaaff19901aa0b51c4e70dfb5e856` passed CI run **`32420828278`**:
   - TypeScript passed.
   - all **10 then-current** production recommendation calibration tests passed.
   - production build passed.
   - all **35 then-current** migrations replayed on a fresh local Supabase database.
   - complete canonical pgTAP/database behavior suite passed.
-- Preferred Fit source through `2a75bf75e46e72654a4f952191f05c44ca2a3d7b` has a successful Vercel build status.
-- Derived Proportions source through `7ee1a620980b78d7f8e3899becc4f437e17ee878` also has a successful Vercel build status.
-- Chest-vs-Full-Bust source/test head through `f8ce64ca89c3da010ac3c9a268ad5a0eb9da389e` hit Vercel's **build-rate limit before a build ran**. This is an external capacity limit, not a source-code build failure.
-- A new full GitHub CI migration replay/pgTAP run has **not** started on migrations #36–#38 while PR #36 is non-mergeable/diverged from `main`. Do not mark those migrations fully CI-verified until that run exists and passes.
+- Preferred Fit source through `2a75bf75e46e72654a4f952191f05c44ca2a3d7b` historically received a successful Vercel build status.
+- Derived Proportions source through `7ee1a620980b78d7f8e3899becc4f437e17ee878` historically received a successful Vercel build status.
+- Chest-vs-Full-Bust source/test head through `f8ce64ca89c3da010ac3c9a268ad5a0eb9da389e` historically hit Vercel's **build-rate limit before a build ran**. This is an external capacity limit, not a source-code build failure.
+- **Those Vercel records are historical only. No further Vercel preview/build/deployment is authorized as a verification shortcut.**
+- PR #36 remains non-mergeable/diverged from `main`; do not reconcile/rebase/sync `main` without explicit owner authorization.
+- New migrations #39/#40 have **not** had a fresh migration replay/pgTAP execution in the current runtime. Do not mark them fully verified until the actual database gates run and pass.
+- Local pure-code verification for this consolidation passed the **13 existing recommendation calibration cases + 3 new UI-semantics checks**, and all changed TS/TSX files passed TypeScript transpile/syntax diagnostics.
 
 ### Fit Result — final V1 decision
 - **There is no separate 1–5 star Fit Rating in the final branch design.**
@@ -71,7 +77,7 @@ Production/main: **UNCHANGED**
 - Examples: a member can prefer Fitted T-shirts, Relaxed hoodies, Standard jeans, etc.
 - Missing preference means **Standard**; Standard is the neutral default and is stored sparsely.
 - Preferences live in canonical owner-private `user_garment_fit_preferences` keyed by member + garment type.
-- Fit Profile save now accepts measurements, private normally-worn size references, and Preferred Fit settings in the same canonical database transaction.
+- Fit Profile save accepts measurements, private normally-worn size references, and Preferred Fit settings in the same canonical database transaction.
 - Preferred Fit is current personalization, not historical body state. A preference-only edit does **not** create a new immutable body version and never rewrites old Fit Reports.
 - Preferred Fit does **not** change Match %, who qualifies as a Fit Twin/body Match, or how bodies are compared.
 - It is applied only when LikeSized translates historical physical Fit Results into the viewer's recommended size.
@@ -91,8 +97,7 @@ Production/main: **UNCHANGED**
 - Current rules include useful relationships such as chest-to-waist, bust-to-waist, shoulder-to-chest/bust, waist-to-hip, thigh-to-hip, torso-to-height, inseam-to-height, and rise-to-height only where the garment makes them relevant.
 - Total derived-proportion influence is capped at **8%**, and the final Match may move by at most **±4 percentage points** from the already-qualified confidence-aware base Match.
 - No derived-proportion values or private helper functions are exposed to members/clients.
-- Generic Overall/Tops/Bottoms broad-discovery matching remains on its existing canonical profile model; the new ratio refinement applies to specific garment-type matching and historical Product/body-snapshot matching.
-- Bra- and shoe-specific advanced geometry remain separate later audit topics; #4 does not prematurely create special bra/shoe proportion logic.
+- Generic Overall/Tops/Bottoms broad-discovery matching remains on its existing canonical profile model; the ratio refinement applies to specific garment-type matching and historical Product/body-snapshot matching.
 
 ### Chest vs Full Bust — OWNER LOCKED
 - **Chest and Full Bust are separate measurements.** LikeSized must not use the labels interchangeably.
@@ -107,6 +112,36 @@ Production/main: **UNCHANGED**
 - When both Chest and Full Bust are available for an explicitly women's configured bust-shaped Product, their relationship may contribute a **small private Full-Bust-to-Chest proportion refinement**. This is still subject to the existing global derived-proportion cap of 8% influence / ±4 Match points.
 - Missing Chest or Full Bust simply removes that ratio refinement. No fake ratio is generated and no new user-entered field exists.
 - The cold-start bust-shaping rules live in private canonical configuration and are not exposed to authenticated clients.
+
+### Measurement freshness / V1 provenance — OWNER LOCKED
+- Every current measurement has a private last-confirmed timestamp and a measurement-specific reconfirmation cadence.
+- Measurement age never changes the stored value, assumes the member's body changed, removes qualification/coverage, or alters raw similarity.
+- Age may only apply a **mild confidence discount** after the reconfirmation window.
+- Stale Fit Profile fields may show **Remeasure recommended** with **Confirm unchanged**.
+- Editing a value refreshes only that measurement. An unchanged save does not silently refresh it; explicit Confirm unchanged does.
+- Confirmation-only changes do not create fake immutable body-history versions.
+- Historical Fit Report snapshots do not decay merely because time passes; historical confirmation is evaluated as of the snapshot time.
+- V1 Fit Profile entry is **manual only**: tape for length/circumference, scale for weight.
+- No import/device workflow, import/device reliability questionnaire, or user-facing reliability percentage exists in V1. Existing extensible enum values do not authorize or imply those product features.
+
+### Bra / shoes / outerwear / stretch — OWNER LOCKED
+- Bras: Full Bust + Underbust core; High Bust supporting. Existing bust-point spacing and shoulder-to-bust-point measurements remain optional low-weight evidence only. No extra specialist bra fields and no second bra scoring formula.
+- Shoes: Foot Length is dominant and Foot Width secondary using the existing 70/30 profile. No extra foot geometry fields in V1.
+- Outerwear: casual jackets/coats keep the existing slightly wider circumference tolerances for normal layering; suit jackets/blazers remain more precise. No separate layering profile/input in V1.
+- Stretch: remains a controlled Product fact under the existing provenance/trust model. One member stays provisional; corroborated/verified evidence receives stronger normal influence. No user-entered fabric stretch percentages.
+
+### Garment condition / changed garment state — OWNER LOCKED
+- Field belongs to each Add Garment / Update Fit observation directly below physical Fit Result.
+- Member-facing question: **Has this garment changed from its original fit?**
+- Options:
+  - No / Normal wear
+  - Shrunk
+  - Stretched out
+  - Altered / Tailored
+- Routine washing/wear remains Normal; do not create wash-count/dryer-setting lifecycle tracking.
+- Changed-state observations remain in personal Fit History.
+- Shrunk / Stretched out / Altered observations are excluded from normal-new-product community fit summaries and size-recommendation evidence.
+- Filtering occurs before unique-wearer selection, so an earlier normal observation can remain valid evidence after that same physical garment later changes.
 
 ### Garment-information/provenance decision
 - Existing Product resolution order: explicit canonical Product → UPC/barcode → normalized Product URL → Brand + manufacturer Style ID → normalized Brand + Product fallback/new provisional Product.
@@ -126,24 +161,32 @@ Production/main: **UNCHANGED**
 - Manufacturer/retailer garment dimensions can remain a future optional enrichment source if reliably available.
 - Generic brand body-size charts are not actual garment measurements/ease and must not be treated as such.
 
-### Deep Fit Match audit status
+### Learned calibration / edge-body testing / UI semantics — OWNER LOCKED
+- Future aggregated LikeSized Fit Result data may calibrate existing canonical weights/tolerances only with meaningful sample sizes, unique wearers, versioned tests/review, and **owner approval before production behavior changes**. No autonomous self-rewriting Match model in V1.
+- Edge-body and uncommon-proportion cases use the same canonical algorithm. Tests must cover extreme-but-valid values, uncommon proportions, symmetry, missing optional data and bounded refinements. If a range performs worse, fix the underlying garment logic—not a hidden body-type scoring system.
+- **One primary Match %.** It means how closely another person's garment-relevant body measurements match the viewer's. It is not a probability that the garment will fit.
+- Confidence is secondary and qualitative when shown: High / Good / Limited.
+- Never use raw measurement coverage as a fake confidence label. Coverage may be shown only as explicitly labeled measurement coverage.
+- Product size recommendation confidence is displayed qualitatively; the internal numeric recommendation confidence remains implementation/calibration detail rather than a competing public percentage.
+
+### Deep Fit Match audit status — COMPLETE DECISION PASS
 1. Actual garment measurements/ease — **DEFERRED by owner; not V1 dependency.**
-2. Directional body differences — **IMPLEMENTED + VERIFIED.**
-3. Personal fit preference — **IMPLEMENTED IN CANONICAL SOURCE; VERCEL BUILD GREEN; FULL CI PENDING because PR #36 is currently non-mergeable/diverged from main.**
-4. Derived body proportions — **IMPLEMENTED IN CANONICAL SOURCE; VERCEL BUILD GREEN; FULL CI PENDING for the same branch-state reason.**
-5. Chest vs Full Bust / men's missing bust fields — **IMPLEMENTED IN CANONICAL SOURCE. Generic optionality, men's/unisex safeguards, explicit women's bust-shaped Product weighting, specialized bra handling, and low-weight Chest-vs-Full-Bust proportion logic are locked. FULL CI PENDING; latest Vercel preview was blocked by build-rate limit before execution.**
-6. Measurement age/staleness — **NEXT.**
-7. Measurement provenance/reliability — engine substantially resolved; UX can still improve.
-8. Bra-specific advanced geometry — unresolved.
-9. Shoe-specific geometry — unresolved.
-10. Outerwear layering — unresolved.
-11. Stretch source/trust — provenance architecture substantially resolved; external source integration remains future work.
-12. Shrinkage/garment state — unresolved/future.
+2. Directional body differences — **IMPLEMENTED + VERIFIED at prior full-CI checkpoint.**
+3. Personal fit preference — **OWNER LOCKED + IMPLEMENTED; full current-branch CI pending.**
+4. Derived body proportions — **OWNER LOCKED + IMPLEMENTED; full current-branch CI pending.**
+5. Chest vs Full Bust / men's missing bust fields — **OWNER LOCKED + IMPLEMENTED; full current-branch CI pending.**
+6. Measurement age/staleness — **OWNER LOCKED + IMPLEMENTED IN CONSOLIDATION SOURCE; DB replay/pgTAP pending.**
+7. Measurement provenance/reliability — **OWNER LOCKED: V1 manual tape/scale only; no import/device UX. IMPLEMENTED through canonical Fit Profile save path.**
+8. Bra-specific advanced geometry — **OWNER LOCKED: existing optional bust-point geometry only; no extra specialist fields/second formula. Existing canonical engine already satisfies the scoring rule; dedicated regression assertions added.**
+9. Shoe-specific geometry — **OWNER LOCKED: Foot Length dominant / Foot Width secondary; existing 70/30 profile retained.**
+10. Outerwear layering — **OWNER LOCKED: existing wider jacket/coat tolerances retained; no layering profile.**
+11. Stretch source/trust — **OWNER LOCKED: existing provenance architecture retained; provisional evidence stays soft.**
+12. Shrinkage/garment state — **OWNER LOCKED + IMPLEMENTED as observation-level garment condition; changed states excluded from normal-product aggregation/recommendations. DB replay/pgTAP pending.**
 13. Directional learning from Fit Result — **IMPLEMENTED through #2.**
 14. Fit Result vs Fit Rating — **RESOLVED: separate star rating dropped; Fit Result only.**
-15. Learned calibration from LikeSized data — unresolved/future.
-16. Bias / edge-body testing — unresolved.
-17. Match % / confidence UI semantics — unresolved.
+15. Learned calibration from LikeSized data — **OWNER LOCKED FUTURE RULE: controlled/evidence-thresholded/versioned/owner-approved; no autonomous self-rewriting V1 behavior.**
+16. Bias / edge-body testing — **OWNER LOCKED + regression suite added; DB execution pending.**
+17. Match % / confidence UI semantics — **OWNER LOCKED + UI SOURCE IMPLEMENTED: Match is primary, no probability wording, no coverage-as-confidence, recommendation confidence qualitative. Local UI tests PASS.**
 
 ## Phase 6.4 canonical completed work
 - Fit Profile copy/labels/help UI polished.
@@ -168,7 +211,7 @@ Production/main: **UNCHANGED**
 ## Phase 6.4 — remaining work
 1. Mobile Menu auto-close behavior.
 2. iPhone Safari form-focus zoom fix.
-3. Final Fit Profile save/load/edit regression verification.
+3. Final Fit Profile save/load/edit regression verification, including measurement reconfirmation UX.
 4. Resume measurement-name/help audit at **Individual Shoulder Length** and finish the remaining measurement audit.
 5. Close Phase 6.4 only after the canonical source, verification result, and this master agree.
 
@@ -248,6 +291,7 @@ Required user-facing information:
 - **Fit Result: Too Small / Snug / Just Right / Relaxed / Too Big**
 
 Optional where useful:
+- **Garment condition: Normal / Shrunk / Stretched out / Altered / Tailored**
 - fit details/notes
 - photo
 - garment-specific controlled fit questions
@@ -256,6 +300,7 @@ Optional where useful:
 Rules:
 - Do not require a 1–5 star satisfaction rating.
 - Encourage logging bad fits; failure evidence is useful sizing data.
+- Materially changed garments remain personal history but must not redefine normal-new-product fit evidence.
 - Privacy/share behavior must continue to respect the canonical Private/Shared and fit-photo rules.
 
 ### 6.5.7 Fit Result + Preferred Fit semantics — LOCKED
@@ -299,6 +344,7 @@ Show useful fit evidence without exposing raw body measurements, derived ratios,
 - historical Match % to viewer for that try-on
 - **Fit Result**
 - optional fit details
+- optional changed-garment condition where context is useful
 
 Matching context rule remains locked:
 - profile Overall/Tops/Bottoms = viewer current body ↔ other member current body
@@ -325,6 +371,7 @@ Detail should support:
 - size
 - historical Match %
 - **Fit Result**
+- garment condition when materially changed
 - optional details
 - garment-specific fit evidence
 - relevant date/history
@@ -344,6 +391,7 @@ Rules:
 - no filler from Similar Garments
 - exact same variant may receive a subtle **Same Variant** badge
 - if more qualifying people exist, offer **See All Fits**
+- materially changed garment observations do not represent normal-new-product fit recommendation evidence
 
 Useful row/card information may include:
 - historical Match %
@@ -362,9 +410,10 @@ Audit/support:
 - Favorite heart
 - viewer recommendation context
 - viewer's applied Preferred Fit label when relevant
+- qualitative recommendation confidence when relevant
 - strongest historical matches
 - reported sizes
-- physical Fit Result distribution
+- physical Fit Result distribution from normal-condition evidence
 - evidence hierarchy
 - same-product Shared wearer evidence
 - retailer links
@@ -437,13 +486,16 @@ Add a deliberate help surface before Beta.
 
 Must explain at minimum:
 - measurement privacy
-- Match % meaning
+- Match % meaning and that it is not a fit probability
+- qualitative confidence vs measurement coverage
+- measurement reconfirmation / why an old value may be worth confirming without assuming the body changed
 - that some garment-specific proportions are derived privately from existing measurements as a small refinement, without exposing ratios
 - that Chest and Full Bust are distinct and Full Bust only becomes primary in explicit Product contexts where bust shaping matters
 - body Match vs physical Fit Result
 - Preferred Fit and why it changes size recommendation without changing Match %
 - why a highly matched person can report a bad fit
 - why bad fits are valuable recommendation evidence
+- changed garment condition and why Shrunk/Stretched out/Altered observations stay in history but do not represent a fresh product's normal fit
 - current Fit Twin match vs historical garment match
 - People My Size
 - Fit Twins
@@ -458,7 +510,7 @@ Help/FAQ can live in the account/menu/support hierarchy rather than requiring a 
 
 ### 6.5.21 Remaining product-surface audit
 Audit all remaining V1 surfaces for terminology, privacy, usability, responsiveness, and hierarchy:
-- Fit Profile, including private per-garment Preferred Fit controls
+- Fit Profile, including private per-garment Preferred Fit controls and measurement reconfirmation prompts
 - Settings
 - Notifications
 - homepage
@@ -480,6 +532,7 @@ Primary member-facing vocabulary should be coherent and minimal:
 - Fit Profile
 - **Fit Result**
 - **Preferred Fit**
+- **Garment condition** when needed
 
 “Fit Report” may remain an internal engineering/database term but should not be presented as a second member-facing object separate from the garment. The legacy database type name `fit_rating` must not leak into user-facing terminology. Derived body ratios and bust-shaping rule labels remain engine-internal and do not become member-facing profile terminology.
 
@@ -494,11 +547,18 @@ Verify at minimum:
 - repeat try-on / history behavior
 - immutable historical body links
 - required Fit Result, including bad-fit uploads
+- garment condition behavior and exclusion of materially changed states from normal-product aggregation/recommendation evidence
 - private garment-specific Preferred Fit save/edit/default behavior
 - Preferred Fit recommendation changes without Match % changes
 - directional size recommendation behavior without exposing raw differences
+- measurement freshness affects confidence only; Confirm unchanged does not create a body version
+- V1 Fit Profile provenance remains manual tape/scale only
+- existing bra optional geometry stays optional/no second formula
+- shoe 70/30 model and outerwear tolerances remain intact
 - derived proportion refinement remains bounded, garment-specific, private, and coverage-neutral
 - Chest-vs-Full-Bust Product context never penalizes generic/unisex/mens cases or infers sex/gender
+- edge-body cases remain symmetric/bounded under the same algorithm
+- Match % is not presented as fit probability and raw coverage is not mislabeled confidence
 - Favorites
 - favorite-source privacy changes
 - Fit Twins and Activity
@@ -513,14 +573,14 @@ Begin only after Phase 6.5 is complete.
 
 Representative end-to-end verification must cover:
 - signup/auth
-- Fit Profile + garment-specific Preferred Fit
+- Fit Profile + garment-specific Preferred Fit + measurement reconfirmation
 - Discover / People My Size
 - saving Fit Twins
 - Shared Closet browsing
 - garment/product discovery
 - Favorites
 - retailer links
-- My Closet garment logging, including bad fits
+- My Closet garment logging, including bad fits and garment condition
 - later fit updates/history
 - directional + preference-aware recommendation behavior
 - bounded private derived-proportion garment matching
@@ -533,10 +593,11 @@ Representative end-to-end verification must cover:
 - CI/database/security verification
 
 ## Exact next action
-1. Preferred Fit, Derived Proportions, and Chest-vs-Full-Bust implementations are canonical in `fit-match-engine-audit`; do **not** merge/sync `main` or production solely to force CI without owner authorization.
-2. When the branch is authorized/reconciled enough for PR CI to run, require full TypeScript + recommendation calibration + build + fresh migration replay + pgTAP before marking migrations #36/#37/#38 verified.
-3. Continue the deep Fit Match audit at **#6 Measurement age/staleness**.
-4. After the Fit Match audit is complete, resume the remaining Phase 6.4 tasks from Mobile Menu auto-close through measurement-name/help audit.
-5. Close Phase 6.4, then begin Phase 6.5 at navigation/information architecture audit.
+1. Keep all audit-consolidation work on `fit-match-engine-audit`; **do not sync/rebase/merge `main`** or touch production without explicit owner authorization.
+2. Keep verification local by default. **Do not use Vercel preview/build/deployment without explicit owner approval.**
+3. Run the missing full local/authorized verification gates when a suitable environment is available: project typecheck, Next production build, fresh replay of all 40 migrations, and complete pgTAP suite including the three new audit suites.
+4. If those gates pass, update this same master checkpoint to VERIFIED; do not create a second handoff/status file.
+5. Then resume remaining Phase 6.4 work at Mobile Menu auto-close / Safari focus zoom / Fit Profile regression / measurement-name-help audit.
+6. Close Phase 6.4, then begin Phase 6.5 at navigation/information architecture audit.
 
-No merge to `main`, production migration, or production deployment is authorized by this checkpoint.
+No merge to `main`, production migration, Vercel action, or production deployment is authorized by this checkpoint.

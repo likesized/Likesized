@@ -27,26 +27,11 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
   ]);
   const labelByKey=new Map((definitions??[]).map((item)=>[item.key,item.label]));
   const dimensions=(mappings??[]).map((item)=>({...item,label:labelByKey.get(item.dimension_key)??item.dimension_key}));
-  const catalogProducts=(products??[]).map((product)=>({
-    id:product.id,
-    name:product.name,
-    brand_id:product.brand_id,
-    brand_name:one<{name:string}>(product.brand)?.name??"",
-    garment_type_key:product.garment_type_key,
-    market_segment:product.market_segment,
-    manufacturer_style_number:product.manufacturer_style_number,
-  }));
-  const catalogFamilies=(families??[]).map((family)=>({
-    id:family.id,
-    name:family.name,
-    brand_id:family.brand_id,
-    brand_name:one<{name:string}>(family.brand)?.name??"",
-    garment_type_key:family.garment_type_key,
-    market_segment:family.market_segment,
-  }));
+  const catalogProducts=(products??[]).map((product)=>({id:product.id,name:product.name,brand_id:product.brand_id,brand_name:one<{name:string}>(product.brand)?.name??"",garment_type_key:product.garment_type_key,market_segment:product.market_segment,manufacturer_style_number:product.manufacturer_style_number}));
+  const catalogFamilies=(families??[]).map((family)=>({id:family.id,name:family.name,brand_id:family.brand_id,brand_name:one<{name:string}>(family.brand)?.name??"",garment_type_key:family.garment_type_key,market_segment:family.market_segment}));
   const params = await searchParams;
   const error = first(params.error);
-  const errorMessage = error === "invalid_fields" ? "Check the controlled garment details and required Fit Result, then try again." : error === "invalid_photo" ? "Fit photo must be JPEG, PNG, or WebP and no larger than 8 MB." : error === "save_failed" ? "That garment could not be saved." : null;
+  const errorMessage = error === "invalid_fields" ? "Check the controlled garment details, Fit Result, and garment condition, then try again." : error === "invalid_photo" ? "Fit photo must be JPEG, PNG, or WebP and no larger than 8 MB." : error === "save_failed" ? "That garment could not be saved." : null;
 
   return <main className="pageShell addGarmentShell">
     <div className="pageTitle rowTitle"><div><span className="eyebrow">MY CLOSET · ADD GARMENT</span><h1>Log what you actually wear.</h1><p>LikeSized resolves known garments first and keeps unknown product details provisional until the catalog evidence is corroborated.</p></div><Link className="secondaryButton" href="/closet">Back to Closet</Link></div>
@@ -56,6 +41,8 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
       <GarmentSizeFields />
       <label>Color / variant<input name="color_label" maxLength={80} placeholder="Optional" /></label>
       <div className="fieldPair"><label>Closet visibility<select name="visibility" defaultValue="private"><option value="private">Private</option><option value="shared">Shared with LikeSized members</option></select></label><label>Overall fit<select name="fit" defaultValue="" required><option value="" disabled>Select physical fit</option><option value="too_small">Too small</option><option value="snug">Snug</option><option value="just_right">Just right</option><option value="relaxed">Relaxed</option><option value="too_big">Too big</option></select><span className="fieldHelp">Required. Log bad fits too—Too Small and Too Big are valuable evidence against that size.</span></label></div>
+      <label>Has this garment changed from its original fit?<select name="garment_condition" defaultValue="normal"><option value="normal">No / Normal wear</option><option value="shrunk">Shrunk</option><option value="stretched_out">Stretched out</option><option value="altered">Altered / Tailored</option></select><span className="fieldHelp">Optional — only choose something other than Normal wear if the garment no longer fits the way it did when new.</span></label>
+      <div className="privacyNote">This helps LikeSized avoid treating an altered or changed garment as typical fit evidence for everyone else.</div>
       <div className="fieldPair"><label>Would you buy it again?<select name="would_buy_again" defaultValue="unsure"><option value="yes">Yes</option><option value="no">No</option><option value="unsure">Not sure</option></select></label><label>Times worn<input name="wears_count" type="number" min="0" max="100000" step="1" defaultValue="0" /></label></div>
       <label>Add a Fit Photo — Optional<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><span className="fieldHelp"><b>Fit photos are shared with LikeSized members as real-world fit references. Don’t upload a photo you don’t want other members to see.</b></span></label>
       <label>Fit notes <span className="muted inlineMuted">optional</span><textarea name="fit_notes" maxLength={1000} rows={5} placeholder="Roomy in the thighs, right at the waist..." /></label>

@@ -26,7 +26,7 @@ No production deployment is authorized merely because recovery work exists or a 
 
 - Following = user-controlled social relationship stored in canonical `follows`.
 - A member may follow anyone regardless of Match %.
-- Fit Twin = system-generated strong current-person Match designation applied only to someone the member follows.
+- Fit Twin = system-generated strong current-person Match designation applied only to someone the member follows; the initial threshold is configurable and starts at 85% Overall Match.
 - A followed person may or may not qualify as a Fit Twin; a non-followed person is not one of that member’s Fit Twins.
 - Style Feed is driven by Following and contains posts from My Circle.
 - Public relationship count is Followers, not Fit Twins.
@@ -76,7 +76,7 @@ Garment card correction:
 - Notify is not an always-visible action when useful Fit Matches exist; it belongs to the insufficient/no-useful-fit-evidence fallback state;
 - no stars.
 
-The exact Wishlist ↔ LikeLocker ↔ Gift List relationship is intentionally unresolved until the owner confirms it. Do not create duplicate save systems by assumption.
+LikeLocker opens to Garments and filters Garments / Outfits / Wish Locker. Ordinary product likes, Outfit likes, and products specifically wanted for purchase remain distinct saved states in that one destination. Future Gift Lists remain a separate owner-controlled sharing feature.
 
 ### LikeSized Gift Lists
 Roadmap-locked. Reuse canonical Product + canonical sizing/confidence systems; owner-controlled sharing; raw measurements never exposed; random member search never reveals another member's recommended size.

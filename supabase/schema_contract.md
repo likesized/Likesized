@@ -30,7 +30,7 @@ Owner-approved Fit Match work exists on preserved PR #36 / `fit-match-engine-aud
 ## Following vs Fit Twin — product semantics over legacy identifiers
 - `follows` is the one canonical **Following** relationship: `follower_id → followed_id`.
 - Only the follower controls creation/removal of their relationship under the existing RLS/functions.
-- **`follows` does not mean Fit Twin.** Fit Twin is a system-derived strong-match designation from current-person matching.
+- **`follows` does not mean Fit Twin.** Fit Twin is a system-derived strong-match designation from current-person matching. The product-wide threshold starts at 85% Overall Match and is read from the singleton `fit_twin_settings` row so calibration does not create a second relationship graph.
 - Do not create a second Fit Twin relationship table/graph.
 - Existing migration/function/test names containing `fit_twin` are legacy implementation naming until deliberately migrated. Their names do not redefine product semantics.
 
@@ -40,6 +40,13 @@ Owner-approved Fit Match work exists on preserved PR #36 / `fit-match-engine-aud
 - private/deleted source content must not continue to expose feed/notification content.
 - current Fit-Twin-named notification helpers/tables are legacy naming debt; dedicated social cleanup must migrate terminology safely without duplicating relationship state.
 - V1 does not send followed-person activity email/phone push unless the owner later changes that.
+
+## LikeLocker foundation
+- `product_likes` stores owner-private ordinary garment likes.
+- `outfit_likes` remains the existing Outfit-like graph.
+- `wish_locker_items` stores owner-private product purchase intent.
+- owner-scoped RLS controls read/write/delete for product likes and Wish Locker saves.
+- LikeLocker is the one destination exposing these three distinct filters; none of these tables stores people.
 
 ## Outfit foundation
 - canonical Outfit posts/links/likes remain preserved in V1.

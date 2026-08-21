@@ -292,7 +292,7 @@ Fit Alert remains separate at 85%+ garment-specific Match with legitimate releva
 - wearer identity → Wearer Mini Profile;
 - **heart = Like**;
 - **wishlist control = wishlist/save action**;
-- exact storage/naming relationship among Wishlist, LikeLocker, and future Gift Lists must be resolved before implementation; do not create duplicate save graphs by assumption;
+- heart likes save ordinary garment inspiration to LikeLocker → Garments; the Wish Locker control records separate purchase intent in LikeLocker → Wish Locker; future Gift Lists may reuse canonical products but must not collapse these private intents;
 - Notify is not shown as a permanent normal action when useful Fit Matches exist; it appears in insufficient/no-useful-fit-evidence fallback states;
 - Like/Wishlist/Notify must be distinct tap targets and never open detail accidentally;
 - no stars.
@@ -309,8 +309,12 @@ Fit Alert remains separate at 85%+ garment-specific Match with legitimate releva
 - previously approved private saved-fashion destination for canonical products/garments and saved Outfits;
 - not for people.
 
-## Wishlist terminology — unresolved relationship
-The owner later explicitly corrected the garment card to use a **Wishlist** control. Before implementation resumes, determine whether Wishlist is the member-facing name/action for the existing LikeLocker save, a renamed destination, or another approved construct. Do not silently create a second save system.
+## Wish Locker — OWNER LOCKED
+- LikeLocker opens to Garments and filters **Garments / Outfits / Wish Locker**.
+- Garments = ordinary product likes.
+- Outfits = Outfit likes.
+- Wish Locker = products the member specifically wants to buy.
+- The three states have distinct intent but live in one LikeLocker destination; people never belong there.
 
 ## LikeSized Gift Lists
 - roadmap-locked after Product/retailer/save/recommendation foundations;
@@ -367,7 +371,7 @@ Search/autocomplete must prefer canonical brands/products before creation. Ident
 5. Log garments using canonical product identity, normalized size, Fit Result, optional controlled fit details/condition, and optional Shared photo; preserve immutable body state from that try-on.
 6. Follow useful people into My Circle; LikeSized may designate the strongest followed body matches as Fit Twins.
 7. Consume followed-person style/activity while keeping current-person matching separate from historical garment matching.
-8. Save/wishlist fashion content through the one final canonical save architecture once Wishlist/LikeLocker terminology is resolved.
+8. Save ordinary garment and Outfit inspiration in LikeLocker; use Wish Locker separately for products specifically wanted for purchase.
 9. Create/share Outfits using existing Closet garments.
 10. Gift Lists may later share owner-approved wanted products with confidence-gated recommended sizes without revealing raw measurements.
 

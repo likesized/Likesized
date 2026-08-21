@@ -152,7 +152,7 @@ LikeSized prioritizes real-world garment evidence from people with garment-relev
   - Following + Fit Twin + Match %
   - Following + not Fit Twin + Match %
 - A person who is not followed may still have a strong Match %, but is not designated as one of that member’s Fit Twins
-- Exact Fit Twin threshold remains intentionally unresolved/configurable until the final matching model is validated.
+- The initial Fit Twin threshold is **85% Overall Match** and is stored as a configurable product setting so it can be calibrated as real network evidence grows.
 - `follows` remains the one canonical social graph. Do not create a second Fit Twin graph.
 - Member actions are **Follow / Following / Unfollow**.
 - `Save as Fit Twin`, `Saved Fit Twin`, `Remove Fit Twin`, and follower counts labeled Fit Twins are obsolete semantics and must be removed from current UI/source/docs.
@@ -299,7 +299,7 @@ Fallback rules:
 ### Notify relationship
 Notify is not a permanent normal garment-card action. It belongs to the insufficient/no-useful-fit-evidence fallback state so the member can ask to be alerted when useful matching evidence arrives.
 
-## Browse — CURRENT OWNER-LOCKED DESIGN, IMPLEMENTATION NOT YET ACCEPTED
+## Explore — CURRENT OWNER-LOCKED DESIGN, COMPLETE PREVIEW IN PROGRESS
 
 ### Structure
 - one Browse page;
@@ -359,12 +359,12 @@ Notify is not a permanent normal garment-card action. It belongs to the insuffic
 - internal overlay history for garment/person/outfit/report exploration.
 
 ### Preview review status
-The prior mobile preview is **NOT ACCEPTED**. Owner found blocking issues including dynamic-filter behavior, blank fallback imagery, broken overlapping mini-browser, failed wearer-profile interaction, Like opening detail, duplicate/oversized search results, and stale star/action semantics. Do not resume ordinary preview testing until recovery is complete and a corrected canonical implementation is built.
+The rejected synthetic Browse preview remains excluded. The active PR #47 now builds one canonical **Explore** implementation against real Product, Outfit, member-search, current-person Match, and historical garment-evidence sources. It is branch-only and must pass CI plus owner desktop/mobile review before production authorization.
 
 ## LikeLocker / saved fashion content
 - LikeLocker is the previously approved private saved-fashion destination for canonical products/garments and saved Outfits.
 - It is not a people graph.
-- Because the owner later explicitly called the garment-card control **Wishlist**, the exact UI/storage relationship between Wishlist and LikeLocker must be resolved before implementation. Do not create duplicate save systems by assumption.
+- LikeLocker opens to **Garments** and has exactly three tabs: **Garments / Outfits / Wish Locker**.\n- Garments contains ordinary product likes; Outfits contains Outfit likes; Wish Locker contains products the member specifically wants to buy. These are distinct intents but one destination, not duplicate save graphs.
 
 ## LikeSized Gift Lists — ROADMAP LOCKED
 - feature remains on roadmap after LikeLocker/Product/retailer/recommendation foundations;
@@ -531,5 +531,18 @@ Status: **COMPLETE / DEPLOYED / VERIFIED**.
 - Final live verification returned 39 measurement definitions, nine core measurements, and non-null freshness metadata across the catalog.
 - FAQ owner review remains pending and the homepage is still not called complete.
 
+# ACTIVE OWNER PREVIEW — EXPLORE / MY CIRCLE / LIKELOCKER
+
+Status: **BRANCH-ONLY / NOT PRODUCTION / VERIFICATION PENDING**.
+
+- Active line: PR #47, `correct-grouped-menu-layout`.
+- Desktop and mobile use the same one Menu + one fixed notification bell control.
+- Explore uses real catalog, Outfit, People, current Overall Match, and historical garment-evidence sources; it defaults to 75%+ My Fit Matches and also exposes All.
+- My Circle Style Feed orders posts from followed people qualifying at the configurable initial 85% Overall Match Fit Twin threshold first, then fills with other followed activity, without duplicates.
+- LikeLocker opens to Garments and filters Garments / Outfits / Wish Locker. Product likes, Outfit likes, and purchase-intent Wish Locker saves remain distinct.
+- Migration `20260821231040_add_likelocker_and_fit_twin_settings.sql` is the canonical replay source for the already-applied live tables/settings.
+- This work is not complete until focused tests, typecheck, build, fresh migration replay, database tests, preview deployment, and owner review pass.
+- Public homepage five-question FAQ owner review remains pending.
+
 ## Exact next action
-Conduct the owner’s question-by-question review of the five deployed public FAQ entries before calling the homepage repaired or returning to Phase 6.5.2 Browse as the single active implementation line using real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains separate.
+Finish full CI and create one owner-accessible PR #47 preview covering Explore, My Circle, LikeLocker, and the shared menu. Do not merge or promote production without explicit owner authorization. After owner review, retain requested tweaks on this one canonical line. FAQ owner review and deferred desktop Fit Profile verification remain open.

@@ -147,17 +147,17 @@ LikeSized prioritizes real-world garment evidence from people with garment-relev
 
 ## Following vs Fit Twin — LOCKED
 - **Following is user-controlled.** A member may follow anyone for style/content regardless of Match %.
-- **Fit Twin is system-generated from strong current-person match quality.** It is not a manual save/follow relationship.
-- A person can be:
+- **Fit Twin is a system-generated designation within Following.** A person must first be followed; LikeSized then decides whether that followed person qualifies as a Fit Twin from strong current-person Match quality.
+- A followed person can be:
   - Following + Fit Twin + Match %
-  - Following + not Fit Twin
-  - Fit Twin + not Following
+  - Following + not Fit Twin + Match %
+- A person who is not followed may still have a strong Match %, but is not designated as one of that member’s Fit Twins
 - Exact Fit Twin threshold remains intentionally unresolved/configurable until the final matching model is validated.
 - `follows` remains the one canonical social graph. Do not create a second Fit Twin graph.
 - Member actions are **Follow / Following / Unfollow**.
 - `Save as Fit Twin`, `Saved Fit Twin`, `Remove Fit Twin`, and follower counts labeled Fit Twins are obsolete semantics and must be removed from current UI/source/docs.
 - Public social relationship count is **Followers**.
-- Style Feed eligibility is driven by Following. Fit Twin status alone does not subscribe content.
+- My Circle and Style Feed eligibility are driven by Following. Fit Twins are the system-designated strongest matches within that same followed set, never a separate subscription.
 
 ## Fit Result / star system — LOCKED
 - **Fit Result** is the physical garment outcome:
@@ -524,7 +524,7 @@ Status: **COMPLETE / DEPLOYED / VERIFIED**.
 - Live verification now returns all 39 measurement definitions, including nine core measurements, through the exact column selection used by the Fit Profile page.
 - Canonical migration filenames are synchronized to the versions recorded by the live Supabase migration ledger so future pushes do not replay the recovery migrations.
 - The grouped menu is restored without the obsolete Fit-Twin-owned Style Feed or `/outfits?feed=twins` route. Desktop and mobile use the same owner-approved organization: Discover (Explore / People My Size / My Circle / LikeLocker), My Closet (My Closet / New Fit Report / New Outfit), and Account (Fit Profile / Settings / Help / FAQ / Sign Out). The notification bell remains fixed outside the menus and beside the mobile Menu button.
-- **My Circle** is the single social destination containing system Fit Twin status and Following activity while keeping those relationships semantically separate. Legacy `/twins` and `/following` routes redirect to `/circle`.
+- **My Circle** is the single social destination for everyone the member follows. The Style Feed shows posts from that followed set, and LikeSized marks qualifying followed people as Fit Twins. Legacy `/twins` and `/following` routes redirect to `/circle`.
 - PR #46 repair head `f0068d761eb4d110f6663863522a42fd8013e705` passed CI run **#369** end-to-end.
 - PR #46 merged to `main` as `ec987f5a22575b54806341615309a150558467dc`.
 - Vercel production deployment `dpl_FZ2MeLLXaecG8QYVoK284e1n4x2E` for that exact merge commit reached **READY**.

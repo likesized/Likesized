@@ -27,7 +27,7 @@ const capabilities = [
 const faqs = [
   {
     question: "What is a Fit Twin?",
-    answer: "A Fit Twin is someone LikeSized identifies as a strong current body match. Fit Twin status comes from matching—not from following or manually saving someone.",
+    answer: "A Fit Twin is someone you follow whom LikeSized identifies as a strong current body match. Following adds someone to My Circle; LikeSized decides whether that followed person qualifies as a Fit Twin.",
   },
   {
     question: "Can other members see my measurements?",

@@ -28,41 +28,44 @@ Owner approved canonical recovery on **2026-08-21** after a full repository audi
 
 No branch above is canonical by itself. They are evidence/salvage sources until reconciled into this recovery line.
 
-## PR #36 salvage ledger — every file must be classified before closure/deletion
+## PR #36 salvage ledger — every file classified
 
 ### Application/UI files
-- `app/closet/[id]/edit/page.tsx`
-- `app/closet/actions.ts`
-- `app/closet/add/CatalogGarmentFields.tsx`
-- `app/closet/add/page.tsx`
-- `app/closet/closet.module.css`
-- `app/closet/edit-actions.ts`
-- `app/closet/page.tsx`
-- `app/item/[slug]/page.tsx`
-- `app/onboarding/FitProfileForm.tsx`
-- `app/onboarding/MeasurementHelp.module.css`
-- `app/onboarding/actions.ts`
-- `app/onboarding/page.tsx`
-- `app/people/page.tsx`
+- `app/closet/[id]/edit/page.tsx` — **RECOVERED / ADAPTED**: immutable Fit History now records/displays garment condition without importing obsolete UI.
+- `app/closet/actions.ts` — **RECOVERED / ADAPTED**: canonical Product resolution/provisional creation, provenance evidence boundary, garment condition, and server-side exclusion of superseded member material/stretch inputs.
+- `app/closet/add/CatalogGarmentFields.tsx` — **RECOVERED / ADAPTED**: controlled product evidence retained; `primary_material` and `stretch_level` explicitly excluded from member V1 input.
+- `app/closet/add/page.tsx` — **RECOVERED / ADAPTED**: physical Fit Result + garment-condition intake retained; member material/stretch UI excluded.
+- `app/closet/closet.module.css` — **DEFERRED** from PR #36 preserved head `fcf87fa1782f2ed704a4856c99487900b1445db5`; responsive Closet-list styling belongs to the later My Closet UX phase and is not a recovery dependency.
+- `app/closet/edit-actions.ts` — **RECOVERED / ADAPTED**: garment condition saved on new immutable observations.
+- `app/closet/page.tsx` — **DEFERRED** from PR #36 preserved head `fcf87fa1782f2ed704a4856c99487900b1445db5`; its responsive/list-presentation changes belong to the later My Closet phase. Its valid “bad fits are useful evidence” meaning is already represented in recovered New Fit Report/Product copy.
+- `app/item/[slug]/page.tsx` — **RECOVERED / ADAPTED**: normal-condition product summary, directional recommendation support, Preferred Fit, qualitative confidence, and Fit Result/Match separation restored; `Would Buy Again` is not passed to sizing.
+- `app/onboarding/FitProfileForm.tsx` — **RECOVERED / ADAPTED into later owner-verified production flow**: measurement reconfirmation and Preferred Fit retained. PR #36’s normally-worn-size UI and old History notice are **SUPERSEDED** and were not restored.
+- `app/onboarding/MeasurementHelp.module.css` — **RECOVERED / DUPLICATE-IN-CURRENT-SOURCE**: reconfirmation styles are already present alongside later production UI styles.
+- `app/onboarding/actions.ts` — **RECOVERED / ADAPTED**: confirmation flags and Preferred Fit persistence retained; retired normally-worn-size UI is not reintroduced and existing private size-reference records are preserved behind the scenes.
+- `app/onboarding/page.tsx` — **RECOVERED / ADAPTED into later production flow**: freshness fields and Preferred Fit data loading retained while later initial/revisit Fit Profile UX remains canonical.
+- `app/people/page.tsx` — **RECOVERED / ADAPTED** for body-Match semantics. PR #36 `Save as Fit Twin` / `Remove Fit Twin` actions and saved-Fit-Twin wording are **SUPERSEDED** by current Follow/Unfollow semantics.
 
 ### Core recommendation code
-- `lib/recommendation.ts`
+- `lib/recommendation.ts` — **RECOVERED / VERIFIED** with the canonical evidence hierarchy, directional Fit Result support, Preferred Fit translation, qualitative member-facing confidence helper, and no `Would Buy Again` sizing influence.
 
 ### Ordered migrations
-- `20260820153100_confidence_aware_fit_matching.sql`
-- `20260820153200_fit_match_engine_rpc_boundary.sql`
-- `20260820153400_contextual_optional_measurements.sql`
-- `20260820203500_garment_enrichment_provenance.sql`
-- `20260820211800_directional_fit_recommendation.sql`
-- `20260820215500_garment_fit_preferences.sql`
-- `20260820221000_derived_body_proportion_refinement.sql`
-- `20260820222100_bust_shaping_context.sql`
-- `20260820234000_fit_match_audit_consolidation.sql`
-- `20260820235000_garment_condition_evidence.sql`
-- `20260821011600_fit_profile_reference_normalization_boundary.sql`
-- `20260821014000_harden_historical_snapshot_match_boundary.sql`
+All twelve PR #36 migration domains are **RECOVERED / RE-SEQUENCED** after the later production migration head:
+- `20260820153100_confidence_aware_fit_matching.sql` → `20260821201000_recover_confidence_aware_fit_matching.sql`
+- `20260820153200_fit_match_engine_rpc_boundary.sql` → `20260821201100_recover_fit_match_engine_rpc_boundary.sql`
+- `20260820153400_contextual_optional_measurements.sql` → `20260821201200_recover_contextual_optional_measurements.sql`
+- `20260820203500_garment_enrichment_provenance.sql` → `20260821201300_recover_garment_enrichment_provenance.sql`
+- `20260820211800_directional_fit_recommendation.sql` → `20260821201400_recover_directional_fit_recommendation.sql`
+- `20260820215500_garment_fit_preferences.sql` → `20260821201500_recover_garment_fit_preferences.sql`
+- `20260820221000_derived_body_proportion_refinement.sql` → `20260821201600_recover_derived_body_proportion_refinement.sql`
+- `20260820222100_bust_shaping_context.sql` → `20260821201700_recover_bust_shaping_context.sql`
+- `20260820234000_fit_match_audit_consolidation.sql` → `20260821201800_recover_fit_match_audit_consolidation.sql`
+- `20260820235000_garment_condition_evidence.sql` → `20260821201900_recover_garment_condition_evidence.sql`
+- `20260821011600_fit_profile_reference_normalization_boundary.sql` → `20260821202000_recover_fit_profile_reference_normalization_boundary.sql`
+- `20260821014000_harden_historical_snapshot_match_boundary.sql` → `20260821202100_recover_harden_historical_snapshot_match_boundary.sql`
+- Additional canonical recovery migration `20260821202200_reassert_positive_only_measurement_normalization.sql` reasserts the later owner decision after the recovered sequence.
 
 ### Database/application tests
+All preserved PR #36 database/application tests are **RECOVERED / VERIFIED** on the recovery line:
 - `supabase/tests/bust_shaping_context.test.sql`
 - `supabase/tests/derived_body_proportions.test.sql`
 - `supabase/tests/fit_match_edge_body_cases.test.sql`
@@ -78,8 +81,11 @@ No branch above is canonical by itself. They are evidence/salvage sources until 
 - `tests/recommendation-confidence.test.ts`
 
 ### Documentation files from PR #36
-- `docs/AI_MASTER_LOG.md` — **NOT copied wholesale** because its Phase 6.5 social/outfit plan was later superseded; its Fit Match owner decisions are salvaged below.
-- `supabase/schema_contract.md` — technical decisions are reconciled into the current contract rather than copied wholesale.
+- `docs/AI_MASTER_LOG.md` — **SUPERSEDED AS A WHOLE FILE** because later owner decisions changed Phase 6.5/social/product truth; valid Fit Match decisions were **RECOVERED** into this canonical master instead of copying the stale document wholesale.
+- `supabase/schema_contract.md` — **RECOVERED / RECONCILED** into the current contract rather than copied wholesale.
+
+### PR #36 closure status
+The PR #36 salvage classification is now complete. **Do not close/delete PR #36 or its preserved branch yet.** Recovery gate #10 still requires the owner-facing final salvage report across all preserved branches, including Phase 6.5 Browse/navigation work.
 
 ## Recovery classification rule
 Each preserved file/decision must end as one of:
@@ -428,9 +434,12 @@ Then:
 - **RECOVERED / VERIFIED:** Closet/Product provenance + garment-condition application integration on source head **`bf6318ffe376dec396731fbd9e64ebeb431bcc59`**. New Fit Report resolves known Product identity through the canonical resolver before creating anything new; newly created Products are provisional; member controlled construction facts are routed through `record_member_product_evidence` only after the Closet/Fit Report write succeeds rather than being written directly as trusted Product truth; Fit Reports record garment condition; changed-state observations remain in personal Fit History but canonical product summaries/recommendation evidence use normal-condition observations only.
 - **SUPERSEDED / EXCLUDED:** PR #36 member-entered material composition and active stretch collection. Current New Fit Report hides `primary_material` and `stretch_level`, and the server rejects crafted submissions for both keys. `record_member_product_evidence` receives no member material rows. Legacy material/stretch schema support may remain dormant for compatibility/future manufacturer enrichment; it does not authorize active V1 member collection.
 - **VERIFIED CHECKPOINT:** source head **`bf6318ffe376dec396731fbd9e64ebeb431bcc59`** passed CI run **#349** end-to-end: canonical integrity, typecheck, recommendation calibration, Fit Match UI semantics, Next.js build, pinned Supabase setup, fresh full migration replay, and canonical database behavior tests.
+- **RECOVERED / VERIFIED:** Product Detail now consumes the recovered matching model correctly: viewer Preferred Fit, safe aggregated directional Fit Result support, normal-condition exact-product fit summary, qualitative recommendation confidence, and explicit body-Match-vs-physical-Fit semantics. `Would Buy Again` remains outside recommendation input.
+- **VERIFIED CHECKPOINT:** source head **`c71fcff2bfd7a2a9302a52dd2120283b930a9914`** passed CI run **#351** end-to-end, including fresh migration replay and database behavior tests.
+- **PR #36 CLASSIFICATION COMPLETE:** every preserved application/UI file, engine file, migration, test, and documentation file now has a RECOVERED / SUPERSEDED / DUPLICATE / DEFERRED disposition above. No PR #36 source remains unclassified.
 - Legacy database RPC/table/test identifiers containing `fit_twin` remain an explicitly known internal cleanup item until a safe ordered migration/compatibility plan is audited. Their existence does not authorize old user-facing semantics.
 - Draft PR **#43** exists only as the recovery CI harness and remains **DO NOT MERGE / DO NOT DEPLOY**.
 - Production/main remain untouched during recovery.
 
 ## Exact next action
-Finish classifying the remaining PR #36 application/UI files—especially `app/closet/closet.module.css`, `app/closet/page.tsx`, and residual Product/Onboarding/People changes—as **RECOVERED / SUPERSEDED / DUPLICATE / DEFERRED** without importing obsolete UI. Then classify/reconcile the preserved Phase 6.5 Browse branch. Do not resume feature development or production deployment.
+Classify and reconcile the preserved Phase 6.5 navigation/product-decision branch `phase-6-5-1-navigation-ia` and Browse preview branch `phase-6-5-2-browse-preview` against current owner-locked Browse truth. Recover only canonical decisions/source that survive the later owner corrections; mark stale preview-only implementations and rejected mobile behavior SUPERSEDED/OBSOLETE rather than importing them. Keep PR #43 draft and do not resume feature development or production deployment.

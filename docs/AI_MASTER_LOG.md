@@ -516,7 +516,7 @@ Status: **DEPLOYED / VERIFIED / FAQ OWNER REVIEW PENDING**.
 
 # POST-RECOVERY REPAIR — LIVE SCHEMA + GROUPED NAVIGATION
 
-Status: **LIVE SCHEMA REPAIRED / MENU VERIFICATION IN PROGRESS**.
+Status: **COMPLETE / DEPLOYED / VERIFIED**.
 
 - The recovery promotion deployed application code but did not apply the 13 recovered database migrations to live Supabase.
 - This caused the Fit Profile measurement-type query to fail because production lacked the recovered `reconfirm_after_days` column; all measurement controls therefore disappeared even though the 39 measurement definitions remained stored.
@@ -524,7 +524,11 @@ Status: **LIVE SCHEMA REPAIRED / MENU VERIFICATION IN PROGRESS**.
 - Live verification now returns all 39 measurement definitions, including nine core measurements, through the exact column selection used by the Fit Profile page.
 - Canonical migration filenames are synchronized to the versions recorded by the live Supabase migration ledger so future pushes do not replay the recovery migrations.
 - The grouped menu is restored without the obsolete Fit-Twin-owned Style Feed or `/outfits?feed=twins` route. Discover, My Closet, Account, and the persistent notification bell are restored; Following remains distinct from system Fit Twin status.
+- PR #46 repair head `f0068d761eb4d110f6663863522a42fd8013e705` passed CI run **#369** end-to-end.
+- PR #46 merged to `main` as `ec987f5a22575b54806341615309a150558467dc`.
+- Vercel production deployment `dpl_FZ2MeLLXaecG8QYVoK284e1n4x2E` for that exact merge commit reached **READY**.
+- Final live verification returned 39 measurement definitions, nine core measurements, and non-null freshness metadata across the catalog.
 - FAQ owner review remains pending and the homepage is still not called complete.
 
 ## Exact next action
-Verify the grouped navigation branch through full CI, obtain owner authorization for production promotion, deploy it, and verify production. Then conduct the owner’s question-by-question review of the five deployed public FAQ entries before calling the homepage repaired or returning to Phase 6.5.2 Browse as the single active implementation line using real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains separate.
+Conduct the owner’s question-by-question review of the five deployed public FAQ entries before calling the homepage repaired or returning to Phase 6.5.2 Browse as the single active implementation line using real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains separate.

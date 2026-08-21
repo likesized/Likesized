@@ -29,14 +29,14 @@ Never blend the two contexts.
 # 3. Following vs Fit Twin — LOCKED
 
 - **Following is user-controlled.** A member may follow someone at any Match % for style/content usefulness.
-- **Fit Twin is system-generated** from strong current-person match quality.
-- Fit Twin is not a saved/followed relationship.
-- A member may be Following + Fit Twin, Following without Fit Twin, or Fit Twin without Following.
+- **Fit Twin is system-generated within Following** from strong current-person Match quality.
+- Following places someone in My Circle; LikeSized—not the member—decides whether that followed person qualifies as a Fit Twin.
+- A followed member may be Following + Fit Twin or Following without Fit Twin. A non-followed person may still have a strong Match %, but is not one of that member’s Fit Twins.
 - Exact Fit Twin threshold remains unresolved/configurable until the final matching model is validated.
 - `follows` is the one canonical social graph. Do not create a second Fit Twin graph.
 - Member actions are **Follow / Following / Unfollow**.
 - Public relationship count is **Followers**, never Fit Twins.
-- Style Feed eligibility is driven by Following. Fit Twin status alone does not subscribe content.
+- My Circle and Style Feed eligibility are driven by Following. Fit Twin is a designation within that followed set, not a separate subscription.
 - Legacy source/function/database identifiers containing `fit_twin` are implementation debt and do not redefine product meaning.
 
 # 4. Garment identity and controlled taxonomy
@@ -331,7 +331,7 @@ The owner later explicitly corrected the garment card to use a **Wishlist** cont
 - Other-member Outfit discovery lives in Browse.
 - Followed-person Outfit activity lives in Style Feed.
 - Owned Outfits live in My Closet.
-- Fit Twin status alone never auto-subscribes a creator.
+- Fit Twin designation never creates a second subscription; it can only exist for someone already followed.
 
 # 13. Images / sharing
 
@@ -365,7 +365,7 @@ Search/autocomplete must prefer canonical brands/products before creation. Ident
 3. Browse strong real-world historical garment evidence first.
 4. When strong same-product evidence is insufficient, use Help Me Size It as a clearly labeled fallback estimate and inspect Other Fit Reports.
 5. Log garments using canonical product identity, normalized size, Fit Result, optional controlled fit details/condition, and optional Shared photo; preserve immutable body state from that try-on.
-6. Follow useful people independently of Fit Twin status.
+6. Follow useful people into My Circle; LikeSized may designate the strongest followed body matches as Fit Twins.
 7. Consume followed-person style/activity while keeping current-person matching separate from historical garment matching.
 8. Save/wishlist fashion content through the one final canonical save architecture once Wishlist/LikeLocker terminology is resolved.
 9. Create/share Outfits using existing Closet garments.

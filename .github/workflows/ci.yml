@@ -13,7 +13,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Check out canonical source
         uses: actions/checkout@v4
@@ -24,6 +24,9 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Canonical integrity / drift guard
+        run: npm run canonical:check
+
       - name: Install exact dependencies
         run: npm ci
 
@@ -32,6 +35,10 @@ jobs:
 
       - name: Recommendation confidence calibration
         run: node --test tests/recommendation-confidence.test.ts
+
+      - name: Fit Match audit UI semantics
+        if: ${{ hashFiles('tests/fit-match-audit-ui.test.ts') != '' }}
+        run: node --test tests/fit-match-audit-ui.test.ts
 
       - name: Build
         run: npm run build

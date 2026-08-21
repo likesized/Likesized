@@ -1,49 +1,113 @@
 # LikeSized AI Repository Rules
 
-This file is the canonical repository policy for every AI agent and human contributor working on LikeSized.
+This file is the canonical repository/source-of-truth policy for every AI agent and human contributor working on LikeSized.
 
-## Canonical Repository Rule — No Patches
+## 1. One canonical product truth — LOCKED
 
-LikeSized must remain a clean, canonical repository at all times.
+- The canonical repository is `likesized/Likesized`.
+- After recovery is promoted, `main` is the one canonical branch. A feature/recovery branch may contain proposed or in-progress work, but it must never be described as a second canonical product universe.
+- Git history preserves old implementations and decisions. Current files describe current truth only.
+- Never require a future contributor to reconstruct current product meaning from chat history, old branches, superseded PRs, or a chain of contradictory notes.
 
-1. **Never create patch files, hotfix files, temporary repair files, duplicate replacement files, or version-suffixed copies as a way to change the product.**
-2. **Every approved change must be applied directly to the canonical source file(s) that own that behavior.**
-3. Do not leave behind files such as `*-fixed`, `*-patched`, `*-new`, `*-v2`, `*-backup`, `*-temp`, `*-copy`, or similar substitutes when the original file should simply be updated.
-4. Do not maintain parallel implementations of the same feature to preserve an older version. Git history is the history. The working tree should represent the current canonical product only.
-5. When replacing an implementation, update the canonical file and remove obsolete code/files in the same change when safe to do so.
-6. Database changes must be reflected in the canonical schema/migration structure used by the project; do not create ad hoc SQL patch dumps as the long-term source of truth.
-7. Documentation and project records must describe the current canonical state, not require a future AI to reconstruct the product from a chain of patch notes.
-8. Temporary files created during local debugging must never be committed unless they are an intentional permanent part of the product.
-9. Every AI agent must inspect this file and `docs/AI_MASTER_LOG.md` before making repository changes and must preserve these rules unless the repository owner explicitly changes them.
-10. If an instruction conflicts with this policy, stop and ask the repository owner rather than creating a patch workaround.
+## 2. No patches / no parallel implementations — LOCKED
 
-## Master Log Synchronization Rule — LOCKED
+1. Never create patch, hotfix, fixed, new-version, backup, copy, temp, or trigger files as a substitute for editing the source file that owns the behavior.
+2. Never commit `noop`/trigger/debug artifacts merely to force a deployment or build.
+3. Do not keep two active implementations of the same feature. When a replacement is approved, update the canonical source and remove the obsolete implementation in the same change when safe.
+4. Preview/demo behavior must use the same feature-owned source that will become canonical. Preview-only data is allowed; a parallel preview implementation is not.
+5. Database evolution uses ordered migrations in `supabase/migrations/`. Do not create ad-hoc SQL patch dumps or alternate current-state schemas.
 
-`docs/AI_MASTER_LOG.md` is the one canonical roadmap, status record, completed-work ledger, and AI handoff for LikeSized.
+## 3. Canonical document ownership — LOCKED
 
-1. **Every completed task, approved product update, canonical code change, configuration change, deployment checkpoint, verification result, and owner-locked decision must be recorded in `docs/AI_MASTER_LOG.md`.**
-2. **A task is not complete until the canonical repository and the master log both reflect the final state.** When practical, the source change and its master-log update belong in the same canonical commit/change set.
-3. The master must always describe the current truth. Do not leave stale phase status, stale next actions, stale deployment/configuration claims, or superseded decisions in place.
-4. Never record attempted, planned, approved-but-unimplemented, failed, local-only, preview-only, or unverified work as completed. Record it as pending/unresolved when it matters to the handoff.
-5. If an audit finds that prior completion claims do not match canonical source or production, correct the master immediately and treat canonical source/verified production as authoritative for implementation status.
-6. Before ending a work session or handing the project to another AI, update the master with the exact current phase, completed work, unresolved work, deployment state, and exact next action.
-7. The master is not a substitute for canonical source. Source code, migrations, and repository policy remain authoritative for their respective implementation details; the master must accurately summarize them.
+- `AI_REPOSITORY_RULES.md` — repository/source-of-truth policy.
+- `docs/AI_MASTER_LOG.md` — sole roadmap, status record, owner-decision ledger, recovery/salvage ledger, completed-work ledger, deployment ledger, and AI handoff.
+- `docs/V1_PRODUCT_SPEC.md` — current product/fit architecture only.
+- `supabase/schema_contract.md` — current database behavior/privacy contract plus explicit implementation debt.
+- `README.md` — summary only. It never overrides the files above.
 
-## Production Deployment Rule — LOCKED
+If these documents disagree, STOP feature work and reconcile them before implementation continues.
 
-Do not deploy production unless the repository owner explicitly authorizes that deployment. Updating `main` may trigger Vercel automatically, so treat any `main` update that can trigger production as a production deployment action requiring owner authorization.
+### Atomic documentation rule
+When an owner-locked decision changes product meaning, update the master and every canonical document that owns the affected meaning in the same canonical change set. Do not leave an old statement marked LOCKED and add a newer contradictory statement elsewhere. Rewrite/remove stale current-state wording; Git history is the archive.
 
-## Definition of Done
+## 4. Owner-decision rule — LOCKED
 
-A change is not complete until:
+- An owner-approved decision is not safely recorded while it exists only in chat or on a long-lived feature branch.
+- During branch work, record the decision in that branch's master immediately and mark branch-only implementation status accurately.
+- Before a different feature branch begins, the prior branch must be reconciled into the single recovery/canonical line or explicitly parked in the master with exact source branch + commit SHA and a salvage status.
+- Never start a second divergent product future while meaningful owner-approved work remains unclassified on another branch.
 
-- the repository itself is clean and canonical;
-- the normal source files contain the final implementation;
+## 5. Branch discipline / salvage protection — LOCKED
+
+1. Only one primary active implementation/recovery line should exist at a time unless the owner explicitly authorizes parallel work.
+2. Before new work starts, compare the active branch with canonical `main`. If it is materially behind/diverged, reconcile first.
+3. Do not delete a branch or close a salvage PR until every meaningful changed file/decision has been classified as one of: **RECOVERED / SUPERSEDED / OBSOLETE / DUPLICATE / DEFERRED**.
+4. Any DEFERRED work must remain recorded in `docs/AI_MASTER_LOG.md` with the exact source branch/commit until recovered or explicitly discarded by the owner.
+5. At phase completion, clean obsolete merged/retry/verification branches after the salvage ledger proves nothing unique remains.
+
+## 6. Master synchronization rule — LOCKED
+
+A task is not complete until:
+- canonical source contains the final implementation;
 - obsolete alternatives are removed;
-- relevant verification has passed;
-- `docs/AI_MASTER_LOG.md` accurately records the completed change and current status; and
-- a new contributor can understand the current product without applying patches or reconstructing missing work from chat history.
+- relevant verification passes;
+- canonical docs agree;
+- `docs/AI_MASTER_LOG.md` records the verified final state, deployment state, unresolved work, and exact next action.
 
-## Source of Truth
+Never mark planned, attempted, preview-only, failed, branch-only, unverified, or partially salvaged work COMPLETE.
 
-This file is the authoritative repository policy. Agent-specific instruction files may repeat or point to it, but they must not weaken or override it. `docs/AI_MASTER_LOG.md` is the authoritative roadmap/status/handoff and must stay synchronized with the canonical repository.
+## 7. Database source-of-truth rule — LOCKED
+
+- Ordered files in `supabase/migrations/` are the executable database history and replay source.
+- Never hard-code a migration count as architectural truth. The current count is whatever ordered migration files exist in the canonical directory.
+- `supabase/schema.sql` is retired and must not exist as an alternate schema representation.
+- Applied migrations are immutable. Future database changes use new ordered migrations.
+- Dormant legacy columns/types/functions do not define current product semantics merely because their old names remain.
+
+## 8. Production deployment rule — LOCKED
+
+- Do not deploy production without explicit owner authorization.
+- Until Git/Vercel production coupling is deliberately changed and verified, treat any update to `main` that can trigger Vercel production as a production deployment action requiring explicit owner authorization.
+- Preview/build verification is not production authorization.
+- Never infer authorization from a prior deployment, prior conversation, or the fact that a PR is ready.
+- If production authorization for an old deployment cannot be proven from canonical records, record it as **authorization status unresolved** rather than inventing history.
+
+## 9. Mandatory machine safeguards — LOCKED
+
+Canonical CI must run `npm run canonical:check` before typecheck/build/database replay. The integrity check must fail when it detects at minimum:
+- contradictory current Fit Twin/Following definitions;
+- reintroduction of Save-as-Fit-Twin follower semantics;
+- current 1–5-star Fit Rating UI/source;
+- hard-coded migration-count claims in canonical database docs;
+- a live `supabase/schema.sql` alternate schema;
+- forbidden temp/noop/version-suffixed source artifacts;
+- missing required current terminology in canonical docs.
+
+Do not weaken or remove these checks to make a branch pass. Fix the underlying drift.
+
+## 10. Verification gates — LOCKED
+
+For relevant changes, verify as applicable:
+- canonical integrity check;
+- TypeScript/typecheck;
+- focused unit/application tests;
+- production build;
+- complete fresh migration replay;
+- pgTAP/database behavior/privacy tests;
+- mobile + desktop owner verification where required.
+
+A green historical run on another branch is evidence worth preserving, not proof that a newly reconciled branch passes.
+
+## 11. Recovery freeze — LOCKED until cleared in master
+
+While `docs/AI_MASTER_LOG.md` says canonical recovery is active:
+- no new feature development;
+- no branch deletion;
+- no PR #36 closure;
+- no production merge/deployment;
+- no schema cleanup that destroys historical data;
+- recovery/salvage and safeguards only.
+
+## Source of truth
+
+This policy cannot be weakened by agent-specific instruction files. If an instruction conflicts with it, stop and surface the conflict rather than creating a workaround.

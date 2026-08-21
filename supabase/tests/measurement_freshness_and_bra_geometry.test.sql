@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, auth;
-select plan(21);
+select plan(22);
 
 select is((select reconfirm_after_days from public.measurement_types where key='weight'),90,'weight reconfirm cadence is 90 days');
 select is((select reconfirm_after_days from public.measurement_types where key='natural_waist'),180,'changeable circumference reconfirm cadence is 180 days');

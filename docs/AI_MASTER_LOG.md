@@ -233,6 +233,7 @@ Changed-state observations stay in personal Fit History but are excluded from no
 Current engine weights recovered from the matching/recommendation work:
 - Exact Variant: 1.00
 - Exact Product: 0.94
+- Exact Product: 0.94
 - Product Family: 0.82
 - Similar Garments: 0.70
 - Brand + Garment Type: 0.58
@@ -423,8 +424,9 @@ Then:
 - **RECOVERED:** measurement freshness/reconfirmation and Preferred Fit merged into the later owner-verified Fit Profile flow without restoring retired normally-worn-size input UI or the removed History notice.
 - **RECOVERED:** Following/Fit Twin application semantics on the recovery line. Following is now Follow/Unfollow through `follows`; member profiles and People My Size no longer save/remove Fit Twins; Following Feed and outfit Following filter are driven by `follows`; notification UI is Following-based; `/twins` no longer reads `follows` and deliberately does not invent an unresolved Fit Twin threshold.
 - **SAFEGUARD ADDED:** canonical CI now rejects the old source action names/wording, rejects `/outfits?feed=twins`, and fails if `app/twins/page.tsx` derives Fit Twins from `follows`.
+- **RECOVERY-LINEAGE SAFEGUARD:** social-source commit `7840877db2b131aab41881b0824e4b59aa88d370` and master-checkpoint commit `7404e955c14c360f89f1a07338b10c70c11f490e` were created as sibling commits from `9c524bb...`; recovery immediately reconciled both without discarding either into merge commit **`986d57d70277448138f787f911be0a28cb016285`**. No force push, no lost work.
 - Legacy database RPC/table/test identifiers containing `fit_twin` remain an explicitly known internal cleanup item until a safe ordered migration/compatibility plan is audited. Their existence does not authorize old user-facing semantics.
 - Production/main remain untouched during recovery.
 
 ## Exact next action
-Continue canonical recovery only: verify the Following/Fit Twin cleanup, recover the remaining PR #36 Closet/Product provenance + garment-condition application work without reactivating member material/stretch inputs, then classify/reconcile Phase 6.5 Browse work. Do not resume feature development or production deployment.
+Verify the reconciled recovery head (`986d57d...`) with canonical check, typecheck, build, and then recover the remaining PR #36 Closet/Product provenance + garment-condition application work without reactivating member material/stretch inputs. After that, classify/reconcile Phase 6.5 Browse work. Do not resume feature development or production deployment.

@@ -28,6 +28,8 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - **Phase 6.5.2 Browse:** DESIGN AUDIT COMPLETE / IMPLEMENTATION + OWNER PREVIEW IN PROGRESS. The current zero-cost Vercel demo on `phase-6-5-2-browse-preview` is preview-only and unverified; it is not the canonical finished Browse implementation and must be folded back into normal canonical Browse source before completion. Production remains untouched.
 - **Owner decision — 2026-08-21 (Following vs. Fit Twins):** prior language equating Fit Twins with saved/followed people is superseded. **Following is a user-controlled social relationship. Fit Twin is a system-generated designation based on match quality.** A person can be followed regardless of Match %, and a Fit Twin does not have to be followed. Reuse the single canonical `follows` social relationship; do not create a second Fit Twin social graph. Exact Fit Twin threshold remains intentionally unresolved until the matching model is finalized and validated.
 - **Owner decision — 2026-08-21 (LikeSized Gift Lists):** **LikeSized Gift Lists** is added to the canonical product roadmap. The differentiator is a user-approved list of wanted garments where LikeSized also provides a confidence-gated recommended size for the list owner without exposing body measurements. Gift Lists must reuse canonical Product, Fit Profile, matching/recommendation/confidence, retailer, auth, and privacy systems rather than duplicating them. It is positioned after the LikeLocker foundation/view as **6.5.17A** so current Browse and foundational work are not derailed.
+- **Owner decision — 2026-08-21 (Help Me Size It):** **Help Me Size It is a fallback state, not a primary sizing mode.** Normal LikeSized fit evidence from real matched wearers comes first. When useful strong evidence is missing or insufficient, Help Me Size It reuses the canonical recommendation engine and weaker evidence hierarchy to provide a clearly labeled estimate, then shows the remaining same-product Fit Reports below for the member to review. It must never pretend an estimate has the same status/confidence as strong real-world matched evidence and must never create a second sizing engine.
+- **Owner correction — 2026-08-21 (star system):** the previous **1–5-star Fit Rating** presentation is no longer part of current V1. Do not show stars in Browse, Search, Help Me Size It, Fit Report lists, Closet, Product, Outfit garment tags, or member surfaces. **Fit Result** remains the current user-facing physical fit outcome. Existing schema/history related to prior rating work may remain until the dedicated data cleanup; do not delete historical data casually and do not invent a replacement subjective-rating UI without owner approval.
 
 ## Phase 6.4 canonical completed work / locked source decisions
 - Fit Profile copy/labels/help UI polished.
@@ -318,7 +320,42 @@ The rules in this section are the current owner-locked Browse truth and supersed
 - Search is not restricted by My Fit Matches. A specific product/person/outfit can be found even when it is not a close match.
 - Search should recognize canonical brand/product/model names and useful product identity data; people search uses member identity without exposing private Fit Profile measurements.
 - Search results distinguish content type so garment, outfit, and person results do not masquerade as one object type.
+- Normal product/brand/model garment search returns **one result per canonical garment/product**, not duplicate rows for each wearer/Fit Report. Wearer-name searches may anchor the canonical garment result to that wearer’s latest Shared report as the already-locked contextual exception.
+- Mobile live suggestions are a **compact list-style dropdown under the search field** with small thumbnails and brief secondary context; do not render full Browse cards/carousels inside the suggestion surface. Full grouped Search Results open only on intentional search/Enter and remain compact enough to navigate on mobile.
 - Clicking a search result enters the same Browse mini-browser/detail behavior as clicking the equivalent normal Browse card; returning/closing preserves the Browse/search state unless the user intentionally enters a full-page destination.
+
+#### Help Me Size It fallback — OWNER LOCKED
+**Help Me Size It is fallback sizing assistance, not a competing primary feature. Real matched-wearer evidence remains the LikeSized product.**
+
+Visibility hierarchy:
+1. **Strong/normal useful matches available:** show normal LikeSized matched Fit Reports/size evidence. **Do not show Help Me Size It.**
+2. **Some useful same-product evidence exists but normal recommendation confidence is weak/limited:** show the useful Fit Reports first, then a smaller secondary prompt such as **Need another estimate? / Help Me Size It**. Exact microcopy can be polished in preview, but Help Me Size It must remain visually secondary here.
+3. **Zero meaningful close matches:** make **Help Me Size It** the primary fallback CTA, with context such as **No strong Fit Matches yet** and an explanation that LikeSized does not yet have enough people like the viewer who logged this item.
+
+Opening Help Me Size It:
+- Keep the user inside the Browse/product mini-browser stack; do not throw them into a disconnected sizing tool.
+- First show the best available **estimated size** only when the canonical recommendation engine can legitimately produce one.
+- Clearly label it as an **estimate** and show recommendation confidence/context distinctly from a normal strong-match result. Exact confidence wording/bands remain implementation-audited; do not fabricate precision.
+- Include short plain-language copy explaining that LikeSized is using weaker available evidence because it does not yet have enough strong same-product matches.
+- Then show **Other Fit Reports** for the same canonical garment below the estimate so the member can inspect the real-world evidence themselves, including reports in other sizes.
+- Do **not** create a separate “View non-matching Fit Reports” competing CTA in this fallback state. The weaker/remaining same-product reports are part of the Help Me Size It experience under **Other Fit Reports**.
+- **Other Fit Reports** is the member-facing wording; avoid labeling real reports “non-matching,” because weaker body similarity can still be useful context.
+- Other Fit Report rows should use the currently retained evidence fields: wearer identity/photo where allowed, garment-specific historical Match %, size worn, and **Fit Result**. **No star rating.** Closest historical matches sort first unless a later owner decision changes that.
+- If there are same-product reports but no estimate can be responsibly produced, say so explicitly (for example **Not enough fit data to confidently estimate a size yet**) and still show the available Other Fit Reports below.
+- If there are no same-product reports and no responsible estimate, do not invent a size. Keep **Notify** available for the canonical Product so the user can be alerted when useful evidence arrives.
+
+Canonical sizing-engine rule:
+- **Do not build a separate Help Me Size It algorithm.** Reuse the canonical `recommendSize`/recommendation evidence architecture.
+- Verified current evidence hierarchy is **Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit**.
+- Verified current evidence weights are intentionally strongest-to-weakest: `exact_variant` **1.00**, `exact_product` **0.94**, `product_family` **0.82**, `similar_garments` **0.70**, `brand_garment_type` **0.58**, `category_fit` **0.42**.
+- **Brand sizing tendencies therefore already exist as derived LikeSized evidence at Brand + Garment Type level; there is no need for a separate generic “Brand X runs small” database.** Do not introduce unsupported generic brand claims.
+- User’s own Closet/history and broader matched-wearer/Fit Twin evidence may support recommendation evidence where the canonical implementation can map them legitimately, but **do not invent new evidence levels or bypass the existing hierarchy without a dedicated audit**.
+- The engine already caps recommendation confidence below 100%; Help Me Size It must preserve that conservative treatment and should be even more explicit to the member that fallback output is an estimate.
+
+Relationship to existing Fit Report actions:
+- When a strong report is featured, **View More Fit Reports (X)** remains available for normal same-product evidence browsing.
+- When no close report is featured, Help Me Size It becomes the preferred combined sizing-assistance path, with **Other Fit Reports** underneath its estimate/explanation.
+- `View Full Product Details` remains the intentional full Product-page jump and is not replaced by Help Me Size It.
 
 #### Strict filters and See Similar Results
 - User-selected filters never silently change.
@@ -329,26 +366,27 @@ The rules in this section are the current owner-locked Browse truth and supersed
 
 #### Garment cards and evidence
 - Browse uses one canonical product card rather than duplicate cards for each wearer/colorway.
-- Garment card: image; Brand + Model/Product Line; garment name/type; **Worn by Display Name** with small profile photo; no @ handle in the wearer line; garment-specific Match prominent in My Fit Matches; Overall Match as secondary context where useful; featured wearer Fit Result/Fit Rating; garment Like count; Save + Notify.
+- Garment card: image; Brand + Model/Product Line; garment name/type; **Worn by Display Name** with small profile photo; no @ handle in the wearer line; garment-specific Match prominent in My Fit Matches; Overall Match as secondary context where useful; featured wearer Fit Result; garment Like count; Save + Notify.
 - Display Name is primary social presentation; username is fallback only when no Display Name.
 - Current person match and historical garment-evidence match stay separate: current Overall/Tops/Bottoms = viewer current ↔ wearer current; garment Match = viewer current ↔ wearer immutable try-on snapshot.
-- Browse image priority: wearer’s Shared fit photo → canonical/product/retail image where valid → garment-type-specific LikeSized fallback.
+- Browse image priority: wearer’s Shared fit photo → canonical/product/retail image where valid → garment-type-specific LikeSized fallback. **Never leave the image area blank when no photo exists.**
 - Likes belong to the **canonical garment/product**, not the Fit Report or wearer. **Fit Reports have no Like action/count.**
-- Save/Like/Notify are separate concepts. Save goes to private LikeLocker. Garment Notify automatically ensures the canonical garment is saved; turning Notify off leaves it saved; removing the save turns Notify off.
+- Save/Like/Notify are separate concepts and must be separate tap targets. Tapping Like/Save/Notify must never open the garment detail. Wearer identity opens Wearer Mini Profile; product/image area opens Garment Quick-Detail.
+- Save goes to private LikeLocker. Garment Notify automatically ensures the canonical garment is saved; turning Notify off leaves it saved; removing the save turns Notify off.
 - Fit Alert qualification remains **85%+ garment-specific Match** with enough relevant measurements for a legitimate score. The 85% alert threshold does not widen with Browse.
 - First qualifying report on a saved zero-evidence product gets stronger first-report wording; later alerts are new close-fit report wording.
 
 #### Garments → All behavior
 - In All, cards are product-first/non-personalized. Every Shared garment can appear even if no wearer is a close match.
 - Opening an All garment preserves the product-first context. Show the representative/latest Shared Fit as evidence and show **Closest Fit Match** separately when one exists rather than pretending that evidence is the personalized recommendation.
-- Specific product search must not dead-end: close match exists → matched wearer; reports exist but no close match → **No close-fit reports for you yet** plus report/size evidence and Notify/View Full Details; no reports → **No fits posted yet** plus Notify.
+- Specific product search must not dead-end: close match exists → matched wearer; reports exist but no close match → **No strong Fit Matches yet** + Help Me Size It fallback + available Other Fit Reports + Notify/View Full Details; no reports → **No fits posted yet** + Help Me Size It only if the canonical engine has enough broader evidence to estimate responsibly, otherwise Notify.
 
 #### Garment mini-browser / quick detail
-- Clicking product area opens **Garment Quick-Detail**; clicking wearer identity opens **Wearer Mini Profile**; Save/Notify actions do not trigger either.
-- Browse uses an overlay/mini-browser: mobile full-screen-style detail, desktop large centered panel. Internal **Back** moves through overlay history; **X/Close** returns to the exact original Browse state/scroll.
-- Quick detail stays streamlined: larger image, Brand/Model/name, type/style/color, featured wearer and size, garment-specific Match, Overall context, Fit Result, Fit Rating, garment Like, Save, Notify. **No Shop link in quick-detail.**
+- Clicking product area opens **Garment Quick-Detail**; clicking wearer identity opens **Wearer Mini Profile**; Like/Save/Notify actions do not trigger either.
+- Browse uses an overlay/mini-browser: **mobile is a true full-screen opaque detail view** with clean vertical flow and sticky/clear Back + X controls; desktop is a large centered panel. Underlying Browse content/state remains preserved but must not visually bleed through or compete with the mobile overlay. Internal **Back** moves through overlay history; **X/Close** returns to the exact original Browse state/scroll.
+- Quick detail stays streamlined: larger image, Brand/Model/name, type/style/color, featured wearer and size, garment-specific Match, Overall context, Fit Result, garment Like, Save, Notify. **No Shop link in quick-detail. No star rating.**
 - **View Full Product Details** is the intentional full-page jump for aggregate evidence, retailer links, fit distributions/sizes, broader wearer pool, etc.
-- **View More Fit Reports (X)** stays inside the mini-browser first and opens a compact same-product Fit Report list ranked closest matches first while still allowing weaker reports. Fit Reports themselves are not liked/saved objects.
+- **View More Fit Reports (X)** remains the normal strong-evidence path when a close report is featured. The Help Me Size It fallback combines the estimate/explanation with **Other Fit Reports** when close evidence is insufficient.
 - Contextual entry points from an Outfit, wearer Shared Closet, or Style Feed preserve that specific person’s Fit Report even if the viewer match is weak; they do not swap in another wearer. Browse product-first discovery is the exception.
 - Saving/Notify from any garment quick-detail always targets the canonical Product, not the individual Fit Report.
 
@@ -380,7 +418,8 @@ The rules in this section are the current owner-locked Browse truth and supersed
 
 #### Current preview status
 - The zero-cost Vercel Browse demo is for owner UX testing only. Demo data/state must never reach production.
-- The preview-only `BrowsePreview.tsx` / `browsePreview.module.css` implementation is not the long-term canonical feature source. Before Browse can be marked complete, useful behavior must be folded into the normal canonical Browse implementation and the parallel preview implementation removed in the same cleanup.
+- Owner mobile review found and blocked on: non-dynamic filters, blank missing-photo states, broken/overlapping mobile mini-browser, wearer/profile tap failure, Like action opening detail, and oversized/duplicate search results. The repair preview must be retested before any of those behaviors are owner-accepted.
+- The previous preview-only `BrowsePreview.tsx` / `browsePreview.module.css` implementation has been removed from the current preview line and replaced with the normal Browse-owned `BrowseExperience.tsx` / `browse.module.css` feature source. Do not recreate a parallel preview component.
 
 ### 6.5.3 Following + Fit Twins social hub — OWNER-LOCKED ARCHITECTURE; IMPLEMENT AFTER BROWSE + DEFERRED DESKTOP FIT PROFILE CHECK
 This section supersedes the old rule “Fit Twins are saved/followed people.”
@@ -427,7 +466,6 @@ Audit/build:
 - garment product/brand/model
 - size
 - Fit Result
-- Fit Rating
 - image
 - Private / Shared state
 - search/filtering by useful garment fields
@@ -447,7 +485,6 @@ Required user-facing information:
 - garment/product identity
 - size
 - **Fit Result**
-- **Fit Rating — 1–5 stars**
 
 Optional where useful:
 - fit details/notes
@@ -493,11 +530,12 @@ Usability gate before 6.5.7:
 
 Privacy/share behavior must continue to respect the canonical Private/Shared and fit-photo rules.
 
-### 6.5.7 Fit Result vs Fit Rating — LOCKED distinction
-- **Fit Result** = physical fit outcome, e.g. Too Small / Snug / Just Right / Relaxed / Too Big.
-- **Fit Rating** = member’s personal 1–5 star satisfaction with that fit/experience.
-- These are separate signals. A deliberately snug garment can still receive five stars.
-- Any new database field must use a non-conflicting name such as `personal_rating` or `fit_satisfaction_rating`, rather than colliding with the existing fit-outcome enum terminology.
+### 6.5.7 Fit Result + satisfaction-signal audit — STAR SYSTEM REMOVED
+- **Fit Result** remains the physical fit outcome, e.g. Too Small / Snug / Just Right / Relaxed / Too Big.
+- The previous **1–5-star Fit Rating** user-facing system is superseded/removed from current V1.
+- Do not show or request star ratings in New Fit Report, Closet, Browse, Product, Shared Closet, Outfit garment tags, Help Me Size It, Search, or Fit Report lists.
+- Existing database fields/history created for earlier rating work may remain temporarily for compatibility/history; do not drop or rewrite them casually during unrelated phases.
+- Whether LikeSized retains a different explicit subjective-satisfaction signal later is **unresolved**. `Would Buy Again` may continue to exist as background recommendation evidence only where already valid, but do not invent a new public rating surface without owner approval.
 
 ### 6.5.8 Member profile + Shared Closet
 Other-member profile should make Shared Closet the main garment evidence experience.
@@ -535,7 +573,6 @@ Show useful fit evidence without exposing raw body measurements:
 - size worn
 - historical Match % to viewer for that try-on
 - Fit Result
-- Fit Rating
 - optional fit details
 
 Matching context rule remains locked:
@@ -553,6 +590,7 @@ For Shared Closet / garment discovery:
 Rules:
 - never substitute another member’s personal fit photo as a generic product image
 - catalog/manufacturer imagery should be distinguishable as **Product Image** when needed so it is not mistaken for the member’s own photo
+- if none of the first three image sources exists, the LikeSized fallback must render; blank image areas are not acceptable
 
 ### 6.5.11 Garment Detail interaction
 Clicking the garment/card/image opens useful garment detail, not merely a larger image.
@@ -563,11 +601,11 @@ Detail should support:
 - size
 - historical Match %
 - Fit Result
-- Fit Rating
 - optional details
 - garment-specific fit evidence
 - relevant date/history
 - Fit History if the member has multiple observations
+- Help Me Size It fallback when strong same-product matches are insufficient
 - product destination
 - retailer links when available
 - LikeLocker save action
@@ -588,7 +626,6 @@ Rules:
 Useful row/card information may include:
 - historical Match %
 - size
-- Fit Rating
 - Fit Result
 - brief note/details
 
@@ -604,7 +641,7 @@ Audit/support:
 - strongest historical matches
 - reported sizes
 - Fit Results
-- Fit Ratings
+- Help Me Size It fallback when strong same-product evidence is insufficient
 - evidence hierarchy
 - same-product Shared wearer evidence
 - retailer links
@@ -655,7 +692,7 @@ Useful product content:
 - brand/product/model
 - strongest available fit evidence for viewer
 - useful reported size context
-- View Fits
+- View Fits / Help Me Size It according to evidence state
 - Shop
 - remove from LikeLocker
 - explicit **Add to Gift List** entry point may be added when Gift Lists are implemented; saving alone never shares the item.
@@ -718,7 +755,7 @@ Audit/finalize:
 - likes
 - Save Outfit into LikeLocker
 - controlled Outfit Type + Season labels defined in 6.5.1
-- garment tags showing useful product, size, Fit Result/Fit Rating, and viewer-relevant historical match context without exposing raw measurements
+- garment tags showing useful product, size, Fit Result, and viewer-relevant historical match context without exposing raw measurements
 - click garment tag → canonical garment/Product detail
 - current person/Fit Twin match context must remain distinct from each garment’s immutable historical match context
 - member profile Outfit presentation
@@ -747,8 +784,11 @@ Rules:
 After the new hierarchy exists:
 - search canonical products/brands/models/identifiers within Browse
 - search Garments, Outfits, and People without restricting search to the current My Fit Matches scope
+- normal garment search deduplicates to one canonical product result instead of one row per Fit Report/wearer
+- live mobile suggestions use compact list rows under the search bar rather than giant cards/carousels
 - search/member discovery behavior must not duplicate People My Size algorithmic matching
 - product results support LikeLocker saves and canonical garment Likes where applicable
+- when an exact searched garment lacks strong matches, **Help Me Size It** is the fallback sizing path and incorporates the available Other Fit Reports below its estimate/explanation
 - member results open the member mini-profile/Shared Closet path and use **Follow/Following** plus derived Fit Twin badge rather than “Save Fit Twin”
 - keep intentional Search/Browse behavior distinct from People My Size algorithmic discovery
 
@@ -763,7 +803,8 @@ Must explain at minimum:
 - **Following vs Fit Twin:** Following is chosen by the member; Fit Twin is system-determined from match quality
 - Private vs Shared Closet
 - photo sharing behavior
-- Fit Result vs Fit Rating
+- **Fit Result** and the fact that the old star-rating system is not part of current V1
+- **Help Me Size It:** real matched-wearer evidence comes first; estimates appear only when strong evidence is insufficient and are labeled as estimates
 - LikeLocker
 - Outfits / Style Feed social behavior
 - retailer links
@@ -805,12 +846,13 @@ Primary member-facing vocabulary should be coherent and minimal:
 - LikeLocker
 - Fit Profile
 - Fit Result
-- Fit Rating
+- Help Me Size It
+- Other Fit Reports
 - Outfit
 - New Fit Report as the approved garment-create action label
 - LikeSized Gift Lists as the current roadmap concept name; secondary UI naming remains owner-unlocked
 
-Do not use **Save as Fit Twin**, **Saved Fit Twin**, **Remove Fit Twin**, or Fit Twin count as follower-language. Do not surface Favorites as a competing fashion-save destination.
+Do not use **Save as Fit Twin**, **Saved Fit Twin**, **Remove Fit Twin**, or Fit Twin count as follower-language. Do not surface Favorites as a competing fashion-save destination. Do not reintroduce a 1–5-star Fit Rating UI without owner approval.
 
 ### 6.5.24 Preview verification before Phase 7
 Phase 6.5 is not complete until canonical source + verification + master agree.
@@ -820,8 +862,14 @@ Verify at minimum:
 - multiple users
 - Private vs Shared
 - grouped navigation + persistent notification bell
-- Browse Garments/Outfits behavior, **My Fit Matches | All**, filters, search, Popular/Most Liked ranking, batching, and mini-browser state preservation
+- Browse Garments/Outfits behavior, **My Fit Matches | All**, dynamic filters, search, Popular/Most Liked ranking, batching, and mini-browser state preservation
+- mobile mini-browser is opaque/full-screen and interaction-safe; no background bleed or overlapping layout
+- separate tap targets for product, wearer, Like, Save, and Notify
+- missing-photo fallback renders instead of blank image areas
+- search deduplicates canonical garments and uses compact mobile suggestion/result rows
 - 75% My Fit Matches threshold/tiering and separate 85% garment Fit Alert threshold
+- **Help Me Size It** appears only in the correct fallback states, reuses the canonical recommendation engine, never fabricates a size/confidence, and shows Other Fit Reports below fallback sizing assistance
+- canonical evidence hierarchy/weights remain Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit unless explicitly re-audited
 - Category → Type → Style taxonomy
 - Brand → Model filtering
 - garment creation/edit/update
@@ -830,7 +878,7 @@ Verify at minimum:
 - manufacturer-only background material behavior; no member material/stretch questions
 - repeat try-on / history behavior
 - immutable historical body links
-- Fit Rating and Fit Result
+- Fit Result and **no 1–5-star Fit Rating UI**
 - garment Likes on canonical Product; no Fit Report Likes
 - Outfit Likes + Style Likes; Followers not mislabeled as Fit Twins
 - LikeLocker product/outfit saves
@@ -856,6 +904,7 @@ Representative end-to-end verification must cover:
 - system-derived Fit Twin status independently of Following
 - Shared Closet browsing
 - garment/product discovery
+- Help Me Size It fallback behavior
 - LikeLocker
 - retailer links
 - My Closet garment + Outfit library
@@ -865,10 +914,11 @@ Representative end-to-end verification must cover:
 - Style Feed from followed members
 - privacy boundaries
 - recommendation behavior
+- no star-rating UI
 - Gift Lists if approved/implemented for V1
 - admin/moderation basics
 - mobile UX
 - CI/database/security verification
 
 ## Exact next action
-Continue **Phase 6.5.2 Browse owner preview/testing** on the safe preview line and collect the owner’s UI/behavior corrections. Do not treat the preview-only component as the finished canonical implementation. After Browse is accepted, fold the accepted behavior into the normal canonical Browse source and remove the parallel preview implementation, verify the result, and then perform the owner-deferred **desktop Fit Profile verification** before beginning **6.5.3 Following + Fit Twins social hub**. Gift Lists remain parked at 6.5.17A and must not derail the current sequence. No production push is authorized.
+Continue **Phase 6.5.2 Browse owner mobile preview/testing** on the safe preview line and collect the owner’s UI/behavior corrections. The current repair preview must be retested after the blocking mobile fixes. **Help Me Size It is now locked as the fallback sizing framework and should be implemented canonically with the Browse/Product work—not as a separate sizing subsystem.** After Browse is accepted, fold/finish the accepted behavior in the normal canonical Browse source, verify the result, and then perform the owner-deferred **desktop Fit Profile verification** before beginning **6.5.3 Following + Fit Twins social hub**. Gift Lists remain parked at 6.5.17A and must not derail the current sequence. No production push is authorized.

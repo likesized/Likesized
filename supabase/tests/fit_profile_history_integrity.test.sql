@@ -3,7 +3,17 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, auth;
 
-select plan(14);
+select plan(16);
+
+-- The safe public wrapper remains callable, while the product-aware raw helper stays private.
+select ok(
+  has_function_privilege('authenticated','public.get_fit_report_snapshot_matches(uuid[])','EXECUTE'),
+  'authenticated users can call the safe historical snapshot Match wrapper'
+);
+select ok(
+  not has_function_privilege('authenticated','private.calculate_snapshot_match_for_product(uuid,uuid)','EXECUTE'),
+  'authenticated users cannot directly execute the private product-aware snapshot Match helper'
+);
 
 -- Two disposable members: wearer A changes body state; viewer B stays at A's original state.
 insert into auth.users (id, aud, role, email, created_at, updated_at)

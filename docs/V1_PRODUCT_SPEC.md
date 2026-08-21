@@ -8,150 +8,172 @@ LikeSized answers: **“How did this garment fit people built like me?”**
 The V1 evidence chain is:
 **private body measurements + garment-specific body matching + canonical garment/product identity + real-world Fit Reports + shared fit/reference photos → useful fit evidence.**
 
-## Planning source
-This file defines the **product/fit architecture only**. It does not own project status or build order. The sole canonical roadmap/status/handoff is `docs/AI_MASTER_LOG.md`.
+## Canonical document role
+This file owns the current **product/fit architecture**. It does not own roadmap order, deployment status, completion claims, or next actions; those live only in `docs/AI_MASTER_LOG.md`.
 
-## Authoritative V1 fit/garment architecture — 2026-08-19
+This file must never knowingly disagree with a current owner-locked product decision in the master. When an owner decision changes product architecture, update this spec in the same canonical change. Do not preserve stale “LOCKED” product language here and rely on a later superseded note elsewhere.
+
+## Authoritative V1 fit/garment architecture — current through 2026-08-21
 
 ### Measurements and immutable body-state history
 - `fit_profiles` is a small profile shell, not a permanent column-per-measurement table.
 - Current raw values live in owner-only `body_measurements` using controlled `measurement_types`.
 - `fit_profile_versions`, `fit_profile_version_measurements`, and `fit_profile_version_size_references` store immutable owner-private historical body states.
-- Saving the current Fit Profile atomically replaces the current measurement/reference set, normalizes it, and creates/reuses the matching immutable version.
+- Saving the current Fit Profile normalizes the current measurement set and creates/reuses the matching immutable version.
 - Every Fit Report stores an immutable `fit_profile_version_id`; later body edits never rewrite older garment/body associations.
 - A later try-on after a body change is a new Fit Report tied to the new version.
-- Manual values are numeric, validated and normalized to canonical units/precision.
-- Normally worn bra/shoe/other size references are private `user_size_references`; historical copies live with each Fit Profile version.
 - Raw current and historical measurements and size references are never member-visible.
+- The old normally-worn-size reference UI is not part of current V1. Existing private size-reference records/schema may remain for compatibility/history until deliberately audited.
 
-### Garment identity and taxonomy
+### Garment identity and controlled taxonomy
 - `brands` uses normalized names plus aliases for deduplication/autocomplete.
 - `products` are canonical products; retailer URLs are not product identity.
-- `product_families` are **intentional same-fit/cut groups** only; never fuzzy-name auto-grouping.
-- New canonical Products receive a standalone family by default or may explicitly join a compatible same-fit/cut family when brand, garment type and market/cut segment match.
-- Existing shared Products are not silently reassigned by later Closet logs.
-- `retailer_listings` preserves retailer-specific URLs, IDs and SKUs while pointing to canonical products/variants.
-- `product_identifiers` preserves manufacturer style, SKU, UPC/barcode and other canonical identity values.
-- `product_variants` handles color/variant identity and normalized size.
-- Garment market segment is controlled: men's, women's, unisex, kids/youth, unknown. It describes cut/sizing, never user gender identity.
-- `garment_types` is an extensible controlled taxonomy.
-- Similar Garments uses controlled construction attributes: fit/cut, rise, stretch, Primary material/fabric family, sleeve length, neckline, collar style, knit/woven construction, length profile and leg shape.
-- V1 does not attempt exact fiber-percentage composition.
-- Category-scoped attributes may be stored only for compatible Product categories.
-- Product construction attributes are initialized only when a new canonical Product is actually created; reusing an existing Product does not rewrite its shared attributes.
+- `product_families` are intentional compatible same-fit/cut groups only; never fuzzy-name auto-grouping.
+- `retailer_listings` preserves retailer-specific URLs/IDs/SKUs while pointing to canonical products/variants.
+- `product_identifiers` preserves manufacturer style/model, SKU, UPC/barcode and other canonical identity values.
+- `product_variants` handles variant identity and normalized size.
+- Garment market segment describes cut/sizing, never user gender identity.
+- Browse and New Fit Report share one controlled **Category → Type → Style** taxonomy. No parallel taxonomy is allowed.
+- Current V1 top-level categories are Tops, Bottoms, Dresses & One-Pieces, Outerwear, Activewear, Swimwear, Lingerie and Shoes. Accessories are not V1.
+- Brand and recognizable Model/Product Line are first-class canonical metadata used by Browse/Search.
+- Standardized member-entered Color is garment discovery context only and does not create duplicate canonical product cards per colorway.
+- Material composition may be retained only as reliable manufacturer/product-source background data. Members do not enter or verify it and it is not a V1 Browse filter.
+- **Do not collect, classify, infer, or expose stretch as a V1 member field/filter.** Legacy schema/options may remain until a deliberate cleanup; their existence does not make stretch a current product feature.
 
 ### Size normalization
 - Original manufacturer/retailer `size_label` is always preserved.
-- `normalized_sizes` supplies logical structured identity for alpha, numeric, waist×inseam, dress/work shirt, jacket, bra, shoe, length-designation and fallback sizes.
-- Formatting variants such as `3030`, `30x30`, `30 X 30`, `30×30`, and `30 x 30` resolve to one logical waist/inseam identity when they mean 30/30.
-- Dress/work shirts can decompose collar + sleeve range; jackets chest + length; bras band + cup + system.
-- Free text is fallback only for unusual manufacturer sizing.
+- `normalized_sizes` supplies structured identity for alpha, numeric, waist×inseam, dress/work shirt, jacket, bra, shoe, length designation and fallback sizes.
+- Formatting variants such as `3030`, `30x30`, `30 X 30`, `30×30`, and `30 x 30` resolve to one logical waist/inseam identity where applicable.
+- Dress/work shirts can decompose collar + sleeve; jackets chest + length; bras band + cup + sizing system.
+- Free text is fallback only for genuinely unusual manufacturer sizing.
 
 ### Two distinct matching contexts — LOCKED
-1. **Current person / Fit Twin match:** current `body_measurements` ↔ current `body_measurements` through the current-person matching engine.
-2. **Historical garment evidence match:** viewer current body ↔ immutable `fit_profile_version_id` attached to that Fit Report.
+1. **Current person match:** viewer current body ↔ another member current body through the current-person matching engine. Overall/Tops/Bottoms and eventual Fit Twin designation live here.
+2. **Historical garment evidence match:** viewer current body ↔ immutable body snapshot attached to a Fit Report.
 
-Do not blend current-person scores with historical garment scores.
+Never blend current-person scores with historical garment evidence scores.
+
+### Following vs Fit Twin — LOCKED
+- **Following is user-controlled.** A member may follow someone for style, outfits, Closet activity, brands, useful Fit Reports or any other reason regardless of Match %.
+- **Fit Twin is system-generated.** It is a strong-match designation derived from current-person matching, not a saved/followed relationship.
+- A person can be Following + Fit Twin, Following without Fit Twin, or Fit Twin without Following.
+- Exact Fit Twin threshold remains intentionally unresolved/configurable until the matching model is validated.
+- `follows` is the one canonical social relationship graph. Do not create a second Fit Twin follow/save table.
+- Member actions are **Follow / Following / Unfollow**. Do not use Save as Fit Twin, Saved Fit Twin or Remove Fit Twin.
+- Public social proof uses **Followers** for the stored relationship count. Do not label follower count as Fit Twins.
+- Style Feed is driven by **Following**. Fit Twin status alone does not subscribe a creator’s content.
+- Fit Twin badges may appear as match context without exposing raw measurements.
 
 ### Fit matching and evidence
-- No separate men's/women's engines. Garment type selects controlled match profiles/measurement weights.
-- Missing relevant measurements reduce coverage/confidence rather than failing unnecessarily.
-- Evidence hierarchy: **Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit**.
+- No separate men's/women's matching engines. Garment type selects controlled measurement weights.
+- Missing relevant measurements reduce coverage/confidence instead of failing unnecessarily.
+- Current recommendation evidence hierarchy is:
+  **Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit**.
+- Current production evidence weights are `exact_variant` 1.00, `exact_product` 0.94, `product_family` 0.82, `similar_garments` 0.70, `brand_garment_type` 0.58 and `category_fit` 0.42.
 - Exact Variant requires the variant to belong to the target Product; invalid/foreign variant IDs fall back safely.
 - Product Family evidence exists only through explicit compatible family membership.
-- Similar Garments requires same garment type plus controlled Product-attribute overlap.
-- Product evidence uses historical snapshot match scores, never current Fit Twin scores.
-- Recommendation evidence is capped to **one strongest historical observation per unique wearer**.
-- All legitimate observations remain available in Shared Fit History; the cap applies to recommendation aggregation only.
+- Product evidence uses historical snapshot match scores, never current Fit Twin/person scores.
+- Recommendation aggregation is capped to one strongest historical observation per unique wearer.
+- All legitimate same-product observations may still be browsed as Fit Reports; the unique-wearer cap applies only to recommendation aggregation.
 
-### Recommendation confidence — LOCKED V1
-- Production `recommendSize()` is the single confidence implementation; tests call it directly.
-- Evidence below **50% historical body match** is not recommendation-eligible.
-- Confidence reflects unique-wearer/sample strength, historical closeness, relevant coverage, evidence-tier exactness, fit outcome agreement/conflict, Similar Garments overlap, buy-again signal and competing-size support.
-- Confidence caps at **99%**.
-- Missing coverage, weaker fallback tiers and conflicting evidence reduce confidence rather than being hidden.
+### Recommendation confidence
+- Production `recommendSize()` is the single current recommendation-confidence implementation.
+- Evidence below 50% historical body match is not recommendation-eligible in that engine.
+- Confidence reflects unique-wearer/sample strength, historical closeness, relevant coverage, evidence-tier exactness, fit outcome agreement/conflict, applicable Similar Garments overlap, existing buy-again evidence where valid, and competing-size support.
+- Confidence caps at 99%.
+- Missing coverage, weak fallback tiers and conflicting evidence reduce confidence rather than being hidden.
+- Do not create a second gift-sizing engine or Help Me Size It engine.
 
-### Fit Reports, Shared Closet and photos
-- Overall fit remains controlled; optional garment-specific dimensions live in `fit_report_dimensions` using controlled responses.
+### Help Me Size It — LOCKED fallback behavior
+**Help Me Size It is fallback sizing assistance, not a primary feature competing with real matched-wearer evidence.**
+
+Visibility hierarchy:
+1. Strong/normal useful same-product matches available → show the normal LikeSized matched evidence. Do not show Help Me Size It.
+2. Some useful same-product evidence exists but normal confidence is limited → show the useful reports first, then a smaller Help Me Size It option.
+3. Zero meaningful close matches → Help Me Size It becomes the primary fallback CTA.
+
+Opening Help Me Size It:
+- stay inside the Browse/Product mini-browser flow;
+- show an estimated size only when the canonical recommendation engine can responsibly produce one;
+- explicitly label the output as an estimate and distinguish its confidence from normal strong-match evidence;
+- use the best canonical evidence available rather than generic unsupported brand claims;
+- Brand + Garment Type acts as derived LikeSized brand-sizing tendency when exact evidence is thin;
+- after the estimate/explanation, show **Other Fit Reports** for the same canonical garment, including other sizes, so the member can review the real-world evidence;
+- Other Fit Reports may show wearer identity/photo where permitted, historical garment Match %, size and Fit Result;
+- do not call them “non-matching” reports;
+- if no responsible estimate exists, say so and still show available Other Fit Reports;
+- if no same-product reports and no responsible estimate exist, do not invent a size; keep Notify available.
+
+`View More Fit Reports (X)` remains the normal same-product evidence path when strong evidence is featured. Help Me Size It is the preferred combined fallback path when strong evidence is insufficient.
+
+### Fit Reports, Fit Result and photos
+- The user-facing physical fit outcome is **Fit Result**: Too Small / Snug / Just Right / Relaxed / Too Big.
+- **There is no current V1 1–5-star Fit Rating UI.** Do not request or display stars in New Fit Report, Closet, Browse, Search, Help Me Size It, Product, Shared Closet, Outfit garment tags or Fit Report lists.
+- Existing old schema/history related to rating experiments may remain until deliberately audited; do not treat that dormant data as a current product feature.
+- `Would Buy Again` may remain as existing background recommendation evidence where valid, but it is not a replacement public star-rating system and its final member-facing role remains subject to the dedicated audit.
+- Optional garment-specific controlled fit dimensions live in `fit_report_dimensions`.
 - Multiple historical Fit Reports may exist for one Closet item.
-- `closet_items.visibility` is `private` or `shared`; RLS—not UI filtering—controls access.
+- `closet_items.visibility` is `private` or `shared`; RLS controls access.
 - Shared history may expose safe garment/product/size/Fit Report/history-match/photo context, never raw measurements.
-- Fit/reference photo upload is optional. **If uploaded, the garment must be Shared and the photo is visible to authenticated LikeSized members. There is no private fit-photo mode.**
-- `fit-reference-photos` is a non-public Storage bucket with member-read/owner-write behavior tied to Shared evidence.
+- Fit/reference photo upload is optional. If uploaded, the garment is Shared and the photo is member-visible. There is no private fit-photo mode.
 
-## Fit Twins, Following and social behavior — LOCKED V1
-A Fit Twin is a Fit Match the user deliberately saves/follows. There is no universal percentage threshold. The follow relationship remains stable while live current-person match scores may change.
+### Browse and Search
+- Browse is one dynamic discovery page with **Garments | Outfits** and **My Fit Matches | All** scopes.
+- Fresh Browse defaults to My Fit Matches.
+- Garments My Fit Matches requires 75%+ garment-specific historical Match; Outfits My Fit Matches requires 75%+ current Overall Match to the creator.
+- Fit Alert remains a separate 85%+ garment-specific threshold.
+- Normal garment discovery/search returns one canonical product card/result rather than duplicate rows for every wearer/Fit Report.
+- Explicit wearer-name search may anchor a canonical garment result to that wearer’s latest Shared report as contextual evidence.
+- Mobile live search suggestions are compact list rows under the search field; do not render giant Browse cards/carousels in the suggestion surface.
+- Search spans Garments, Outfits and People and is not restricted by My Fit Matches.
+- Search preserves raw-measurement privacy and does not create a second catalog/member index/social graph.
 
-### Follow visibility
-The Fit Twin/follow graph is **community-public within LikeSized**. Authenticated members may see who follows whom; only the follower may create/remove their own relationship. Anonymous web visitors cannot query member identity/follows.
+### Browse card/detail interaction
+- Garment image priority: Shared wearer fit photo → valid canonical/product image → garment-type LikeSized fallback. Blank image areas are not acceptable.
+- Product/image tap opens Garment Quick-Detail.
+- Wearer identity tap opens Wearer Mini Profile.
+- Like, Save and Notify are independent tap targets and must not open product/person detail accidentally.
+- Garment Like belongs to the canonical product. Fit Reports have no Like action/count.
+- Save stores the canonical product in private LikeLocker.
+- Notify attaches to the canonical product; Notify-on auto-saves, Notify-off leaves Saved, removing Save disables Notify.
+- On mobile, the mini-browser is a true opaque full-screen detail flow with clean Back/X behavior and no underlying Browse bleed-through.
 
-### Dedicated Following Feed
-V1 has a dedicated personalized Following Feed driven by the same canonical `follows` relationship.
-
-Meaningful activity includes:
-- newly Shared Closet garment,
-- new Shared Fit Report observation/re-try-on,
-- new outfit post.
-
-Likes are not feed activity. Private Closet/Fit Report activity and raw body measurements never appear.
-
-Current Overall/Tops/Bottoms match badges shown on feed cards are relationship context only. Linked garment evidence still uses its immutable historical snapshot.
-
-If Shared content becomes Private or is deleted, the feed must stop exposing it immediately.
-
-### Fit Twin activity notifications
-- In-app only in V1; **ON by default for future Fit Twin activity**.
-- One private global on/off setting plus private per-Fit-Twin mute.
-- Mute/global off does not alter the Following Feed.
-- Same three meaningful activity types as the Following Feed; likes never notify.
-- No Fit Twin activity email or phone push in V1.
-- Global off, mute or unfollow suppresses future notifications only; no backfill after re-enable/refollow.
-- Unfollow clears the relationship-specific mute; refollow starts unmuted subject to the global switch.
-- Private/deleted source content removes corresponding existing notifications.
-- Notification state and output never expose raw body measurements.
+### Following Feed and notifications
+- Meaningful Followed-person activity can include newly Shared Closet garments, new/retried Shared Fit Reports and new Outfits.
+- Likes are not feed activity.
+- Private content and raw body measurements never appear.
+- Existing database/function names containing `fit_twin` are legacy implementation naming until the dedicated 6.5.3 cleanup; they must not redefine the product meaning of Fit Twin.
+- Per-person Notify is separate from Follow. Notification behavior must attach to the one canonical social relationship/settings rather than create another relationship graph.
 
 ### Outfit social behavior
 - Outfit posts are authenticated-member-readable social content.
-- Likes are one per member/post and only the liker may remove their own like.
-- All Outfits is member-wide; Fit Twins Outfits filters canonical outfit posts through `follows`.
-- Posting requires one photo and **1–6 unique owned Closet garments with Fit Report evidence**.
-- Selecting a Private garment intentionally publishes its fit evidence by changing it to Shared, but share + post + tag creation must be one atomic database transaction.
-- Photo uploads occur before the transaction; if the transaction fails, the app removes the uploaded photo.
-- Outfit tags show the **latest currently visible Fit Report** for the tagged garment.
-- If a tagged garment later becomes Private, its garment tag/Fit Report evidence disappears for other members, while the independent outfit post and likes may remain.
-- Deleting an outfit cascades its links, likes, outfit activity and source-linked notifications. It does not automatically make previously Shared Closet garments Private.
-- Likes never create Following Feed activity or Fit Twin notifications.
+- Outfit likes are one per member/post and contribute to creator **Style Likes**.
+- Garment Likes belong to canonical products and do not contribute to creator Style Likes.
+- Posting uses existing owned Closet garments; Outfit creation does not re-enter garment taxonomy/product data.
+- Outfit discovery lives in Browse; followed-person Outfit activity lives in Style Feed; owned Outfits live inside My Closet.
+- Fit Twin status alone never auto-subscribes a creator.
+- Tagged garment evidence remains linked to the original garment/Fit Report context and never exposes raw measurements.
 
-## Search & discovery — LOCKED V1
-- Search must resolve existing canonical data rather than build a second catalog, duplicate profile index or alternate follow system.
-- Authenticated **catalog search** uses the canonical Product/Brand/identifier/listing tables and returns one deduplicated canonical Product per result.
-- Catalog queries may match:
-  - canonical Product name,
-  - canonical Brand name,
-  - Brand alias,
-  - manufacturer style/style number,
-  - product identifiers including SKU, UPC/barcode and other stored identifiers,
-  - retailer product ID,
-  - retailer SKU,
-  - retailer listing title.
-- Search normalizes punctuation/case where logical identity permits while preserving canonical human-facing result names/slug.
-- Authenticated **member search** uses member-readable username/display name only, is case-insensitive, excludes the current viewer, and returns no raw body measurements or private size references.
-- Member search remains signed-in-only because V1 profile identity is signed-in-member-only.
-- A member found through Search or People My Size opens the same canonical member profile and can be saved through the same canonical `follows` relationship used by Fit Twins, the Following Feed, notifications and Fit-Twins Outfits.
-
-Fit Twin/member pages continue to show current match scores separately from historical Shared Fit History.
+### LikeLocker and Gift Lists
+- **LikeLocker = private saved fashion content** such as canonical products/garments and saved Outfits. It is not for people.
+- **Following = people. Fit Twin = system match designation.**
+- A LikeLocker save never automatically becomes a Gift List item.
+- LikeSized Gift Lists reference canonical Products and reuse the same recommendation/confidence system; they do not duplicate products or sizing logic.
+- Gift List sharing is owner-controlled. A random person cannot search a member and retrieve that member’s recommended size.
+- Raw measurements are never exposed through Gift Lists.
 
 ## Data-quality rule
-**Controlled when possible. Normalize when necessary. Free text only when useful.** Search/autocomplete must prefer canonical brands/products before creation. Text, identifiers and URLs are normalized for matching while original human-facing values are preserved where useful.
+**Controlled when possible. Normalize when necessary. Free text only when useful.** Search/autocomplete must prefer canonical brands/products before creation. Text, identifiers and URLs are normalized for matching while useful original human-facing values are preserved.
 
 ## Core V1 loop
 1. Create a private, versioned Fit Profile.
-2. Receive current garment-relevant Fit Match scores.
-3. Browse shared historical fit evidence from current or former body-state matches.
-4. Log a garment with canonical product identity, original + normalized size, controlled fit and optional shared fit photo; the observation locks to the current Fit Profile version.
-5. Open a product page and see exact evidence first, then clearly labeled fallback evidence weighted against each observation's historical snapshot.
-6. Find useful members through People My Size or Search and save them as Fit Twins / followed members.
-7. Keep learning from those people through the Following Feed and in-app Fit Twin activity notifications.
-8. Post outfits and search/discover canonical products, brands and members.
+2. Receive current garment-relevant person Match scores and system Fit Twin context.
+3. Browse strong shared historical garment evidence first.
+4. When strong same-product evidence is insufficient, use Help Me Size It as a clearly labeled fallback estimate and inspect Other Fit Reports.
+5. Log garments with canonical product identity, normalized size, Fit Result and optional Shared fit photo; each observation locks to the body state from that try-on.
+6. Follow useful people independently of whether they qualify as Fit Twins.
+7. Learn from followed people through Style Feed/activity while keeping current-person matching separate from historical garment matching.
+8. Save fashion content to LikeLocker, create/share Outfits, and use canonical Search/Browse discovery.
+9. Gift Lists may later share owner-approved wanted products with confidence-gated recommended sizes without revealing raw measurements.
 
-Project completion status, gaps and exact next work live only in `docs/AI_MASTER_LOG.md`.
+Project completion status, roadmap order, preview state and exact next work live only in `docs/AI_MASTER_LOG.md`.

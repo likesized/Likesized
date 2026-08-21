@@ -31,9 +31,10 @@ export function FitProfileForm({username,isInitialSetup,unitSystem:initialSystem
   const [system,setSystem]=useState<UnitSystem>(initialSystem);
   const [helpKey,setHelpKey]=useState<string|null>(null);
   const [reviewing,setReviewing]=useState(false);
+  const [usernameDraft,setUsernameDraft]=useState(username);
   const [values,setValues]=useState<Record<string,string>>(()=>Object.fromEntries(visibleTypes.map((type)=>{const row=byKey.get(type.key);if(!row)return[type.key,""];const to=targetUnit(type,initialSystem);return[type.key,String(roundStep(convert(Number(row.entered_value),row.entered_unit,to),stepFor(type,initialSystem)))];})));
 
-  const reviewRows=useMemo(()=>visibleTypes.flatMap((type)=>{const raw=values[type.key];if(!raw)return[];const currentCanonical=canonical(type,Number(raw),targetUnit(type,system));const original=byKey.get(type.key);const originalCanonical=original?canonical(type,Number(original.entered_value),original.entered_unit):null;return[{key:type.key,label:displayLabel(type),value:reviewValue(type,raw,system),changed:originalCanonical===null||Math.abs(currentCanonical-originalCanonical)>0.0001,core:type.core}];}),[values,system,visibleTypes,byKey]);
+  const reviewRows=useMemo(()=>visibleTypes.flatMap((type)=>{const raw=values[type.key];if(!raw)return[];const currentCanonical=canonical(type,Number(raw),targetUnit(type,system));const original=byKey.get(type.key);const originalCanonical=original?canonical(type,Number(original.entered_value),original.entered_unit):null;return[{key:type.key,label:displayLabel(type),value:reviewValue(type,raw,system),changed:originalCanonical===null||Math.abs(currentCanonical-originalCanonical)>0.0001}];}),[values,system,visibleTypes,byKey]);
 
   function setMeasurementValue(key:string,value:string){setValues((current)=>({...current,[key]:value}));}
   function setImperialLength(key:string,wholeRaw:string,fractionRaw:string){if(wholeRaw===""){setMeasurementValue(key,"");return;}const whole=Number(wholeRaw),fraction=Number(fractionRaw);if(!Number.isFinite(whole)||!Number.isFinite(fraction)){setMeasurementValue(key,"");return;}setMeasurementValue(key,String(whole+fraction));}
@@ -51,13 +52,13 @@ export function FitProfileForm({username,isInitialSetup,unitSystem:initialSystem
     <h2>{reviewing?(isInitialSetup?"Review Fit Profile":"Review Changes"):"Core Fit Profile"}</h2>
     {reviewing?<>
       <p className={helpStyles.coreIntro}>Review what you entered. Nothing is saved until you confirm.</p>
-      {isInitialSetup?<div className="evidence"><div><strong>Username</strong><span>{username}</span></div></div>:null}
+      {isInitialSetup?<div className="evidence"><div><strong>Username</strong><span>{usernameDraft}</span></div></div>:null}
       <div className="evidenceList">{reviewRows.map((row)=><div className="evidence" key={row.key}><div><strong>{row.label}</strong><span>{row.value}{!isInitialSetup&&row.changed?" · Changed":""}</span></div></div>)}</div>
-      <input type="hidden" name="username" value={isInitialSetup?username:""}/><input type="hidden" name="unit_system" value={system}/>{visibleTypes.map((type)=><input key={type.key} type="hidden" name={`measurement_${type.key}`} value={values[type.key]??""}/>)}
+      <input type="hidden" name="username" value={isInitialSetup?usernameDraft:""}/><input type="hidden" name="unit_system" value={system}/>{visibleTypes.map((type)=><input key={type.key} type="hidden" name={`measurement_${type.key}`} value={values[type.key]??""}/>)}
       <div className="buttonRow"><button type="button" className="secondaryButton" onClick={()=>setReviewing(false)}>← Back to Edit</button><button type="submit" className="primaryButton">Confirm & Save</button></div>
     </>:<>
       <p className={helpStyles.coreIntro}>Add only what you know right now. More details lead to better fit matches and recommendations. You can always update your profile measurements anytime.</p>
-      <div className="fieldPair">{isInitialSetup?<label>Username<div><input name="username" type="text" defaultValue={username} minLength={3} maxLength={32} pattern="[A-Za-z0-9_]{3,32}" autoCapitalize="none" autoCorrect="off" spellCheck={false} required /></div></label>:null}<label>Units<select name="unit_system" value={system} onChange={(event)=>changeSystem(event.target.value as UnitSystem)}><option value="imperial">Inches / pounds</option><option value="metric">Centimeters / kilograms</option></select></label></div>
+      <div className="fieldPair">{isInitialSetup?<label>Username<div><input name="username" type="text" value={usernameDraft} onChange={(event)=>setUsernameDraft(event.target.value)} minLength={3} maxLength={32} pattern="[A-Za-z0-9_]{3,32}" autoCapitalize="none" autoCorrect="off" spellCheck={false} required /></div></label>:null}<label>Units<select name="unit_system" value={system} onChange={(event)=>changeSystem(event.target.value as UnitSystem)}><option value="imperial">Inches / pounds</option><option value="metric">Centimeters / kilograms</option></select></label></div>
       <div className="fieldPair">{core.map(field)}</div>
       <details open={advanced.some((type)=>Boolean(values[type.key]))}><summary>Optional advanced measurements</summary><p className="muted">Add more detailed measurements for even smarter fit matches. Fill in only what you know and come back anytime to add more or make changes.</p><div className="fieldPair optionalFields">{advanced.map(field)}</div></details>
       <button type="submit" className="primaryButton fullButton">{isInitialSetup?"Review Fit Profile →":"Review Changes →"}</button>

@@ -88,6 +88,13 @@ export default function Home() {
           <div><b>04</b><h3>Shop with better answers</h3><p>Use personalized insights from people like you to make smarter choices and get the fit right the first time.</p></div>
         </div>
       </section>
+
+      <section className="section" aria-label="Help and frequently asked questions">
+        <span className="eyebrow">NEED HELP?</span>
+        <h2 className="sectionTitle">Questions about LikeSized?</h2>
+        <p>Learn how Fit Twins, matching, privacy, Closet sharing, and fit evidence work.</p>
+        <Link className="textLink" href="/help">Help / FAQ →</Link>
+      </section>
     </main>
   );
 }

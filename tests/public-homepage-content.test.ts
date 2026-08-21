@@ -20,5 +20,5 @@ test("public homepage contains substantive FAQ content", () => {
   assert.match(home, /What is a Fit Twin\?/);
   assert.match(home, /Can other members see my measurements\?/);
   assert.match(home, /Can I follow someone who is not my Fit Twin\?/);
-  assert.ok((home.match(/<details/g) ?? []).length >= 5);
+  assert.ok((home.match(/question:/g) ?? []).length >= 5);
 });

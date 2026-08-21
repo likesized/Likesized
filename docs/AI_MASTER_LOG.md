@@ -479,7 +479,7 @@ The owner cleared the recovery freeze on **2026-08-21**, PR #43 was promoted to 
 
 # POST-RECOVERY CORRECTION — OUTFIT PHOTO PIPELINE
 
-Status: **VERIFIED / OWNER AUTHORIZED FOR CANONICAL PROMOTION**.
+Status: **COMPLETE / DEPLOYED / VERIFIED**.
 
 - Active branch: `optimize-outfit-photo-pipeline`.
 - New outfit intake still accepts JPEG, PNG, or WebP up to 8 MB for normal phone-photo usability.
@@ -493,6 +493,9 @@ Status: **VERIFIED / OWNER AUTHORIZED FOR CANONICAL PROMOTION**.
 - Branch head `ad05b5541947972bf83dbc499c0c11b6204f6b43` passed CI run **#358** end-to-end: canonical integrity, typecheck, focused application tests, production build, full fresh migration replay, and database behavior/privacy tests.
 - No Fit Match cache or matching-engine change is included.
 - On **2026-08-21**, the owner explicitly authorized PR #44 for `main`/production promotion after CI #359 passed.
+- Authorization commit `20c61c808465480e0e744d1452c7fa7bad0a8c6a` passed CI #360 end-to-end.
+- PR #44 merged to `main` as `04319c76469819c6178eeb31a3e3f3c987e7694c`.
+- Vercel production deployment `dpl_GCRvJjDHgTCDPbSAsN357QN1CHjv` for that exact merge commit reached **READY**.
 
 ## Exact next action
-Promote owner-authorized PR #44 to `main`/production, verify the resulting deployment, then resume/finalize **Phase 6.5.2 Browse** as the single active implementation line using real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains separate.
+Resume/finalize **Phase 6.5.2 Browse** as the single active implementation line using real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains separate.

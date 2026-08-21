@@ -23,6 +23,9 @@ export function MobileMenu({ unreadCount }: MobileMenuProps) {
   useEffect(() => {
     if (!open) return;
 
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     const handlePointerDown = (event: PointerEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         closeMenu();
@@ -30,7 +33,10 @@ export function MobileMenu({ unreadCount }: MobileMenuProps) {
     };
 
     document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
   }, [open]);
 
   return (

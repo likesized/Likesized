@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { EVIDENCE_LABELS, type EvidenceLevel } from "@/lib/domain";
-import { recommendSize, type RecommendationEvidence } from "@/lib/recommendation";
+import { recommendationConfidenceLabel, recommendSize, type RecommendationEvidence } from "@/lib/recommendation";
 
 type Params=Promise<{slug:string}>;
 type SearchParams=Promise<Record<string,string|string[]|undefined>>;
@@ -76,7 +76,6 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
       coveragePercent:row.historical_coverage_percent,
       evidenceLevel:row.evidence_level,
       attributeOverlap:row.attribute_overlap,
-      wouldBuyAgain:row.would_buy_again,
     };
   }));
 
@@ -86,7 +85,7 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
 
   return <main className="pageShell">
     <section className="itemHero"><div className="productImage">{placeholder}</div><div className="itemDetails"><span className="eyebrow">{brand?.name?.toUpperCase()||"BRAND"}{product.garment_type_key?` · ${product.garment_type_key.replaceAll("_"," ").toUpperCase()}`:""}</span><h1>{product.name}</h1><p>LikeSized uses the strongest relevant evidence available. Each garment report stays tied to the body measurements from when it was actually worn, even if that member's body changes later.</p>
-      {recommendation?<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>{recommendation.sizeLabel}</strong><b>{recommendation.confidence}% confidence</b></div><div className="tiny">Based on {recommendation.similarWearerCount} unique relevant wearer{recommendation.similarWearerCount===1?"":"s"}. Strongest supporting tier: {EVIDENCE_LABELS[recommendation.strongestEvidenceLevel]}.</div></>:<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>—</strong><b>Not enough relevant evidence yet</b></div><div className="tiny">No eligible shared historical fit evidence from sufficiently similar body snapshots yet.</div></>}
+      {recommendation?<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>{recommendation.sizeLabel}</strong><b>{recommendationConfidenceLabel(recommendation.confidence)}</b></div><div className="tiny">Based on {recommendation.similarWearerCount} unique relevant wearer{recommendation.similarWearerCount===1?"":"s"}. Strongest supporting tier: {EVIDENCE_LABELS[recommendation.strongestEvidenceLevel]}.</div></>:<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>—</strong><b>Not enough relevant evidence yet</b></div><div className="tiny">No eligible shared historical fit evidence from sufficiently similar body snapshots yet.</div></>}
       <div className="statsRow"><span><b>{ranked.length}</b> unique wearer{ranked.length===1?"":"s"}</span><span><b>{bestLevel?EVIDENCE_LABELS[bestLevel]:"—"}</b> strongest tier</span><span><b>{bestCount}</b> at strongest tier</span></div>
     </div></section>
 
@@ -107,7 +106,7 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
           <div><span>Evidence</span><strong>{EVIDENCE_LABELS[row.evidence_level]}</strong></div>
           <div><span>Garment</span><strong>{sourceBrand?.name?`${sourceBrand.name} · `:""}{sourceProduct?.name||"Garment"}</strong></div>
           <div><span>Size</span><strong>{normalized?.display_label||row.original_size_label}</strong></div>
-          <div><span>Fit</span><strong>{FIT_LABELS[row.fit]||row.fit}</strong></div>
+          <div><span>Fit Result</span><strong>{FIT_LABELS[row.fit]||row.fit}</strong></div>
         </div>;
       })}</div>:<div className="emptyState"><span className="eyebrow">NO FIT EVIDENCE YET</span><h2>Be the first useful data point.</h2><p>LikeSized will use exact variant/product evidence first, then family and clearly labeled similar-garment evidence as the user-built database grows.</p></div>}
     </section>

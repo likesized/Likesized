@@ -499,7 +499,7 @@ Status: **COMPLETE / DEPLOYED / VERIFIED**.
 
 # POST-RECOVERY CORRECTION — PUBLIC HOMEPAGE CONTENT
 
-Status: **VERIFIED / OWNER AUTHORIZED FOR CANONICAL PROMOTION / FAQ REVIEW STILL REQUIRED**.
+Status: **DEPLOYED / VERIFIED / FAQ OWNER REVIEW PENDING**.
 
 - Active branch: `fix-public-homepage-content`.
 - The third capability CTA is owner-approved as **Get Inspired →**, restoring the three-card rhythm: Find My Matches / Shop Smarter / Get Inspired.
@@ -509,7 +509,10 @@ Status: **VERIFIED / OWNER AUTHORIZED FOR CANONICAL PROMOTION / FAQ REVIEW STILL
 - CI includes `tests/public-homepage-content.test.ts` to prevent recurrence.
 - Branch head `1b2212eee821015d642d13f88fbbefb63e97c84d` passed CI run **#364** end-to-end.
 - On **2026-08-21**, the owner explicitly authorized PR #45 for `main`/production promotion after CI #365 passed.
+- Authorization commit `1f94f774fdef375188a360ba1cb14435300a9e51` passed CI run **#366** end-to-end.
+- PR #45 merged to `main` as `0961ca6635f790debdbcf7df0b194247caa3eaf4`.
+- Vercel production deployment `dpl_FScqLGEXYJAgQEmqUsMeokKzfbCd` for that exact merge commit reached **READY**.
 - The owner explicitly requires review of all five FAQ questions after deployment; the homepage must not be called repaired/complete until that review is finished.
 
 ## Exact next action
-Promote owner-authorized PR #45 to `main`/production and verify the deployment. Then conduct the owner’s question-by-question review of the five public FAQ entries before calling the homepage repaired or returning to Phase 6.5.2 Browse as the single active implementation line using real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains separate.
+Conduct the owner’s question-by-question review of the five deployed public FAQ entries before calling the homepage repaired or returning to Phase 6.5.2 Browse as the single active implementation line using real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains separate.

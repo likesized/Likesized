@@ -92,7 +92,7 @@ export default function Home() {
       <section className="section" aria-label="Help and frequently asked questions">
         <span className="eyebrow">NEED HELP?</span>
         <h2 className="sectionTitle">Questions about LikeSized?</h2>
-        <p>Learn how Fit Twins, matching, privacy, Closet sharing, and fit evidence work.</p>
+        <p>Learn how LikeSized works, how we find your Fit Twins, how your measurements stay private, and how real people help you find a better fit.</p>
         <Link className="textLink" href="/help">Help / FAQ →</Link>
       </section>
     </main>

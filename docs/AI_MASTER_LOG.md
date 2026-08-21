@@ -479,7 +479,7 @@ The owner cleared the recovery freeze on **2026-08-21**, PR #43 was promoted to 
 
 # POST-RECOVERY CORRECTION — OUTFIT PHOTO PIPELINE
 
-Status: **IMPLEMENTED ON BRANCH / VERIFICATION PENDING**.
+Status: **VERIFIED ON BRANCH / OWNER PROMOTION AUTHORIZATION PENDING**.
 
 - Active branch: `optimize-outfit-photo-pipeline`.
 - New outfit intake still accepts JPEG, PNG, or WebP up to 8 MB for normal phone-photo usability.
@@ -489,8 +489,9 @@ Status: **IMPLEMENTED ON BRANCH / VERIFICATION PENDING**.
 - The server accepts only those capped optimized WebP outputs and removes partial uploads on failure.
 - Outfit and Following feeds request `feed.webp`; legacy posts fall back to their existing stored path.
 - Storage remains private/member-readable with owner-only writes/deletes.
-- CI now includes `tests/outfit-photo-pipeline.test.ts`.
+- CI includes `tests/outfit-photo-pipeline.test.ts`.
+- Branch head `ad05b5541947972bf83dbc499c0c11b6204f6b43` passed CI run **#358** end-to-end: canonical integrity, typecheck, focused application tests, production build, full fresh migration replay, and database behavior/privacy tests.
 - No Fit Match cache or matching-engine change is included.
 
 ## Exact next action
-Verify the outfit-photo correction branch end-to-end. After it passes and receives owner-authorized canonical promotion, resume/finalize **Phase 6.5.2 Browse** as the single active implementation line using real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains separate.
+Wait for explicit owner authorization to promote verified PR #44 to `main`/production. After promotion and production verification, resume/finalize **Phase 6.5.2 Browse** as the single active implementation line using real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains separate.

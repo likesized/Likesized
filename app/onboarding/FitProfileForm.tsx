@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { saveFitProfile } from "@/app/onboarding/actions";
 import { MeasurementHelpDialog } from "@/app/onboarding/MeasurementHelp";
 import helpStyles from "@/app/onboarding/MeasurementHelp.module.css";
@@ -8,7 +8,6 @@ import helpStyles from "@/app/onboarding/MeasurementHelp.module.css";
 type UnitSystem = "imperial" | "metric";
 export type MeasurementType = { key:string; label:string; core:boolean; measurement_group:string; dimension:"length"|"weight"; manual_step_imperial:number|string; manual_step_metric:number|string; sort_order:number };
 export type BodyMeasurement = { measurement_type_key:string; entered_value:number|string; entered_unit:string };
-
 type Props={username:string;isInitialSetup:boolean;unitSystem:UnitSystem;types:MeasurementType[];measurements:BodyMeasurement[];errorMessage:string|null};
 
 const INCH_FRACTIONS=[{value:"0",label:"0"},{value:"0.25",label:"¼"},{value:"0.5",label:"½"},{value:"0.75",label:"¾"}];
@@ -33,6 +32,12 @@ export function FitProfileForm({username,isInitialSetup,unitSystem:initialSystem
   const [reviewing,setReviewing]=useState(false);
   const [usernameDraft,setUsernameDraft]=useState(username);
   const [values,setValues]=useState<Record<string,string>>(()=>Object.fromEntries(visibleTypes.map((type)=>{const row=byKey.get(type.key);if(!row)return[type.key,""];const to=targetUnit(type,initialSystem);return[type.key,String(roundStep(convert(Number(row.entered_value),row.entered_unit,to),stepFor(type,initialSystem)))];})));
+
+  useEffect(()=>{
+    if(!reviewing)return;
+    const frame=requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:"auto"}));
+    return()=>cancelAnimationFrame(frame);
+  },[reviewing]);
 
   const reviewRows=useMemo(()=>visibleTypes.flatMap((type)=>{
     const raw=values[type.key];
@@ -59,13 +64,13 @@ export function FitProfileForm({username,isInitialSetup,unitSystem:initialSystem
     if(system==="imperial"&&type.dimension==="length"){const parts=inchParts(values[type.key]??"");return <div key={type.key} className={helpStyles.measurementField}><div className={helpStyles.measurementLabelRow}><label htmlFor={`${inputId}_whole`}>{label}</label><button type="button" className={helpStyles.helpButton} aria-label={`How to measure ${label}`} onClick={()=>setHelpKey(type.key)}>?</button></div><input type="hidden" name={`measurement_${type.key}`} value={values[type.key]??""}/><div className={`${helpStyles.measurementInputRow} ${helpStyles.imperialMeasurementRow}`}><input id={`${inputId}_whole`} aria-label={`${label} whole inches`} type="number" inputMode="numeric" min="0" step="1" value={parts.whole} onChange={(event)=>setImperialLength(type.key,event.target.value,parts.fraction)}/><select aria-label={`${label} fractional inches`} value={parts.fraction} onChange={(event)=>setImperialLength(type.key,parts.whole,event.target.value)} disabled={!parts.whole}>{INCH_FRACTIONS.map((fraction)=><option key={fraction.value} value={fraction.value}>{fraction.label}</option>)}</select><span>in</span></div></div>;}
     const step=stepFor(type,system);return <div key={type.key} className={helpStyles.measurementField}><div className={helpStyles.measurementLabelRow}><label htmlFor={inputId}>{label}</label><button type="button" className={helpStyles.helpButton} aria-label={`How to measure ${label}`} onClick={()=>setHelpKey(type.key)}>?</button></div><div className={helpStyles.measurementInputRow}><input id={inputId} name={`measurement_${type.key}`} type="number" inputMode="decimal" min="0" step={step} value={values[type.key]??""} onChange={(event)=>setMeasurementValue(type.key,event.target.value)}/><span>{suffix}</span></div></div>;};
 
-  return <form className="fitForm" action={saveFitProfile} onSubmit={(event)=>{if(!reviewing){event.preventDefault();setReviewing(true);window.scrollTo({top:0,behavior:"smooth"});}}}>
+  return <form className="fitForm" action={saveFitProfile} onSubmit={(event)=>{if(!reviewing){event.preventDefault();(document.activeElement as HTMLElement|null)?.blur();setReviewing(true);}}}>
     {errorMessage?<div className="authMessage error">{errorMessage}</div>:null}
     <h2>{reviewing?(isInitialSetup?"Review Fit Profile":"Review Changes"):"Core Fit Profile"}</h2>
     {reviewing?<>
       <p className={helpStyles.coreIntro}>Review what you entered. Nothing is saved until you confirm.</p>
       {isInitialSetup?<div className="evidence"><div><strong>Username</strong><span>{usernameDraft}</span></div></div>:null}
-      <div className="evidenceList">{reviewRows.map((row)=><div className="evidence" key={row.key}><div><strong>{row.label}</strong><span>{row.value}{row.status?` · ${row.status}`:""}</span></div></div>)}</div>
+      <div className={`evidenceList ${helpStyles.reviewGrid}`}>{reviewRows.map((row)=><div className={`evidence ${helpStyles.reviewItem}`} key={row.key}><div><strong>{row.label}</strong><span>{row.value}{row.status?` · ${row.status}`:""}</span></div></div>)}</div>
       <input type="hidden" name="username" value={isInitialSetup?usernameDraft:""}/><input type="hidden" name="unit_system" value={system}/>{visibleTypes.map((type)=><input key={type.key} type="hidden" name={`measurement_${type.key}`} value={values[type.key]??""}/>)}
       <div className="buttonRow"><button type="button" className="secondaryButton" onClick={()=>setReviewing(false)}>← Back to Edit</button><button type="submit" className="primaryButton">Confirm & Save</button></div>
     </>:<>

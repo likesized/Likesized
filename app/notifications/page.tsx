@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { markAllFitTwinNotificationsRead, markFitTwinNotificationRead } from "./actions";
+import { markAllFollowingNotificationsRead, markFollowingNotificationRead } from "./actions";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./notifications.module.css";
 
@@ -27,7 +27,7 @@ export default async function NotificationsPage({searchParams}:{searchParams:Sea
     supabase.rpc("get_fit_twin_activity_notifications",{p_result_limit:50,p_before:null}),
     supabase.rpc("get_fit_twin_notification_unread_count"),
   ]);
-  if(profileError||fitProfileError||notificationError||unreadError)throw new Error("Could not load Fit Twin notifications.");
+  if(profileError||fitProfileError||notificationError||unreadError)throw new Error("Could not load Following notifications.");
   if(!profile?.username||!fitProfile?.completed_at)redirect("/onboarding");
 
   const notifications=(notificationData??[]) as NotificationRow[];
@@ -47,12 +47,12 @@ export default async function NotificationsPage({searchParams}:{searchParams:Sea
   return <main className="pageShell">
     <div className="pageTitle">
       <span className="eyebrow">NOTIFICATIONS</span>
-      <h1>New fit activity from your people.</h1>
-      <p>In-app alerts for new Shared garments, fresh Fit Reports, and outfits from your Fit Twins. Likes never generate alerts, and V1 does not send these by email or phone push.</p>
+      <h1>New fit activity from people you follow.</h1>
+      <p>In-app alerts for new Shared garments, fit updates, and outfits from people you follow. Following is separate from Fit Twin status. Likes never generate alerts, and V1 does not send these by email or phone push.</p>
       <div className={styles.toolbar}>
         <Link className="secondaryButton" href="/following">Following Feed</Link>
         <Link className="secondaryButton" href="/settings">Notification settings</Link>
-        {unreadCount>0?<form action={markAllFitTwinNotificationsRead}><button className="primaryButton" type="submit">Mark all read ({unreadCount})</button></form>:null}
+        {unreadCount>0?<form action={markAllFollowingNotificationsRead}><button className="primaryButton" type="submit">Mark all read ({unreadCount})</button></form>:null}
       </div>
     </div>
 
@@ -82,12 +82,12 @@ export default async function NotificationsPage({searchParams}:{searchParams:Sea
           {note?<p className={styles.note}>“{note}”</p>:null}
 
           <div className={styles.actions}>
-            {row.activity_type==="outfit_posted"?<Link className="textLink" href="/outfits?feed=twins">View Fit Twin outfits →</Link>:<Link className="textLink" href={`/people/${row.username}`}>View Fit Report →</Link>}
+            {row.activity_type==="outfit_posted"?<Link className="textLink" href="/outfits?feed=following">View followed outfits →</Link>:<Link className="textLink" href={`/people/${row.username}`}>View {name} →</Link>}
             {row.product_slug?<Link className="textLink" href={`/item/${row.product_slug}`}>View product →</Link>:null}
-            {!row.read_at?<form action={markFitTwinNotificationRead}><input type="hidden" name="notification_id" value={row.notification_id}/><button className={styles.readButton} type="submit">Mark read</button></form>:null}
+            {!row.read_at?<form action={markFollowingNotificationRead}><input type="hidden" name="notification_id" value={row.notification_id}/><button className={styles.readButton} type="submit">Mark read</button></form>:null}
           </div>
         </div>
       </article>;
-    })}</div>:<div className="emptyState"><span className="eyebrow">NO NOTIFICATIONS YET</span><h2>Your Fit Twins have been quiet.</h2><p>When notification alerts are on, meaningful new Shared fit activity from people you follow will appear here. Your Following Feed still works even when alerts are muted.</p><Link className="primaryButton" href="/following">Open Following Feed →</Link></div>}
+    })}</div>:<div className="emptyState"><span className="eyebrow">NO NOTIFICATIONS YET</span><h2>The people you follow have been quiet.</h2><p>When Following alerts are on, meaningful new Shared activity from people you follow will appear here. Your Following Feed still works even when alerts are off.</p><Link className="primaryButton" href="/following">Open Following Feed →</Link></div>}
   </main>;
 }

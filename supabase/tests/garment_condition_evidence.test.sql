@@ -9,7 +9,11 @@ select is((select array_agg(e.enumlabel order by e.enumsortorder)::text from pg_
 select ok(pg_get_functiondef('public.get_product_fit_summary(uuid)'::regprocedure) like '%garment_condition=''normal''%','product fit summary excludes materially changed garments');
 select ok(pg_get_functiondef('public.get_product_evidence_candidates(uuid,uuid,integer)'::regprocedure) like '%garment_condition=''normal''%','recommendation evidence excludes materially changed garments');
 select ok(pg_get_functiondef('public.get_product_evidence_candidates(uuid,uuid,integer)'::regprocedure) like '%visibility=''shared''%','recommendation evidence keeps Shared Closet boundary');
-select ok(pg_get_functiondef('public.get_product_evidence_candidates(uuid,uuid,integer)'::regprocedure) like '%row_number() OVER (PARTITION BY s.user_id%','evidence remains unique-wearer capped');
+select ok(
+  position('row_number() over' in lower(pg_get_functiondef('public.get_product_evidence_candidates(uuid,uuid,integer)'::regprocedure))) > 0
+  and position('partition by s.user_id' in lower(pg_get_functiondef('public.get_product_evidence_candidates(uuid,uuid,integer)'::regprocedure))) > 0,
+  'evidence remains unique-wearer capped'
+);
 select ok(has_function_privilege('authenticated','public.get_product_fit_summary(uuid)','EXECUTE'),'authenticated users can read safe normal-condition summary');
 select ok(not has_function_privilege('anon','public.get_product_fit_summary(uuid)','EXECUTE'),'anonymous users cannot read product fit summary');
 select ok(not has_function_privilege('anon','public.get_product_evidence_candidates(uuid,uuid,integer)','EXECUTE'),'anonymous users cannot read recommendation evidence');

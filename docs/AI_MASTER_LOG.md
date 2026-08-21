@@ -417,5 +417,14 @@ Then:
 11. Only after #10 may obsolete branches/PRs be closed/deleted.
 12. No production promotion until separately authorized by owner.
 
+## Recovery progress — 2026-08-21
+- **RECOVERED:** canonical documentation hierarchy, migration documentation, CI canonical-integrity guard, CODEOWNERS, and recovery PR checklist.
+- **RECOVERED:** PR #36 core recommendation engine and all preserved Fit Match migrations re-sequenced after the production migration head, with the later positive-only body-measurement normalization reasserted last.
+- **RECOVERED:** measurement freshness/reconfirmation and Preferred Fit merged into the later owner-verified Fit Profile flow without restoring retired normally-worn-size input UI or the removed History notice.
+- **RECOVERED:** Following/Fit Twin application semantics on the recovery line. Following is now Follow/Unfollow through `follows`; member profiles and People My Size no longer save/remove Fit Twins; Following Feed and outfit Following filter are driven by `follows`; notification UI is Following-based; `/twins` no longer reads `follows` and deliberately does not invent an unresolved Fit Twin threshold.
+- **SAFEGUARD ADDED:** canonical CI now rejects the old source action names/wording, rejects `/outfits?feed=twins`, and fails if `app/twins/page.tsx` derives Fit Twins from `follows`.
+- Legacy database RPC/table/test identifiers containing `fit_twin` remain an explicitly known internal cleanup item until a safe ordered migration/compatibility plan is audited. Their existence does not authorize old user-facing semantics.
+- Production/main remain untouched during recovery.
+
 ## Exact next action
-Continue canonical recovery only: install documentation/CI safeguards, recover PR #36 core matching work by domain with verification, reconcile stale social/star source semantics, then classify Phase 6.5 Browse work. Do not resume feature development or production deployment.
+Continue canonical recovery only: verify the Following/Fit Twin cleanup, recover the remaining PR #36 Closet/Product provenance + garment-condition application work without reactivating member material/stretch inputs, then classify/reconcile Phase 6.5 Browse work. Do not resume feature development or production deployment.

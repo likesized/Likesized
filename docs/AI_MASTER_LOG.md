@@ -12,14 +12,19 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 ## Current status — 2026-08-20
 - Phase 6.3 auth/configuration: COMPLETE.
 - Phase 6.4 responsive/accessibility + Fit Profile polish: IN PROGRESS.
-- Measurement-guide implementation, binary repair, production deployment, and owner visual verification: COMPLETE.
-- Phase 6.4 mobile/measurement batch through Front Waist Length: MERGED TO CANONICAL `main` / PRODUCTION READY.
+- The owner has completed and locked the full Fit Profile measurement-name/help wording audit. The approved source batch is on PR #37 and is pending final CI/preview/production verification before this portion is called live.
+- The owner explicitly authorized finishing this Fit Profile batch, merging it, and pushing it through Vercel production.
+- The final crotch artwork is one single owner-approved PNG used by both **Crotch Depth** and **Total Crotch Length**. The owner manually added `public/measurement-guides/crotch-guide.png` to canonical `main` in commit `c120691db0f1ae94186d27547ad6027b9a9735f7`; PR #37 wiring points both help entries to that same path.
+- The **Normally worn sizes — private reference only** UI and the Fit Profile **History** notice are owner-removed for V1. Existing private size-reference records are retained behind the scenes and are not silently deleted when measurements are saved.
+- The former Fit Profile **Display Name** label is now **Username**. Username remains 3–32 letters/numbers/underscores, no spaces, case-insensitively unique, and may be changed later.
+- Owner locked a 30-day reservation for a member's previous username after a change. Supabase migration `20260821033107_reserve_previous_usernames` is applied to the connected LikeSized project and its exact SQL is recorded in the canonical migration file on PR #37.
 - Mobile Menu navigation-close behavior is owner-verified working on production.
-- Owner additionally required the open Mobile Menu to close when clicking/tapping anywhere outside it. That refinement is merged to canonical `main` and deployed production READY; final owner functional confirmation of outside-click behavior remains pending.
-- Current measurement-audit checkpoint: **Back Waist / Neck-to-Waist Length**.
+- Outside-click/tap close is deployed but still pending final owner functional confirmation.
+- iPhone Safari form-focus zoom prevention is deployed but still pending final functional verification.
 - Phase 6.5 V1 Product Surface + Navigation Audit: LOCKED / QUEUED immediately after Phase 6.4.
+- **Owner decision — 2026-08-20:** Outfits remain in V1. The prior Phase 6.5 instruction to remove Outfits is superseded. Existing canonical Outfit code/data are preserved, and the final V1 Outfits / Fits social-layer audit is scheduled after the Closet/Product/Favorites foundation and before Fit Twin Activity.
 
-## Phase 6.4 canonical completed work
+## Phase 6.4 canonical completed work / locked source decisions
 - Fit Profile copy/labels/help UI polished.
 - Overbust removed.
 - Height uses feet + whole inches.
@@ -27,14 +32,40 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - Server validates height as whole inches and other imperial lengths in quarter-inch increments.
 - Mobile Menu uses a single canonical React-controlled open state rather than native `<details>` state. Selecting any navigation link closes it, pathname changes close it, and the latest canonical implementation also closes it on any click/tap outside the menu. Navigation-close is owner-verified; outside-click remains pending owner functional confirmation.
 - iPhone Safari form-focus zoom prevention is implemented in canonical source and deployed via 16px form-control text; final functional verification remains before Phase 6.4 closes.
+- **Username** replaces the misleading user-facing **Display Name** label on Fit Profile. The underlying canonical identity remains `profiles.username`; no parallel identity field was introduced.
+- Username format remains `[A-Za-z0-9_]{3,32}`, no spaces. Existing `profiles_username_ci_uq` continues to enforce case-insensitive current ownership.
+- Username changes are allowed. Relationships/matches/follows/Closet/history remain attached to UUIDs and therefore continue through a username change.
+- Previous usernames are reserved to the same account for 30 days after a normalized username change. A member may reclaim their own reserved username during that period; another member may not claim it until expiration. Reservations are private/internal and do not create a public username-history surface.
+- The normally-worn-size form surface is removed from V1 because actual body measurements plus product-specific size/fit evidence are the useful fit inputs. The dormant schema is retained for forward compatibility.
+- Fit Profile saves preserve any pre-existing `user_size_references` unchanged even though the fields are no longer displayed, preventing accidental historical-data deletion.
+- The user-facing Fit Profile History note is removed; immutable historical Fit Report/body snapshot architecture remains intact internally.
 
-## Phase 6.4 measurement audit — owner-locked decisions so far
+## Phase 6.4 measurement audit — COMPLETE / OWNER LOCKED
+Canonical owner-approved wording is implemented in `app/onboarding/MeasurementHelp.tsx`. Key locked decisions:
 - **Individual Shoulder Length:** keep current name, description, how-to, and guide as-is.
 - **Torso Girth:** keep current name, description, how-to, tip, and approved guide as-is.
 - **Bust Point to Bust Point:** title capitalization standardized; how-to is “Measure straight across from the fullest point of one bust to the fullest point of the other while standing naturally.”
-- **Shoulder to Bust Point:** use a vertical measurement from the middle of the shoulder, where a bra strap naturally sits, down to the fullest part or nipple of the bust; guide aligned vertically.
-- **Front Waist Length:** description is “The distance from the high shoulder point to the natural waist along the front of the body.” How-to is “Start at the high shoulder point where the neck meets the shoulder. Measure down the front of the body, over the fullest part of the bust, to the natural waist.”
-- **Next measurement under audit:** Back Waist / Neck-to-Waist Length. No owner-approved wording change has been applied to it yet.
+- **Shoulder to Bust Point:** description is “The distance from the middle of the shoulder to the fullest point of the bust.” How-to is “Start at the middle of the shoulder, where a bra strap naturally sits. Measure straight down to the fullest point of the bust.”
+- **Front Waist Length:** description is “The distance from the shoulder at the base of the neck to the natural waist along the front of the body.” How-to is “Start where the neck meets the shoulder. Measure down the front of the body, passing over the fullest part of the bust, to the natural waist.”
+- **Back Waist Length:** description is “The distance from the base of the neck to the natural waist along the center back.” How-to is “Start at the prominent bone at the base of the neck. Measure straight down the center of the back to the natural waist.”
+- **Shoulder to Waist:** description is “The distance from the outer shoulder point to the natural waist.” How-to is “Start at the outer shoulder point where a sleeve seam would sit. Measure down the side of the torso to the natural waist, following the body.”
+- **Across-Back Width:** horizontal upper-back width between rear arm creases; measure straight across, tape level, do not wrap around body.
+- **Across-Front Chest Width:** horizontal upper-front chest width between front arm creases; measure above the fullest bust/chest, tape level, do not wrap around body.
+- **Arm / Sleeve Length:** outer shoulder point to wrist along outside of slightly bent arm, over elbow.
+- **Upper Arm Circumference:** fullest upper arm with arm relaxed; tape level/snug, not tight.
+- **Elbow Circumference:** fullest elbow with elbow slightly bent; tape snug, not tight.
+- **Wrist Circumference:** around wrist bone where watch/cuff naturally sits; tape snug, not tight.
+- **Neck / Collar Circumference:** base of neck at natural collar level; comfortably snug. Tip retains about one finger of space for shirt-collar fit.
+- **Thigh Circumference:** fullest upper thigh while standing naturally with weight evenly distributed.
+- **Knee Circumference:** fullest knee while standing relaxed with leg straight.
+- **Calf Circumference:** widest part of calf while standing naturally.
+- **Outseam:** normal waistband position down outside leg to desired hem or floor.
+- **Front Rise:** center front waistband to the point between the legs where front/back seams meet.
+- **Back Rise:** center back waistband down along body to the point between the legs where front/back seams meet.
+- **Crotch Depth:** description is “The vertical distance from the natural waist to the surface you are sitting on.” How-to is “Sit upright on a firm, flat chair. Measure straight down from the side of your natural waist to the chair surface.”
+- **Total Crotch Length:** description is “The full distance from the center front waist, through the legs, to the center back waist.” How-to is “Start at the center front of your natural waist. Run the tape down through the legs and up to the center back of your natural waist, following the body.”
+- **Foot Length:** heel to longest toe while standing with full weight on foot. Tip: measure both feet and use the larger measurement.
+- **Foot Width:** widest part of forefoot / ball of foot while standing with full weight on foot. Tip: measure both feet and use the larger measurement.
 
 ## Phase 6.4 production checkpoint — 2026-08-20
 - Owner explicitly authorized the Phase 6.4 mobile/measurement batches promoted during this session.
@@ -54,24 +85,29 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - PR #35 was squash-merged into canonical `main` as commit `3a6e3ac81b78d830c5f45cc7d608729f6b230055` after explicit owner authorization.
 - Vercel production deployment `dpl_JBRpLEd2qE5ynsYAazTdJrFJBZWC` for commit `3a6e3ac81b78d830c5f45cc7d608729f6b230055` reached READY with no alias error and owns `likesized.com`, `likesized.vercel.app`, and the canonical main-branch aliases.
 - Outside-click/tap behavior remains pending owner functional confirmation; do not mark that behavior complete until confirmed.
-- The measurement audit intentionally stops at **Back Waist / Neck-to-Waist Length** for the next owner review.
+- Owner manually added the final combined crotch guide to canonical `main` as `public/measurement-guides/crotch-guide.png` in commit `c120691db0f1ae94186d27547ad6027b9a9735f7`.
+- Supabase migration `20260821033107_reserve_previous_usernames` was applied successfully to project `rlksidwniuoxoacumyaf`; source is recorded in `supabase/migrations/20260821033107_reserve_previous_usernames.sql` on PR #37.
+- PR #37 is the active Fit Profile completion batch and is owner-authorized for production promotion after CI/preview verification.
 
-## Approved measurement-guide artwork — COMPLETE / LIVE / OWNER VERIFIED
-- Approved unisex body artwork is the base for normal measurement guides and remained valid.
+## Approved measurement-guide artwork
+- Approved unisex body artwork is the base for normal measurement guides.
 - Approved shared waist/hip artwork is used for Natural Waist, High Hip, Hips / Seat, and Waist-to-Hip Length.
 - Approved front/back magenta artwork is used for Torso Girth.
+- Owner-approved combined crotch artwork is one image shared by Crotch Depth and Total Crotch Length; canonical path is `public/measurement-guides/crotch-guide.png`.
+- Do not split, crop, redraw, recolor, compress, convert, or substitute the combined crotch guide. Both measurement help entries intentionally render the same full image.
 - Old coded body figure and old WaistHipDiagram / TorsoGirthDiagram implementations remain removed; there are no fallback copies.
-- Canonical asset paths are `public/measurement-guides/body-guide.webp`, `public/measurement-guides/waist-hip-guide.webp`, and `public/measurement-guides/torso-girth-guide.webp`.
-- Original implementation commit: `14c60617fc5ad391198f1f6ea64bf6bcc11d7644`.
+- Existing canonical asset paths are `public/measurement-guides/body-guide.webp`, `public/measurement-guides/waist-hip-guide.webp`, `public/measurement-guides/torso-girth-guide.webp`, and `public/measurement-guides/crotch-guide.png`.
+- Original shared-artwork implementation commit: `14c60617fc5ad391198f1f6ea64bf6bcc11d7644`.
 - Corrected waist/hip Git blob: `207cef3553aacb70909d95427e5541be81f9782a`.
 - Corrected Torso Girth Git blob: `f8933270c7d75888a531587ecbf7eee31f5268e4`.
-- Repair commit `c9de2165280ff7b13591eb64665774394af932a9` deployed through Vercel production deployment `dpl_2zn8KbfppxY8CkMKZ7JsdPEFH5qv`, which reached READY with no build errors.
-- Live verification confirmed corrected canonical binaries, and the owner confirmed the rendered measurement guides work.
-- Binary verification rule remains locked: HTTP 200 alone is not sufficient for image assets. Verify deployed files are complete/decodable and match expected canonical bytes/hash.
+- Shared-artwork repair commit `c9de2165280ff7b13591eb64665774394af932a9` deployed through Vercel production deployment `dpl_2zn8KbfppxY8CkMKZ7JsdPEFH5qv`, which reached READY with no build errors.
+- Existing live shared-artwork verification confirmed corrected canonical binaries, and the owner confirmed those rendered measurement guides work.
+- The new combined crotch image is owner-approved and present on `main`; final rendered production verification is still required after PR #37 wiring is promoted.
+- Binary verification rule remains locked: HTTP 200 alone is not sufficient for image assets. Verify deployed files are complete/decodable and match the intended canonical asset.
 
 ## Phase 6.4 — remaining work
-1. Continue and finish the remaining measurement-name/help audit beginning at **Back Waist / Neck-to-Waist Length**.
-2. Final Fit Profile save/load/edit regression verification.
+1. Complete PR #37 CI/preview verification, promote the owner-authorized Fit Profile completion batch to canonical `main`, and verify Vercel production rendering including the combined crotch guide.
+2. Final Fit Profile save/load/edit regression verification after promotion, including username change behavior and preservation of dormant private size-reference data.
 3. Owner functional confirmation that outside-click/tap closes the deployed Mobile Menu.
 4. Final functional verification of the deployed iPhone Safari form-focus zoom fix.
 5. Close Phase 6.4 only after the canonical source, verification result, and this master agree.
@@ -99,7 +135,7 @@ Target hierarchy:
 - Settings
 - Help / FAQ
 
-Current separate top-level concepts Search, People My Size, Following, and Outfits must be audited against this hierarchy rather than automatically retained as peer menu items.
+Current separate top-level concepts Search, People My Size, Following, and Outfits must be audited against this hierarchy rather than automatically retained as peer menu items. Outfits remain a V1 feature, but whether the member-facing destination is named **Outfits**, **Fits**, lives within Discover, or receives another placement is decided here and in the dedicated Outfit social-layer audit rather than assumed from the legacy navigation.
 
 ### 6.5.2 Discover hub
 Discover owns finding products and people.
@@ -117,12 +153,12 @@ Fit Twins are saved/followed people.
 - “Following” should not remain a competing top-level product concept if it can live cleanly as Fit Twin Activity.
 - Reuse the canonical `follows` relationship; no parallel social model.
 
-### 6.5.4 Remove the V1 Outfits concept
-- LikeSized V1 is about individual articles of clothing, not full-outfit posts composed from multiple garments.
-- Remove Outfits from the user-facing navigation and audit/remove the current V1 outfit-post surface.
-- Remove/supersede outfit activity from feeds/notifications/docs where appropriate.
-- Do not rewrite applied migrations. If database cleanup is required, use a new ordered canonical migration.
-- Update product/spec/schema documentation so V1 no longer presents full-outfit posting as a feature.
+### 6.5.4 Preserve V1 Outfits; defer final social-layer audit
+- **Supersedes the prior decision to remove Outfits from V1.**
+- Preserve the existing canonical Outfit implementation, migrations, storage behavior, likes, and Closet-item linking while the underlying garment/product experience is audited.
+- Do not create a parallel Outfit implementation or alternate social graph.
+- Do not expand Outfits yet; the dedicated V1 Outfit/Fits social-layer audit occurs after Favorites so it can build on the final Closet, garment-detail, Product, Fit Twin, privacy, and save behavior.
+- Existing Outfit behavior must continue to respect raw-measurement privacy and the canonical `follows` relationship.
 
 ### 6.5.5 My Closet audit/redesign
 **My Closet = all individual garments the member has logged and how they fit.**
@@ -180,7 +216,7 @@ Header/context:
 Primary content:
 - Shared Closet
 - Activity
-- no Outfits tab in V1
+- Outfit/profile presentation is finalized in 6.5.18 rather than removed in advance.
 
 Shared Closet:
 - only intentionally Shared garments
@@ -313,15 +349,42 @@ Useful content:
 - Shop
 - remove Favorite
 
-### 6.5.18 Fit Twin Activity audit
-Activity should focus on garment evidence:
+### 6.5.18 V1 Outfits / Fits social-layer audit — LOCKED POSITION
+Outfits are the social wrapper around LikeSized garment fit evidence, not a disconnected generic social feed.
+
+Audit/finalize:
+- one Outfit post is composed from existing owned Closet garments rather than duplicating product/fit data
+- require an Outfit photo and 1–6 unique owned Closet garments with fit evidence unless the owner later changes that limit
+- caption
+- likes
+- whether Save Outfit belongs in V1
+- garment tags showing useful product, size, Fit Result/Fit Rating, and viewer-relevant historical match context without exposing raw measurements
+- click garment tag → canonical garment/Product detail
+- current person/Fit Twin match context must remain distinct from each garment’s immutable historical match context
+- member profile Outfit presentation
+- member-wide discovery versus Fit-Twin-focused Outfit discovery
+- ranking should prioritize body/fit relevance before generic popularity; exact ranking formula is audited here rather than assumed
+- privacy behavior when a tagged garment becomes Private or is deleted
+- Outfit activity integration with Fit Twins and notifications
+- creator/influencer usefulness, including making body-relevant creators discoverable through fit similarity rather than follower count alone
+- creator-facing aggregate concepts such as Fit Twin count / close-fit audience may be considered, but raw member body measurements remain private and no advanced brand dashboard is required for V1
+- no V1 DMs, Stories, Reels/video feed, creator payouts, sponsorship marketplace, or other broad social-network expansion unless separately owner-approved
+- reuse canonical `follows`, Closet, Product, Fit Report/history, storage, and Outfit tables; no parallel social model
+
+Naming/navigation rule:
+- **Outfit** remains the content object unless owner changes it.
+- The destination may ultimately be labeled **Fits**, **Outfits**, or placed inside Discover based on the 6.5.1/6.5.18 audit; no naming change is locked merely by preserving the feature.
+
+### 6.5.19 Fit Twin Activity audit
+Activity should focus on useful fit evidence:
 - newly Shared garment
 - new/retried fit observation on an existing garment
-- click through to the actual garment/detail evidence
+- new Outfit post when allowed by the final 6.5.18 rules
+- click through to the actual garment/detail or Outfit evidence
 
-Current person-to-person Fit Match may appear as relationship context, while the garment evidence remains tied to its historical body snapshot.
+Current person-to-person Fit Match may appear as relationship context, while garment evidence remains tied to its historical body snapshot.
 
-### 6.5.19 Search audit
+### 6.5.20 Search audit
 After the new hierarchy exists:
 - search canonical products/brands/identifiers
 - search members
@@ -329,7 +392,7 @@ After the new hierarchy exists:
 - member results open member Shared Closet/profile
 - keep Search distinct from People My Size algorithmic discovery
 
-### 6.5.20 Help / FAQ
+### 6.5.21 Help / FAQ
 Add a deliberate help surface before Beta.
 
 Must explain at minimum:
@@ -342,13 +405,14 @@ Must explain at minimum:
 - photo sharing behavior
 - Fit Result vs Fit Rating
 - Favorites
+- Outfits/Fits social behavior after 6.5.18 is finalized
 - retailer links
 - why highly matched people may still choose different sizes
 - why historical evidence remains attached to the body state from the original try-on
 
 Help/FAQ can live in the account/menu/support hierarchy rather than requiring a major primary-navigation slot.
 
-### 6.5.21 Remaining product-surface audit
+### 6.5.22 Remaining product-surface audit
 Audit all remaining V1 surfaces for terminology, privacy, usability, responsiveness, and hierarchy:
 - Fit Profile
 - Settings
@@ -361,7 +425,7 @@ Audit all remaining V1 surfaces for terminology, privacy, usability, responsiven
 - logged-out states
 - profile/account editing
 
-### 6.5.22 Terminology cleanup
+### 6.5.23 Terminology cleanup
 Primary member-facing vocabulary should be coherent and minimal:
 - Discover
 - People My Size
@@ -372,10 +436,11 @@ Primary member-facing vocabulary should be coherent and minimal:
 - Fit Profile
 - Fit Result
 - Fit Rating
+- final Outfit/Fits terminology locked by the preceding navigation/social audit
 
 “Fit Report” may remain an internal engineering/database term but should not be presented as a second member-facing object separate from the garment.
 
-### 6.5.23 Preview verification before Phase 7
+### 6.5.24 Preview verification before Phase 7
 Phase 6.5 is not complete until canonical source + verification + master agree.
 
 Verify at minimum:
@@ -389,10 +454,11 @@ Verify at minimum:
 - Favorites
 - favorite-source privacy changes
 - Fit Twins and Activity
+- Outfit/Fits creation, privacy, garment links, likes, profile/discovery placement, and Fit Twin integration
 - same-product top matched wearers
 - retailer links
 - Search / People My Size distinction
-- no unintended legacy Outfit surface
+- no unintended duplicate/legacy social surface
 - CI, migration replay, privacy/security tests as relevant
 
 # Phase 7 — V1 BETA END-TO-END VERIFICATION — QUEUED
@@ -409,6 +475,7 @@ Representative end-to-end verification must cover:
 - retailer links
 - My Closet garment logging
 - later fit updates/history
+- Outfits/Fits social flow
 - Fit Twin Activity
 - Search
 - privacy boundaries
@@ -417,4 +484,4 @@ Representative end-to-end verification must cover:
 - CI/database/security verification
 
 ## Exact next action
-Resume Phase 6.4 at **Back Waist / Neck-to-Waist Length**. Do not change that measurement until the owner approves its wording. Then finish the remaining measurements, run the Fit Profile save/load/edit regression check, obtain owner functional confirmation that clicking/tapping outside the production Mobile Menu closes it, verify the iPhone Safari focus-zoom correction, synchronize verified results here, and close Phase 6.4 before beginning Phase 6.5.
+Finish PR #37 CI/preview verification, merge the owner-authorized Fit Profile completion batch to canonical `main`, verify the production Fit Profile and combined crotch guide, then run the final save/load/edit regression and outstanding owner functional checks before closing Phase 6.4 and beginning Phase 6.5.

@@ -25,6 +25,7 @@
 .approvedGuideImage { display:block; width:100%; height:auto; object-fit:contain; padding:8px; }
 .waistGuideImage { max-width:520px; max-height:560px; }
 .torsoGuideImage { max-width:460px; max-height:560px; }
+.crotchGuideImage { max-width:420px; max-height:560px; }
 .helpCopy { align-self:center; }
 .description { margin:0 0 22px; font-size:18px; line-height:1.45; font-weight:800; }
 .helpCopy h3 { margin:0 0 8px; font-size:15px; }
@@ -42,6 +43,7 @@
   .approvedGuideImage { padding:4px; }
   .waistGuideImage { max-width:390px; max-height:520px; }
   .torsoGuideImage { max-width:350px; max-height:500px; }
+  .crotchGuideImage { max-width:330px; max-height:500px; }
   .description { font-size:16px; }
   .imperialMeasurementRow { flex-wrap:nowrap; }
   .imperialMeasurementRow input { flex-basis:100px; }

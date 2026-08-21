@@ -339,6 +339,11 @@ The owner later explicitly corrected the garment card to use a **Wishlist** cont
 - If uploaded, the garment is Shared and the photo is visible to authenticated LikeSized members.
 - There is no private fit-photo mode.
 - Never use another member's personal fit photo as a generic product fallback.
+- Outfit photo intake may accept JPEG, PNG, or WebP files up to 8 MB, but the original must not be stored directly.
+- Before upload, new outfit photos are converted to WebP as a display image capped at 600 KB and a feed image capped at 220 KB.
+- Outfit and Following feeds use the feed-sized image. The display image is reserved for detail/full presentation.
+- Existing legacy outfit-photo paths remain readable; new optimized paths must not break older posts.
+- Both files remain in the private, authenticated-member-readable `outfit-photos` bucket with owner-only writes/deletes.
 
 # 14. Data-quality rule
 

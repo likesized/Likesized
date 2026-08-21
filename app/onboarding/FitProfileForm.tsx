@@ -12,6 +12,7 @@ export type BodyMeasurement = { measurement_type_key:string; entered_value:numbe
 export type GarmentTypePreferenceOption = { key:string; label:string; category:string; sort_order:number };
 export type GarmentFitPreference = { garment_type_key:string; preference:PreferredFit };
 type Props={username:string;isInitialSetup:boolean;unitSystem:UnitSystem;types:MeasurementType[];measurements:BodyMeasurement[];garmentTypes:GarmentTypePreferenceOption[];fitPreferences:GarmentFitPreference[];errorMessage:string|null};
+type ReviewRow={key:string;label:string;value:string;status:string|null};
 
 const INCH_FRACTIONS=[{value:"0",label:"0"},{value:"0.25",label:"¼"},{value:"0.5",label:"½"},{value:"0.75",label:"¾"}];
 const HEIGHT_INCHES=Array.from({length:12},(_,index)=>index);
@@ -51,7 +52,7 @@ export function FitProfileForm({username,isInitialSetup,unitSystem:initialSystem
     return()=>cancelAnimationFrame(frame);
   },[reviewing]);
 
-  const reviewRows=useMemo(()=>visibleTypes.flatMap((type)=>{
+  const reviewRows=useMemo<ReviewRow[]>(()=>visibleTypes.flatMap((type)=>{
     const raw=values[type.key];
     const original=byKey.get(type.key);
     if(!raw){
@@ -61,17 +62,23 @@ export function FitProfileForm({username,isInitialSetup,unitSystem:initialSystem
     const currentCanonical=canonical(type,Number(raw),targetUnit(type,system));
     const originalCanonical=original?canonical(type,Number(original.entered_value),original.entered_unit):null;
     const changed=originalCanonical===null||Math.abs(currentCanonical-originalCanonical)>0.0001;
-    const status=isInitialSetup?null:!original?"Added":changed?"Changed":confirmedUnchanged.has(type.key)?"Confirmed unchanged":null;
+    const status:string|null=isInitialSetup?null:!original?"Added":changed?"Changed":confirmedUnchanged.has(type.key)?"Confirmed unchanged":null;
     return[{key:type.key,label:displayLabel(type),value:reviewValue(type,raw,system),status}];
   }),[values,system,visibleTypes,byKey,isInitialSetup,confirmedUnchanged]);
 
-  const preferenceReviewRows=useMemo(()=>garmentTypes.flatMap((item)=>{
-    const current=preferences[item.key]??"standard";
-    const original=originalPreferences.get(item.key)??"standard";
-    if(isInitialSetup){return current==="standard"?[]:[{key:item.key,label:item.label,value:PREFERENCE_LABELS[current],status:null}];}
-    if(current===original)return[];
-    return[{key:item.key,label:item.label,value:PREFERENCE_LABELS[current],status:"Changed"}];
-  }),[garmentTypes,preferences,originalPreferences,isInitialSetup]);
+  const preferenceReviewRows=useMemo<ReviewRow[]>(()=>{
+    const rows:ReviewRow[]=[];
+    for(const item of garmentTypes){
+      const current=preferences[item.key]??"standard";
+      const original=originalPreferences.get(item.key)??"standard";
+      if(isInitialSetup){
+        if(current!=="standard")rows.push({key:item.key,label:item.label,value:PREFERENCE_LABELS[current],status:null});
+        continue;
+      }
+      if(current!==original)rows.push({key:item.key,label:item.label,value:PREFERENCE_LABELS[current],status:"Changed"});
+    }
+    return rows;
+  },[garmentTypes,preferences,originalPreferences,isInitialSetup]);
 
   function setMeasurementValue(key:string,value:string){setValues((current)=>({...current,[key]:value}));if(confirmedUnchanged.has(key))setConfirmedUnchanged((current)=>{const next=new Set(current);next.delete(key);return next;});}
   function setImperialLength(key:string,wholeRaw:string,fractionRaw:string){if(wholeRaw===""){setMeasurementValue(key,"");return;}const whole=Number(wholeRaw),fraction=Number(fractionRaw);if(!Number.isFinite(whole)||!Number.isFinite(fraction)){setMeasurementValue(key,"");return;}setMeasurementValue(key,String(whole+fraction));}

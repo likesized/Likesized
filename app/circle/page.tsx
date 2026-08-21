@@ -62,15 +62,15 @@ export default async function MyCirclePage(){
   return <main className="pageShell">
     <div className="pageTitle">
       <span className="eyebrow">MY CIRCLE</span>
-      <h1>Your Fit Twins and the people you follow—in one place.</h1>
-      <p>Fit Twins are identified by LikeSized from strong body Match quality. Following is your choice. A person may be one, both, or neither.</p>
+      <h1>The people you follow—in one place.</h1>
+      <p>My Circle is made up of the people you choose to follow. LikeSized marks the strongest body matches within your Circle as Fit Twins.</p>
       <div className="authActions"><Link className="secondaryButton" href="/people">Find people my size</Link></div>
     </div>
 
     <section className="emptyState">
       <span className="eyebrow">FIT TWINS</span>
-      <h2>System-generated Fit Twins will appear here.</h2>
-      <p>The exact qualification threshold remains under validation. Following someone never creates or removes Fit Twin status.</p>
+      <h2>Your strongest followed matches will be marked as Fit Twins.</h2>
+      <p>The exact qualification threshold remains under validation. Fit Twin is a system-applied designation within the people you follow—not a separate relationship.</p>
     </section>
 
     <div className="pageTitle">
@@ -117,6 +117,6 @@ export default async function MyCirclePage(){
           </>}
         </div>
       </article>;
-    })}</div>:<div className="emptyState"><span className="eyebrow">NO FOLLOWING ACTIVITY YET</span><h2>Follow people whose style or fit experience you want to keep up with.</h2><p>Following is your choice. It is separate from LikeSized system-generated Fit Twin status.</p><Link className="primaryButton" href="/people">Find people my size →</Link></div>}
+    })}</div>:<div className="emptyState"><span className="eyebrow">NO FOLLOWING ACTIVITY YET</span><h2>Follow people whose style or fit experience you want to keep up with.</h2><p>Following adds someone to My Circle. LikeSized may mark that followed person as a Fit Twin when their current body Match is strong enough.</p><Link className="primaryButton" href="/people">Find people my size →</Link></div>}
   </main>;
 }

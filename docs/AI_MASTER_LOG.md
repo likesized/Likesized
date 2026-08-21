@@ -50,19 +50,19 @@ No branch above is canonical by itself. Their unique decisions/files are classif
 
 ### Ordered migrations
 All twelve PR #36 migration domains are **RECOVERED / RE-SEQUENCED** after the later production migration head:
-- `20260820153100_confidence_aware_fit_matching.sql` → `20260821201000_recover_confidence_aware_fit_matching.sql`
-- `20260820153200_fit_match_engine_rpc_boundary.sql` → `20260821201100_recover_fit_match_engine_rpc_boundary.sql`
-- `20260820153400_contextual_optional_measurements.sql` → `20260821201200_recover_contextual_optional_measurements.sql`
-- `20260820203500_garment_enrichment_provenance.sql` → `20260821201300_recover_garment_enrichment_provenance.sql`
-- `20260820211800_directional_fit_recommendation.sql` → `20260821201400_recover_directional_fit_recommendation.sql`
-- `20260820215500_garment_fit_preferences.sql` → `20260821201500_recover_garment_fit_preferences.sql`
-- `20260820221000_derived_body_proportion_refinement.sql` → `20260821201600_recover_derived_body_proportion_refinement.sql`
-- `20260820222100_bust_shaping_context.sql` → `20260821201700_recover_bust_shaping_context.sql`
-- `20260820234000_fit_match_audit_consolidation.sql` → `20260821201800_recover_fit_match_audit_consolidation.sql`
-- `20260820235000_garment_condition_evidence.sql` → `20260821201900_recover_garment_condition_evidence.sql`
-- `20260821011600_fit_profile_reference_normalization_boundary.sql` → `20260821202000_recover_fit_profile_reference_normalization_boundary.sql`
-- `20260821014000_harden_historical_snapshot_match_boundary.sql` → `20260821202100_recover_harden_historical_snapshot_match_boundary.sql`
-- Additional canonical recovery migration `20260821202200_reassert_positive_only_measurement_normalization.sql` reasserts the later owner decision after the recovered sequence.
+- `20260820153100_confidence_aware_fit_matching.sql` → `20260821223236_recover_confidence_aware_fit_matching.sql`
+- `20260820153200_fit_match_engine_rpc_boundary.sql` → `20260821223239_recover_fit_match_engine_rpc_boundary.sql`
+- `20260820153400_contextual_optional_measurements.sql` → `20260821223241_recover_contextual_optional_measurements.sql`
+- `20260820203500_garment_enrichment_provenance.sql` → `20260821223243_recover_garment_enrichment_provenance.sql`
+- `20260820211800_directional_fit_recommendation.sql` → `20260821223246_recover_directional_fit_recommendation.sql`
+- `20260820215500_garment_fit_preferences.sql` → `20260821223250_recover_garment_fit_preferences.sql`
+- `20260820221000_derived_body_proportion_refinement.sql` → `20260821223252_recover_derived_body_proportion_refinement.sql`
+- `20260820222100_bust_shaping_context.sql` → `20260821223255_recover_bust_shaping_context.sql`
+- `20260820234000_fit_match_audit_consolidation.sql` → `20260821223257_recover_fit_match_audit_consolidation.sql`
+- `20260820235000_garment_condition_evidence.sql` → `20260821223301_recover_garment_condition_evidence.sql`
+- `20260821011600_fit_profile_reference_normalization_boundary.sql` → `20260821223303_recover_fit_profile_reference_normalization_boundary.sql`
+- `20260821014000_harden_historical_snapshot_match_boundary.sql` → `20260821223308_recover_harden_historical_snapshot_match_boundary.sql`
+- Additional canonical recovery migration `20260821223310_reassert_positive_only_measurement_normalization.sql` reasserts the later owner decision after the recovered sequence.
 
 ### Database/application tests
 All preserved PR #36 database/application tests are **RECOVERED / VERIFIED** on the recovery line:
@@ -514,5 +514,17 @@ Status: **DEPLOYED / VERIFIED / FAQ OWNER REVIEW PENDING**.
 - Vercel production deployment `dpl_FScqLGEXYJAgQEmqUsMeokKzfbCd` for that exact merge commit reached **READY**.
 - The owner explicitly requires review of all five FAQ questions after deployment; the homepage must not be called repaired/complete until that review is finished.
 
+# POST-RECOVERY REPAIR — LIVE SCHEMA + GROUPED NAVIGATION
+
+Status: **LIVE SCHEMA REPAIRED / MENU VERIFICATION IN PROGRESS**.
+
+- The recovery promotion deployed application code but did not apply the 13 recovered database migrations to live Supabase.
+- This caused the Fit Profile measurement-type query to fail because production lacked the recovered `reconfirm_after_days` column; all measurement controls therefore disappeared even though the 39 measurement definitions remained stored.
+- On **2026-08-21**, the owner authorized repair. All 13 canonical recovery migrations were applied to live Supabase in their locked order.
+- Live verification now returns all 39 measurement definitions, including nine core measurements, through the exact column selection used by the Fit Profile page.
+- Canonical migration filenames are synchronized to the versions recorded by the live Supabase migration ledger so future pushes do not replay the recovery migrations.
+- The grouped menu is restored without the obsolete Fit-Twin-owned Style Feed or `/outfits?feed=twins` route. Discover, My Closet, Account, and the persistent notification bell are restored; Following remains distinct from system Fit Twin status.
+- FAQ owner review remains pending and the homepage is still not called complete.
+
 ## Exact next action
-Conduct the owner’s question-by-question review of the five deployed public FAQ entries before calling the homepage repaired or returning to Phase 6.5.2 Browse as the single active implementation line using real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains separate.
+Verify the grouped navigation branch through full CI, obtain owner authorization for production promotion, deploy it, and verify production. Then conduct the owner’s question-by-question review of the five deployed public FAQ entries before calling the homepage repaired or returning to Phase 6.5.2 Browse as the single active implementation line using real LikeSized data. Do not reuse the rejected synthetic preview implementation. After Browse owner mobile review, perform the deferred Phase 6.4 desktop Fit Profile verification. Destructive old-branch/PR cleanup remains separate.

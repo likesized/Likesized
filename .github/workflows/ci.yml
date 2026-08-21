@@ -46,6 +46,9 @@ jobs:
       - name: Public homepage content safeguards
         run: node --test tests/public-homepage-content.test.ts
 
+      - name: Grouped navigation safeguards
+        run: node --test tests/navigation-layout.test.ts
+
       - name: Build
         run: npm run build
 

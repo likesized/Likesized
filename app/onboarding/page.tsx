@@ -20,11 +20,12 @@ export default async function OnboardingPage({searchParams}:{searchParams:Search
 
   const params=await searchParams;
   const error=first(params.error);
-  const errorMessage=error==="invalid_username"?"Choose a username with 3–32 letters, numbers, or underscores.":error==="username_taken"?"That username is already taken. Try another one.":error==="invalid_measurements"?"Check your numeric measurements. Manual values are normalized to the precision defined for each measurement.":error==="save_failed"?"Your Fit Profile could not be saved.":null;
+  const errorMessage=error==="invalid_username"?"Choose a username with 3–32 letters, numbers, or underscores.":error==="username_taken"?"That username is already taken. Try another one.":error==="invalid_measurements"?"Check the measurements you entered and try again.":error==="save_failed"?"Your Fit Profile could not be saved.":null;
   const unitSystem=fitProfile?.preferred_unit_system==="metric"?"metric":"imperial";
+  const isInitialSetup=!fitProfile?.completed_at;
 
   return <main className="onboardingShell">
     <section className="onboardingIntro"><span className="eyebrow">FIT PROFILE</span><h1>Personalize LikeSized to fit your needs</h1><p>Your measurements stay 100% private and help LikeSized make smarter fit matches and recommendations. The more information you provide, the more personalized your results become.</p></section>
-    <FitProfileForm username={profile?.username??""} unitSystem={unitSystem} types={(types??[]) as MeasurementType[]} measurements={(measurements??[]) as BodyMeasurement[]} errorMessage={errorMessage}/>
+    <FitProfileForm username={profile?.username??""} isInitialSetup={isInitialSetup} unitSystem={unitSystem} types={(types??[]) as MeasurementType[]} measurements={(measurements??[]) as BodyMeasurement[]} errorMessage={errorMessage}/>
   </main>;
 }

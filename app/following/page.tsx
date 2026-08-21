@@ -10,12 +10,7 @@ type FitPhoto={closet_item_id:string;storage_path:string};
 
 const FIT_LABELS:Record<string,string>={too_small:"Too small",snug:"Snug",just_right:"Just right",relaxed:"Relaxed",too_big:"Too big"};
 const CATEGORY_LABELS:Record<MatchCategory,string>={overall:"Overall",tops:"Tops",bottoms:"Bottoms"};
-
-function activityLabel(type:FeedRow["activity_type"]){
-  if(type==="fit_report_added")return "Posted a new fit update";
-  if(type==="outfit_posted")return "Posted a new outfit";
-  return "Added a garment to their Shared Closet";
-}
+function activityLabel(type:FeedRow["activity_type"]){if(type==="fit_report_added")return "Posted a new fit update";if(type==="outfit_posted")return "Posted a new outfit";return "Added a garment to their Shared Closet";}
 function dateLabel(value:string){return new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric"}).format(new Date(value));}
 function shortNote(value:string|null){if(!value)return null;return value.length>220?`${value.slice(0,217).trimEnd()}…`:value;}
 
@@ -64,9 +59,9 @@ export default async function FollowingPage(){
   return <main className="pageShell">
     <div className="pageTitle">
       <span className="eyebrow">FOLLOWING</span>
-      <h1>Keep learning from your Fit Twins.</h1>
-      <p>New Shared garments, fresh Fit Reports, and outfits from the people you follow—connected back to the current Fit Match that makes their experience useful to you.</p>
-      <div className="authActions"><Link className="secondaryButton" href="/twins">Manage Fit Twins</Link><Link className="secondaryButton" href="/people">Find people my size</Link></div>
+      <h1>Keep up with the people you choose to follow.</h1>
+      <p>New Shared garments, fit updates, and outfits from people you follow, with current Match context shown when it is available. Following never changes anyone’s Fit Twin status.</p>
+      <div className="authActions"><Link className="secondaryButton" href="/people">Find people my size</Link><Link className="secondaryButton" href="/twins">My Fit Twins</Link></div>
     </div>
 
     {feed.length?<div className={styles.feed}>{feed.map((row)=>{
@@ -84,7 +79,7 @@ export default async function FollowingPage(){
               <div className={styles.identity}><Link className="textLink" href={`/people/${row.username}`}><strong>{name}</strong></Link><span className={styles.handle}>@{row.username}</span></div>
               <span className={styles.time}>{dateLabel(row.occurred_at)}</span>
             </div>
-            <span className={styles.badge}>{typeof score==="number"?`${score}% ${CATEGORY_LABELS[category]} Fit Match`:`${CATEGORY_LABELS[category]} Fit Twin`}</span>
+            <span className={styles.badge}>{typeof score==="number"?`${score}% ${CATEGORY_LABELS[category]} Fit Match`:"Following"}</span>
           </div>
           <div className={styles.activity}>{activityLabel(row.activity_type)}</div>
 
@@ -97,17 +92,17 @@ export default async function FollowingPage(){
             </div>
             {note?<p className={styles.note}>“{note}”</p>:null}
             <div className={styles.actions}>
-              <Link className="textLink" href={`/people/${row.username}`}>View Fit Report →</Link>
+              <Link className="textLink" href={`/people/${row.username}`}>View {name} →</Link>
               {row.product_slug?<Link className="textLink" href={`/item/${row.product_slug}`}>View product →</Link>:null}
             </div>
-            <div className={styles.context}>The match badge is your current person-to-person Fit Match. The garment report itself stays tied to the body snapshot from that try-on.</div>
+            <div className={styles.context}>The match badge is your current person-to-person Fit Match. The garment evidence stays tied to the body snapshot from that try-on.</div>
           </>:<>
             {outfitPhoto?<img className={styles.photo} src={outfitPhoto} alt={row.outfit_caption?`Outfit posted by ${name}`:`Outfit by ${name}`}/>:null}
             {row.outfit_caption?<p className={styles.outfitCaption}>{row.outfit_caption}</p>:null}
-            <div className={styles.actions}><Link className="textLink" href="/outfits?feed=twins">View Fit Twin outfits →</Link><Link className="textLink" href={`/people/${row.username}`}>View {name} →</Link></div>
+            <div className={styles.actions}><Link className="textLink" href="/outfits?feed=following">View followed outfits →</Link><Link className="textLink" href={`/people/${row.username}`}>View {name} →</Link></div>
           </>}
         </div>
       </article>;
-    })}</div>:<div className="emptyState"><span className="eyebrow">NO FOLLOWING ACTIVITY YET</span><h2>Your useful people are the start of this feed.</h2><p>Save Fit Matches as Fit Twins. When they share a garment, add a new fit observation, or post an outfit, their activity can appear here.</p><Link className="primaryButton" href="/people">Find people my size →</Link></div>}
+    })}</div>:<div className="emptyState"><span className="eyebrow">NO FOLLOWING ACTIVITY YET</span><h2>Follow people whose style or fit experience you want to keep up with.</h2><p>Following is your choice. It is separate from LikeSized system-generated Fit Twin status.</p><Link className="primaryButton" href="/people">Find people my size →</Link></div>}
   </main>;
 }

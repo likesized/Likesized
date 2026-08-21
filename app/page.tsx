@@ -6,7 +6,7 @@ const capabilities = [
     title: "Discover people shaped like you.",
     description: "Ranked by what matters most.",
     href: "/people",
-    link: "Find My Fit Twins →",
+    link: "Find My Matches →",
   },
   {
     eyebrow: "WHAT WORKS FOR THEM",
@@ -20,7 +20,7 @@ const capabilities = [
     title: "Follow the people whose fit you trust.",
     description: "See what they wear, share, and recommend next.",
     href: "/following",
-    link: "Browse Their Closet →",
+    link: "See Following →",
   },
 ];
 

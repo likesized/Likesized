@@ -33,8 +33,8 @@ This is the one canonical roadmap/status/handoff. Repository policy lives in `AI
 - **Individual Shoulder Length:** keep current name, description, how-to, and guide as-is.
 - **Torso Girth:** keep current name, description, how-to, tip, and approved guide as-is.
 - **Bust Point to Bust Point:** title capitalization standardized; how-to is “Measure straight across from the fullest point of one bust to the fullest point of the other while standing naturally.”
-- **Shoulder to Bust Point:** use a vertical measurement from the middle of the shoulder, where a bra strap naturally sits, down to the fullest part or nipple of the bust; guide aligned vertically.
-- **Front Waist Length:** description is “The distance from the high shoulder point to the natural waist along the front of the body.” How-to is “Start at the high shoulder point where the neck meets the shoulder. Measure down the front of the body, over the fullest part of the bust, to the natural waist.”
+- **Shoulder to Bust Point:** description is “The distance from the middle of the shoulder to the fullest point of the bust.” How-to is “Start at the middle of the shoulder, where a bra strap naturally sits. Measure straight down to the fullest point of the bust.” Guide remains a straight vertical shoulder-to-bust-point line.
+- **Front Waist Length:** description is “The distance from the shoulder at the base of the neck to the natural waist along the front of the body.” How-to is “Start where the neck meets the shoulder. Measure down the front of the body, passing over the fullest part of the bust, to the natural waist.” Guide continues to follow the body from the neck/shoulder point over the bust to the waist.
 - **Next measurement under audit:** Back Waist / Neck-to-Waist Length. No owner-approved wording change has been applied to it yet.
 
 ## Phase 6.4 production checkpoint — 2026-08-20

@@ -1,6 +1,11 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-set local search_path = public, extensions;
+
+-- This suite intentionally probes private deterministic Match helpers. Make the test
+-- role-isolated so a prior pgTAP file cannot leave the shared test session acting as an
+-- authenticated member. Production authenticated roles remain denied direct EXECUTE.
+reset role;
+set local search_path = public, private, extensions;
 select plan(11);
 
 select is(private.fit_measurement_similarity(80,80,12.7),1::numeric,'exact low-range measurement remains 100% similar');

@@ -35,6 +35,8 @@ const DISPLAY_LABELS:Record<string,string>={
   shoulder_width:"Shoulder Width",
   individual_shoulder_length:"Individual Shoulder Length",
   torso_body_length:"Torso Length",
+  back_waist_length:"Back Waist Length",
+  shoulder_to_waist:"Shoulder to Waist",
 };
 
 function displayLabel(type:MeasurementType){return DISPLAY_LABELS[type.key]??type.label;}

@@ -13,7 +13,7 @@ Owner approved canonical recovery on **2026-08-21** after a full repository audi
 - Production must remain unchanged during recovery unless the owner separately authorizes a production promotion.
 - No old branch/PR may be deleted or closed until its unique decisions/files are classified and salvaged.
 
-## Preserved recovery sources — DO NOT DELETE UNTIL CLASSIFIED
+## Preserved recovery sources
 1. **Fit Match audit**
    - branch: `fit-match-engine-audit`
    - PR: #36 `Build confidence-aware garment-specific Fit Match engine`
@@ -26,7 +26,7 @@ Owner approved canonical recovery on **2026-08-21** after a full repository audi
    - branch: `phase-6-5-2-browse-preview`
    - preserved head: **`2d150bc3d7238a50d80cac98d6ddde92c310ae3b`**
 
-No branch above is canonical by itself. They are evidence/salvage sources until reconciled into this recovery line.
+No branch above is canonical by itself. Their unique decisions/files have now been classified below; do not delete/close preserved sources until the owner-facing final salvage report has been delivered.
 
 ## PR #36 salvage ledger — every file classified
 
@@ -85,7 +85,43 @@ All preserved PR #36 database/application tests are **RECOVERED / VERIFIED** on 
 - `supabase/schema_contract.md` — **RECOVERED / RECONCILED** into the current contract rather than copied wholesale.
 
 ### PR #36 closure status
-The PR #36 salvage classification is now complete. **Do not close/delete PR #36 or its preserved branch yet.** Recovery gate #10 still requires the owner-facing final salvage report across all preserved branches, including Phase 6.5 Browse/navigation work.
+The PR #36 salvage classification is complete. **Do not close/delete PR #36 or its preserved branch yet.** Recovery gate #10 still requires the owner-facing final salvage report across all preserved branches.
+
+## Phase 6.5 preserved-branch salvage ledger — every file classified
+
+### `phase-6-5-1-navigation-ia` at `b56f663199a9f7252c27cddfebfdae710230cb5e`
+- `AI_REPOSITORY_RULES.md` — **RECOVERED / ADAPTED** into the stronger current canonical repository policy and CI drift guard.
+- `README.md` — **SUPERSEDED AS A WHOLE FILE**; surviving product/architecture decisions are reconciled into current canonical docs.
+- `app/browse/page.tsx` — **OBSOLETE PLACEHOLDER IMPLEMENTATION**. It did not implement canonical Browse and was later replaced by a rejected preview demo; the Browse route/product decision survives, not this placeholder.
+- `app/help/page.tsx` — **OBSOLETE PLACEHOLDER IMPLEMENTATION**. Help / FAQ remains roadmap-locked, but the empty placeholder is not canonical recovery source.
+- `app/likelocker/page.tsx` — **OBSOLETE PLACEHOLDER IMPLEMENTATION**. LikeLocker remains roadmap-locked; the empty placeholder is not recovered as product code.
+- `app/page.tsx` — **DEFERRED IMPLEMENTATION** from preserved head `b56f663199a9f7252c27cddfebfdae710230cb5e`: the homepage Help / FAQ entry/copy remains a valid later Help/FAQ task, but recovery does not introduce that surface ahead of its roadmap gate.
+- `components/Header.tsx` — **DEFERRED / PARTLY SUPERSEDED** from preserved head `b56f663199a9f7252c27cddfebfdae710230cb5e`. The grouped IA concept and persistent notification-bell decision survive, but the old `Fit Twins → My Fit Twins / Style Feed` group is **SUPERSEDED** by the Following-vs-system-Fit-Twin decision and cannot be copied without inventing the unresolved 6.5.3 social-hub wording.
+- `components/HeaderResponsive.module.css` — **DEFERRED WITH HEADER IMPLEMENTATION** from the same preserved head; styles are coupled to the deferred grouped-nav implementation.
+- `components/MobileMenu.tsx` — **DEFERRED / PARTLY SUPERSEDED** from the same preserved head. Owner-verified close-on-navigation/outside-tap behavior remains in current production source; the stale Fit-Twin social grouping and `?feed=twins` link are not recovered.
+- `docs/AI_MASTER_LOG.md` — **SUPERSEDED AS A WHOLE FILE**; surviving owner decisions are reconciled here.
+- `docs/V1_PRODUCT_SPEC.md` — **SUPERSEDED AS A WHOLE FILE**; surviving product decisions are reconciled into current canonical product truth.
+- `supabase/schema_contract.md` — **SUPERSEDED AS A WHOLE BRANCH VERSION**; current recovery contract is authoritative.
+
+### Durable Phase 6.5.1 decisions recovered from that branch
+- **RECOVERED AS DECISIONS, NOT STALE CODE:** grouped navigation intent; Discover contains Browse / People My Size / LikeLocker; My Closet contains My Closet / New Fit Report / New Outfit; Account contains Fit Profile / Settings / Help / Sign Out; notification bell stays persistent; logo returns Home.
+- **SUPERSEDED:** the old navigation assumption that manual/saved Fit Twins own the Style Feed. Following now owns subscription/feed semantics, while Fit Twin remains a system designation.
+- **DEFERRED:** exact social-group/hub navigation wording until Phase 6.5.3 so recovery does not invent a new label.
+
+### `phase-6-5-2-browse-preview` at `2d150bc3d7238a50d80cac98d6ddde92c310ae3b`
+- Inherited repository-rule/docs files carry the same dispositions above: current recovery docs/policy win; valid Browse decisions are already reconciled into this master.
+- `app/browse/BrowseExperience.tsx` — **SUPERSEDED / OBSOLETE PREVIEW IMPLEMENTATION**. It is a hard-coded client-side demo with synthetic people/garments/outfits, local-only Like/Save/Notify/Following state, and a numeric `rating` field from the removed star system. It is not connected to canonical Product/Fit Report data and the owner explicitly rejected its mobile behavior.
+- `app/browse/browse.module.css` — **OBSOLETE WITH REJECTED PREVIEW**. It exists solely to style the superseded demo and is not recovered.
+- `app/browse/page.tsx` — **SUPERSEDED / OBSOLETE PREVIEW FORK**. It conditionally serves the demo only when `VERCEL_ENV === "preview"` and a different placeholder outside preview, creating exactly the kind of parallel preview/product implementation recovery forbids.
+- **NO Browse preview source files are copied into the recovery branch.** The next Browse implementation must be built once, canonically, against real LikeSized data after the recovery freeze clears.
+
+### Durable Phase 6.5.2 Browse decisions recovered from that branch
+- **RECOVERED AS OWNER-LOCKED PRODUCT TRUTH:** Garments / Outfits, My Fit Matches / All, 75% eligibility, progressive fit tiers, 8-item carousel, 24-item result batches, strict taxonomy filters, full-universe Search, one canonical Product result, compact mobile suggestions, opaque full-screen mobile mini-browser, exact wearer/report context, image fallback hierarchy, Fit Result instead of stars, Following separate from system Fit Twin, and Help Me Size It as fallback only.
+- **SUPERSEDED BY LATER OWNER CORRECTIONS:** always-visible Notify; old Save/Fit-Twin semantics; star/rating presentation; duplicate per-wearer product results; rejected mini-browser interaction; preview-only synthetic data implementation.
+- **UNRESOLVED / DEFERRED TO CANONICAL BUILD:** Wishlist-vs-LikeLocker storage/action relationship, exact Fit Twin threshold, exact replacement social-hub wording, final jeans/pants controlled cut/rise taxonomy details, and exact Help Me Size It strong-evidence suppression threshold.
+
+### Phase 6.5 preserved-source closure status
+Both preserved Phase 6.5 branch heads are now fully classified. **Do not delete them yet.** They remain available until the final owner-facing salvage report is delivered and branch cleanup is separately undertaken.
 
 ## Recovery classification rule
 Each preserved file/decision must end as one of:
@@ -94,8 +130,6 @@ Each preserved file/decision must end as one of:
 - **OBSOLETE** — no longer required by current architecture.
 - **DUPLICATE** — equivalent current source already exists.
 - **DEFERRED** — still valid but intentionally postponed; exact source SHA remains recorded.
-
-No branch cleanup occurs until this ledger is complete.
 
 # CURRENT OWNER-LOCKED PRODUCT TRUTH
 
@@ -136,7 +170,7 @@ LikeSized prioritizes real-world garment evidence from people with garment-relev
 - Existing database enum/type names containing `fit_rating` may remain as legacy internal naming if they actually store the five physical Fit Result values; legacy identifier names do not authorize a star system.
 - Do not show/request stars in Browse, Search, Closet, Product, Help Me Size It, Outfit tags, Shared Closet, or Fit Report lists.
 
-## Deep Fit Match audit — OWNER LOCKED / MUST BE RECOVERED FROM PR #36
+## Deep Fit Match audit — OWNER LOCKED / RECOVERED
 
 ### Primary Match semantics
 - One primary Match % means garment-relevant body similarity, not probability the garment will fit.
@@ -436,10 +470,12 @@ Then:
 - **VERIFIED CHECKPOINT:** source head **`bf6318ffe376dec396731fbd9e64ebeb431bcc59`** passed CI run **#349** end-to-end: canonical integrity, typecheck, recommendation calibration, Fit Match UI semantics, Next.js build, pinned Supabase setup, fresh full migration replay, and canonical database behavior tests.
 - **RECOVERED / VERIFIED:** Product Detail now consumes the recovered matching model correctly: viewer Preferred Fit, safe aggregated directional Fit Result support, normal-condition exact-product fit summary, qualitative recommendation confidence, and explicit body-Match-vs-physical-Fit semantics. `Would Buy Again` remains outside recommendation input.
 - **VERIFIED CHECKPOINT:** source head **`c71fcff2bfd7a2a9302a52dd2120283b930a9914`** passed CI run **#351** end-to-end, including fresh migration replay and database behavior tests.
-- **PR #36 CLASSIFICATION COMPLETE:** every preserved application/UI file, engine file, migration, test, and documentation file now has a RECOVERED / SUPERSEDED / DUPLICATE / DEFERRED disposition above. No PR #36 source remains unclassified.
+- **PR #36 CLASSIFICATION COMPLETE:** every preserved application/UI file, engine file, migration, test, and documentation file has a RECOVERED / SUPERSEDED / DUPLICATE / DEFERRED disposition above.
+- **PHASE 6.5 PRESERVED-SOURCE CLASSIFICATION COMPLETE:** both old Phase 6.5 branches have file/decision dispositions above. The rejected Browse preview is not present in recovery source; only the surviving owner decisions remain canonical.
+- **VERIFIED CHECKPOINT:** master classification commit **`3f44a832cde628331cb759a8a3b89c87b36bbad0`** passed CI run **#352** end-to-end.
 - Legacy database RPC/table/test identifiers containing `fit_twin` remain an explicitly known internal cleanup item until a safe ordered migration/compatibility plan is audited. Their existence does not authorize old user-facing semantics.
 - Draft PR **#43** exists only as the recovery CI harness and remains **DO NOT MERGE / DO NOT DEPLOY**.
 - Production/main remain untouched during recovery.
 
 ## Exact next action
-Classify and reconcile the preserved Phase 6.5 navigation/product-decision branch `phase-6-5-1-navigation-ia` and Browse preview branch `phase-6-5-2-browse-preview` against current owner-locked Browse truth. Recover only canonical decisions/source that survive the later owner corrections; mark stale preview-only implementations and rejected mobile behavior SUPERSEDED/OBSOLETE rather than importing them. Keep PR #43 draft and do not resume feature development or production deployment.
+Run the full recovery CI against this completed salvage ledger. If green, prepare and deliver the owner-facing final salvage report required by recovery gate #10. Do not close/delete preserved branches or PR #36 before that report is delivered, and do not merge PR #43 or promote production without separate explicit owner authorization.

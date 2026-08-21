@@ -3,7 +3,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-const FIT_RATINGS=new Set(["too_small","snug","just_right","relaxed","too_big"]);
+const FIT_RESULTS=new Set(["too_small","snug","just_right","relaxed","too_big"]);
+const GARMENT_CONDITIONS=new Set(["normal","shrunk","stretched_out","altered"]);
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const FIT_DIMENSION_PREFIX="fit_dimension__";
 function text(formData:FormData,name:string){return String(formData.get(name)??"").trim();}
@@ -44,10 +45,11 @@ export async function logFitObservation(formData:FormData){
   const id=text(formData,"closet_item_id");
   if(!UUID.test(id))redirect("/closet");
   const fit=text(formData,"fit");
+  const garmentCondition=text(formData,"garment_condition")||"normal";
   const notes=text(formData,"fit_notes")||null;
   const buy=text(formData,"would_buy_again");
   const dimensions=fitDimensionRows(formData);
-  if(!FIT_RATINGS.has(fit)||(notes&&notes.length>1000)||dimensions===null)redirect(itemPath(id,"error=invalid_observation"));
+  if(!FIT_RESULTS.has(fit)||!GARMENT_CONDITIONS.has(garmentCondition)||(notes&&notes.length>1000)||dimensions===null)redirect(itemPath(id,"error=invalid_observation"));
   const wouldBuyAgain=buy==="yes"?true:buy==="no"?false:null;
   const {supabase,userId}=await auth(itemPath(id));
   const {data:item,error:itemError}=await supabase.from("closet_items").select("id,product_id,variant_id,size_label,normalized_size_id").eq("id",id).eq("user_id",userId).maybeSingle();
@@ -63,6 +65,7 @@ export async function logFitObservation(formData:FormData){
     normalized_size_id:item.normalized_size_id,
     fit_profile_version_id:versionId,
     fit,
+    garment_condition:garmentCondition,
     fit_notes:notes,
     would_buy_again:wouldBuyAgain,
   }).select("id").single();

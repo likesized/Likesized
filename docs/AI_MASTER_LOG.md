@@ -3,15 +3,15 @@
 ## Sole master-guide rule — LOCKED
 This is the one canonical roadmap, status record, owner-decision ledger, recovery/salvage ledger, completed-work ledger, deployment ledger, and AI handoff. Repository policy lives in `AI_REPOSITORY_RULES.md`.
 
-# CANONICAL RECOVERY — ACTIVE / FEATURE FREEZE
+# CANONICAL RECOVERY — TECHNICALLY VERIFIED / OWNER FREEZE CLEARANCE PENDING
 
-Owner approved canonical recovery on **2026-08-21** after a full repository audit found severe source-of-truth drift. No new feature work resumes until this recovery is complete and the owner clears the freeze.
+Owner approved canonical recovery on **2026-08-21** after a full repository audit found severe source-of-truth drift. Recovery source is now technically verified, but no new feature work resumes until the owner explicitly clears the recovery freeze.
 
 ## Recovery baseline
 - Production/canonical baseline at recovery start: `main` commit **`e997a217e8fa6f33df4f84a7f18f581e1ac7de3c`** — `Finish Settings mobile cleanup (#42)`.
 - Recovery branch: **`canonical-recovery-2026-08-21`**, created directly from that exact main commit.
-- Production must remain unchanged during recovery unless the owner separately authorizes a production promotion.
-- No old branch/PR may be deleted or closed until its unique decisions/files are classified and salvaged.
+- Production must remain unchanged unless the owner separately authorizes a production promotion.
+- Preserved branches/PR #36 remain untouched until the owner-facing final salvage report is delivered and cleanup is separately undertaken.
 
 ## Preserved recovery sources
 1. **Fit Match audit**
@@ -26,7 +26,7 @@ Owner approved canonical recovery on **2026-08-21** after a full repository audi
    - branch: `phase-6-5-2-browse-preview`
    - preserved head: **`2d150bc3d7238a50d80cac98d6ddde92c310ae3b`**
 
-No branch above is canonical by itself. Their unique decisions/files have now been classified below; do not delete/close preserved sources until the owner-facing final salvage report has been delivered.
+No branch above is canonical by itself. Their unique decisions/files are classified below.
 
 ## PR #36 salvage ledger — every file classified
 
@@ -85,7 +85,7 @@ All preserved PR #36 database/application tests are **RECOVERED / VERIFIED** on 
 - `supabase/schema_contract.md` — **RECOVERED / RECONCILED** into the current contract rather than copied wholesale.
 
 ### PR #36 closure status
-The PR #36 salvage classification is complete. **Do not close/delete PR #36 or its preserved branch yet.** Recovery gate #10 still requires the owner-facing final salvage report across all preserved branches.
+The PR #36 salvage classification is complete. **Do not close/delete PR #36 or its preserved branch automatically.** Cleanup is a separate post-report action.
 
 ## Phase 6.5 preserved-branch salvage ledger — every file classified
 
@@ -121,15 +121,15 @@ The PR #36 salvage classification is complete. **Do not close/delete PR #36 or i
 - **UNRESOLVED / DEFERRED TO CANONICAL BUILD:** Wishlist-vs-LikeLocker storage/action relationship, exact Fit Twin threshold, exact replacement social-hub wording, final jeans/pants controlled cut/rise taxonomy details, and exact Help Me Size It strong-evidence suppression threshold.
 
 ### Phase 6.5 preserved-source closure status
-Both preserved Phase 6.5 branch heads are now fully classified. **Do not delete them yet.** They remain available until the final owner-facing salvage report is delivered and branch cleanup is separately undertaken.
+Both preserved Phase 6.5 branch heads are fully classified. **Do not delete them automatically.** Cleanup is a separate post-report action.
 
 ## Recovery classification rule
-Each preserved file/decision must end as one of:
+Each preserved file/decision ends as one of:
 - **RECOVERED** — applied to recovery source and verified.
 - **SUPERSEDED** — owner later changed the decision; newer owner decision wins.
 - **OBSOLETE** — no longer required by current architecture.
 - **DUPLICATE** — equivalent current source already exists.
-- **DEFERRED** — still valid but intentionally postponed; exact source SHA remains recorded.
+- **DEFERRED** — still valid but intentionally postponed; preserved source SHA remains recorded.
 
 # CURRENT OWNER-LOCKED PRODUCT TRUTH
 
@@ -385,7 +385,7 @@ The prior mobile preview is **NOT ACCEPTED**. Owner found blocking issues includ
 - Outfit likes contribute to Style Likes; garment/product likes do not.
 
 # PHASE / ROADMAP ORDER AFTER RECOVERY
-No phase resumes until canonical recovery is COMPLETE.
+No phase resumes until the owner clears the recovery freeze.
 
 Then:
 1. Resume/finalize Phase 6.5.2 Browse canonical implementation + owner mobile review.
@@ -443,39 +443,40 @@ Then:
 - Mobile Menu close on navigation and outside click/tap owner-verified.
 - desktop Fit Profile verification remains intentionally unfinished.
 
-# RECOVERY GATES — ALL MUST PASS BEFORE FREEZE CLEARS
-1. Canonical docs agree: master, product spec, README, schema contract, migration README.
-2. `supabase/schema.sql` alternate schema removed/retired.
-3. Machine canonical-integrity check added to CI and passing.
-4. Main stale Fit Twin/Following semantics removed from current source/UI or explicitly migrated without duplicate graphs.
-5. Current star-rating UI/source removed; no active `rating`/star Browse semantics.
-6. PR #36 matching engine, migrations, tests and owner decisions classified/recovered without overwriting later production Fit Profile work.
-7. Phase 6.5 Browse work classified/recovered; preview-only stale semantics removed.
-8. Database docs describe actual migration directory without hard-coded count claims.
-9. Full recovery branch typecheck/build/migration replay/database tests pass.
-10. Owner receives a final salvage report showing what was RECOVERED / SUPERSEDED / OBSOLETE / DUPLICATE / DEFERRED.
-11. Only after #10 may obsolete branches/PRs be closed/deleted.
-12. No production promotion until separately authorized by owner.
+# RECOVERY GATES
+1. Canonical docs agree: **PASS**.
+2. `supabase/schema.sql` alternate schema removed/retired: **PASS**.
+3. Machine canonical-integrity check added to CI and passing: **PASS**.
+4. Stale Fit Twin/Following semantics removed from current source/UI without duplicate graphs: **PASS**; legacy internal DB identifiers remain known naming debt only.
+5. Current star-rating UI/source removed: **PASS**.
+6. PR #36 matching engine/migrations/tests/owner decisions classified/recovered without overwriting later production Fit Profile work: **PASS**.
+7. Phase 6.5 Browse/navigation sources classified; rejected preview source excluded: **PASS**.
+8. Database docs describe actual migration directory without hard-coded count claims: **PASS**.
+9. Full recovery branch typecheck/build/migration replay/database tests: **PASS** on completed salvage-ledger commit **`4cf9ea2ddff4d8ed26821c3c9501ede2e976185a`**, CI run **#353**.
+10. Owner receives final salvage report: **PENDING DELIVERY IN CURRENT HANDOFF**.
+11. Obsolete branch/PR cleanup: **NOT STARTED**; allowed only after final report and should be treated as a separate cleanup action.
+12. Production promotion: **NOT AUTHORIZED / NOT STARTED**.
 
 ## Recovery progress — 2026-08-21
 - **RECOVERED:** canonical documentation hierarchy, migration documentation, CI canonical-integrity guard, CODEOWNERS, and recovery PR checklist.
 - **RECOVERED:** PR #36 core recommendation engine and all preserved Fit Match migrations re-sequenced after the production migration head, with the later positive-only body-measurement normalization reasserted last.
 - **RECOVERED:** measurement freshness/reconfirmation and Preferred Fit merged into the later owner-verified Fit Profile flow without restoring retired normally-worn-size input UI or the removed History notice.
 - **RECOVERED:** Following/Fit Twin application semantics on the recovery line. Following is now Follow/Unfollow through `follows`; member profiles and People My Size no longer save/remove Fit Twins; Following Feed and outfit Following filter are driven by `follows`; notification UI is Following-based; `/twins` no longer reads `follows` and deliberately does not invent an unresolved Fit Twin threshold.
-- **SAFEGUARD ADDED:** canonical CI now rejects the old source action names/wording, rejects `/outfits?feed=twins`, and fails if `app/twins/page.tsx` derives Fit Twins from `follows`.
+- **SAFEGUARD ADDED:** canonical CI rejects old source action names/wording, rejects `/outfits?feed=twins`, and fails if `app/twins/page.tsx` derives Fit Twins from `follows`.
 - **RECOVERY-LINEAGE SAFEGUARD:** social-source work and the master checkpoint briefly existed as sibling commits during recovery. Both were preserved and reconciled into the active recovery line with merge commit **`efa6f4c10f6dd9182d1738b798c78ab359ff3b6a`**; no force push and no work discarded.
-- **VERIFIED CHECKPOINT:** recovery head **`5cb4a246a41aba51916447424c4838fdbebc2db6`** passed CI run **#344**: canonical integrity, typecheck, recommendation calibration, Fit Match UI semantics, Next.js build, fresh full migration replay, and canonical database behavior/privacy tests.
-- **RECOVERED / VERIFIED:** Closet/Product provenance + garment-condition application integration on source head **`bf6318ffe376dec396731fbd9e64ebeb431bcc59`**. New Fit Report resolves known Product identity through the canonical resolver before creating anything new; newly created Products are provisional; member controlled construction facts are routed through `record_member_product_evidence` only after the Closet/Fit Report write succeeds rather than being written directly as trusted Product truth; Fit Reports record garment condition; changed-state observations remain in personal Fit History but canonical product summaries/recommendation evidence use normal-condition observations only.
-- **SUPERSEDED / EXCLUDED:** PR #36 member-entered material composition and active stretch collection. Current New Fit Report hides `primary_material` and `stretch_level`, and the server rejects crafted submissions for both keys. `record_member_product_evidence` receives no member material rows. Legacy material/stretch schema support may remain dormant for compatibility/future manufacturer enrichment; it does not authorize active V1 member collection.
-- **VERIFIED CHECKPOINT:** source head **`bf6318ffe376dec396731fbd9e64ebeb431bcc59`** passed CI run **#349** end-to-end: canonical integrity, typecheck, recommendation calibration, Fit Match UI semantics, Next.js build, pinned Supabase setup, fresh full migration replay, and canonical database behavior tests.
-- **RECOVERED / VERIFIED:** Product Detail now consumes the recovered matching model correctly: viewer Preferred Fit, safe aggregated directional Fit Result support, normal-condition exact-product fit summary, qualitative recommendation confidence, and explicit body-Match-vs-physical-Fit semantics. `Would Buy Again` remains outside recommendation input.
-- **VERIFIED CHECKPOINT:** source head **`c71fcff2bfd7a2a9302a52dd2120283b930a9914`** passed CI run **#351** end-to-end, including fresh migration replay and database behavior tests.
-- **PR #36 CLASSIFICATION COMPLETE:** every preserved application/UI file, engine file, migration, test, and documentation file has a RECOVERED / SUPERSEDED / DUPLICATE / DEFERRED disposition above.
-- **PHASE 6.5 PRESERVED-SOURCE CLASSIFICATION COMPLETE:** both old Phase 6.5 branches have file/decision dispositions above. The rejected Browse preview is not present in recovery source; only the surviving owner decisions remain canonical.
-- **VERIFIED CHECKPOINT:** master classification commit **`3f44a832cde628331cb759a8a3b89c87b36bbad0`** passed CI run **#352** end-to-end.
-- Legacy database RPC/table/test identifiers containing `fit_twin` remain an explicitly known internal cleanup item until a safe ordered migration/compatibility plan is audited. Their existence does not authorize old user-facing semantics.
-- Draft PR **#43** exists only as the recovery CI harness and remains **DO NOT MERGE / DO NOT DEPLOY**.
+- **VERIFIED CHECKPOINT:** recovery head **`5cb4a246a41aba51916447424c4838fdbebc2db6`** passed CI run **#344**.
+- **RECOVERED / VERIFIED:** Closet/Product provenance + garment-condition application integration on source head **`bf6318ffe376dec396731fbd9e64ebeb431bcc59`**.
+- **SUPERSEDED / EXCLUDED:** PR #36 member-entered material composition and active stretch collection; current UI hides them and server rejects crafted submissions.
+- **VERIFIED CHECKPOINT:** source head **`bf6318ffe376dec396731fbd9e64ebeb431bcc59`** passed CI run **#349** end-to-end.
+- **RECOVERED / VERIFIED:** Product Detail consumes viewer Preferred Fit, safe aggregated directional Fit Result support, normal-condition exact-product fit summary, qualitative recommendation confidence, and explicit body-Match-vs-physical-Fit semantics. `Would Buy Again` remains outside recommendation input.
+- **VERIFIED CHECKPOINT:** source head **`c71fcff2bfd7a2a9302a52dd2120283b930a9914`** passed CI run **#351** end-to-end.
+- **PR #36 CLASSIFICATION COMPLETE:** every preserved application/UI file, engine file, migration, test, and documentation file has a disposition.
+- **PHASE 6.5 PRESERVED-SOURCE CLASSIFICATION COMPLETE:** both old Phase 6.5 branches have file/decision dispositions; rejected Browse preview code is not present in recovery source.
+- **VERIFIED CHECKPOINT:** master classification commit **`3f44a832cde628331cb759a8a3b89c87b36bbad0`** passed CI run **#352**.
+- **FINAL TECHNICAL RECOVERY VERIFICATION:** completed salvage-ledger commit **`4cf9ea2ddff4d8ed26821c3c9501ede2e976185a`** passed CI run **#353**: canonical integrity, exact dependency install, typecheck, recommendation confidence calibration, Fit Match UI semantics, Next.js production build, pinned Supabase setup, fresh full migration replay, and canonical database behavior tests.
+- Legacy database RPC/table/test identifiers containing `fit_twin` remain known internal naming debt pending a safe ordered migration/compatibility audit; they do not authorize stale user-facing semantics.
+- Draft PR **#43** remains recovery-verification-only: **DO NOT MERGE / DO NOT DEPLOY**.
 - Production/main remain untouched during recovery.
 
 ## Exact next action
-Run the full recovery CI against this completed salvage ledger. If green, prepare and deliver the owner-facing final salvage report required by recovery gate #10. Do not close/delete preserved branches or PR #36 before that report is delivered, and do not merge PR #43 or promote production without separate explicit owner authorization.
+Deliver the owner-facing final salvage report. After delivery, wait for explicit owner direction before any destructive branch/PR cleanup, before clearing the recovery feature freeze, and before resuming Phase 6.5.2 Browse. PR #43 must not be merged and production must not be promoted without separate explicit owner authorization.

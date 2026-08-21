@@ -14,7 +14,7 @@ export async function saveUsernameSettings(formData:FormData){
   const {supabase,userId}=await authenticatedSettingsClient();
   const {error}=await supabase.from("profiles").update({username,updated_at:new Date().toISOString()}).eq("id",userId);
   if(error){if(error.code==="23505")fail("username_taken");if(error.code==="23514")fail("invalid_username");fail("username_save_failed");}
-  revalidatePath("/settings");revalidatePath("/people");revalidatePath("/search");revalidatePath("/twins");revalidatePath("/following");revalidatePath("/outfits");
+  revalidatePath("/settings");revalidatePath("/people");revalidatePath("/search");revalidatePath("/following");revalidatePath("/outfits");
   redirect("/settings?username=saved");
 }
 
@@ -24,9 +24,15 @@ export async function saveProfileSettings(formData:FormData){
   const {supabase,userId}=await authenticatedSettingsClient();
   const {error}=await supabase.from("profiles").update({display_name:displayName||null,bio:bio||null,updated_at:new Date().toISOString()}).eq("id",userId);
   if(error){if(error.code==="23514")fail("invalid_profile");fail("save_failed");}
-  revalidatePath("/settings");revalidatePath("/people");revalidatePath("/search");redirect("/settings?saved=1");
+  revalidatePath("/settings");revalidatePath("/people");revalidatePath("/search");revalidatePath("/following");revalidatePath("/outfits");redirect("/settings?saved=1");
 }
 
-export async function saveFitTwinNotificationSettings(formData:FormData){
-  const enabled=text(formData,"enabled")==="true";const {supabase}=await authenticatedSettingsClient();const {error}=await supabase.rpc("set_fit_twin_activity_notifications",{p_enabled:enabled});if(error)fail("notification_save_failed");revalidatePath("/settings");revalidatePath("/notifications");revalidatePath("/");redirect(`/settings?notifications=${enabled?"on":"off"}`);
+export async function saveFollowingNotificationSettings(formData:FormData){
+  const enabled=text(formData,"enabled")==="true";
+  const {supabase}=await authenticatedSettingsClient();
+  // Legacy RPC identifier is preserved during recovery; the behavior is Following activity notifications.
+  const {error}=await supabase.rpc("set_fit_twin_activity_notifications",{p_enabled:enabled});
+  if(error)fail("notification_save_failed");
+  revalidatePath("/settings");revalidatePath("/notifications");revalidatePath("/following");revalidatePath("/");
+  redirect(`/settings?notifications=${enabled?"on":"off"}`);
 }

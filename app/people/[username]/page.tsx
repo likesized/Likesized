@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { followFitTwin, unfollowFitTwin } from "@/app/people/actions";
+import { followPerson, unfollowPerson } from "@/app/people/actions";
 import { createClient } from "@/lib/supabase/server";
 
 type Params=Promise<{username:string}>;
@@ -24,7 +24,7 @@ async function scoreFor(supabase:Awaited<ReturnType<typeof createClient>>,target
   return ((data??[]) as MatchRecord[]).find((row)=>row.user_id===targetUserId)?.match_score;
 }
 
-export default async function FitTwinProfilePage({params}:{params:Params}){
+export default async function MemberProfilePage({params}:{params:Params}){
   const {username}=await params;
   const supabase=await createClient();
   const {data:claimsData,error:claimsError}=await supabase.auth.getClaims();
@@ -32,7 +32,7 @@ export default async function FitTwinProfilePage({params}:{params:Params}){
   if(claimsError||!viewerId)redirect(`/login?next=${encodeURIComponent(`/people/${username}`)}`);
 
   const {data:profileData,error:profileError}=await supabase.from("profiles").select("id,username,display_name,bio").eq("username",username).maybeSingle();
-  if(profileError)throw new Error("Could not load Fit Twin profile.");
+  if(profileError)throw new Error("Could not load member profile.");
   if(!profileData)notFound();
   const profile=profileData as ProfileRecord;
   const isSelf=profile.id===viewerId;
@@ -44,7 +44,7 @@ export default async function FitTwinProfilePage({params}:{params:Params}){
     isSelf?Promise.resolve(undefined):scoreFor(supabase,profile.id,"tops"),
     isSelf?Promise.resolve(undefined):scoreFor(supabase,profile.id,"bottoms"),
   ]);
-  if(reportsError||followError)throw new Error("Could not load Fit Twin evidence.");
+  if(reportsError||followError)throw new Error("Could not load member fit evidence.");
 
   const reports=(reportsData??[]) as ReportRecord[];
   const closetIds=[...new Set(reports.map((row)=>row.closet_item_id))];
@@ -94,9 +94,9 @@ export default async function FitTwinProfilePage({params}:{params:Params}){
   const returnTo=`/people/${profile.username}`;
 
   return <main className="pageShell">
-    <div className="pageTitle"><span className="eyebrow">FIT TWIN PROFILE</span><h1>{name}</h1><p>@{profile.username}{profile.bio?` · ${profile.bio}`:""}</p><p>Current Fit Match scores compare your current bodies. Shared Closet history below stays tied to the body state from each actual try-on. Raw measurements are never shown.</p>
+    <div className="pageTitle"><span className="eyebrow">MEMBER PROFILE</span><h1>{name}</h1><p>@{profile.username}{profile.bio?` · ${profile.bio}`:""}</p><p>Current Fit Match scores compare your current bodies. Shared Closet history below stays tied to the body state from each actual try-on. Raw measurements are never shown.</p>
       {!isSelf?<div className="statsRow"><span><b>{typeof overall==="number"?`${overall}%`:"—"}</b> current overall</span><span><b>{typeof tops==="number"?`${tops}%`:"—"}</b> current tops</span><span><b>{typeof bottoms==="number"?`${bottoms}%`:"—"}</b> current bottoms</span></div>:null}
-      {!isSelf?<div className="authActions"><form action={followed?unfollowFitTwin:followFitTwin}><input type="hidden" name="target_user_id" value={profile.id}/><input type="hidden" name="return_to" value={returnTo}/><button className={followed?"secondaryButton":"primaryButton"} type="submit">{followed?"Remove Fit Twin":"Save as Fit Twin"}</button></form><Link className="secondaryButton" href="/people">Back to matches</Link></div>:<div className="authActions"><Link className="secondaryButton" href="/settings">Profile & Privacy</Link><Link className="secondaryButton" href="/onboarding">Edit Fit Profile</Link><Link className="secondaryButton" href="/closet">My Closet</Link></div>}
+      {!isSelf?<div className="authActions"><form action={followed?unfollowPerson:followPerson}><input type="hidden" name="target_user_id" value={profile.id}/><input type="hidden" name="return_to" value={returnTo}/><button className={followed?"secondaryButton":"primaryButton"} type="submit">{followed?"Unfollow":"Follow"}</button></form><Link className="secondaryButton" href="/people">Back to matches</Link></div>:<div className="authActions"><Link className="secondaryButton" href="/settings">Profile & Privacy</Link><Link className="secondaryButton" href="/onboarding">Edit Fit Profile</Link><Link className="secondaryButton" href="/closet">My Closet</Link></div>}
     </div>
 
     <section className="section flush"><div className="sectionHeading"><div><span className="eyebrow">SHARED FIT HISTORY</span><h2>{isSelf?"Your visible fit-reference history":`${name}'s real garment evidence`}</h2></div></div>
@@ -110,7 +110,7 @@ export default async function FitTwinProfilePage({params}:{params:Params}){
           {photo?<img className="garmentPhoto" src={photo} alt="Fit reference"/>:<div className="avatar small">{(brand?.name||product?.name||"F").slice(0,1).toUpperCase()}</div>}
           <div>{product?<Link className="textLink" href={`/item/${product.slug}`}>{product.name}</Link>:<strong>Garment</strong>}<span>{brand?.name||"Brand"}{product?.garment_type_key?` · ${product.garment_type_key.replaceAll("_"," ")}`:""} · Logged {dateLabel(report.created_at)}</span></div>
           <div><span>Size worn then</span><strong>{report.size_label}</strong></div>
-          <div><span>Overall fit then</span><strong>{FIT_LABELS[report.fit]||report.fit}</strong></div>
+          <div><span>Fit Result then</span><strong>{FIT_LABELS[report.fit]||report.fit}</strong></div>
           {!isSelf&&historical?<div><span>Historical body match to you</span><strong>{historical.historical_match_score}%</strong><span>{historical.historical_coverage_percent}% measurement coverage</span></div>:null}
           <div><span>Buy again</span><strong>{report.would_buy_again===true?"Yes":report.would_buy_again===false?"No":"—"}</strong></div>
           {dims.length?<div>{dims.map((dim)=><span key={dim.dimension_key}><b>{dimensionName.get(dim.dimension_key)||dim.dimension_key}:</b> {responseName.get(`${dim.dimension_key}:${dim.response_key}`)||dim.response_key} </span>)}</div>:null}

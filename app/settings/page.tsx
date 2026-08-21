@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { saveFitTwinNotificationSettings, saveUsernameSettings } from "@/app/settings/actions";
+import { saveFollowingNotificationSettings, saveUsernameSettings } from "@/app/settings/actions";
 import { ProfileIdentityForm } from "@/app/settings/ProfileIdentityForm";
 import styles from "@/app/settings/settings.module.css";
 import { createClient } from "@/lib/supabase/server";
@@ -38,8 +38,8 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
 
     {saved?<div className="authMessage">Profile settings saved.</div>:null}
     {usernameSaved?<div className="authMessage">Username updated.</div>:null}
-    {notificationState==="on"?<div className="authMessage">Fit Twin activity notifications turned on.</div>:null}
-    {notificationState==="off"?<div className="authMessage">Fit Twin activity notifications turned off. Your Following Feed is unchanged.</div>:null}
+    {notificationState==="on"?<div className="authMessage">Following activity notifications turned on.</div>:null}
+    {notificationState==="off"?<div className="authMessage">Following activity notifications turned off. Your Following Feed is unchanged.</div>:null}
     {errorMessage?<div className="authMessage error">{errorMessage}</div>:null}
 
     <section className="section flush">
@@ -56,19 +56,18 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
     </section>
 
     <section className="section">
-      <div className="sectionHeading"><div><span className="eyebrow">NOTIFICATIONS</span><h2>Fit Twin activity alerts</h2></div></div>
+      <div className="sectionHeading"><div><span className="eyebrow">NOTIFICATIONS</span><h2>Following activity alerts</h2></div></div>
       <div className="evidenceList">
-        <div className={`evidence ${styles.settingsEvidence}`}><div><strong>{notificationsEnabled?"On":"Off"} by default for future activity</strong><span>Alerts cover new Shared Closet garments, new Fit Reports/re-try-ons, and new outfits from Fit Twins. Likes never create alerts.</span></div><form action={saveFitTwinNotificationSettings}><input type="hidden" name="enabled" value={notificationsEnabled?"false":"true"}/><button className={notificationsEnabled?"secondaryButton":"primaryButton"} type="submit">Turn {notificationsEnabled?"off":"on"}</button></form></div>
-        <div className={`evidence ${styles.settingsEvidence}`}><div><strong>Per-Fit-Twin mute</strong><span>Mute one Fit Twin without unfollowing them. Their Shared activity still appears in your Following Feed; only future alerts stop.</span></div><Link className="secondaryButton" href="/twins">Manage Fit Twins</Link></div>
-        <div className={`evidence ${styles.settingsEvidence}`}><div><strong>In-app only in V1</strong><span>No Fit Twin activity emails or phone push notifications are sent in V1.</span></div><Link className="secondaryButton" href="/notifications">Open notifications</Link></div>
+        <div className={`evidence ${styles.settingsEvidence}`}><div><strong>{notificationsEnabled?"On":"Off"} by default for future activity</strong><span>Alerts cover new Shared Closet garments, new garment fit updates, and new outfits from people you follow. Following is separate from Fit Twin status. Likes never create alerts.</span></div><form action={saveFollowingNotificationSettings}><input type="hidden" name="enabled" value={notificationsEnabled?"false":"true"}/><button className={notificationsEnabled?"secondaryButton":"primaryButton"} type="submit">Turn {notificationsEnabled?"off":"on"}</button></form></div>
+        <div className={`evidence ${styles.settingsEvidence}`}><div><strong>In-app only in V1</strong><span>No Following activity emails or phone push notifications are sent in V1.</span></div><Link className="secondaryButton" href="/notifications">Open notifications</Link></div>
       </div>
     </section>
 
     <section className="section">
       <div className="sectionHeading"><div><span className="eyebrow">PRIVACY</span><h2>What is—and is not—shared</h2></div></div>
       <div className="evidenceList">
-        <div className={`evidence ${styles.settingsEvidence}`}><div><strong>Always private</strong><span>Exact current body measurements, immutable historical measurements, and normally-worn size references. There is no public-measurement switch.</span></div></div>
-        <div className={`evidence ${styles.settingsEvidence}`}><div><strong>Profile identity</strong><span>Username, optional display name, and optional bio are visible to authenticated LikeSized members only. Avatar editing is not exposed until LikeSized has an intentional avatar-storage model.</span></div></div>
+        <div className={`evidence ${styles.settingsEvidence}`}><div><strong>Always private</strong><span>Exact current body measurements, immutable historical measurements, and preserved normally-worn size references. There is no public-measurement switch.</span></div></div>
+        <div className={`evidence ${styles.settingsEvidence}`}><div><strong>Profile identity</strong><span>Username, optional display name, and optional bio are visible to authenticated LikeSized members only. Profile-photo controls remain a V1 Settings requirement and will be reconciled before production promotion.</span></div></div>
         <div className={`evidence ${styles.settingsEvidence}`}><div><strong>Closet visibility</strong><span>{privateCount} Private · {sharedCount} Shared. Each garment controls whether its fit evidence can appear to other signed-in members.</span></div><Link className="secondaryButton" href="/closet">Manage Closet</Link></div>
         <div className={`evidence ${styles.settingsEvidence}`}><div><strong>Fit/reference photos</strong><span>Uploading one is optional. If you upload one, the garment must be Shared and the photo is visible to authenticated LikeSized members. There is no private fit-photo mode.</span></div></div>
         <div className={`evidence ${styles.settingsEvidence}`}><div><strong>Safe match scores</strong><span>Other members may see derived Fit Match or historical-body-match percentages where appropriate, but never the raw measurements used to calculate them.</span></div></div>

@@ -48,7 +48,6 @@ const canonicalDocs = [
 
 for (const rel of canonicalDocs) read(rel);
 
-// Required current meanings across the canonical decision/architecture docs.
 for (const rel of ['docs/AI_MASTER_LOG.md', 'docs/V1_PRODUCT_SPEC.md', 'README.md']) {
   mustContain(rel, 'Following');
   mustContain(rel, 'Fit Twin');
@@ -60,7 +59,6 @@ mustContain('docs/V1_PRODUCT_SPEC.md', 'Help Me Size It is fallback');
 mustContain('supabase/schema_contract.md', '`follows` is the one canonical **Following** relationship');
 mustContain('AI_REPOSITORY_RULES.md', 'Canonical CI must run `npm run canonical:check`');
 
-// Stale product semantics that must never be presented as current again.
 const forbiddenDocPhrases = [
   'A Fit Twin is a Fit Match the user deliberately saves/follows',
   'Fit Twins are your saved Fit Matches',
@@ -74,19 +72,16 @@ for (const rel of canonicalDocs) {
   for (const phrase of forbiddenDocPhrases) mustNotContain(rel, phrase);
 }
 
-// Database docs must not become stale by hard-coding a migration total.
 for (const rel of ['supabase/migrations/README.md', 'supabase/schema_contract.md']) {
   const content = read(rel);
   if (/\ball\s+\d+\s+migrations\b/i.test(content)) fail(`${rel} hard-codes a migration count.`);
   if (/\bComplete V1 migration sequence\b/i.test(content)) fail(`${rel} claims a fixed complete migration sequence.`);
 }
 
-// Alternate schema representation is forbidden: ordered migrations are canonical.
 if (fs.existsSync(path.join(root, 'supabase/schema.sql'))) {
   fail('supabase/schema.sql must not exist as an alternate current-state schema.');
 }
 
-// Temporary/version-suffixed source artifacts are forbidden.
 const allFiles = walk(root);
 const forbiddenFile = /(?:^|[-_.])(fixed|patched|v2|backup|temp|copy)(?=\.|$)/i;
 for (const full of allFiles) {
@@ -96,7 +91,6 @@ for (const full of allFiles) {
   if (forbiddenFile.test(base)) fail(`Forbidden patch/version-suffixed file committed: ${rel}`);
 }
 
-// Current application source may use Fit Twin as a designation, but not as a synonym for Following.
 const sourceRoots = ['app', 'components', 'lib'];
 const staleSourcePhrases = [
   'Fit Twins are your saved Fit Matches',
@@ -105,6 +99,13 @@ const staleSourcePhrases = [
   'Remove Fit Twin',
   'followFitTwin',
   'unfollowFitTwin',
+  'setFitTwinNotificationMute',
+  'saveFitTwinNotificationSettings',
+  'markAllFitTwinNotificationsRead',
+  'markFitTwinNotificationRead',
+  'fitTwinIds',
+  '/outfits?feed=twins',
+  'Fit Twin outfits',
 ];
 for (const base of sourceRoots) {
   const dir = path.join(root, base);
@@ -121,7 +122,14 @@ for (const base of sourceRoots) {
   }
 }
 
-// Would Buy Again must not silently creep back into recommendation inputs.
+const twinsPage = read('app/twins/page.tsx');
+if (/\.from\(["']follows["']\)/.test(twinsPage)) {
+  fail('app/twins/page.tsx must never derive Fit Twin membership from the follows graph.');
+}
+mustContain('app/people/actions.ts', 'followPerson');
+mustContain('app/people/actions.ts', 'unfollowPerson');
+mustContain('app/outfits/page.tsx', 'feed==="following"');
+
 const recommendation = read('lib/recommendation.ts');
 if (/wouldBuyAgain|would_buy_again/.test(recommendation)) {
   fail('lib/recommendation.ts must not use Would Buy Again in size recommendation/confidence under the owner-locked Fit Match decision.');

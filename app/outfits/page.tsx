@@ -24,18 +24,18 @@ export default async function OutfitsPage({searchParams}:{searchParams:SearchPar
 
   const params=await searchParams;
   const posted=first(params.posted)==="1";
-  const feed=first(params.feed)==="twins"?"twins":"all";
-  let fitTwinIds:string[]=[];
-  if(feed==="twins"){
+  const feed=first(params.feed)==="following"?"following":"all";
+  let followedIds:string[]=[];
+  if(feed==="following"){
     const {data,error}=await supabase.from("follows").select("followed_id").eq("follower_id",viewerId);
-    if(error)throw new Error("Could not load Fit Twins.");
-    fitTwinIds=(data??[]).map((row)=>row.followed_id);
+    if(error)throw new Error("Could not load people you follow.");
+    followedIds=(data??[]).map((row)=>row.followed_id);
   }
 
   let posts:OutfitPost[]=[];
-  if(feed==="all"||fitTwinIds.length){
+  if(feed==="all"||followedIds.length){
     let query=supabase.from("outfit_posts").select("id,user_id,caption,photo_url,created_at,profile:profiles(username,display_name)").order("created_at",{ascending:false}).limit(50);
-    if(feed==="twins")query=query.in("user_id",fitTwinIds);
+    if(feed==="following")query=query.in("user_id",followedIds);
     const {data,error}=await query;
     if(error)throw new Error("Could not load outfits.");
     posts=(data??[]) as OutfitPost[];
@@ -62,7 +62,6 @@ export default async function OutfitsPage({searchParams}:{searchParams:SearchPar
     reports=(data??[]) as FitReport[];
   }
 
-  // A Closet item may have several historical observations. Outfit tags display the latest visible one intentionally.
   const latestReportByClosetItem=new Map<string,FitReport>();
   for(const report of reports)if(!latestReportByClosetItem.has(report.closet_item_id))latestReportByClosetItem.set(report.closet_item_id,report);
   const itemIdsByPost=new Map<string,string[]>();
@@ -73,11 +72,11 @@ export default async function OutfitsPage({searchParams}:{searchParams:SearchPar
 
   const signedPhotoByPost=new Map<string,string>();
   await Promise.all(posts.map(async(post)=>{const {data}=await supabase.storage.from("outfit-photos").createSignedUrl(post.photo_url,60*60);if(data?.signedUrl)signedPhotoByPost.set(post.id,data.signedUrl);}));
-  const returnTo=feed==="twins"?"/outfits?feed=twins":"/outfits";
+  const returnTo=feed==="following"?"/outfits?feed=following":"/outfits";
 
   return <main className="pageShell">
     <div className="pageTitle rowTitle"><div><span className="eyebrow">OUTFITS</span><h1>Real clothes on real Fit Profiles.</h1><p>Member outfits connect what people wear back to exact products, purchased sizes, and reported fit—without exposing body measurements.</p></div><Link className="primaryButton" href="/outfits/new">+ Post outfit</Link></div>
-    <nav className={styles.feedTabs} aria-label="Outfit feed"><Link className={feed==="all"?styles.activeTab:styles.tab} href="/outfits">All outfits</Link><Link className={feed==="twins"?styles.activeTab:styles.tab} href="/outfits?feed=twins">Fit Twins</Link></nav>
+    <nav className={styles.feedTabs} aria-label="Outfit feed"><Link className={feed==="all"?styles.activeTab:styles.tab} href="/outfits">All outfits</Link><Link className={feed==="following"?styles.activeTab:styles.tab} href="/outfits?feed=following">Following</Link></nav>
     {posted?<div className="authMessage">Outfit posted.</div>:null}
 
     {posts.length?<div className={styles.feed}>{posts.map((post)=>{
@@ -96,6 +95,6 @@ export default async function OutfitsPage({searchParams}:{searchParams:SearchPar
           <div className={styles.tags}>{taggedReports.map((report)=>{const product=one<ProductRecord>(report.product);const brand=one<BrandRecord>(product?.brand);return product?<Link className={styles.tag} href={`/item/${product.slug}`} key={report.closet_item_id}><strong>{brand?.name||"Brand"} · {product.name}</strong><span>Size {report.size_label} · {FIT_LABELS[report.fit]||report.fit}</span></Link>:null;})}</div>
         </div>
       </article>;
-    })}</div>:<div className="emptyState"><span className="eyebrow">{feed==="twins"?"NO FIT TWIN OUTFITS YET":"NO OUTFITS YET"}</span><h2>{feed==="twins"?"Your saved Fit Twins haven't posted an outfit yet.":"Be the first to connect a look to real fit evidence."}</h2><p>{feed==="twins"?"Save useful matches as Fit Twins, then their outfit posts can appear in this focused feed.":"Post a photo and tag the garments you actually own and wear."}</p>{feed==="twins"?<Link className="secondaryButton" href="/people">Find Fit Twins →</Link>:<Link className="primaryButton" href="/outfits/new">Post an outfit →</Link>}</div>}
+    })}</div>:<div className="emptyState"><span className="eyebrow">{feed==="following"?"NO FOLLOWED OUTFITS YET":"NO OUTFITS YET"}</span><h2>{feed==="following"?"The people you follow haven't posted an outfit yet.":"Be the first to connect a look to real fit evidence."}</h2><p>{feed==="following"?"Follow people whose style you want to keep up with. Following is separate from Fit Twin status.":"Post a photo and tag the garments you actually own and wear."}</p>{feed==="following"?<Link className="secondaryButton" href="/people">Find people →</Link>:<Link className="primaryButton" href="/outfits/new">Post an outfit →</Link>}</div>}
   </main>;
 }

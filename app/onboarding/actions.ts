@@ -8,7 +8,14 @@ type MeasurementType = {
   dimension: "length" | "weight";
 };
 
-type SizeReferenceType = "bra" | "shoe" | "shirt" | "pants" | "dress" | "other";
+type ExistingSizeReference = {
+  reference_type: "bra" | "shoe" | "shirt" | "pants" | "dress" | "other";
+  original_size_label: string;
+  sizing_system: string | null;
+  band_size: number | string | null;
+  cup_designation: string | null;
+  shoe_size: number | string | null;
+};
 
 function fail(code: string): never {
   redirect(`/onboarding?error=${encodeURIComponent(code)}`);
@@ -34,11 +41,11 @@ export async function saveFitProfile(formData: FormData) {
   const userId = claimsData?.claims?.sub;
   if (claimsError || !userId) redirect("/login?next=/onboarding");
 
-  const { data: typesData, error: typesError } = await supabase
-    .from("measurement_types")
-    .select("key, dimension")
-    .order("sort_order");
-  if (typesError) fail("save_failed");
+  const [{ data: typesData, error: typesError }, { data: existingSizeReferences, error: sizeReferenceError }] = await Promise.all([
+    supabase.from("measurement_types").select("key, dimension").order("sort_order"),
+    supabase.from("user_size_references").select("reference_type,original_size_label,sizing_system,band_size,cup_designation,shoe_size").eq("user_id", userId),
+  ]);
+  if (typesError || sizeReferenceError) fail("save_failed");
 
   const rows: Array<Record<string, unknown>> = [];
   for (const type of (typesData ?? []) as MeasurementType[]) {
@@ -65,54 +72,17 @@ export async function saveFitProfile(formData: FormData) {
 
   if (!rows.length) fail("invalid_measurements");
 
-  const sizeReferences: Array<Record<string, unknown>> = [];
-  const braBandRaw = text(formData, "size_ref_bra_band");
-  const braCup = text(formData, "size_ref_bra_cup").toUpperCase();
-  const braSystem = text(formData, "size_ref_bra_system").toUpperCase();
-  if (braBandRaw || braCup) {
-    const band = Number(braBandRaw);
-    if (!braBandRaw || !braCup || !["US", "UK", "EU"].includes(braSystem) || !Number.isFinite(band) || band <= 0) {
-      fail("invalid_size_references");
-    }
-    sizeReferences.push({
-      reference_type: "bra",
-      original_size_label: `${band}${braCup}`,
-      sizing_system: braSystem,
-      band_size: band,
-      cup_designation: braCup,
-    });
-  }
-
-  const shoeRaw = text(formData, "size_ref_shoe_size");
-  const shoeSystem = text(formData, "size_ref_shoe_system").toUpperCase();
-  if (shoeRaw) {
-    const shoeSize = Number(shoeRaw);
-    if (!["US", "UK", "EU", "JP"].includes(shoeSystem) || !Number.isFinite(shoeSize) || shoeSize <= 0) {
-      fail("invalid_size_references");
-    }
-    sizeReferences.push({
-      reference_type: "shoe",
-      original_size_label: String(shoeSize),
-      sizing_system: shoeSystem,
-      shoe_size: shoeSize,
-    });
-  }
-
-  const simpleReferences: Array<[SizeReferenceType, string]> = [
-    ["shirt", "size_ref_shirt"],
-    ["pants", "size_ref_pants"],
-    ["dress", "size_ref_dress"],
-    ["other", "size_ref_other"],
-  ];
-  for (const [referenceType, fieldName] of simpleReferences) {
-    const label = text(formData, fieldName);
-    if (!label) continue;
-    if (label.length > 60) fail("invalid_size_references");
-    sizeReferences.push({
-      reference_type: referenceType,
-      original_size_label: label,
-    });
-  }
+  // The normally-worn-size UI is intentionally removed from V1. Preserve any
+  // already-saved private references unchanged so editing body measurements
+  // never silently deletes historical user data.
+  const sizeReferences = ((existingSizeReferences ?? []) as ExistingSizeReference[]).map((row) => ({
+    reference_type: row.reference_type,
+    original_size_label: row.original_size_label,
+    sizing_system: row.sizing_system,
+    band_size: row.band_size,
+    cup_designation: row.cup_designation,
+    shoe_size: row.shoe_size,
+  }));
 
   const { error } = await supabase.rpc("save_fit_profile", {
     p_username: username,
@@ -123,10 +93,7 @@ export async function saveFitProfile(formData: FormData) {
 
   if (error) {
     if (error.code === "23505") fail("username_taken");
-    if (error.code === "22023") {
-      if (error.message.toLowerCase().includes("size reference")) fail("invalid_size_references");
-      fail("invalid_measurements");
-    }
+    if (error.code === "22023") fail("invalid_measurements");
     fail("save_failed");
   }
 

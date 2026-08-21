@@ -22,15 +22,15 @@ No production deployment is authorized merely because recovery work exists or a 
 ## Current product meaning
 
 ### Following vs Fit Twin
-**Following and Fit Twin are different.**
+**Following controls My Circle; Fit Twin is a designation inside it.**
 
 - Following = user-controlled social relationship stored in canonical `follows`.
-- Fit Twin = system-generated strong current-person match designation.
 - A member may follow anyone regardless of Match %.
-- A Fit Twin does not have to be followed.
-- Style Feed is driven by Following.
+- Fit Twin = system-generated strong current-person Match designation applied only to someone the member follows.
+- A followed person may or may not qualify as a Fit Twin; a non-followed person is not one of that member’s Fit Twins.
+- Style Feed is driven by Following and contains posts from My Circle.
 - Public relationship count is Followers, not Fit Twins.
-- `Save as Fit Twin`, `Saved Fit Twin`, and `Remove Fit Twin` are obsolete member-facing semantics.
+- `Save as Fit Twin`, `Saved Fit Twin`, and `Remove Fit Twin` remain obsolete member-facing actions because LikeSized applies the designation.
 - Legacy route/function/database names containing `fit_twin` are implementation debt, not product meaning.
 
 ### Fit Result

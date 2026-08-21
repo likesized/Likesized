@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import styles from "@/components/HeaderResponsive.module.css";
 
-type MemberMenuProps = { unreadCount: number };
+type MemberMenuProps = { unreadCount: number; isAdmin?: boolean };
 
-export function MemberMenu({ unreadCount }: MemberMenuProps) {
+export function MemberMenu({ unreadCount, isAdmin = false }: MemberMenuProps) {
   const pathname = usePathname();
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -33,7 +33,7 @@ export function MemberMenu({ unreadCount }: MemberMenuProps) {
       {open ? (
         <div id="mobile-navigation-menu" className={styles.menuPanel} role="navigation" aria-label="Member navigation">
           <div className={styles.sectionLabel}>Discover</div>
-          <Link href="/browse" onClick={closeMenu}>Explore</Link>
+          <Link href="/explore" onClick={closeMenu}>Explore</Link>
           <Link href="/people" onClick={closeMenu}>People My Size</Link>
           <Link href="/circle" onClick={closeMenu}>My Circle</Link>
           <Link href="/likelocker" onClick={closeMenu}>LikeLocker</Link>
@@ -47,6 +47,7 @@ export function MemberMenu({ unreadCount }: MemberMenuProps) {
           <Link href="/onboarding" onClick={closeMenu}>Fit Profile</Link>
           <Link href="/settings" onClick={closeMenu}>Settings</Link>
           <Link href="/#faq" onClick={closeMenu}>Help / FAQ</Link>
+          {isAdmin ? <Link href="/moderation" onClick={closeMenu}>Admin Moderation</Link> : null}
           <form action="/auth/signout" method="post" onSubmit={closeMenu}><button type="submit">Sign Out</button></form>
         </div>
       ) : null}

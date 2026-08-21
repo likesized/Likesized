@@ -7,10 +7,15 @@ export async function Header() {
   const { data: claimsData, error } = await supabase.auth.getClaims();
   const signedIn = !error && Boolean(claimsData?.claims?.sub);
   let unreadCount = 0;
+  let isAdmin = false;
 
   if (signedIn) {
-    const { data } = await supabase.rpc("get_fit_twin_notification_unread_count");
+    const [{ data }, { data: adminData }] = await Promise.all([
+      supabase.rpc("get_fit_twin_notification_unread_count"),
+      supabase.rpc("is_current_user_admin"),
+    ]);
     unreadCount = typeof data === "number" ? data : Number(data ?? 0);
+    isAdmin = Boolean(adminData);
   }
 
   return (
@@ -19,7 +24,7 @@ export async function Header() {
         <img className="brandLogo" src="/brand/likesized-logo.png" alt="LikeSized" width="2048" height="682" />
       </Link>
       {signedIn ? (
-        <MemberMenu unreadCount={unreadCount} />
+        <MemberMenu unreadCount={unreadCount} isAdmin={isAdmin} />
       ) : (
         <nav aria-label="Primary navigation">
           <Link className="navButton" href="/login">My Fit Profile</Link>

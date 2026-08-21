@@ -16,7 +16,7 @@ test("desktop and mobile share one bell and one member menu", () => {
 
 test("single menu contains the owner-approved sections and links", () => {
   assert.match(menu, />Discover<\/div>/);
-  assert.match(menu, /href="\/browse"[^>]*>Explore/);
+  assert.match(menu, /href="\/explore"[^>]*>Explore/);
   assert.match(menu, /href="\/people"[^>]*>People My Size/);
   assert.match(menu, /href="\/circle"[^>]*>My Circle/);
   assert.match(menu, /href="\/likelocker"[^>]*>LikeLocker/);

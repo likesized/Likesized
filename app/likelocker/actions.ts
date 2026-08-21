@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-const SAFE_RETURN = /^\/(?:browse|likelocker)(?:\?[^\s]*)?$/;
+const SAFE_RETURN = /^\/(?:explore|likelocker)(?:\?[^\s]*)?$/;
 
 function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -33,7 +33,7 @@ async function change(table: "product_likes" | "wish_locker_items", add: boolean
     : supabase.from(table).delete().eq("user_id", userId).eq("product_id", productId);
   const { error } = await operation;
   if (error) throw new Error("Could not update LikeLocker.");
-  revalidatePath("/browse");
+  revalidatePath("/explore");
   revalidatePath("/likelocker");
   redirect(destination);
 }

@@ -239,6 +239,7 @@ export async function addGarment(formData: FormData) {
   const originalSizeLabel = text(formData, "original_size_label") || structuredSizeLabel;
   const sizingSystem = text(formData, "sizing_system") || null;
   const styleNumber = text(formData, "style_number") || null;
+  const productDescription = text(formData, "product_description") || null;
   const identifier = text(formData, "identifier");
   const productUrl = text(formData, "product_url");
   const colorLabel = text(formData, "color_label") || null;
@@ -249,7 +250,7 @@ export async function addGarment(formData: FormData) {
   const wouldBuyAgainRaw = text(formData, "would_buy_again");
   const wearsCount = Number(text(formData, "wears_count") || "0");
 
-  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId&&!UUID.test(existingProductId)) || (requestedFamilyId&&!UUID.test(requestedFamilyId)) || !garmentType || !MARKET_SEGMENTS.has(marketSegment) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || !originalSizeLabel || originalSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !FIT_RESULTS.has(fit) || !GARMENT_CONDITIONS.has(garmentCondition) || !Number.isInteger(wearsCount) || wearsCount < 0 || wearsCount > 100000 || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000) || identifier.length>120 || (styleNumber&&styleNumber.length>100)) fail("invalid_fields");
+  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId&&!UUID.test(existingProductId)) || (requestedFamilyId&&!UUID.test(requestedFamilyId)) || !garmentType || !MARKET_SEGMENTS.has(marketSegment) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || !originalSizeLabel || originalSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !FIT_RESULTS.has(fit) || !GARMENT_CONDITIONS.has(garmentCondition) || !Number.isInteger(wearsCount) || wearsCount < 0 || wearsCount > 100000 || (fitNotes && fitNotes.length > 1000) || (productDescription && productDescription.length > 1000) || (productUrl && productUrl.length > 1000) || identifier.length>120 || (styleNumber&&styleNumber.length>100)) fail("invalid_fields");
   if (productUrl) { try { normalizeProductUrl(productUrl); } catch { fail("invalid_fields"); } }
 
   const photoEntry = formData.get("photo");
@@ -318,6 +319,7 @@ export async function addGarment(formData: FormData) {
 
     const {error:evidenceError}=await supabase.rpc("record_member_product_evidence",{p_product_id:product.id,p_garment_type:garmentType,p_market_segment:marketSegment,p_attributes:attributeRows,p_materials:[],p_source_reference:sourceReference});
     if(evidenceError)throw evidenceError;
+    if(productDescription){const {error:descriptionError}=await supabase.rpc("record_member_product_description",{p_product_id:product.id,p_description:productDescription});if(descriptionError)throw descriptionError;}
   } catch {
     if (photoPath) await supabase.storage.from("fit-reference-photos").remove([photoPath]);
     await supabase.from("closet_items").delete().eq("id", closetItemId).eq("user_id", userId);

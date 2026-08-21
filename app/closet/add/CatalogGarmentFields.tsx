@@ -113,5 +113,9 @@ export function CatalogGarmentFields({brands,products,families,garmentTypes,dime
       <input name="style_number" maxLength={100} placeholder="Optional" value={styleNumber} onChange={(event)=>{clearExact();setStyleNumber(event.target.value);}}/>
       <span className="fieldHelp">If you choose an existing catalog match, its known Style ID is filled automatically.</span>
     </label>
+    <label>Product description <span className="muted inlineMuted">optional</span>
+      <textarea name="product_description" maxLength={1000} rows={3} placeholder="Describe the garment itself, such as the cut, intended style, or identifying details."/>
+      <span className="fieldHelp">Member descriptions stay provisional until another member confirms them. Disagreements are sent to admin review; verified descriptions are locked.</span>
+    </label>
   </>;
 }

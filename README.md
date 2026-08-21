@@ -52,13 +52,13 @@ Help Me Size It is a fallback only when strong normal matched-wearer evidence is
 `Would Buy Again` does not influence size recommendation/confidence under the owner-locked Fit Match audit.
 
 ### Garment metadata boundaries
-- one controlled taxonomy shared by Browse + New Fit Report;
+- one controlled taxonomy shared by Explore + New Fit Report;
 - Material may exist only as reliable manufacturer/background data and is not a member filter/input;
 - Stretch is not an active V1 member input/classification/filter;
-- Color remains garment Browse/search data;
+- Color remains garment Explore/search data;
 - jeans/pants need controlled leg-shape/cut and rise handling reconciled into the one taxonomy before implementation resumes.
 
-### Browse
+### Explore
 Current owner-approved direction includes:
 - Garments | Outfits;
 - My Fit Matches | All;

@@ -32,7 +32,7 @@ Never blend the two contexts.
 - **Fit Twin is system-generated within Following** from strong current-person Match quality.
 - Following places someone in My Circle; LikeSized—not the member—decides whether that followed person qualifies as a Fit Twin.
 - A followed member may be Following + Fit Twin or Following without Fit Twin. A non-followed person may still have a strong Match %, but is not one of that member’s Fit Twins.
-- Exact Fit Twin threshold remains unresolved/configurable until the final matching model is validated.
+- Initial Fit Twin threshold is a configurable 85% Overall Match and may be calibrated as real distributions become available.
 - `follows` is the one canonical social graph. Do not create a second Fit Twin graph.
 - Member actions are **Follow / Following / Unfollow**.
 - Public relationship count is **Followers**, never Fit Twins.
@@ -53,7 +53,7 @@ Never blend the two contexts.
 - Conflicts trigger review instead of silently replacing stronger facts.
 
 ## V1 taxonomy
-Browse and New Fit Report must share one controlled garment taxonomy. No parallel category/type/style systems.
+Explore and New Fit Report must share one controlled garment taxonomy. No parallel category/type/style systems.
 
 Top-level categories:
 - Tops
@@ -67,7 +67,7 @@ Top-level categories:
 
 Accessories are not V1.
 
-Current Browse design requires Category → Type → Style plus Brand → Model and standardized Color where applicable.
+Current Explore design requires Category → Type → Style plus Brand → Model and standardized Color where applicable.
 
 For jeans/pants, owner review identified a need for explicit controlled structural descriptors such as:
 - leg shape/cut: Skinny, Slim, Straight, Relaxed, Wide, Bootcut, Flare;
@@ -236,15 +236,15 @@ Rules:
 
 Notify belongs to the insufficient/no-useful-fit-evidence fallback state so a member may be alerted when useful matching evidence arrives. Notify is not a permanent always-visible matched-card action.
 
-# 10. Browse / Search — CURRENT DESIGN, NOT YET OWNER-ACCEPTED IMPLEMENTATION
+# 10. Explore / Search — CURRENT OWNER-LOCKED DESIGN
 
 ## Structure
-- one dynamic Browse page;
+- one dynamic Explore page at `/explore`; legacy `/browse` links redirect without owning a second implementation;
 - search at top;
 - **Garments | Outfits**;
 - each content type: **My Fit Matches | All**;
 - fresh visit defaults to My Fit Matches;
-- garment/outfit scope/filter/sort/search state remembered independently during active Browse session only.
+- garment/outfit scope/filter/sort/search state remembered independently during the active Explore session only.
 
 ## Eligibility/ranking
 Garments My Fit Matches:
@@ -274,7 +274,7 @@ Fit Alert remains separate at 85%+ garment-specific Match with legitimate releva
 - normal garment search returns one canonical product result, not one row per wearer/Fit Report;
 - wearer-name contextual search may anchor the canonical product to that wearer's latest Shared report;
 - mobile live suggestions are compact list rows directly below search field;
-- full Search Results remain compact and preserve Browse/search state through mini-browser navigation.
+- full Search Results remain compact and preserve Explore/search state through mini-browser navigation.
 
 ## Strict filters
 - user selections never silently relax;
@@ -300,7 +300,7 @@ Fit Alert remains separate at 85%+ garment-specific Match with legitimate releva
 ## Mobile mini-browser
 - opaque true full-screen mobile flow;
 - clean Back + X controls;
-- underlying Browse state preserved but visually hidden;
+- underlying Explore state preserved but visually hidden;
 - overlay history supports garment/person/outfit/report exploration.
 
 # 11. LikeLocker / Wishlist / Gift Lists
@@ -332,12 +332,21 @@ Fit Alert remains separate at 85%+ garment-specific Match with legitimate releva
 - Outfit posts use existing owned Closet garments; do not duplicate garment product/taxonomy data.
 - Outfit likes contribute to creator Style Likes.
 - Garment/product likes do not contribute to Style Likes.
-- Other-member Outfit discovery lives in Browse.
+- Other-member Outfit discovery lives in Explore.
 - Followed-person Outfit activity lives in Style Feed.
 - Owned Outfits live in My Closet.
 - Fit Twin designation never creates a second subscription; it can only exist for someone already followed.
 
-# 13. Images / sharing
+# 13. Moderation and catalog verification
+
+- Members can report Outfit posts and shared Fit Report photos with a controlled reason and optional details.
+- Only explicitly authorized admins can review all reports, dismiss reports, remove reported content, or resolve disputed catalog facts.
+- Removing inappropriate photo content removes its member-visible record and private Storage files; the moderation action remains in an append-only audit trail.
+- Member-supplied missing garment facts are provisional. Independent agreement corroborates them; disagreement automatically marks the canonical Product for admin review.
+- Admin-reviewed controlled tags become verified/locked values. Later member evidence cannot overwrite them and remains available only as conflict evidence.
+- Product confirmation, conflict review, and locking extend the one canonical Product evidence/provenance system. They never create a second catalog.
+
+# 14. Images / sharing
 
 - Fit/reference photo upload is optional.
 - If uploaded, the garment is Shared and the photo is visible to authenticated LikeSized members.

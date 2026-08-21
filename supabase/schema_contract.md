@@ -81,22 +81,16 @@ Help Me Size It must reuse the same canonical recommendation architecture; no se
 
 `Would Buy Again` must not be used as size-recommendation/confidence input under the owner-locked Fit Match audit.
 
-## PR #36 database work — preserved / pending recovery
-The following migration files are mandatory salvage candidates and must not be lost or treated as applied to production merely because they exist on the old branch:
-- `20260820153100_confidence_aware_fit_matching.sql`
-- `20260820153200_fit_match_engine_rpc_boundary.sql`
-- `20260820153400_contextual_optional_measurements.sql`
-- `20260820203500_garment_enrichment_provenance.sql`
-- `20260820211800_directional_fit_recommendation.sql`
-- `20260820215500_garment_fit_preferences.sql`
-- `20260820221000_derived_body_proportion_refinement.sql`
-- `20260820222100_bust_shaping_context.sql`
-- `20260820234000_fit_match_audit_consolidation.sql`
-- `20260820235000_garment_condition_evidence.sql`
-- `20260821011600_fit_profile_reference_normalization_boundary.sql`
-- `20260821014000_harden_historical_snapshot_match_boundary.sql`
+## Recovered Fit Match database work
+The ordered `20260821223236` through `20260821223310` recovery migrations are the canonical, replayable implementations of the owner-audited Match, evidence, Preferred Fit, body-proportion, freshness, garment-condition, and historical-snapshot rules. Earlier PR #36 filenames are historical salvage references only and are not alternate current schema files.
 
-Their recovery must preserve owner-approved directional recommendation, Preferred Fit, derived proportions, chest/full-bust context, measurement freshness, garment-condition evidence, hardened historical snapshot boundaries and associated privacy constraints, while later owner decisions supersede active V1 stretch/member-stretch behavior.
+## Moderation and catalog-conflict foundation
+- `private.admin_users` is the explicit admin allowlist; the earliest existing Auth account bootstraps the owner and later members are never auto-promoted.
+- `content_reports` stores member reports for Outfit posts and shared Fit Report photos under reporter-own/admin-only RLS.
+- `moderation_actions` is the append-only audit trail for dismissals and content removal.
+- Admin deletion policies cover the member-visible database row and its private Storage object; ordinary member ownership policies remain unchanged.
+- Existing Product metadata/attribute evidence remains the one confirmation system. Independent member agreement corroborates provisional facts; conflicting evidence sets `products.catalog_review_needed`.
+- `catalog_moderation_actions` records the final verified controlled value. Verified admin evidence cannot be overwritten by later member submissions; later disagreements remain review evidence.
 
 ## Material / stretch implementation debt
 - reliable manufacturer/product-source material may exist as background data only; member material input/verification/filter is not current V1.

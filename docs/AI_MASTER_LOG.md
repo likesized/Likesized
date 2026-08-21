@@ -299,14 +299,14 @@ Fallback rules:
 ### Notify relationship
 Notify is not a permanent normal garment-card action. It belongs to the insufficient/no-useful-fit-evidence fallback state so the member can ask to be alerted when useful matching evidence arrives.
 
-## Explore — CURRENT OWNER-LOCKED DESIGN, COMPLETE PREVIEW IN PROGRESS
+## Explore — CURRENT OWNER-LOCKED DESIGN, CANONICAL REBUILD IN PROGRESS
 
 ### Structure
-- one Browse page;
+- one Explore page at `/explore`; `/browse` is compatibility redirect only;
 - universal search at top;
 - primary switch **Garments | Outfits**;
 - each content type has **My Fit Matches | All**;
-- fresh Browse defaults to My Fit Matches;
+- fresh Explore visits default to My Fit Matches;
 - Garments and Outfits remember their own state during the active session only.
 
 ### My Fit Matches eligibility
@@ -327,7 +327,7 @@ Notify is not a permanent normal garment-card action. It belongs to the insuffic
 - one canonical product result per garment/product, not duplicate results per wearer/Fit Report;
 - wearer-name contextual exception may anchor the canonical product to that wearer's latest Shared report;
 - mobile live suggestions are compact list rows below the search field, not giant cards/carousels;
-- full Search Results remain compact and preserve search/Browse state through mini-browser navigation.
+- full Search Results remain compact and preserve search/Explore state through mini-browser navigation.
 
 ### Filters
 - strict; never silently relax user selections;
@@ -355,11 +355,22 @@ Notify is not a permanent normal garment-card action. It belongs to the insuffic
 ### Mobile mini-browser
 - true opaque full-screen mobile detail flow;
 - clean Back + X controls;
-- underlying Browse state preserved but not visually bleeding through;
+- underlying Explore state preserved but not visually bleeding through;
 - internal overlay history for garment/person/outfit/report exploration.
 
 ### Preview review status
-The rejected synthetic Browse preview remains excluded. The active PR #47 now builds one canonical **Explore** implementation against real Product, Outfit, member-search, current-person Match, and historical garment-evidence sources. It is branch-only and must pass CI plus owner desktop/mobile review before production authorization.
+The rejected synthetic Browse preview remains excluded as historical recovery context. The active PR #47 now rebuilds one canonical **Explore** implementation against real Product, Outfit, member-search, current-person Match, and historical garment-evidence sources. It is branch-only and must pass CI plus owner desktop/mobile review before production authorization.
+
+## Admin moderation and member-confirmed garment facts — OWNER LOCKED / BRANCH IMPLEMENTATION IN PROGRESS
+- Members can report Outfit posts and shared Fit Report photos with a controlled reason and optional details.
+- The owner/admin moderation queue shows open reports, flagged content, involved members, resolution totals, and an append-only action history.
+- Admin may dismiss a report or remove the inappropriate post/photo. Removal includes stored photo files and records who acted, when, and why.
+- The earliest existing Auth account bootstraps the initial owner/admin. Later admin access is explicit; new members never become admins automatically.
+- Missing garment facts submitted by a member remain provisional evidence.
+- Later members may independently confirm the same controlled value or submit a different value through the existing canonical evidence path.
+- Matching confirmations strengthen/corroborate the value. Conflicting confirmations automatically set `products.catalog_review_needed` and enter the garment-information admin queue.
+- An admin decision writes verified evidence and locks the controlled tag/value. Later member conflicts remain evidence for review and cannot overwrite the verified value.
+- This extends the existing Product/provenance system; it does not create a second catalog or tagging graph.
 
 ## LikeLocker / saved fashion content
 - LikeLocker is the previously approved private saved-fashion destination for canonical products/garments and saved Outfits.
@@ -408,7 +419,7 @@ The owner cleared the recovery freeze on **2026-08-21**, PR #43 was promoted to 
 19. Style Feed.
 20. Browse search semantics.
 21. Help / FAQ.
-22. Remaining Settings/admin/moderation/product surfaces.
+22. Remaining Settings/admin/product surfaces beyond the content-report and catalog-conflict moderation foundation implemented in PR #47.
 23. Terminology cleanup.
 24. Full preview verification.
 25. Phase 7 Beta end-to-end verification.
@@ -533,7 +544,7 @@ Status: **COMPLETE / DEPLOYED / VERIFIED**.
 
 # ACTIVE OWNER PREVIEW — EXPLORE / MY CIRCLE / LIKELOCKER
 
-Status: **BRANCH-ONLY / PREVIEW READY / NOT PRODUCTION**.
+Status: **BRANCH-ONLY / REBUILD VERIFICATION IN PROGRESS / NOT PRODUCTION**.
 
 - Active line: PR #47, `correct-grouped-menu-layout`.
 - Desktop and mobile use the same one Menu + one fixed notification bell control.
@@ -541,8 +552,12 @@ Status: **BRANCH-ONLY / PREVIEW READY / NOT PRODUCTION**.
 - My Circle Style Feed orders posts from followed people qualifying at the configurable initial 85% Overall Match Fit Twin threshold first, then fills with other followed activity, without duplicates.
 - LikeLocker opens to Garments and filters Garments / Outfits / Wish Locker. Product likes, Outfit likes, and purchase-intent Wish Locker saves remain distinct.
 - Migration `20260821231040_add_likelocker_and_fit_twin_settings.sql` is the canonical replay source for the already-applied live tables/settings.
-- Source head `ccac70f1b5413b0b566db6218baa68552f3a9a26` passed CI run **#378** end-to-end: canonical integrity, typecheck, all focused tests, production build, fresh migration replay, and database behavior/privacy tests.\n- Vercel preview deployment `dpl_Ai2mywe1dLrp8ai4ncWT27pQQVEc` for that exact source head reached **READY**. Owner desktop/mobile review remains required before production authorization.
+- Earlier source head `ccac70f1b5413b0b566db6218baa68552f3a9a26` passed CI run **#378** and produced preview deployment `dpl_Ai2mywe1dLrp8ai4ncWT27pQQVEc`; that preview is now superseded by the owner-requested Explore and moderation rebuild on the same branch.
+- Current branch work renames the canonical page/route to Explore (`/explore`), retains `/browse` only as a compatibility redirect, adds the eight-item leading carousel and 24-item Keep Browsing expansion, and keeps real Product/Outfit/People/Match sources.
+- Current branch work adds member reports for Outfit posts/shared Fit Report photos, an admin moderation queue, accountable removal/dismissal history, and admin-only file/content removal.
+- Current branch work connects existing member Product-evidence confirmation/conflict rules to an admin garment-information queue and final verified/locked decisions, including controlled tags and member-supplied product descriptions.
+- Local canonical integrity, TypeScript, all focused application tests, and production build pass. Fresh migration replay/privacy tests and a new preview are still pending CI and therefore this update is not yet marked verified/preview-ready.
 - Public homepage five-question FAQ owner review remains pending.
 
 ## Exact next action
-Finish full CI and create one owner-accessible PR #47 preview covering Explore, My Circle, LikeLocker, and the shared menu. Do not merge or promote production without explicit owner authorization. After owner review, retain requested tweaks on this one canonical line. FAQ owner review and deferred desktop Fit Profile verification remain open.
+Commit the current PR #47 rebuild, run full CI including fresh migration replay/privacy tests, then create and visually verify one owner-accessible preview covering Explore, My Circle, LikeLocker, shared navigation, member reporting, content moderation, and catalog-conflict locking. Do not merge or promote production without explicit owner authorization. FAQ owner review and deferred desktop Fit Profile verification remain open.

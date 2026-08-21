@@ -25,15 +25,17 @@ export function MobileMenu({ unreadCount }: MobileMenuProps) {
 
   return (
     <div className={styles.mobileNav} ref={menuRef}>
+      <Link className={styles.notificationBell} href="/notifications" aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"} title="Notifications">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></svg>
+        {unreadCount > 0 ? <span className={styles.notificationBadge}>{unreadCount}</span> : null}
+      </Link>
       <button type="button" className={styles.mobileMenuButton} aria-expanded={open} aria-controls="mobile-navigation-menu" onClick={() => setOpen((current) => !current)}>Menu</button>
       {open ? (
         <div id="mobile-navigation-menu" className={styles.mobileMenuPanel} role="navigation" aria-label="Mobile navigation">
           <div className={styles.mobileSectionLabel}>Discover</div>
-          <Link href="/browse" onClick={closeMenu}>Browse</Link>
+          <Link href="/browse" onClick={closeMenu}>Explore</Link>
           <Link href="/people" onClick={closeMenu}>People My Size</Link>
-          <Link href="/twins" onClick={closeMenu}>Fit Twins</Link>
-          <Link href="/following" onClick={closeMenu}>Following</Link>
-          <Link href="/outfits" onClick={closeMenu}>Outfits</Link>
+          <Link href="/circle" onClick={closeMenu}>My Circle</Link>
           <Link href="/likelocker" onClick={closeMenu}>LikeLocker</Link>
 
           <div className={styles.mobileSectionLabel}>My Closet</div>
@@ -45,7 +47,6 @@ export function MobileMenu({ unreadCount }: MobileMenuProps) {
           <Link href="/onboarding" onClick={closeMenu}>Fit Profile</Link>
           <Link href="/settings" onClick={closeMenu}>Settings</Link>
           <Link href="/#faq" onClick={closeMenu}>Help / FAQ</Link>
-          <Link href="/notifications" onClick={closeMenu}>Notifications{unreadCount > 0 ? <span className={styles.notificationCount}>{unreadCount}</span> : null}</Link>
           <form action="/auth/signout" method="post" onSubmit={closeMenu}><button type="submit">Sign Out</button></form>
         </div>
       ) : null}

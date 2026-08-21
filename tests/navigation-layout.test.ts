@@ -11,6 +11,8 @@ test("signed-in desktop navigation is grouped behind menus", () => {
   assert.match(header, /<summary>My Closet<\/summary>/);
   assert.match(header, /<summary>Account<\/summary>/);
   assert.match(header, /notificationBell/);
+  assert.match(header, /href="\/browse">Explore/);
+  assert.match(header, /href="\/circle">My Circle/);
   assert.doesNotMatch(header, /outfits\?feed=twins/);
 });
 
@@ -18,6 +20,9 @@ test("mobile menu keeps grouped sections and closes safely", () => {
   assert.match(mobile, />Discover<\/div>/);
   assert.match(mobile, />My Closet<\/div>/);
   assert.match(mobile, />Account<\/div>/);
+  assert.match(mobile, /notificationBell/);
+  assert.match(mobile, /href="\/circle"[^>]*>My Circle/);
+  assert.doesNotMatch(mobile, />Notifications/);
   assert.match(mobile, /usePathname/);
   assert.match(mobile, /pointerdown/);
   assert.doesNotMatch(mobile, /outfits\?feed=twins/);

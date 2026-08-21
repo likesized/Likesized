@@ -523,7 +523,8 @@ Status: **COMPLETE / DEPLOYED / VERIFIED**.
 - On **2026-08-21**, the owner authorized repair. All 13 canonical recovery migrations were applied to live Supabase in their locked order.
 - Live verification now returns all 39 measurement definitions, including nine core measurements, through the exact column selection used by the Fit Profile page.
 - Canonical migration filenames are synchronized to the versions recorded by the live Supabase migration ledger so future pushes do not replay the recovery migrations.
-- The grouped menu is restored without the obsolete Fit-Twin-owned Style Feed or `/outfits?feed=twins` route. Discover, My Closet, Account, and the persistent notification bell are restored; Following remains distinct from system Fit Twin status.
+- The grouped menu is restored without the obsolete Fit-Twin-owned Style Feed or `/outfits?feed=twins` route. Desktop and mobile use the same owner-approved organization: Discover (Explore / People My Size / My Circle / LikeLocker), My Closet (My Closet / New Fit Report / New Outfit), and Account (Fit Profile / Settings / Help / FAQ / Sign Out). The notification bell remains fixed outside the menus and beside the mobile Menu button.
+- **My Circle** is the single social destination containing system Fit Twin status and Following activity while keeping those relationships semantically separate. Legacy `/twins` and `/following` routes redirect to `/circle`.
 - PR #46 repair head `f0068d761eb4d110f6663863522a42fd8013e705` passed CI run **#369** end-to-end.
 - PR #46 merged to `main` as `ec987f5a22575b54806341615309a150558467dc`.
 - Vercel production deployment `dpl_FZ2MeLLXaecG8QYVoK284e1n4x2E` for that exact merge commit reached **READY**.

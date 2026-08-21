@@ -43,11 +43,9 @@ export async function Header() {
             <details className={styles.desktopMenu}>
               <summary>Discover</summary>
               <div className={styles.desktopMenuPanel}>
-                <Link href="/browse">Browse</Link>
+                <Link href="/browse">Explore</Link>
                 <Link href="/people">People My Size</Link>
-                <Link href="/twins">Fit Twins</Link>
-                <Link href="/following">Following</Link>
-                <Link href="/outfits">Outfits</Link>
+                <Link href="/circle">My Circle</Link>
                 <Link href="/likelocker">LikeLocker</Link>
               </div>
             </details>

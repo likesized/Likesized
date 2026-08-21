@@ -533,7 +533,7 @@ Status: **COMPLETE / DEPLOYED / VERIFIED**.
 
 # ACTIVE OWNER PREVIEW — EXPLORE / MY CIRCLE / LIKELOCKER
 
-Status: **BRANCH-ONLY / NOT PRODUCTION / VERIFICATION PENDING**.
+Status: **BRANCH-ONLY / PREVIEW READY / NOT PRODUCTION**.
 
 - Active line: PR #47, `correct-grouped-menu-layout`.
 - Desktop and mobile use the same one Menu + one fixed notification bell control.
@@ -541,7 +541,7 @@ Status: **BRANCH-ONLY / NOT PRODUCTION / VERIFICATION PENDING**.
 - My Circle Style Feed orders posts from followed people qualifying at the configurable initial 85% Overall Match Fit Twin threshold first, then fills with other followed activity, without duplicates.
 - LikeLocker opens to Garments and filters Garments / Outfits / Wish Locker. Product likes, Outfit likes, and purchase-intent Wish Locker saves remain distinct.
 - Migration `20260821231040_add_likelocker_and_fit_twin_settings.sql` is the canonical replay source for the already-applied live tables/settings.
-- This work is not complete until focused tests, typecheck, build, fresh migration replay, database tests, preview deployment, and owner review pass.
+- Source head `ccac70f1b5413b0b566db6218baa68552f3a9a26` passed CI run **#378** end-to-end: canonical integrity, typecheck, all focused tests, production build, fresh migration replay, and database behavior/privacy tests.\n- Vercel preview deployment `dpl_Ai2mywe1dLrp8ai4ncWT27pQQVEc` for that exact source head reached **READY**. Owner desktop/mobile review remains required before production authorization.
 - Public homepage five-question FAQ owner review remains pending.
 
 ## Exact next action

@@ -9,6 +9,8 @@
 .imperialMeasurementRow select { flex:0 0 86px; min-width:86px; }
 .imperialMeasurementRow select:disabled { opacity:.55; cursor:not-allowed; }
 .coreIntro { margin:8px 0 22px; color:var(--muted); font-size:14px; line-height:1.5; }
+.reviewGrid { min-width:0; }
+.reviewItem { min-width:0; }
 .helpDialog { width:min(760px, calc(100vw - 32px)); max-height:min(86vh, 760px); margin:auto; padding:0; border:0; border-radius:26px; background:var(--white); color:var(--ink); box-shadow:0 30px 100px rgba(18,18,18,.28); overflow:auto; }
 .helpDialog::backdrop { background:rgba(18,18,18,.55); backdrop-filter:blur(3px); }
 .helpDialogHeader { position:sticky; top:0; z-index:2; display:flex; align-items:flex-start; justify-content:space-between; gap:20px; padding:24px 24px 16px; background:rgba(255,253,248,.96); border-bottom:1px solid var(--line); }
@@ -48,4 +50,8 @@
   .imperialMeasurementRow { flex-wrap:nowrap; }
   .imperialMeasurementRow input { flex-basis:100px; }
   .imperialMeasurementRow select { flex-basis:78px; min-width:78px; }
+  .reviewGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; border:0; background:transparent; overflow:visible; }
+  .reviewItem { display:block; min-width:0; padding:14px 12px; border:1px solid var(--line)!important; border-radius:14px; background:var(--white); }
+  .reviewItem strong { display:block; font-size:15px; line-height:1.15; overflow-wrap:anywhere; }
+  .reviewItem span { display:block; margin-top:5px; font-size:12px; line-height:1.3; }
 }

@@ -1,14 +1,25 @@
-.signedInDesktop { display:flex; }
-.mobileNav { display:none; margin-left:auto; position:relative; }
+.signedInDesktop { display:flex; align-items:center; gap:8px; margin-left:auto; }
+.desktopMenu { position:relative; }
+.desktopMenu summary { list-style:none; cursor:pointer; padding:10px 12px; border-radius:999px; color:var(--ink); font-size:12px; font-weight:900; letter-spacing:.04em; text-transform:uppercase; user-select:none; }
+.desktopMenu summary::-webkit-details-marker { display:none; }
+.desktopMenu summary::after { content:" ▾"; font-size:10px; }
+.desktopMenu[open] summary, .desktopMenu summary:hover, .desktopMenu summary:focus-visible { background:var(--paper); outline:none; }
+.desktopMenuPanel { position:absolute; right:0; top:calc(100% + 8px); min-width:210px; padding:8px; border:1px solid var(--line); border-radius:16px; background:var(--white); box-shadow:0 20px 60px rgba(18,18,18,.18); display:grid; gap:2px; z-index:1000; }
+.desktopMenuPanel a, .desktopMenuPanel button { width:100%; display:flex; align-items:center; padding:11px 12px; border:0; border-radius:10px; background:transparent; color:var(--ink); text-align:left; font:inherit; font-size:14px; font-weight:800; text-decoration:none; cursor:pointer; }
+.desktopMenuPanel a:hover, .desktopMenuPanel button:hover, .desktopMenuPanel a:focus-visible, .desktopMenuPanel button:focus-visible { background:var(--paper); outline:none; }
+.desktopMenuPanel form { width:100%; margin:4px 0 0; padding-top:6px; border-top:1px solid var(--line); }
+.notificationBell { position:relative; width:42px; height:42px; flex:0 0 42px; display:grid; place-items:center; border:1px solid var(--line); border-radius:999px; background:var(--white); color:var(--ink); text-decoration:none; }
+.notificationBell:hover, .notificationBell:focus-visible { background:var(--paper); outline:none; }
+.notificationBell svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.notificationBadge { position:absolute; top:-4px; right:-4px; min-width:20px; height:20px; padding:0 5px; display:grid; place-items:center; border:2px solid var(--white); border-radius:999px; background:var(--secondary); color:var(--ink); font-size:10px; font-weight:900; line-height:1; }
+.mobileNav { display:none; margin-left:auto; position:relative; align-items:center; gap:8px; }
 .mobileMenuButton { cursor:pointer; padding:10px 15px; border:1px solid var(--ink); border-radius:999px; font-size:13px; font-weight:900; background:transparent; color:var(--ink); }
 .mobileMenuButton[aria-expanded="true"] { background:var(--ink); color:var(--white); }
-.mobileMenuPanel { position:absolute; right:0; top:calc(100% + 10px); width:min(280px, calc(100vw - 36px)); padding:10px; border:1px solid var(--line); border-radius:18px; background:var(--white); box-shadow:0 20px 60px rgba(18,18,18,.18); display:grid; gap:2px; z-index:1000; }
-.mobileMenuPanel a, .mobileMenuPanel button { width:100%; display:flex; align-items:center; justify-content:space-between; padding:12px 13px; border:0; border-radius:11px; background:transparent; color:var(--ink); text-align:left; font-size:14px; font-weight:800; cursor:pointer; }
+.mobileMenuPanel { position:absolute; right:0; top:calc(100% + 10px); width:min(300px, calc(100vw - 28px)); max-height:calc(100svh - 96px - env(safe-area-inset-bottom)); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y; padding:10px 10px calc(10px + env(safe-area-inset-bottom)); border:1px solid var(--line); border-radius:18px; background:var(--white); box-shadow:0 20px 60px rgba(18,18,18,.18); display:grid; gap:2px; z-index:1000; }
+.mobileSectionLabel { margin:9px 8px 3px; padding-top:8px; border-top:1px solid var(--line); color:var(--muted); font-size:10px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; }
+.mobileSectionLabel:first-child { margin-top:2px; padding-top:2px; border-top:0; }
+.mobileMenuPanel a, .mobileMenuPanel button { width:100%; display:flex; align-items:center; justify-content:space-between; padding:12px 13px; border:0; border-radius:11px; background:transparent; color:var(--ink); text-align:left; font-size:14px; font-weight:800; cursor:pointer; text-decoration:none; }
 .mobileMenuPanel a:hover, .mobileMenuPanel button:hover, .mobileMenuPanel a:focus-visible, .mobileMenuPanel button:focus-visible { background:var(--paper); outline:none; }
-.mobileMenuPanel form { width:100%; margin:4px 0 0; padding-top:6px; border-top:1px solid var(--line); }
+.mobileMenuPanel form { width:100%; margin:0; }
 .notificationCount { min-width:22px; height:22px; padding:0 6px; display:inline-grid; place-items:center; border-radius:999px; background:var(--secondary); font-size:11px; }
-
-@media (max-width: 900px) {
-  .signedInDesktop { display:none !important; }
-  .mobileNav { display:flex; align-items:center; }
-}
+@media (max-width: 900px) { .signedInDesktop { display:none !important; } .mobileNav { display:flex; } }

@@ -1,0 +1,58 @@
+.settingsEvidence {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.settingsEvidence > :first-child {
+  min-width: 0;
+}
+
+.settingsEvidence form {
+  margin: 0;
+}
+
+.profileForm {
+  display: grid;
+  gap: 20px;
+}
+
+.bioLabelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.characterCount {
+  flex: 0 0 auto;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.profileForm > button {
+  justify-self: start;
+}
+
+@media (max-width: 700px) {
+  .settingsEvidence {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 14px;
+    padding: 20px;
+  }
+
+  .settingsEvidence > form,
+  .settingsEvidence > a {
+    justify-self: start;
+  }
+
+  .profileForm {
+    gap: 16px;
+    padding-top: 34px;
+    padding-bottom: 34px;
+  }
+
+  .profileForm > button {
+    margin-top: 2px;
+  }
+}

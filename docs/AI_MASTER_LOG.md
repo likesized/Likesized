@@ -486,7 +486,7 @@ Do not rewrite/delete an already-applied migration. Use a later canonical migrat
 # RETAILER LISTINGS + SHOPPING — OWNER LOCKED
 
 ## One-to-many retailer listings
-A canonical Product may have zero, one, or multiple valid retailer destinations.
+A canonical Product may have zero, one or multiple valid retailer destinations.
 
 Rules:
 - append/dedupe; do not overwrite one retailer with another;
@@ -1372,3 +1372,71 @@ Do not overstate the checkpoint. Still required before this consolidation can be
 9. Re-run canonical integrity → typecheck → focused tests → production build → complete fresh Supabase replay → DB tests on the final consolidation head.
 10. Produce one exact-SHA READY Preview for final owner desktop/mobile review and determine the live Supabase migration/promotion sequence.
 11. **STOP before production.** Do not merge PR #47 to `main`, apply/promote the production schema, or promote Vercel production until the owner explicitly authorizes the final consolidation promotion.
+
+# OWNER RE-AUDIT RESET — 2026-08-22 — CURRENT AUTHORITY
+
+This section is the current owner-authorized audit status and **supersedes every earlier page-complete claim, audit ordering, branch-only next-action instruction, and stale production-promotion statement elsewhere in this file**. Older sections remain preservation/history evidence only where they conflict with this section.
+
+## Current working rule
+- Canonical work is being made directly against the current LikeSized `main` production line under the owner's standing production authorization for this review session. Do not create a new Git branch unless the owner explicitly authorizes one.
+- The major catalog/intake/Fit Report rework invalidates prior owner page approvals for audit purposes.
+- **New Fit Report is the only currently owner-confirmed page/surface.** The barcode scanner remains explicitly **OPEN / NOT CONFIRMED** for future testing.
+- Every other member-facing, public, account, navigation, social, commerce and admin surface is reset to **NEEDS OWNER RE-AUDIT**, regardless of any older completion language above.
+- Audit first: inspect the live/current implementation, identify stale or broken behavior, lock owner decisions, then make canonical changes. Do not treat an old approval as current approval after this reset.
+- After the owner confirms a surface is done again, record that confirmation here before moving its audit status to complete.
+
+## New Fit Report — current confirmed scope
+Owner review has confirmed the current New Fit Report flow except barcode scanning. Preserve the current behaviors already live, including:
+- internal LikeSized Product search with manual unresolved fallback;
+- known Product vs pending-candidate handling;
+- Product identity conflict routing to admin review rather than silent canonical overwrite;
+- state-based counted Fit Report identity rather than chronological duplicate episodes;
+- size and objective garment-answer changes may create distinct counted Fit Reports;
+- Intended Fit alone does not create a counted report;
+- blank garment-relevant body measurements added later strengthen/update an existing report rather than creating a new one;
+- irrelevant measurements do not create a new report for a garment that does not use them;
+- garment-relevant body changes use a 2% threshold in either direction;
+- accepted under-2% relevant changes update the existing report and roll its comparison baseline to the newest accepted value;
+- a relevant change outside the accepted body-state window creates a new report, while returning to an already represented equivalent/nearby body state reuses that state instead of creating a duplicate;
+- material updates use exact submitted recipes rather than averaging percentages into a composition nobody submitted;
+- Fit Report added/updated/review modal distinctions and simplified duplicate-update wording;
+- retired Preferred Fit member UI is removed from the Fit Profile surface used by this flow;
+- barcode scanner remains available but deliberately unconfirmed for later owner testing.
+
+## Full owner re-audit sequence — LOCKED ORDER
+1. **Homepage + complete FAQ** — re-audit the entire public story after the catalog/Fit Report rework; remove stale language and make the FAQ match current product truth.
+2. **Global header + member Menu + admin menu entry/navigation** — labels, grouping, destinations, bell, mobile/desktop behavior, admin discoverability and obsolete links.
+3. **Signup / Login / Check Email / auth-confirmation / auth-error / Forgot Password / Reset Password** — complete authentication flow and all empty/error states.
+4. **Fit Profile** — desktop/mobile, measurements, help diagrams, review/save behavior, privacy copy, retired Preferred Fit removal, and measurement-update semantics.
+5. **Settings** — every account/profile/privacy/notification/social preference control, stale settings, layout and mobile behavior.
+6. **Notifications** — types, copy, read/unread behavior, destinations, privacy, empty states and mobile/desktop presentation.
+7. **People My Size** — matching, confidence, filters/sorting if present, member cards, privacy and destinations.
+8. **Member Profile + Shared Closet** — identity/profile UI, Follow state, Match context, shared garments/outfits, privacy and pending Product presentation.
+9. **My Circle / Following / Fit Twins** — one follows graph, derived Fit Twin designation, Style Feed relationship, redirects and any legacy `/following` or `/twins` behavior.
+10. **My Closet** — garments/outfits, multiple valid body/fit states, Fit History, Update Fit/Tried It Again, pending catalog state, sharing and mobile/desktop card behavior.
+11. **Update/Edit Fit Report** — ensure edit/update behavior matches the newly confirmed counted-report and body-state rules rather than older assumptions.
+12. **New Fit Report** — **CONFIRMED EXCEPT BARCODE SCANNER**. Do not rework confirmed behavior during the page sweep unless a regression is discovered. Barcode scan testing remains deferred/open.
+13. **New Outfit** — owned-garment selection, photo flow, classification, privacy and validation.
+14. **Outfits / Style Feed** — outfit browsing, followed-person activity, likes, tags, Fit context and privacy.
+15. **Garment/Product Detail** — canonical vs pending identity, Product facts, Fit Reports, historical Match, People Like You Who Wore This, Help Me Size It, images and commerce actions.
+16. **Explore** — Garments/Outfits, My Fit Matches/All, filters, ranking, search integration, image fallbacks, mobile browser and canonical Product dedupe.
+17. **Search + `/browse` compatibility behavior** — Garments/Outfits/People, canonical result grouping, unresolved-item exclusion from Product results, redirects and compact mobile behavior.
+18. **LikeLocker / Wish Locker** — saves/likes/wishlist distinction, provenance, remove controls, fit context and conditional shopping.
+19. **Full Admin Catalog + Moderation surface** — audit the admin entry and the entire authorized operating surface, not just content moderation. Required review includes Catalog Enrichment, candidate demand ordering, Conflicting Product Facts, Possible Duplicates/Identity Review, Reported/Spam Content, audit history, candidate mapping/new-Product creation, merge/split gaps, Brand/Product aliases, Product/Fit/Outfit photo moderation, spam Fit Report/submission handling, field lock/reopen behavior, pending garment-type conflict flags, SerpAPI cache/research/batch/cap workflow, starter-catalog review, retailer/identifier conflicts and responsive admin usability.
+20. **Final site-wide regression pass** — mobile + desktop, navigation, privacy, terminology, empty/error/loading states, conditional commerce, stale/retired concepts, cross-page destinations and canonical-data consistency.
+
+## Audit completion rule
+A page/surface is not considered complete merely because code exists or tests pass. Completion requires:
+1. current source/live behavior inspected;
+2. owner interaction review performed;
+3. owner-requested corrections made canonically;
+4. production behavior verified where applicable;
+5. owner explicitly confirms the surface is done;
+6. this master status is updated.
+
+## Exact next action — CURRENT
+**Start with Audit #1: Homepage + complete FAQ.**
+
+The next work is to inspect the current homepage and every FAQ entry against the post-rework product truth, identify all stale/missing/misleading language and UX issues, and present the findings for owner decisions before changing the page. After the homepage/FAQ is owner-confirmed, proceed to Audit #2: global header/member Menu/admin navigation.
+
+The barcode scanner stays open for future testing and is not the next task.

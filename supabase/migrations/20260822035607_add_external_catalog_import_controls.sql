@@ -111,6 +111,6 @@ $$;
 revoke all on function public.get_catalog_import_provider_alerts() from public,anon;
 grant execute on function public.get_catalog_import_provider_alerts() to authenticated;
 
-comment on table private.catalog_import_providers is 'Historical external-catalog provider controls. Removed from active schema by the later community-catalog migration.';
-comment on table private.catalog_import_provider_usage is 'Historical external-catalog request accounting. Removed from active schema by the later community-catalog migration.';
-comment on table private.catalog_import_provider_alerts is 'Historical external-catalog alerts. Removed from active schema by the later community-catalog migration.';
+comment on table private.catalog_import_providers is 'Owner-controlled external-catalog provider switches. All providers default disabled; no paid overage is authorized.';
+comment on table private.catalog_import_provider_usage is 'Monthly external-catalog request accounting. Requests stop at the configured hard cap.';
+comment on table private.catalog_import_provider_alerts is 'Owner-facing 80% warning, 95% critical, and hard-limit alerts. No automatic billing action is implied.';

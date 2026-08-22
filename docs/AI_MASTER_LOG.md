@@ -77,7 +77,7 @@ LikeSized prioritizes real-world garment evidence from people with garment-relev
 
 ## Following / Fit Twin / My Circle — LOCKED
 - Following is member-controlled.
-- Fit Twin is system-derived **within the followed set** from strong current-person Match quality.
+- Fit Twin is system-generated **within the followed set** from strong current-person Match quality.
 - `follows` remains the one canonical social graph.
 - initial Fit Twin threshold is configurable and currently 85% Overall Match.
 - member actions are Follow / Following / Unfollow.
@@ -594,7 +594,7 @@ Do not mark Phase 6.4 complete until owner desktop verification is done.
 ## 6.5.3 My Circle / Following + Fit Twins social hub
 Audit/finalize:
 - Following user-controlled;
-- Fit Twin system-derived within followed set;
+- Fit Twin system-generated within followed set;
 - one `follows` graph;
 - Follow/Following/Unfollow;
 - safe Match context without measurements;
@@ -818,7 +818,7 @@ Current primary vocabulary:
 - People My Size
 - My Circle
 - Following / Followers
-- Fit Twin / Fit Twins only as system-derived match designation
+- Fit Twin / Fit Twins only as system-generated match designation
 - Style Feed
 - My Closet
 - LikeLocker

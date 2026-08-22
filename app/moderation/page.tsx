@@ -1,6 +1,17 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createProductFromCandidate, lockCatalogField, mapCatalogCandidate, resolveReport, setCandidateStatus } from "./actions";
+import {
+  addBrandAlias,
+  addProductAlias,
+  createProductFromCandidate,
+  dismissCatalogFlag,
+  lockCatalogField,
+  mapCatalogCandidate,
+  removeCanonicalProductPhoto,
+  removePendingProductPhoto,
+  resolveReport,
+  setCandidateStatus,
+} from "./actions";
 import styles from "./moderation.module.css";
 
 type Report = {
@@ -19,7 +30,7 @@ type Profile = { username: string | null; display_name: string | null };
 type Action = { id: string; action: string; target_type: string; reason: string; created_at: string };
 type CatalogAction = { id: string; action: string; reason: string; created_at: string; candidate_id: string | null; product_id: string | null };
 type ProductFlag = { id: string; name: string; garment_type_key: string | null; market_segment: string; brand: unknown };
-type Brand = { name: string; normalized_name?: string };
+type Brand = { id?: string; name: string; normalized_name?: string };
 type ModeratedContent = { imageUrl: string | null; description: string };
 type EvidenceChoice = { value: string; submitted_by: string | null; source_status: string };
 type CatalogDispute = {
@@ -54,6 +65,9 @@ type Submission = {
 };
 type ReviewFlag = { id: string; candidate_id: string | null; product_id: string | null; flag_type: string; details: Record<string, unknown>; created_at: string };
 type CandidateProduct = { id: string; name: string; normalized_name: string; garment_type_key: string | null; brand: unknown };
+type AliasBrand = { id: string; name: string; normalized_name: string };
+type PhotoProduct = { name: string; brand: unknown };
+type CanonicalProductPhoto = { id: string; product_id: string; storage_path: string; public_url: string; source_status: string; created_at: string; product: unknown };
 function one<T>(v: unknown): T | null { return Array.isArray(v) ? ((v[0] as T | undefined) ?? null) : ((v as T | null) ?? null); }
 function name(v: unknown) { const p = one<Profile>(v); return p?.display_name?.trim() || p?.username || "Member"; }
 function label(value: string) { return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
@@ -74,6 +88,8 @@ export default async function ModerationPage() {
     { data: openReviewFlags },
     { data: candidateProducts },
     { data: catalogHistory },
+    { data: aliasBrandData },
+    { data: canonicalPhotoData },
   ] = await Promise.all([
     supabase
       .from("content_reports")
@@ -85,8 +101,10 @@ export default async function ModerationPage() {
     supabase.from("products").select("id,name,garment_type_key,market_segment,brand:brands(name)").eq("catalog_review_needed", true).order("created_at", { ascending: true }),
     supabase.from("catalog_candidates").select("id,brand_text,normalized_brand,model_text,normalized_model,garment_type_key,department_key,status,submission_count,last_submitted_at,last_researched_at").neq("status", "merged").order("submission_count", { ascending: false }).order("last_submitted_at", { ascending: false }).limit(100),
     supabase.from("catalog_review_flags").select("id,candidate_id,product_id,flag_type,details,created_at").eq("status", "open").order("created_at", { ascending: true }),
-    supabase.from("products").select("id,name,normalized_name,garment_type_key,brand:brands(name,normalized_name)").neq("catalog_status", "rejected").order("name").limit(500),
+    supabase.from("products").select("id,name,normalized_name,garment_type_key,brand:brands(id,name,normalized_name)").neq("catalog_status", "rejected").order("name").limit(500),
     supabase.from("catalog_resolution_actions").select("id,action,reason,created_at,candidate_id,product_id").order("created_at", { ascending: false }).limit(30),
+    supabase.from("brands").select("id,name,normalized_name").order("name").limit(500),
+    supabase.from("product_photo_evidence").select("id,product_id,storage_path,public_url,source_status,created_at,product:products(name,brand:brands(name))").neq("source_status", "rejected").order("created_at", { ascending: false }).limit(100),
   ]);
   if (error || candidateError) throw new Error("Could not load moderation/catalog queues.");
 
@@ -95,6 +113,10 @@ export default async function ModerationPage() {
   const candidateRows = (candidates ?? []) as Candidate[];
   const reviewFlags = (openReviewFlags ?? []) as ReviewFlag[];
   const products = (candidateProducts ?? []) as CandidateProduct[];
+  const aliasBrands = (aliasBrandData ?? []) as AliasBrand[];
+  const canonicalPhotos = (canonicalPhotoData ?? []) as CanonicalProductPhoto[];
+  const productById = new Map(products.map((product) => [product.id, product]));
+  const candidateById = new Map(candidateRows.map((candidate) => [candidate.id, candidate]));
   const candidateIds = candidateRows.map((candidate) => candidate.id);
   const { data: submissionData } = candidateIds.length
     ? await supabase.from("garment_submissions").select("id,candidate_id,identifier_type,identifier_value,manufacturer_style_number,retailer_url,department_key,product_photo_storage_path,created_at").in("candidate_id", candidateIds).order("created_at", { ascending: false })
@@ -191,10 +213,24 @@ export default async function ModerationPage() {
         return <article className={styles.report} key={candidate.id}>
           <strong>{candidate.brand_text} · {candidate.model_text}</strong>
           <div className={styles.meta}><span>{label(candidate.garment_type_key)}</span><span>{label(candidate.status)}</span><span>{candidate.submission_count} member submission{candidate.submission_count === 1 ? "" : "s"}</span><span>Last added {candidate.last_submitted_at ? new Date(candidate.last_submitted_at).toLocaleString() : "—"}</span></div>
-          {candidateFlags.length ? <div className={styles.dispute}><h3>Open flags</h3><ul>{candidateFlags.map((flag) => <li key={flag.id}><b>{label(flag.flag_type)}</b> · {typeof flag.details.reason === "string" ? flag.details.reason : "Review evidence"}</li>)}</ul></div> : null}
+          {candidateFlags.length ? <div className={styles.dispute}><h3>Open flags</h3>{candidateFlags.map((flag) => <div key={flag.id}>
+            <p><b>{label(flag.flag_type)}</b> · {typeof flag.details.reason === "string" ? flag.details.reason : "Review evidence"}</p>
+            <form className={styles.actions} action={dismissCatalogFlag}>
+              <input type="hidden" name="flag_id" value={flag.id}/>
+              <input name="reason" required maxLength={500} placeholder="Why this flag is false or no longer needs review"/>
+              <button className={styles.dismiss}>Dismiss flag</button>
+            </form>
+          </div>)}</div> : null}
           {evidence.length ? <div className={styles.dispute}><h3>Recent member evidence</h3>{evidence.map((submission) => <div key={submission.id}>
-            {pendingPhotoUrls.get(submission.id) ? <img className={styles.preview} src={pendingPhotoUrls.get(submission.id)} alt="Member product-only submission"/> : null}
-            <p>{submission.identifier_value ? `${label(submission.identifier_type || "identifier")}: ${submission.identifier_value} · ` : ""}{submission.manufacturer_style_number ? `Style: ${submission.manufacturer_style_number} · ` : ""}{submission.department_key ? `Department: ${label(submission.department_key)} · ` : ""}{submission.retailer_url ? `Retail link supplied` : ""}</p>
+            {pendingPhotoUrls.get(submission.id) ? <>
+              <img className={styles.preview} src={pendingPhotoUrls.get(submission.id)} alt="Member product-only submission"/>
+              <form className={styles.actions} action={removePendingProductPhoto}>
+                <input type="hidden" name="submission_id" value={submission.id}/>
+                <input name="reason" required maxLength={500} placeholder="Required reason to remove this Product Photo"/>
+                <button className={styles.danger}>Remove Product Photo</button>
+              </form>
+            </> : null}
+            <p>{submission.identifier_value ? `${label(submission.identifier_type || "identifier")}: ${submission.identifier_value} · ` : ""}{submission.manufacturer_style_number ? `Style: ${submission.manufacturer_style_number} · ` : ""}{submission.department_key ? `Department: ${label(submission.department_key)} · ` : ""}{submission.retailer_url ? "Retail link supplied" : ""}</p>
           </div>)}</div> : null}
 
           {matchingProducts.length ? <form className={styles.actions} action={mapCatalogCandidate}>
@@ -221,6 +257,31 @@ export default async function ModerationPage() {
       })}</div> : <div className="emptyState"><h2>No pending catalog candidates.</h2><p>Unknown member garments will appear here without becoming duplicate Products.</p></div>}
     </section>
 
+    <section>
+      <h2>Possible duplicates / identity review</h2>
+      <p className="fieldHelp">Flags are review evidence only. Dismissal is audited and never merges or rewrites Product truth.</p>
+      {reviewFlags.length ? <div className={styles.queue}>{reviewFlags.map((flag) => {
+        const candidate = flag.candidate_id ? candidateById.get(flag.candidate_id) : null;
+        const product = flag.product_id ? productById.get(flag.product_id) : null;
+        const productBrand = product ? one<Brand>(product.brand) : null;
+        const target = candidate
+          ? `${candidate.brand_text} · ${candidate.model_text}`
+          : product
+            ? `${productBrand?.name || "Brand"} · ${product.name}`
+            : "Catalog evidence";
+        return <article className={styles.report} key={flag.id}>
+          <strong>{target}</strong>
+          <div className={styles.meta}><span>{label(flag.flag_type)}</span><span>{new Date(flag.created_at).toLocaleString()}</span></div>
+          <p>{typeof flag.details.reason === "string" ? flag.details.reason : "Review the linked identity evidence before resolving this flag."}</p>
+          <form className={styles.actions} action={dismissCatalogFlag}>
+            <input type="hidden" name="flag_id" value={flag.id}/>
+            <input name="reason" required maxLength={500} placeholder="Why this flag can be dismissed"/>
+            <button className={styles.dismiss}>Dismiss flag</button>
+          </form>
+        </article>;
+      })}</div> : <p>No open catalog review flags.</p>}
+    </section>
+
     <section className={styles.history}>
       <h2>Conflicting Product facts</h2>
       {productFlags.length ? <div className={styles.queue}>{productFlags.map((product) => {
@@ -239,6 +300,53 @@ export default async function ModerationPage() {
           {!disputes.length ? <p>Evidence details are unavailable; keep this flag open until the source values can be reviewed.</p> : null}
         </article>;
       })}</div> : <p>No disputed canonical Product fields need review.</p>}
+    </section>
+
+    <section>
+      <h2>Reviewed aliases</h2>
+      <p className="fieldHelp">Aliases resolve alternate spelling/model wording back to one canonical Brand or Product. They do not create another public identity.</p>
+      <div className={styles.queue}>
+        <article className={styles.report}>
+          <strong>Add Brand alias</strong>
+          <form className={styles.actions} action={addBrandAlias}>
+            <select name="brand_id" required defaultValue=""><option value="" disabled>Choose canonical Brand</option>{aliasBrands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}</select>
+            <input name="alias" required maxLength={120} placeholder="Reviewed alternate Brand spelling"/>
+            <input name="reason" required maxLength={500} placeholder="Why this alias is equivalent"/>
+            <button className={styles.dismiss}>Add Brand alias</button>
+          </form>
+        </article>
+        <article className={styles.report}>
+          <strong>Add Product alias</strong>
+          <form className={styles.actions} action={addProductAlias}>
+            <select name="product_id" required defaultValue=""><option value="" disabled>Choose canonical Product</option>{products.map((product) => {
+              const brand = one<Brand>(product.brand);
+              return <option key={product.id} value={product.id}>{brand?.name || "Brand"} · {product.name}</option>;
+            })}</select>
+            <input name="alias" required maxLength={180} placeholder="Reviewed alternate Item / Model wording"/>
+            <input name="reason" required maxLength={500} placeholder="Why this alias is equivalent"/>
+            <button className={styles.dismiss}>Add Product alias</button>
+          </form>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>Product Photo moderation</h2>
+      <p className="fieldHelp">Pending member Product Photos can be removed directly from their candidate above. Canonical Product-photo evidence remains separate from personal Fit Photos and is removed only with an audited admin reason.</p>
+      {canonicalPhotos.length ? <div className={styles.queue}>{canonicalPhotos.map((photo) => {
+        const product = one<PhotoProduct>(photo.product);
+        const brand = product ? one<Brand>(product.brand) : null;
+        return <article className={styles.report} key={photo.id}>
+          <img className={styles.preview} src={photo.public_url} alt={`${brand?.name || "Brand"} ${product?.name || "Product"}`}/>
+          <strong>{brand?.name || "Brand"} · {product?.name || "Product"}</strong>
+          <div className={styles.meta}><span>{label(photo.source_status)}</span><span>{new Date(photo.created_at).toLocaleString()}</span></div>
+          <form className={styles.actions} action={removeCanonicalProductPhoto}>
+            <input type="hidden" name="photo_id" value={photo.id}/>
+            <input name="reason" required maxLength={500} placeholder="Required reason to remove this Product Photo"/>
+            <button className={styles.danger}>Remove Product Photo</button>
+          </form>
+        </article>;
+      })}</div> : <p>No canonical Product Photos need review.</p>}
     </section>
 
     <section>

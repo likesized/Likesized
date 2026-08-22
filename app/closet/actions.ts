@@ -2,26 +2,25 @@
 
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
-import { COLOR_FAMILIES, GARMENT_TYPE_BY_KEY, isAllowedGarmentAnswer } from "@/lib/garment-taxonomy";
+import { COLOR_FAMILIES, GARMENT_TYPE_BY_KEY, isAllowedGarmentAnswer, questionsForGarmentType } from "@/lib/garment-taxonomy";
 import { createClient } from "@/lib/supabase/server";
 import type { GarmentMarketSegment, GarmentSizeKind } from "@/lib/domain";
 
 const FIT_RESULTS = new Set(["too_small", "snug", "just_right", "relaxed", "too_big"]);
 const REPORTED_CONDITIONS = new Set(["new", "used", "altered"]);
-const CATALOG_CONFIRMATIONS = new Set(["confirm", "change", "unsure"]);
 const COLOR_FAMILY_KEYS = new Set(COLOR_FAMILIES.map((item) => item.value));
 const SIZE_KINDS = new Set(["alpha", "numeric", "waist_inseam", "dress_shirt", "jacket", "bra", "shoe", "length_designation", "freeform"]);
 const PHOTO_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const TRACKING_PARAMS = new Set(["fbclid", "gclid", "dclid", "mc_cid", "mc_eid", "msclkid"]);
-const PRODUCT_ATTRIBUTE_PREFIX="product_attribute__";
-const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const EXTERNAL_CATALOG_PROVIDERS = new Set(["channel3_catalog", "upcitemdb"]);
+const PRODUCT_ATTRIBUTE_PREFIX = "product_attribute__";
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type BrandRecord = { id: string; name: string; slug: string; normalized_name: string };
-type ProductFamilyRecord = { id:string; brand_id:string; name:string; normalized_name:string; garment_type_key:string; market_segment:GarmentMarketSegment };
-type ProductRecord = { id: string; name: string; slug: string; category: string; garment_type_key: string | null; market_segment: GarmentMarketSegment; product_family_id?:string|null; brand_id?:string; manufacturer_style_number?:string|null; manufacturer_style_normalized?:string|null };
+type ProductFamilyRecord = { id: string; brand_id: string; name: string; normalized_name: string; garment_type_key: string; market_segment: GarmentMarketSegment };
+type ProductRecord = { id: string; name: string; slug: string; category: string; garment_type_key: string | null; market_segment: GarmentMarketSegment; product_family_id?: string | null; brand_id?: string; manufacturer_style_number?: string | null; manufacturer_style_normalized?: string | null };
 type ParsedSize = Record<string, string | number | null> & { kind: GarmentSizeKind; normalized_key: string; display_label: string };
+type MaterialClaim = { material_key: string; percentage: number | null };
 
 function fail(code: string): never { redirect(`/closet/add?error=${encodeURIComponent(code)}`); }
 function text(formData: FormData, name: string) { return String(formData.get(name) ?? "").trim(); }
@@ -39,37 +38,30 @@ function normalizeProductUrl(raw: string) {
   if (url.pathname.length > 1) url.pathname = url.pathname.replace(/\/+$/, "");
   return url.toString();
 }
-function externalCatalogRecord(raw: string) {
-  if (!raw || raw.length > 520_000) return null;
-  try {
-    const value = JSON.parse(raw) as { externalProductId?: unknown; sourceRecord?: unknown; imageUrl?: unknown };
-    if (typeof value.externalProductId !== "string" || !value.externalProductId.trim() || value.externalProductId.length > 200 || !value.sourceRecord || typeof value.sourceRecord !== "object" || Array.isArray(value.sourceRecord)) return null;
-    if (JSON.stringify(value.sourceRecord).length > 512_000) return null;
-    return { externalProductId: value.externalProductId.trim(), sourceRecord: value.sourceRecord as Record<string, unknown>, imageUrl: typeof value.imageUrl === "string" && value.imageUrl.length <= 1000 ? value.imageUrl : null };
-  } catch { return null; }
-}
-function importedColorLabels(value: unknown, labels = new Set<string>()): string[] {
-  if (Array.isArray(value)) { for (const child of value) importedColorLabels(child, labels); return [...labels].slice(0, 120); }
-  if (!value || typeof value !== "object") return [...labels].slice(0, 120);
-  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
-    if (/color|colour|swatch|shade|wash/i.test(key)) {
-      if (typeof child === "string" && child.trim() && child.trim().length <= 120) labels.add(child.trim());
-      if (Array.isArray(child)) for (const option of child) if (typeof option === "string" && option.trim() && option.trim().length <= 120) labels.add(option.trim());
-    }
-    importedColorLabels(child, labels);
+function parseMaterials(raw: string): MaterialClaim[] {
+  if (!raw) return [];
+  if (raw.length > 5000) throw new Error("Invalid materials");
+  const value = JSON.parse(raw) as unknown;
+  if (!Array.isArray(value) || value.length > 12) throw new Error("Invalid materials");
+  const rows: MaterialClaim[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error("Invalid materials");
+    const record = item as Record<string, unknown>;
+    const materialKey = typeof record.material_key === "string" ? record.material_key.trim() : "";
+    const percentageRaw = record.percentage;
+    const percentage = percentageRaw === null || percentageRaw === "" || percentageRaw === undefined ? null : Number(percentageRaw);
+    if (!materialKey || materialKey.length > 80 || (percentage !== null && (!Number.isFinite(percentage) || percentage < 0 || percentage > 100))) throw new Error("Invalid materials");
+    rows.push({ material_key: materialKey, percentage });
   }
-  return [...labels].slice(0, 120);
+  if (new Set(rows.map((row) => row.material_key)).size !== rows.length) throw new Error("Duplicate materials");
+  return rows;
 }
-function colorFamilyForImportedLabel(label: string): string | null {
-  const value = label.toLowerCase();
-  if (/black/.test(value)) return "black"; if (/white/.test(value)) return "white"; if (/grey|gray/.test(value)) return "gray";
-  if (/silver/.test(value)) return "silver"; if (/brown|chocolate|mocha|espresso|camel/.test(value)) return "brown";
-  if (/tan|beige|khaki|nude/.test(value)) return "tan_beige"; if (/cream|ivory|off.white|ecru/.test(value)) return "cream_ivory";
-  if (/red|burgundy|maroon|wine|crimson|coral/.test(value)) return "red"; if (/orange|rust/.test(value)) return "orange";
-  if (/yellow|mustard/.test(value)) return "yellow"; if (/green|olive|sage|mint/.test(value)) return "green";
-  if (/blue|navy|teal|aqua|turquoise/.test(value)) return "blue"; if (/purple|violet|lilac|lavender/.test(value)) return "purple";
-  if (/pink|rose|blush|magenta/.test(value)) return "pink"; if (/gold/.test(value)) return "gold"; if (/multi|print|pattern/.test(value)) return "multicolor";
-  return null;
+function departmentToMarketSegment(department: string): GarmentMarketSegment {
+  if (department === "womens") return "womens";
+  if (department === "mens") return "mens";
+  if (department === "unisex") return "unisex";
+  if (["girls", "boys", "kids_unisex", "baby_toddler"].includes(department)) return "kids_youth";
+  return "unknown";
 }
 
 async function findBrand(supabase: SupabaseClient, name: string) {
@@ -98,86 +90,65 @@ async function getOrCreateBrand(supabase: SupabaseClient, name: string) {
 }
 
 async function getGarmentType(supabase: SupabaseClient, key: string) {
-  const { data, error } = await supabase.from("garment_types").select("key,category").eq("key", key).eq("active", true).maybeSingle();
+  const { data, error } = await supabase.from("garment_types").select("key,category").eq("key", key).eq("intake_active", true).maybeSingle();
   if (error || !data) throw error ?? new Error("Unknown garment type");
   return data as { key: string; category: string };
 }
 
-async function getCatalogProductById(supabase:SupabaseClient,id:string){
-  const {data:product,error}=await supabase.from("products").select("id,name,slug,category,garment_type_key,market_segment,product_family_id,brand_id,manufacturer_style_number,manufacturer_style_normalized").eq("id",id).maybeSingle();
-  if(error||!product)throw error??new Error("Unknown catalog product");
-  const {data:brand,error:brandError}=await supabase.from("brands").select("id,name,slug,normalized_name").eq("id",product.brand_id).maybeSingle();
-  if(brandError||!brand)throw brandError??new Error("Unknown product brand");
-  return {brand:brand as BrandRecord,product:product as ProductRecord};
+async function getCatalogProductById(supabase: SupabaseClient, id: string) {
+  const { data: product, error } = await supabase.from("products").select("id,name,slug,category,garment_type_key,market_segment,product_family_id,brand_id,manufacturer_style_number,manufacturer_style_normalized").eq("id", id).neq("catalog_status", "rejected").maybeSingle();
+  if (error || !product) throw error ?? new Error("Unknown catalog product");
+  const { data: brand, error: brandError } = await supabase.from("brands").select("id,name,slug,normalized_name").eq("id", product.brand_id).maybeSingle();
+  if (brandError || !brand) throw brandError ?? new Error("Unknown product brand");
+  return { brand: brand as BrandRecord, product: product as ProductRecord };
 }
 
-async function findProduct(supabase: SupabaseClient, brandId: string, name: string, styleNumber: string | null) {
-  let query = supabase.from("products").select("id,name,slug,category,garment_type_key,market_segment,product_family_id,brand_id,manufacturer_style_number,manufacturer_style_normalized").eq("brand_id", brandId).eq("normalized_name", normalizeSearchText(name));
+async function findProduct(supabase: SupabaseClient, brandId: string, name: string, garmentType: string, marketSegment: GarmentMarketSegment, styleNumber: string | null) {
+  let query = supabase.from("products").select("id,name,slug,category,garment_type_key,market_segment,product_family_id,brand_id,manufacturer_style_number,manufacturer_style_normalized").eq("brand_id", brandId).eq("normalized_name", normalizeSearchText(name)).eq("garment_type_key", garmentType).eq("market_segment", marketSegment).neq("catalog_status", "rejected");
   query = styleNumber ? query.eq("manufacturer_style_normalized", normalizeIdentifier(styleNumber)) : query.is("manufacturer_style_normalized", null);
   const { data, error } = await query.limit(1).maybeSingle();
   if (error) throw error;
   return data as ProductRecord | null;
 }
 
-async function getRequestedProductFamily(supabase:SupabaseClient,id:string,brandId:string,garmentType:string,marketSegment:GarmentMarketSegment){
-  const {data,error}=await supabase.from("product_families").select("id,brand_id,name,normalized_name,garment_type_key,market_segment").eq("id",id).maybeSingle();
-  if(error||!data)throw error??new Error("Unknown Product Fit Family");
-  const family=data as ProductFamilyRecord;
-  if(family.brand_id!==brandId||family.garment_type_key!==garmentType||family.market_segment!==marketSegment)throw new Error("Product Fit Family does not match product identity");
-  return family;
+async function findProductFamily(supabase: SupabaseClient, brandId: string, name: string, garmentType: string, marketSegment: GarmentMarketSegment) {
+  const { data, error } = await supabase.from("product_families").select("id,brand_id,name,normalized_name,garment_type_key,market_segment").eq("brand_id", brandId).eq("normalized_name", normalizeSearchText(name)).eq("garment_type_key", garmentType).eq("market_segment", marketSegment).maybeSingle();
+  if (error) throw error;
+  return data as ProductFamilyRecord | null;
 }
 
-async function findProductFamily(supabase:SupabaseClient,brandId:string,name:string,garmentType:string,marketSegment:GarmentMarketSegment){
-  const {data,error}=await supabase.from("product_families").select("id,brand_id,name,normalized_name,garment_type_key,market_segment").eq("brand_id",brandId).eq("normalized_name",normalizeSearchText(name)).eq("garment_type_key",garmentType).eq("market_segment",marketSegment).maybeSingle();
-  if(error)throw error;
-  return data as ProductFamilyRecord|null;
-}
-
-async function getOrCreateProductFamily(supabase:SupabaseClient,brand:BrandRecord,productName:string,garmentType:string,marketSegment:GarmentMarketSegment,styleNumber:string|null,requestedFamilyId:string|null){
-  if(requestedFamilyId)return getRequestedProductFamily(supabase,requestedFamilyId,brand.id,garmentType,marketSegment);
-  const familyName=styleNumber?`${productName} · Style ${styleNumber}`:productName;
-  const existing=await findProductFamily(supabase,brand.id,familyName,garmentType,marketSegment);
-  if(existing)return existing;
-  const row={brand_id:brand.id,name:familyName,normalized_name:normalizeSearchText(familyName),garment_type_key:garmentType,market_segment:marketSegment};
-  const {data,error}=await supabase.from("product_families").insert(row).select("id,brand_id,name,normalized_name,garment_type_key,market_segment").single();
-  if(!error)return data as ProductFamilyRecord;
-  if(error.code==="23505"){
-    const raced=await findProductFamily(supabase,brand.id,familyName,garmentType,marketSegment);
-    if(raced)return raced;
-  }
+async function getOrCreateProductFamily(supabase: SupabaseClient, brand: BrandRecord, productName: string, garmentType: string, marketSegment: GarmentMarketSegment, styleNumber: string | null) {
+  const familyName = styleNumber ? `${productName} · Style ${styleNumber}` : productName;
+  const existing = await findProductFamily(supabase, brand.id, familyName, garmentType, marketSegment);
+  if (existing) return existing;
+  const row = { brand_id: brand.id, name: familyName, normalized_name: normalizeSearchText(familyName), garment_type_key: garmentType, market_segment: marketSegment };
+  const { data, error } = await supabase.from("product_families").insert(row).select("id,brand_id,name,normalized_name,garment_type_key,market_segment").single();
+  if (!error) return data as ProductFamilyRecord;
+  if (error.code === "23505") { const raced = await findProductFamily(supabase, brand.id, familyName, garmentType, marketSegment); if (raced) return raced; }
   throw error;
 }
 
-async function getOrCreateProduct(supabase: SupabaseClient, brand: BrandRecord, name: string, garmentType: string, category: string, marketSegment: GarmentMarketSegment, styleNumber: string | null, requestedFamilyId:string|null) {
-  const existing = await findProduct(supabase, brand.id, name, styleNumber);
-  if (existing) return {product:existing,created:false};
-  const family=await getOrCreateProductFamily(supabase,brand,name,garmentType,marketSegment,styleNumber,requestedFamilyId);
+async function getOrCreateProduct(supabase: SupabaseClient, brand: BrandRecord, name: string, garmentType: string, category: string, marketSegment: GarmentMarketSegment, styleNumber: string | null) {
+  const existing = await findProduct(supabase, brand.id, name, garmentType, marketSegment, styleNumber);
+  if (existing) return existing;
+  const family = await getOrCreateProductFamily(supabase, brand, name, garmentType, marketSegment, styleNumber);
   const baseSlug = `${brand.slug}-${slugify(name)}-${marketSegment}`.slice(0, 140);
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const slug = attempt === 0 ? baseSlug : `${baseSlug}-${randomUUID().slice(0, 8)}`;
-    const { data, error } = await supabase.from("products").insert({ brand_id: brand.id, name, normalized_name: normalizeSearchText(name), slug, category, product_family_id:family.id, garment_type_key: garmentType, market_segment: marketSegment, manufacturer_style_number: styleNumber, manufacturer_style_normalized: styleNumber ? normalizeIdentifier(styleNumber) : null, catalog_status:"provisional" }).select("id,name,slug,category,garment_type_key,market_segment,product_family_id,brand_id,manufacturer_style_number,manufacturer_style_normalized").single();
-    if (!error) return {product:data as ProductRecord,created:true};
-    if (error.code === "23505") { const raced = await findProduct(supabase, brand.id, name, styleNumber); if (raced) return {product:raced,created:false}; continue; }
+    const { data, error } = await supabase.from("products").insert({ brand_id: brand.id, name, normalized_name: normalizeSearchText(name), slug, category, product_family_id: family.id, garment_type_key: garmentType, market_segment: marketSegment, manufacturer_style_number: styleNumber, manufacturer_style_normalized: styleNumber ? normalizeIdentifier(styleNumber) : null, catalog_status: "provisional" }).select("id,name,slug,category,garment_type_key,market_segment,product_family_id,brand_id,manufacturer_style_number,manufacturer_style_normalized").single();
+    if (!error) return data as ProductRecord;
+    if (error.code === "23505") { const raced = await findProduct(supabase, brand.id, name, garmentType, marketSegment, styleNumber); if (raced) return raced; continue; }
     throw error;
   }
   throw new Error("Could not resolve product");
 }
 
-async function getExactCatalogProduct(supabase:SupabaseClient,id:string,brandName:string,productName:string,styleNumber:string|null){
-  const exact=await getCatalogProductById(supabase,id);
-  const submittedStyle=styleNumber?normalizeIdentifier(styleNumber):null;
-  const canonicalStyle=exact.product.manufacturer_style_normalized??null;
-  if(normalizeSearchText(brandName)!==exact.brand.normalized_name||normalizeSearchText(productName)!==normalizeSearchText(exact.product.name)||submittedStyle!==canonicalStyle)throw new Error("Exact catalog identity changed");
-  return exact;
-}
-
-async function resolveKnownCatalogProduct(supabase:SupabaseClient,existingProductId:string|null,brandName:string,productName:string,garmentType:string,marketSegment:GarmentMarketSegment,styleNumber:string|null,identifier:string,productUrl:string){
-  if(existingProductId)return getExactCatalogProduct(supabase,existingProductId,brandName,productName,styleNumber);
-  const normalizedUrl=productUrl?normalizeProductUrl(productUrl):null;
-  const {data:resolvedId,error}=await supabase.rpc("resolve_catalog_product",{p_existing_product_id:null,p_brand_name:brandName,p_style_number:styleNumber,p_identifier:identifier||null,p_normalized_url:normalizedUrl});
-  if(error)throw error;
-  if(!resolvedId)return null;
-  return getCatalogProductById(supabase,String(resolvedId));
+async function resolveKnownCatalogProduct(supabase: SupabaseClient, existingProductId: string | null, brandName: string, styleNumber: string | null, identifier: string, productUrl: string) {
+  if (existingProductId) return getCatalogProductById(supabase, existingProductId);
+  const normalizedUrl = productUrl ? normalizeProductUrl(productUrl) : null;
+  const { data: resolvedId, error } = await supabase.rpc("resolve_catalog_product", { p_existing_product_id: null, p_brand_name: brandName, p_style_number: styleNumber, p_identifier: identifier || null, p_normalized_url: normalizedUrl });
+  if (error) throw error;
+  return resolvedId ? getCatalogProductById(supabase, String(resolvedId)) : null;
 }
 
 async function getNormalizedSize(supabase: SupabaseClient, structuredLabel: string, kind: GarmentSizeKind, sizingSystem: string | null) {
@@ -187,7 +158,7 @@ async function getNormalizedSize(supabase: SupabaseClient, structuredLabel: stri
   const { data: existing, error } = await supabase.from("normalized_sizes").select("id").eq("normalized_key", parsed.normalized_key).maybeSingle();
   if (error) throw error;
   if (existing) return existing.id as string;
-  const allowed = ["kind","normalized_key","display_label","sizing_system","alpha_size","numeric_size","waist_size","inseam_size","length_designation","collar_size","sleeve_min","sleeve_max","jacket_chest_size","bra_band","bra_cup","shoe_size","freeform_normalized"];
+  const allowed = ["kind", "normalized_key", "display_label", "sizing_system", "alpha_size", "numeric_size", "waist_size", "inseam_size", "length_designation", "collar_size", "sleeve_min", "sleeve_max", "jacket_chest_size", "bra_band", "bra_cup", "shoe_size", "freeform_normalized"];
   const row = Object.fromEntries(allowed.filter((key) => parsed[key] !== undefined).map((key) => [key, parsed[key]]));
   const { data, error: insertError } = await supabase.from("normalized_sizes").insert(row).select("id").single();
   if (!insertError) return data.id as string;
@@ -195,34 +166,32 @@ async function getNormalizedSize(supabase: SupabaseClient, structuredLabel: stri
   throw insertError;
 }
 
-async function getOrCreateVariant(supabase: SupabaseClient, productId: string, normalizedSizeId: string, originalSizeLabel: string, colorFamily: string | null, marketSegment: GarmentMarketSegment, sku: string | null) {
-  const colorLabel = colorFamily ? (COLOR_FAMILIES.find((item) => item.value === colorFamily)?.label ?? colorFamily) : null;
-  const colorNormalized = colorLabel ? normalizeSearchText(colorLabel) : null;
-  let lookup = supabase.from("product_variants").select("id").eq("product_id", productId).eq("normalized_size_id", normalizedSizeId);
-  lookup = colorFamily ? lookup.eq("color_family_key", colorFamily) : lookup.is("color_family_key", null);
-  const { data: existing, error } = await lookup.maybeSingle();
+async function getOrCreateVariant(supabase: SupabaseClient, productId: string, normalizedSizeId: string, sizeLabel: string, colorFamily: string, marketSegment: GarmentMarketSegment) {
+  const colorLabel = COLOR_FAMILIES.find((item) => item.value === colorFamily)?.label ?? colorFamily;
+  const colorNormalized = normalizeSearchText(colorLabel);
+  const { data: existing, error } = await supabase.from("product_variants").select("id").eq("product_id", productId).eq("normalized_size_id", normalizedSizeId).eq("color_family_key", colorFamily).maybeSingle();
   if (error) throw error;
   if (existing) return existing.id as string;
-  const { data, error: insertError } = await supabase.from("product_variants").insert({ product_id: productId, normalized_size_id: normalizedSizeId, size_label: originalSizeLabel, color_label: colorLabel, color_normalized: colorNormalized, color_family_key: colorFamily, market_segment: marketSegment, sku }).select("id").single();
+  const { data, error: insertError } = await supabase.from("product_variants").insert({ product_id: productId, normalized_size_id: normalizedSizeId, size_label: sizeLabel, color_label: colorLabel, color_normalized: colorNormalized, color_family_key: colorFamily, market_segment: marketSegment }).select("id").single();
   if (!insertError) return data.id as string;
   if (insertError.code === "23505") { const { data: raced } = await supabase.from("product_variants").select("id").eq("product_id", productId).eq("normalized_size_id", normalizedSizeId).eq("color_family_key", colorFamily).single(); return raced!.id as string; }
   throw insertError;
 }
 
-async function saveImportedColorVariants(supabase: SupabaseClient, productId: string, marketSegment: GarmentMarketSegment, sourceRecord: Record<string, unknown>) {
-  for (const colorLabel of importedColorLabels(sourceRecord)) {
-    const colorNormalized = normalizeSearchText(colorLabel);
-    const { data: existing, error } = await supabase.from("product_variants").select("id").eq("product_id", productId).eq("color_normalized", colorNormalized).limit(1).maybeSingle();
-    if (error) throw error;
-    if (existing) continue;
-    const { error: insertError } = await supabase.from("product_variants").insert({ product_id: productId, size_label: "Imported color", color_label: colorLabel, color_family_key: colorFamilyForImportedLabel(colorLabel), market_segment: marketSegment });
-    if (insertError && insertError.code !== "23505") throw insertError;
-  }
+async function flagPossibleDuplicate(supabase: SupabaseClient, productIds: string[]) {
+  const ids = [...new Set(productIds.filter(Boolean))];
+  if (ids.length < 2) return;
+  const { error } = await supabase.from("products").update({ catalog_review_needed: true }).in("id", ids);
+  if (error) throw error;
 }
 
-async function recordIdentifier(supabase: SupabaseClient, productId: string, variantId: string, original: string, kind: "manufacturer_style" | "sku" | "upc" | "barcode") {
+async function recordIdentifier(supabase: SupabaseClient, productId: string, variantId: string, original: string, kind: "manufacturer_style" | "upc" | "barcode") {
   if (!original) return;
-  const { error } = await supabase.from("product_identifiers").insert({ product_id: productId, variant_id: variantId, identifier_type: kind, original_value: original, normalized_value: normalizeIdentifier(original) });
+  const normalized = normalizeIdentifier(original);
+  const { data: existing, error: lookupError } = await supabase.from("product_identifiers").select("id,product_id").eq("identifier_type", kind).eq("normalized_value", normalized).is("retailer_id", null).maybeSingle();
+  if (lookupError) throw lookupError;
+  if (existing) { if (existing.product_id && existing.product_id !== productId) await flagPossibleDuplicate(supabase, [existing.product_id, productId]); return; }
+  const { error } = await supabase.from("product_identifiers").insert({ product_id: productId, variant_id: variantId, identifier_type: kind, original_value: original, normalized_value: normalized });
   if (error && error.code !== "23505") throw error;
 }
 
@@ -239,60 +208,70 @@ async function recordListing(supabase: SupabaseClient, productId: string, varian
   }
   const { data: existing, error: lookupError } = await supabase.from("retailer_listings").select("id,product_id").eq("normalized_url", normalizedUrl).maybeSingle();
   if (lookupError) throw lookupError;
-  if (existing) return;
+  if (existing) { if (existing.product_id !== productId) await flagPossibleDuplicate(supabase, [existing.product_id, productId]); return; }
   const { error } = await supabase.from("retailer_listings").insert({ product_id: productId, variant_id: variantId, retailer_id: retailer?.id ?? null, product_url: rawUrl, normalized_url: normalizedUrl });
   if (error && error.code !== "23505") throw error;
 }
 
-async function validatedProductAttributes(supabase:SupabaseClient,formData:FormData,garmentType:string){
-  const submitted=[...formData.entries()].filter(([name,value])=>name.startsWith(PRODUCT_ATTRIBUTE_PREFIX)&&typeof value==="string"&&value.trim()).map(([name,value])=>({attribute_key:name.slice(PRODUCT_ATTRIBUTE_PREFIX.length),option_key:String(value).trim()}));
-  if(!submitted.length)return [];
-  if(submitted.some((row)=>!row.attribute_key||row.attribute_key.length>80||!row.option_key||row.option_key.length>80||!isAllowedGarmentAnswer(garmentType,row.attribute_key,row.option_key))||new Set(submitted.map((row)=>row.attribute_key)).size!==submitted.length)throw new Error("Invalid product attributes");
-  const keys=submitted.map((row)=>row.attribute_key);
-  const {data:definitions,error:definitionError}=await supabase.from("garment_attribute_definitions").select("key").in("key",keys);
-  if(definitionError)throw definitionError;
-  if(new Set((definitions??[]).map((row)=>row.key)).size!==keys.length)throw new Error("Unknown product attribute");
-  const {data:options,error:optionError}=await supabase.from("garment_attribute_options").select("attribute_key,option_key").in("attribute_key",keys);
-  if(optionError)throw optionError;
-  const allowed=new Set((options??[]).map((row)=>`${row.attribute_key}:${row.option_key}`));
-  if(submitted.some((row)=>!allowed.has(`${row.attribute_key}:${row.option_key}`)))throw new Error("Invalid product attribute option");
-  return submitted;
+async function validatedProductAttributes(supabase: SupabaseClient, formData: FormData, garmentType: string) {
+  const entries = [...formData.entries()]
+    .filter(([name, value]) => name.startsWith(PRODUCT_ATTRIBUTE_PREFIX) && typeof value === "string")
+    .map(([name, value]) => ({ attribute_key: name.slice(PRODUCT_ATTRIBUTE_PREFIX.length), option_key: String(value).trim() }));
+  if (new Set(entries.map((row) => row.attribute_key)).size !== entries.length) throw new Error("Duplicate product attributes");
+  const allQuestions = questionsForGarmentType(garmentType);
+  const allKeys = new Set(allQuestions.map((item) => item.key));
+  if (entries.some((row) => !allKeys.has(row.attribute_key))) throw new Error("Invalid product attribute");
+  const selected = Object.fromEntries(entries.map((row) => [row.attribute_key, row.option_key]));
+  const applicable = allQuestions.filter((item) => item.key !== "neckline_height" || (selected.top_sleeve !== "strapless" && selected.swim_top !== "strapless"));
+  if (applicable.some((item) => !selected[item.key])) throw new Error("Every applicable item question requires a selection");
+  const claims = entries.filter((row) => row.option_key !== "not_sure");
+  if (claims.some((row) => !row.option_key || row.option_key.length > 80 || !isAllowedGarmentAnswer(garmentType, row.attribute_key, row.option_key))) throw new Error("Invalid product attribute option");
+  if (!claims.length) return [];
+  const keys = claims.map((row) => row.attribute_key);
+  const { data: definitions, error: definitionError } = await supabase.from("garment_attribute_definitions").select("key").in("key", keys);
+  if (definitionError) throw definitionError;
+  if (new Set((definitions ?? []).map((row) => row.key)).size !== new Set(keys).size) throw new Error("Unknown product attribute");
+  const { data: options, error: optionError } = await supabase.from("garment_attribute_options").select("attribute_key,option_key").in("attribute_key", keys);
+  if (optionError) throw optionError;
+  const allowed = new Set((options ?? []).map((row) => `${row.attribute_key}:${row.option_key}`));
+  if (claims.some((row) => !allowed.has(`${row.attribute_key}:${row.option_key}`))) throw new Error("Invalid product attribute option");
+  return claims;
 }
 
 export async function addGarment(formData: FormData) {
   const brandName = text(formData, "brand");
   const productName = text(formData, "product");
-  const existingProductId=text(formData,"existing_product_id")||null;
-  const requestedFamilyId=null;
+  const existingProductId = text(formData, "existing_product_id") || null;
   const garmentType = text(formData, "garment_type");
-  const marketSegment = "unknown" as GarmentMarketSegment;
-  const catalogConfirmation=text(formData,"catalog_confirmation");
   const sizeKind = text(formData, "size_kind") as GarmentSizeKind;
   const structuredSizeLabel = text(formData, "size_normalized_label");
-  const originalSizeLabel = text(formData, "original_size_label") || structuredSizeLabel;
   const sizingSystem = text(formData, "sizing_system") || null;
   const styleNumber = text(formData, "style_number") || null;
-  const identifier = text(formData, "identifier");
+  const styleIssue = text(formData, "identity_issue_style") || null;
+  const scannedBarcode = text(formData, "scanned_barcode");
+  const typedUpc = text(formData, "upc");
+  const identifier = scannedBarcode || typedUpc;
   const productUrl = text(formData, "product_url");
-  const catalogSourceUrl = text(formData, "catalog_source_url");
-  const catalogSourceProvider = text(formData, "catalog_source_provider");
-  const catalogSourceRecord = externalCatalogRecord(text(formData, "catalog_source_record"));
+  const departmentRaw = text(formData, "department");
+  const department = departmentRaw && departmentRaw !== "not_sure" ? departmentRaw : null;
   const colorFamily = text(formData, "color_family");
-  const visibility = "shared" as const;
   const fit = text(formData, "fit");
   const reportedCondition = text(formData, "reported_condition");
   const garmentCondition = reportedCondition === "altered" ? "altered" : "normal";
   const fitNotes = text(formData, "fit_notes") || null;
-  const wearsCount = 0;
+  let materialClaims: MaterialClaim[] = [];
+  try { materialClaims = parseMaterials(text(formData, "materials_json")); } catch { fail("invalid_fields"); }
 
-  const importedColors = catalogSourceRecord ? importedColorLabels(catalogSourceRecord.sourceRecord) : [];
-  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId&&!UUID.test(existingProductId)) || !GARMENT_TYPE_BY_KEY.has(garmentType) || (existingProductId&&!CATALOG_CONFIRMATIONS.has(catalogConfirmation)) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || !originalSizeLabel || originalSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || (!COLOR_FAMILY_KEYS.has(colorFamily) && !importedColors.length) || !FIT_RESULTS.has(fit) || !REPORTED_CONDITIONS.has(reportedCondition) || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000) || (catalogSourceUrl && catalogSourceUrl.length > 1000) || (catalogSourceProvider && !EXTERNAL_CATALOG_PROVIDERS.has(catalogSourceProvider)) || (catalogSourceRecord && !catalogSourceProvider) || identifier.length>120 || (styleNumber&&styleNumber.length>100)) fail("invalid_fields");
+  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId && !UUID.test(existingProductId)) || !GARMENT_TYPE_BY_KEY.has(garmentType) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !COLOR_FAMILY_KEYS.has(colorFamily) || !FIT_RESULTS.has(fit) || !REPORTED_CONDITIONS.has(reportedCondition) || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000) || identifier.length > 120 || (styleNumber && styleNumber.length > 100) || (styleIssue && styleIssue.length > 180)) fail("invalid_fields");
+  if (identifier && !/^\d{6,32}$/.test(identifier.replace(/\D/g, ""))) fail("invalid_fields");
   if (productUrl) { try { normalizeProductUrl(productUrl); } catch { fail("invalid_fields"); } }
-  if (catalogSourceUrl) { try { normalizeProductUrl(catalogSourceUrl); } catch { fail("invalid_fields"); } }
 
   const photoEntry = formData.get("photo");
   const photo = photoEntry instanceof File && photoEntry.size > 0 ? photoEntry : null;
-  if (photo && (!PHOTO_TYPES[photo.type] || photo.size > 8 * 1024 * 1024)) fail("invalid_photo");
+  const productPhotoEntry = formData.get("product_photo");
+  const productPhoto = productPhotoEntry instanceof File && productPhotoEntry.size > 0 ? productPhotoEntry : null;
+  for (const candidate of [photo, productPhoto]) if (candidate && (!PHOTO_TYPES[candidate.type] || candidate.size > 8 * 1024 * 1024)) fail("invalid_photo");
+
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const userId = claimsData?.claims?.sub;
@@ -304,71 +283,109 @@ export async function addGarment(formData: FormData) {
   ]);
   if (!profile?.username || !fitProfile?.completed_at) redirect("/onboarding");
 
+  const submittedType = await getGarmentType(supabase, garmentType).catch(() => null);
+  if (!submittedType) fail("invalid_fields");
+  let attributeRows: Array<{ attribute_key: string; option_key: string }> = [];
+  try { attributeRows = await validatedProductAttributes(supabase, formData, garmentType); } catch { fail("invalid_fields"); }
+
+  if (department) {
+    const { data: knownDepartment, error: departmentError } = await supabase.from("product_departments").select("key").eq("key", department).maybeSingle();
+    if (departmentError || !knownDepartment) fail("invalid_fields");
+  }
+  if (materialClaims.length) {
+    const { data: knownMaterials, error: materialError } = await supabase.from("materials").select("key").in("key", materialClaims.map((item) => item.material_key));
+    if (materialError || new Set((knownMaterials ?? []).map((item) => item.key)).size !== materialClaims.length) fail("invalid_fields");
+  }
+
   const { data: fitProfileVersionId, error: versionError } = await supabase.rpc("commit_fit_profile_version");
   if (versionError || !fitProfileVersionId) fail("save_failed");
 
   const closetItemId = randomUUID();
-  let photoPath: string | null = null;
+  let fitPhotoPath: string | null = null;
+  let productPhotoPath: string | null = null;
   try {
-    const submittedType = await getGarmentType(supabase, garmentType);
-    const resolvedUrl=productUrl||catalogSourceUrl;
-    const known=await resolveKnownCatalogProduct(supabase,existingProductId,brandName,productName,garmentType,marketSegment,styleNumber,identifier,resolvedUrl);
-    let product:ProductRecord;
-    if(known){
-      product=known.product;
-    }else{
-      const brand=await getOrCreateBrand(supabase, brandName);
-      const resolved=await getOrCreateProduct(supabase, brand, productName, garmentType, submittedType.category, marketSegment, styleNumber,requestedFamilyId);
-      product=resolved.product;
+    const requestedMarketSegment = department ? departmentToMarketSegment(department) : "unknown" as GarmentMarketSegment;
+    const known = await resolveKnownCatalogProduct(supabase, existingProductId, brandName, styleNumber, identifier, productUrl);
+    let product: ProductRecord;
+    let canonicalBrand: BrandRecord;
+    if (known) {
+      product = known.product;
+      canonicalBrand = known.brand;
+    } else {
+      canonicalBrand = await getOrCreateBrand(supabase, brandName);
+      product = await getOrCreateProduct(supabase, canonicalBrand, productName, garmentType, submittedType.category, requestedMarketSegment, styleNumber);
     }
-
-    const canonicalType=product.garment_type_key;
-    const classificationsAgree=canonicalType===garmentType&&product.category===submittedType.category;
-    let attributeRows=classificationsAgree?await validatedProductAttributes(supabase,formData,garmentType):[];
-    if(existingProductId&&catalogConfirmation==="confirm"){
-      const {data:currentAttributes,error:currentAttributeError}=await supabase.from("product_attribute_values").select("attribute_key,option_key").eq("product_id",product.id).neq("source_status","rejected");
-      if(currentAttributeError)throw currentAttributeError;
-      attributeRows=(currentAttributes??[]).filter((row)=>isAllowedGarmentAnswer(garmentType,row.attribute_key,row.option_key));
-    }
-    const sourceReference=catalogSourceUrl ? `${catalogSourceProvider}:${catalogSourceUrl}` : productUrl||identifier||styleNumber||"closet_log";
 
     const normalizedSizeId = await getNormalizedSize(supabase, structuredSizeLabel, sizeKind, sizingSystem);
-    const identifierKind = identifier && /^\d{8}$|^\d{12,14}$/.test(normalizeIdentifier(identifier)) ? "upc" : "sku";
-    if (catalogSourceRecord) await saveImportedColorVariants(supabase, product.id, product.market_segment, catalogSourceRecord.sourceRecord);
-    const variantId = await getOrCreateVariant(supabase, product.id, normalizedSizeId, originalSizeLabel, COLOR_FAMILY_KEYS.has(colorFamily) ? colorFamily : null, product.market_segment, identifierKind === "sku" ? identifier || null : null);
+    const variantId = await getOrCreateVariant(supabase, product.id, normalizedSizeId, structuredSizeLabel, colorFamily, product.market_segment);
 
-    const { error: closetError } = await supabase.from("closet_items").insert({ id: closetItemId, user_id: userId, product_id: product.id, variant_id: variantId, size_label: originalSizeLabel, normalized_size_id: normalizedSizeId, visibility, wears_count: wearsCount });
+    const { error: closetError } = await supabase.from("closet_items").insert({ id: closetItemId, user_id: userId, product_id: product.id, variant_id: variantId, size_label: structuredSizeLabel, normalized_size_id: normalizedSizeId, visibility: "shared", wears_count: 0 });
     if (closetError) throw closetError;
 
-    const { data: report, error: reportError } = await supabase.from("fit_reports").insert({ user_id: userId, closet_item_id: closetItemId, product_id: product.id, variant_id: variantId, fit_profile_version_id: fitProfileVersionId, size_label: originalSizeLabel, normalized_size_id: normalizedSizeId, fit, garment_condition:garmentCondition, reported_condition:reportedCondition, fit_notes: fitNotes, would_buy_again: null }).select("id").single();
+    const { data: report, error: reportError } = await supabase.from("fit_reports").insert({ user_id: userId, closet_item_id: closetItemId, product_id: product.id, variant_id: variantId, fit_profile_version_id: fitProfileVersionId, size_label: structuredSizeLabel, normalized_size_id: normalizedSizeId, fit, garment_condition: garmentCondition, reported_condition: reportedCondition, fit_notes: fitNotes, would_buy_again: null }).select("id").single();
     if (reportError || !report) throw reportError ?? new Error("Could not save fit report");
+
+    if (identifier) {
+      const normalized = normalizeIdentifier(identifier);
+      const identifierKind: "upc" | "barcode" = /^\d{8}$|^\d{12,14}$/.test(normalized) ? "upc" : "barcode";
+      await recordIdentifier(supabase, product.id, variantId, identifier, identifierKind);
+    }
     if (styleNumber) await recordIdentifier(supabase, product.id, variantId, styleNumber, "manufacturer_style");
-    if (identifier) await recordIdentifier(supabase, product.id, variantId, identifier, identifierKind);
-    if (resolvedUrl) await recordListing(supabase, product.id, variantId, resolvedUrl);
+    if (productUrl) await recordListing(supabase, product.id, variantId, productUrl);
 
     if (photo) {
       const extension = PHOTO_TYPES[photo.type];
-      photoPath = `${userId}/${closetItemId}/fit.${extension}`;
-      const { error: uploadError } = await supabase.storage.from("fit-reference-photos").upload(photoPath, await photo.arrayBuffer(), { contentType: photo.type, upsert: false });
+      fitPhotoPath = `${userId}/${closetItemId}/fit.${extension}`;
+      const { error: uploadError } = await supabase.storage.from("fit-reference-photos").upload(fitPhotoPath, await photo.arrayBuffer(), { contentType: photo.type, upsert: false });
       if (uploadError) throw uploadError;
-      const { error: metadataError } = await supabase.from("fit_reference_photos").insert({ user_id: userId, closet_item_id: closetItemId, storage_path: photoPath });
+      const { error: metadataError } = await supabase.from("fit_reference_photos").insert({ user_id: userId, closet_item_id: closetItemId, storage_path: fitPhotoPath });
       if (metadataError) throw metadataError;
     }
 
-    if(!existingProductId||catalogConfirmation!=="unsure"){
-      const {error:evidenceError}=await supabase.rpc("record_member_product_evidence",{p_product_id:product.id,p_garment_type:garmentType,p_market_segment:product.market_segment,p_attributes:attributeRows,p_materials:[],p_source_reference:sourceReference});
-      if(evidenceError)throw evidenceError;
+    if (productPhoto) {
+      const extension = PHOTO_TYPES[productPhoto.type];
+      productPhotoPath = `${userId}/${product.id}/${randomUUID()}.${extension}`;
+      const { error: uploadError } = await supabase.storage.from("product-photos").upload(productPhotoPath, await productPhoto.arrayBuffer(), { contentType: productPhoto.type, upsert: false });
+      if (uploadError) throw uploadError;
+      const publicUrl = supabase.storage.from("product-photos").getPublicUrl(productPhotoPath).data.publicUrl;
+      const { error: evidenceError } = await supabase.from("product_photo_evidence").insert({ product_id: product.id, storage_path: productPhotoPath, public_url: publicUrl, submitted_by: userId });
+      if (evidenceError) throw evidenceError;
     }
-    if (catalogSourceRecord && catalogSourceProvider) {
-      const { error: sourceError } = await supabase.rpc("record_catalog_source_selection", {
-        p_product_id: product.id, p_provider_key: catalogSourceProvider,
-        p_external_product_id: catalogSourceRecord.externalProductId, p_source_url: catalogSourceUrl || null,
-        p_image_url: catalogSourceRecord.imageUrl, p_source_payload: catalogSourceRecord.sourceRecord,
-      });
-      if (sourceError) throw sourceError;
+
+    const typeAgrees = !product.garment_type_key || product.garment_type_key === garmentType;
+    const evidenceAttributes = typeAgrees ? attributeRows : [];
+    const sourceReference = productUrl || identifier || styleNumber || "fit_report";
+    const { error: evidenceError } = await supabase.rpc("record_member_product_evidence", {
+      p_product_id: product.id,
+      p_garment_type: garmentType,
+      p_market_segment: product.market_segment,
+      p_attributes: evidenceAttributes,
+      p_materials: materialClaims,
+      p_department: department,
+      p_source_reference: sourceReference,
+    });
+    if (evidenceError) throw evidenceError;
+
+    if (existingProductId) {
+      if (normalizeSearchText(brandName) !== canonicalBrand.normalized_name) {
+        const { error } = await supabase.rpc("record_member_product_identity_issue", { p_product_id: product.id, p_field_key: "brand_name", p_value: brandName });
+        if (error) throw error;
+      }
+      if (normalizeSearchText(productName) !== normalizeSearchText(product.name)) {
+        const { error } = await supabase.rpc("record_member_product_identity_issue", { p_product_id: product.id, p_field_key: "item_name", p_value: productName });
+        if (error) throw error;
+      }
+      if (styleIssue) {
+        const { error } = await supabase.rpc("record_member_product_identity_issue", { p_product_id: product.id, p_field_key: "manufacturer_style", p_value: styleIssue });
+        if (error) throw error;
+      } else if (!product.manufacturer_style_number && styleNumber) {
+        const { error } = await supabase.rpc("record_member_product_identity_issue", { p_product_id: product.id, p_field_key: "manufacturer_style", p_value: styleNumber });
+        if (error) throw error;
+      }
     }
   } catch {
-    if (photoPath) await supabase.storage.from("fit-reference-photos").remove([photoPath]);
+    if (fitPhotoPath) await supabase.storage.from("fit-reference-photos").remove([fitPhotoPath]);
+    if (productPhotoPath) await supabase.storage.from("product-photos").remove([productPhotoPath]);
     await supabase.from("closet_items").delete().eq("id", closetItemId).eq("user_id", userId);
     fail("save_failed");
   }

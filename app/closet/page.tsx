@@ -3,13 +3,16 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 type SearchParams=Promise<Record<string,string|string[]|undefined>>;
-type ClosetRow={id:string;variant_id:string|null;size_label:string;wears_count:number;visibility:"private"|"shared";product:unknown};
+type ClosetRow={id:string;variant_id:string|null;size_label:string;wears_count:number;visibility:"private"|"shared";product:unknown;submission:unknown};
 type ProductView={id:string;name:string;slug:string;category:string;garment_type_key:string|null;brand:unknown};
 type BrandView={name:string};
+type PendingView={brand_text:string;model_text:string;garment_type_key:string;candidate:unknown};
+type CandidateView={status:string};
 type FitReport={closet_item_id:string;fit:string;would_buy_again:boolean|null;created_at:string};
 type FitPhoto={closet_item_id:string;storage_path:string};
 const FIT_LABELS:Record<string,string>={too_small:"Too small",snug:"Snug",just_right:"Just right",relaxed:"Relaxed",too_big:"Too big"};
-const CATEGORY_LABELS:Record<string,string>={tops:"Tops",bottoms:"Bottoms",dresses:"Dresses",outerwear:"Outerwear",shoes:"Shoes",other:"Other"};
+const CATEGORY_LABELS:Record<string,string>={tops:"Tops",bottoms:"Bottoms",dresses:"Dresses",outerwear:"Outerwear",shoes:"Shoes",swimwear:"Swimwear",intimates:"Intimates",other:"Other"};
+const PENDING_LABELS:Record<string,string>={pending:"Catalog review pending",needs_enrichment:"Needs catalog enrichment",needs_review:"Catalog identity review",merged:"Catalog resolved"};
 function first(value:string|string[]|undefined){return Array.isArray(value)?value[0]:value;}
 function one<T>(value:unknown):T|null{return Array.isArray(value)?((value[0] as T|undefined)??null):((value as T|null)??null);}
 
@@ -22,7 +25,7 @@ export default async function ClosetPage({searchParams}:{searchParams:SearchPara
   const added=first(params.added)==="1";
   const deleted=first(params.deleted)==="1";
 
-  const {data,error}=await supabase.from("closet_items").select("id,variant_id,size_label,wears_count,visibility,product:products(id,name,slug,category,garment_type_key,brand:brands(name))").eq("user_id",userId).order("created_at",{ascending:false});
+  const {data,error}=await supabase.from("closet_items").select("id,variant_id,size_label,wears_count,visibility,product:products(id,name,slug,category,garment_type_key,brand:brands(name)),submission:garment_submissions(brand_text,model_text,garment_type_key,candidate:catalog_candidates(status))").eq("user_id",userId).order("created_at",{ascending:false});
   if(error)throw new Error("Could not load Closet.");
   const items=(data??[]) as ClosetRow[];
   const ids=items.map((item)=>item.id);
@@ -40,11 +43,11 @@ export default async function ClosetPage({searchParams}:{searchParams:SearchPara
     <div className="pageTitle rowTitle"><div><span className="eyebrow">MY CLOSET</span><h1>Teach LikeSized what fits you.</h1></div><Link className="primaryButton" href="/closet/add">+ Add garment</Link></div>
     {added?<div className="authMessage">Garment added to your Closet.</div>:null}{deleted?<div className="authMessage">Garment and its fit history removed.</div>:null}
     <div className="profileStrength"><div><strong>Fit evidence strength</strong><span>{garmentCount} garment{garmentCount===1?"":"s"} logged{remaining>0?` · Add ${remaining} more for stronger recommendations`:" · Strong V1 fit history"}</span></div><div className="meter"><span style={{width:`${strength}%`}}/></div><b>{strength}%</b></div>
-    {items.length?<div className="tableLike">{items.map((item)=>{const product=one<ProductView>(item.product);const brand=one<BrandView>(product?.brand);const report=latestReportByItem.get(item.id);const photo=signedPhotos.get(item.id);return <div className="closetRow" key={item.id}>
-      {photo?<img className="garmentPhoto" src={photo} alt="Fit reference"/>:<div className="garmentThumb">{(brand?.name||"?").slice(0,1).toUpperCase()}</div>}
-      <div className="closetMain"><span className="muted">{brand?.name||"Brand"}</span><strong>{product?.name||"Garment"}</strong><span>{CATEGORY_LABELS[product?.category||""]||"Other"}{product?.garment_type_key?` · ${product.garment_type_key.replaceAll("_"," ")}`:""}</span></div>
+    {items.length?<div className="tableLike">{items.map((item)=>{const product=one<ProductView>(item.product);const brand=one<BrandView>(product?.brand);const submission=one<PendingView>(item.submission);const candidate=one<CandidateView>(submission?.candidate);const report=latestReportByItem.get(item.id);const photo=signedPhotos.get(item.id);const displayBrand=brand?.name||submission?.brand_text||"Brand";const displayName=product?.name||submission?.model_text||"Garment";const displayType=product?.garment_type_key||submission?.garment_type_key;return <div className="closetRow" key={item.id}>
+      {photo?<img className="garmentPhoto" src={photo} alt="Fit reference"/>:<div className="garmentThumb">{displayBrand.slice(0,1).toUpperCase()}</div>}
+      <div className="closetMain"><span className="muted">{displayBrand}</span><strong>{displayName}</strong><span>{product?(CATEGORY_LABELS[product.category]||"Other"):"Pending catalog item"}{displayType?` · ${displayType.replaceAll("_"," ")}`:""}</span>{!product&&candidate?<small className="muted">{PENDING_LABELS[candidate.status]||"Catalog review pending"} · You can keep using this garment while we identify it.</small>:null}</div>
       <div><span className="muted">SIZE</span><strong>{item.size_label}</strong></div><div><span className="muted">LATEST FIT</span><strong>{FIT_LABELS[report?.fit||""]||"—"}</strong></div><div><span className="muted">VISIBILITY</span><strong>{item.visibility==="shared"?"Shared":"Private"}</strong></div>
       <div className="authActions"><Link className="textLink" href={`/closet/${item.id}/edit`}>Edit →</Link>{product?<Link className="textLink closetViewLink" href={`/item/${product.slug}${item.variant_id?`?variant=${encodeURIComponent(item.variant_id)}`:""}`}>Product →</Link>:null}</div>
-    </div>;})}</div>:<div className="emptyState"><span className="eyebrow">YOUR CLOSET IS EMPTY</span><h2>Start with something you already know fits.</h2><p>Log the product, original size and fit. Choose Shared only when you want other members to browse the fit evidence; uploading a Fit Photo automatically shares that item.</p><Link className="primaryButton" href="/closet/add">Add my first garment →</Link></div>}
+    </div>;})}</div>:<div className="emptyState"><span className="eyebrow">YOUR CLOSET IS EMPTY</span><h2>Start with something you already know fits.</h2><p>Log the product, original size and fit. If LikeSized does not know the exact Product yet, your garment still saves immediately while the catalog record is reviewed.</p><Link className="primaryButton" href="/closet/add">Add my first garment →</Link></div>}
   </main>;
 }

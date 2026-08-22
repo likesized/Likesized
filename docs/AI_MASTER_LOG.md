@@ -28,6 +28,20 @@ GitHub `likesized/Likesized` is the source of truth. Current files describe curr
 - purpose: controlled consolidation of Phase 6.5 work plus the submission-first catalog/New Fit Report architecture.
 - production merge/promotion: **NOT AUTHORIZED**.
 
+## Verified consolidation checkpoint — AUTOMATED GATE GREEN
+The latest implementation checkpoint before this status-only master reconciliation is:
+- implementation commit: `5632c05ee452ff00547265ca51dd60186c403034`;
+- LikeSized CI run: #466 / run `32586621388` — **SUCCESS**;
+- canonical integrity/drift guard — PASS;
+- TypeScript — PASS;
+- all focused application safeguards — PASS;
+- production build — PASS;
+- complete fresh replay of every canonical Supabase migration — PASS;
+- canonical database behavior/privacy/security tests — PASS;
+- matching Vercel Preview deployment `dpl_2PiiEQz3oxzs92Tg6qTdenRu6gsg` — **READY**.
+
+That checkpoint proves the current submission-first intake/catalog foundation, reviewed Product-alias reuse, RLS changes, and authorized pending-to-canonical mapping behavior replay and test cleanly from scratch. It does **not** mean Phase 6.5 is complete, it does **not** mean the new migrations have been applied to the live Supabase project, and it does **not** authorize a production merge.
+
 ## Active consolidation directive — OWNER AUTHORIZED
 The owner explicitly authorized the cleanup/consolidation work with the goal of getting LikeSized back on solid canonical ground.
 
@@ -35,7 +49,7 @@ Current rule:
 - PR #47 is the **only active development lineage**.
 - do not create another implementation/decision/retry branch while this consolidation is active.
 - historical branches are inspection/salvage sources only until classified; never copy an old file wholesale back into current source.
-- do not merge/promote PR #47 until the current intake/catalog checkpoint is coherent, CI/migration replay/Preview pass, and the owner explicitly authorizes production.
+- do not merge/promote PR #47 until the current intake/catalog checkpoint is coherent, CI/migration replay/Preview pass, owner interaction review is complete, and the owner explicitly authorizes production.
 
 ## PR #48 salvage — COMPLETE / HISTORICAL ONLY
 PR #48 (`owner-decision-retail-affiliate-plan`) was created from stale `main` while PR #47 was already the active line. It contained documentation-only retail/affiliate decisions.
@@ -465,7 +479,7 @@ Current reconciliation:
 - broad/generic/ambiguous entries exposed by the benchmark must be treated as Pending / Needs Enrichment / Needs Review until resolved rather than falsely presented as verified exact Products;
 - reuse the already-cached SerpAPI benchmark results for these entries before spending another search.
 
-The earlier branch migration seeds the 150 as provisional Products for replay/history. The later submission-first reconciliation migration must reclassify them into catalog candidates and remove only empty/unreferenced provisional seed Products. Any starter Product that already gained real evidence must be preserved and reviewed rather than destructively erased.
+The earlier branch migration seeds the 150 as provisional Products for replay/history. The later submission-first reconciliation migration reclassifies them into catalog candidates and removes only empty/unreferenced provisional seed Products. Any starter Product that already gained real evidence must be preserved and reviewed rather than destructively erased.
 
 Do not rewrite/delete an already-applied migration. Use a later canonical migration/data-state transition where required.
 
@@ -694,79 +708,83 @@ Also cover before Beta:
 
 ## CURRENT OWNER-PRIORITY INSERT — complete before returning to remaining page audits
 
-### 6.5 INSERT A — Submission-first intake
-Branch implementation is now in progress and remains unverified until the complete gate passes.
+### 6.5 INSERT A — Submission-first intake — AUTOMATED FOUNDATION VERIFIED
+The branch implementation through `5632c05...` passed the complete automated gate. Owner desktop/mobile interaction review is still required before this insert is accepted as complete.
 
 Target/checklist:
-- internal LikeSized Product/barcode search only;
-- exact Product selection path;
-- manual fallback creates garment submission/pending candidate, **not a canonical Product**;
-- member Fit Report/Closet remains usable while pending;
-- preserve scanned unknown barcode on submission;
-- canonical Brand/Product suggestions/aliases;
-- required controlled-question behavior: blank default + Not sure last;
-- size-system blank default;
-- exact information ordering;
-- optional Retail/UPC/Style/Material/Product Photo/Department evidence;
-- existing Product field-level issue reporting;
-- pending-candidate mapping without rewriting historical Fit Report/body state;
-- remove/retire active member-facing external-import remnants;
-- full desktop/mobile owner Preview review.
+- internal LikeSized Product/barcode search only — implemented/tested at source boundary;
+- exact Product selection path — implemented;
+- manual fallback creates garment submission/pending candidate, **not a canonical Product** — implemented and DB-tested;
+- member Fit Report/Closet remains usable while pending — implemented and DB-tested;
+- preserve scanned unknown barcode on submission — implemented/safeguarded;
+- canonical Brand/Product suggestions/aliases — Brand aliases and reviewed Product aliases integrated/safeguarded;
+- required controlled-question behavior: blank default + Not sure last — safeguarded;
+- size-system blank default — safeguarded;
+- exact information ordering — safeguarded;
+- optional Retail/UPC/Style/Material/Product Photo/Department evidence — implemented in intake foundation;
+- existing Product field-level issue reporting — retained;
+- pending-candidate mapping without rewriting historical Fit Report/body state — DB-tested with narrow authorized NULL→canonical resolution exception;
+- remove/retire active member-facing external-import remnants — safeguarded;
+- full desktop/mobile owner Preview interaction review — **STILL REQUIRED**.
 
-### 6.5 INSERT B — Reconcile starter 150
-- preserve all 150 owner-supplied starter entries;
-- reuse cached benchmark evidence;
+### 6.5 INSERT B — Reconcile starter 150 — REPLAY FOUNDATION VERIFIED / ITEM REVIEW REMAINS
+- all 150 owner-supplied starter entries remain preserved in the research/enrichment pipeline;
+- existing 150-search SerpAPI cache remains reusable;
 - no invented metadata;
-- classify specific entries appropriately as verified/selectable vs Pending/Needs Enrichment/Needs Review;
-- later reconciliation migration moves research seeds to candidate/enrichment state and removes only empty/unreferenced provisional seed Products;
-- fresh migration replay/data-state verification.
+- reconciliation migration `20260822162100_reclassify_starter_seed_as_candidates.sql` reclassifies empty/unreferenced research seeds into candidates and preserves referenced/evidenced Products;
+- complete fresh migration replay passed;
+- specific-entry classification/enrichment of ambiguous starter candidates is **still ongoing roadmap work**, not falsely marked complete.
 
-### 6.5 INSERT C — Pending candidate + flag architecture
+### 6.5 INSERT C — Pending candidate + flag architecture — FOUNDATION VERIFIED
+Verified foundation includes:
 - garment-submission/pending-candidate data model;
-- aggregate similar submissions without destroying originals;
-- statuses: Verified Catalog Item / Pending Product / Needs Enrichment / Needs Review / Merged;
-- demand/submission-count prioritization;
-- hidden Brand/Product aliases;
-- possible-duplicate detection;
-- field conflict/consensus lifecycle;
-- retail/identifier conflict handling;
-- transactional candidate → existing Product mapping;
-- transactional new canonical Product creation through resolution layer;
-- audited merge;
-- audited split.
+- aggregation of equivalent unresolved submissions without destroying originals;
+- statuses: Pending / Needs Enrichment / Needs Review / Merged plus canonical verified Product state;
+- demand/submission-count prioritization foundation;
+- hidden Brand/Product aliases and reviewed Product-alias reuse in intake search;
+- typed catalog review flags including possible duplicate, Product-fact conflict, ambiguous identity, spam/report and retail/identifier conflict;
+- admin-only candidate → existing Product mapping;
+- reviewed new canonical Product creation through resolution layer;
+- immutable Fit Profile snapshot/Fit Result preservation during first-time pending Product resolution;
+- accountable resolution audit.
 
-### 6.5 INSERT D — Admin catalog dashboard
-Authorized admin surface must cover:
-- Catalog Enrichment;
-- Conflicting Product Facts;
-- Possible Duplicates / Identity Review;
-- Reported / Spam Content;
-- Review / Audit History.
+Still required under this insert:
+- full Product-to-Product merge behavior/tooling;
+- audited split behavior/tooling;
+- richer automated duplicate detection beyond current flag/RPC foundation.
 
-Include:
-- demand counts;
-- submission evidence;
-- conflict evidence;
-- mapping/merge/split;
-- aliases;
-- override/verify/permanent lock/reopen;
-- spam/photo/content removal;
-- audit trail.
+### 6.5 INSERT D — Admin catalog dashboard — PARTIAL FOUNDATION
+Implemented/available on branch:
+- demand-prioritized catalog candidates;
+- catalog flags/evidence visibility;
+- map candidate to existing Product;
+- reviewed new-Product creation;
+- existing content/Product moderation foundation and audit history.
 
-### 6.5 INSERT E — Admin SerpAPI research + cache/batching
-- admin-only SerpAPI research;
-- single and selected-batch searches;
-- normalized query dedupe;
-- private cache first;
-- cached/new indicator;
-- usage cap/warnings/hard stop;
-- save successful responses for reuse;
-- cluster likely base Product candidates while preserving meaningful modifiers;
-- no direct SerpAPI → `products` write path;
-- admin explicitly chooses map/create/review actions;
-- use existing 150-search cache before paying to repeat those searches.
+Still required:
+- complete queue/tab UX across Catalog Enrichment / Conflicting Product Facts / Possible Duplicates / Reported-Spam / Audit History;
+- merge/split controls;
+- complete Brand/Product alias management UX;
+- complete spam garment-submission/Fit Report controls;
+- complete Product-photo transfer/removal workflows;
+- full field lock/reopen UX where not already covered by existing moderation foundation.
 
-### 6.5 INSERT F — Retail aggregation + monetization
+### 6.5 INSERT E — Admin SerpAPI research + cache/batching — CACHE/BENCHMARK DONE, ADMIN WORKFLOW NOT BUILT
+Done:
+- private SerpAPI discovery cache exists;
+- exact 150-item benchmark is stored and reusable;
+- benchmark writer is retired;
+- no member-facing SerpAPI path exists.
+
+Still required:
+- admin-only single and selected-batch research controls;
+- normalized query dedupe/cached-vs-new indicators;
+- usage warning/critical/hard-stop thresholds;
+- admin cluster/review workflow;
+- accountable research action records;
+- no direct SerpAPI → `products` write path.
+
+### 6.5 INSERT F — Retail aggregation + monetization — ROADMAP REMAINS
 - zero/one/multiple retailer behavior exactly as locked above;
 - append/dedupe, never overwrite valid alternatives;
 - unresolved URLs stay candidate evidence until mapping;
@@ -776,7 +794,7 @@ Include:
 - disclosure/privacy/compliance audit;
 - commission never affects fit/search/ranking/retailer choice.
 
-After the insert is owner-accepted, continue every audit below.
+After the current insert is owner-accepted, continue every audit below.
 
 ## 6.5.1 Navigation / information architecture audit
 - LikeSized logo = Home;
@@ -1147,6 +1165,42 @@ Representative Beta verification:
 - the completed SerpAPI benchmark cache is retained as research evidence; temporary benchmark write surfaces are retired.
 - production promotion requires explicit owner authorization after full verification.
 
+## Branch salvage ledger — IN PROGRESS / NO DELETIONS YET
+**ACTIVE**
+- `main` — deployed production baseline only.
+- `correct-grouped-menu-layout` / PR #47 — sole active development lineage.
+
+**HISTORICAL, APPROVED CONTENT SALVAGED**
+- `owner-decision-retail-affiliate-plan` / closed PR #48 — approved retail decisions are already represented on PR #47; do not build from this branch.
+
+**SAFE-TO-REMOVE CANDIDATES VERIFIED SO FAR**
+These refs were compared to `main` and showed `ahead_by = 0`; no unique commit content exists beyond what is already in `main`:
+- `FINAL-NO`
+- `NO-MORE`
+- `STOP-TEST`
+- `THIS-IS-BAD`
+- `agent/canonicalize-migration-version`
+- `auth-supabase`
+- `closet-live`
+- `fit-profile-persistence`
+- `fit-twins`
+- `outfits-live`
+- `people-live-matches`
+- `product-fit-live`
+- `search-discovery`
+- `phase-6-4-diagram-assets`
+- `phase-6-4-diagram-assets-check`
+- `phase-6-4-diagram-assets-check2`
+
+**HOLD / UNIQUE OR DIVERGED CONTENT SEEN**
+Do not remove until the unique content is explicitly classified against current canon:
+- `agent/phase-0-replay-verification` — one unique README-only commit was observed;
+- `fix/high-res-measurement-guides` — unique workflow content exists and must be deliberately classified;
+- `phase-6-4-fit-profile-help` — unique `tmp-placeholder.txt` artifact observed; likely disposable, but still HOLD until final branch pass records the decision;
+- all other historical refs not yet explicitly listed above remain HOLD by default until compared.
+
+Physical branch-pointer deletion has **not** been performed. Git history is preserved regardless; branch cleanup must never precede salvage classification.
+
 # CANONICAL RECOVERY — COMPLETE / PRESERVE
 
 Owner approved canonical recovery on 2026-08-21 after severe source-of-truth drift was audited.
@@ -1211,45 +1265,59 @@ Earlier PR #47 heads had green CI/Preview checkpoints, including previously reco
 - `4c17951e8848e9106bf01c15a84aea376f09228e` → CI #385 / Preview READY;
 - `bf36b673c071f9b93304401b0df7da68bfb2b87d` → CI #396 / Preview READY.
 
-Those do **not** prove the current head is green because product direction changed afterward.
+Those remain preservation evidence only. The current submission-first direction is instead proven by the verified checkpoint recorded above.
 
-# CURRENT CONSOLIDATION IMPLEMENTATION — BRANCH ONLY / UNVERIFIED
+# CURRENT CONSOLIDATION IMPLEMENTATION — BRANCH ONLY / VERIFIED CHECKPOINT
 
-PR #47 now contains branch implementation for the submission-first checkpoint, including:
+PR #47 contains the verified submission-first checkpoint foundation, including:
 - `20260822162000_submission_first_catalog_foundation.sql` — nullable unresolved Product links, pending catalog candidates, garment submissions, typed catalog flags, resolution audit, Product aliases, pending-product photo storage, member submission RPC, duplicate-flag RPC, and admin map/create/status resolution RPCs;
 - `20260822162100_reclassify_starter_seed_as_candidates.sql` — keeps all 150 starter entries in the enrichment pipeline and removes only empty/unreferenced provisional research-seed Products after reclassification;
-- New Fit Report server action now has a known-Product path and an unresolved submission path that does not directly insert a Product;
+- `20260822162200_allow_pending_fit_report_rls.sql` — preserves owner/Closet consistency while permitting unresolved `NULL Product ↔ NULL Product` Fit Reports;
+- `20260822162300_allow_authorized_pending_product_resolution.sql` — preserves historical Fit Report immutability while allowing the private authorized catalog resolver to assign a canonical Product/variant exactly once to a previously unresolved report;
+- New Fit Report server action has a known-Product path and an unresolved submission path that does not directly insert a Product;
 - unresolved Closet/Fit Report rows remain usable and display supplied Brand/Model plus catalog-review state;
-- moderation/admin surface now includes demand-prioritized catalog candidates, flags, evidence, map-to-existing and reviewed new-Product creation actions;
+- moderation/admin surface includes demand-prioritized catalog candidates, typed flags, evidence, map-to-existing and reviewed new-Product creation actions;
 - barcode identity disagreement evidence includes the `barcode` field;
-- private SerpAPI research cache and completed 150-item benchmark remain preserved.
+- reviewed Brand aliases and Product aliases resolve back to canonical Products in internal member intake search;
+- member intake contains no SerpAPI/Google Shopping discovery path;
+- private SerpAPI research cache and completed 150-item benchmark remain preserved;
+- `AI_REPOSITORY_RULES.md` now explicitly blocks stale-base parallel product branches during an active unreconciled lineage.
 
-Verification evidence so far:
-- canonical documentation guard passed after reconciliation;
-- TypeScript passed on the first submission-first verification run;
-- existing recommendation, Fit Match UI, Outfit photo, homepage, navigation and Explore/My Circle/LikeLocker safeguards passed on that run;
-- the first Fit Report/community-catalog test failure was a test-indexing bug (matching the import name instead of rendered component placement) and was corrected;
-- the next Preview failure was isolated to an unsupported RegExp `s` flag inside the strengthened test file; application build reached TypeScript test compilation and the test regex was replaced with an equivalent target-safe expression.
+## What the verified automated checkpoint proves
+At implementation commit `5632c05ee452ff00547265ca51dd60186c403034`:
+- canonical integrity/drift guard passed;
+- TypeScript passed;
+- recommendation/Fit Match/Outfit/homepage/navigation/Explore/My Circle/LikeLocker/controlled-intake/moderation safeguards passed;
+- production Next.js build passed;
+- every canonical migration replayed successfully on a fresh local Supabase database;
+- all canonical DB tests passed;
+- `submission_first_catalog.test.sql` proves unresolved member intake does not create a Product, equivalent submissions aggregate without erasing originals, ordinary members cannot see the admin candidate queue or one another's pending submissions, authorized admin mapping resolves to one canonical Product, original submissions remain audit evidence, and the immutable Fit Profile snapshot/Fit Result survive mapping;
+- the matching Vercel Preview is READY.
 
-**The latest current branch head still requires a complete fresh CI run through build, migration replay and DB tests. Do not call this consolidation green yet.**
-
-Still incomplete for the broader roadmap:
-- full transactional Product-to-Product merge/split UI/data behavior;
-- final Product/Brand alias search integration;
-- admin SerpAPI single/batch UI/server workflow with usage caps;
+## What is **not** complete yet
+Do not overstate the checkpoint. Still required before this consolidation can be promoted to production:
+- owner desktop/mobile interaction review of the real New Fit Report flow, specifically scanner opening, exact Product selection, clear-and-search-again behavior, unknown/pending fallback, known-field locking/issue reporting, and responsive layout;
+- live Supabase migration application/promotion plan; the new submission-first migrations have not been declared/applied as the production schema checkpoint here;
+- full Product-to-Product merge and audited split behavior/UI;
+- complete admin queue/tab UX and complete Brand/Product alias management UX;
+- admin SerpAPI single/batch UI/server workflow, cache indicators and usage-cap controls;
 - full spam garment-submission/Fit Report moderation coverage;
 - complete Product-photo moderation/transfer behavior;
-- browser-level behavioral regression automation;
-- branch salvage ledger and removal of redundant branch pointers.
+- browser-level behavioral regression automation beyond the current source/DB safeguards;
+- complete branch salvage ledger across every remaining historical branch and physical removal of only those refs proven safe;
+- specific enrichment/review of ambiguous members of the starter 150;
+- remaining Phase 6.5 page-by-page audits and deferred desktop Fit Profile review.
 
-# EXACT NEXT ACTION — ACTIVE CONSOLIDATION
+# EXACT NEXT ACTION — AFTER VERIFIED SUBMISSION-FIRST CHECKPOINT
 
-1. Complete the current CI gate on the latest PR #47 head: canonical integrity → typecheck → focused tests → build → fresh Supabase replay → DB tests.
-2. Fix only source/schema/test failures exposed by that gate on PR #47; do not create a side branch.
-3. Add database behavior tests for unresolved submission recording, candidate aggregation, admin-only mapping/creation, immutable Fit state preservation and starter-150 transition safety.
-4. Integrate reviewed Product aliases into canonical intake search without surfacing pending candidates as Product results.
-5. Build the branch salvage ledger and classify historical branches before any branch removal.
-6. Strengthen repository/canonical workflow safeguards against stale-base side branches and wholesale recovery from old branches.
-7. Add browser-level behavioral coverage where practical and require owner Preview interaction verification for scanner opening, repeat search, exact selection and pending fallback.
-8. Produce one protected/current PR #47 Preview tied to the exact passing commit and perform owner desktop/mobile intake review.
-9. **STOP before production.** Do not merge to `main` or promote production until the owner explicitly authorizes that final consolidation promotion.
+1. Verify this documentation-only reconciliation commit passes canonical CI/Preview; it must not weaken the already-green implementation checkpoint.
+2. Perform owner desktop/mobile interaction review of PR #47 New Fit Report against the verified submission-first architecture.
+3. Fix only review failures on PR #47; do not create another branch.
+4. Finish the historical branch salvage ledger. Classify every remaining ref as ACTIVE / SAFE TO REMOVE / HOLD before any physical cleanup.
+5. Finish the minimum admin catalog tooling needed for practical operation: complete queue visibility, merge/split/alias controls, and spam/Product-photo moderation gaps.
+6. Build the admin-only SerpAPI single/batch research workflow using the existing private cache first, with dedupe and usage caps; SerpAPI remains incapable of directly creating Products.
+7. Review/enrich ambiguous starter-150 candidates using the existing cache before spending new calls.
+8. Add browser-level regression coverage for owner-locked intake interactions where practical.
+9. Re-run canonical integrity → typecheck → focused tests → production build → complete fresh Supabase replay → DB tests on the final consolidation head.
+10. Produce one exact-SHA READY Preview for final owner desktop/mobile review and determine the live Supabase migration/promotion sequence.
+11. **STOP before production.** Do not merge PR #47 to `main`, apply/promote the production schema, or promote Vercel production until the owner explicitly authorizes the final consolidation promotion.

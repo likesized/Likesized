@@ -5,6 +5,7 @@ import { COLOR_FAMILIES, GARMENT_TYPES, isAllowedGarmentAnswer } from "../lib/ga
 
 const intake=readFileSync("app/closet/add/page.tsx","utf8");
 const catalog=readFileSync("app/closet/add/CatalogGarmentFields.tsx","utf8");
+const catalogSearch=readFileSync("app/api/catalog/search/route.ts","utf8");
 const size=readFileSync("app/closet/add/GarmentSizeFields.tsx","utf8");
 const actions=readFileSync("app/closet/actions.ts","utf8");
 const taxonomyMigration=readFileSync("supabase/migrations/20260822004901_add_controlled_fit_report_taxonomy.sql","utf8");
@@ -43,6 +44,16 @@ test("barcode is LikeSized-only and an unknown scan stays with the pending submi
  assert.match(actions,/const identifier = scannedBarcode \|\| typedUpc/);
  assert.match(actions,/p_identifier_value: identifier \|\| null/);
  assert.doesNotMatch(catalog,/serpapi|google shopping/i);
+});
+
+test("reviewed Brand and Product aliases resolve back to canonical LikeSized Products",()=>{
+ assert.match(catalogSearch,/from\("brand_aliases"\)/);
+ assert.match(catalogSearch,/from\("product_aliases"\)/);
+ assert.match(catalogSearch,/matchingProductAliasIds/);
+ assert.match(catalogSearch,/detailedProducts/);
+ assert.match(pendingMigration,/create table public\.product_aliases/);
+ assert.match(pendingMigration,/Members read product aliases/);
+ assert.doesNotMatch(catalogSearch,/serpapi|google shopping/i);
 });
 
 test("unresolved manual intake records a pending garment submission and does not create a Product",()=>{

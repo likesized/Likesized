@@ -694,7 +694,7 @@ Status: **COMPLETE / DEPLOYED / VERIFIED**.
 
 # ACTIVE OWNER PREVIEW — EXPLORE / MY CIRCLE / LIKELOCKER
 
-Status: **BRANCH-ONLY / CONTROLLED INTAKE + EXPLORE REBUILD UNDER FINAL VERIFICATION / NOT PRODUCTION**.
+Status: **BRANCH-ONLY / GREEN OWNER-REVIEW TEST ENVIRONMENT READY / NOT PRODUCTION**.
 
 - Active line: PR #47, `correct-grouped-menu-layout`.
 - Desktop and mobile use the same one Menu + one fixed notification bell control.
@@ -723,7 +723,9 @@ Status: **BRANCH-ONLY / CONTROLLED INTAKE + EXPLORE REBUILD UNDER FINAL VERIFICA
 - Vercel preview deployment `dpl_EKLzUtVFHDerEf7ywJ8kfoGUN7au` for that exact commit reached **READY**. This is an owner-review preview only; no code from PR #47 has been merged or promoted to production.
 - Owner review locked the member-facing garment filter label as **Item name**. The existing internal query key remains an implementation detail only.
 - Owner review locked all no-result states to the compact **No garments/outfits found** treatment. My Fit Matches adds only the useful instruction to try All or remove a filter; no threshold percentage or large missing-evidence headline is shown.
+- PR #47 feature head `4c17951e8848e9106bf01c15a84aea376f09228e` passed CI run **#385** end-to-end: canonical drift guard, TypeScript, all focused safeguards, production build, complete fresh migration replay, and every database behavior/privacy test. That includes the historical Match compatibility and preview-no-write regressions added after CI exposed the original intake-taxonomy collision.
+- Vercel Preview deployment `dpl_5kfBk3bMsfpxR845sKKUNXwB2b7x` for that exact feature head reached **READY**. The protected preview entry was browser-verified through the expected LikeSized sign-in boundary with rendered content, no framework error overlay, and no application console errors. Authenticated owner review remains required to inspect member-only routes.
 - Public homepage five-question FAQ owner review remains pending.
 
 ## Exact next action
-Complete fresh-database replay/CI for the controlled taxonomy and grouped search, publish the labeled fixture preview, then have the owner review desktop/mobile Explore, New Fit Report, My Circle, LikeLocker, shared navigation, reporting, photo moderation, notifications, and catalog-conflict locking on this same canonical line. Do not merge or promote production without explicit owner authorization. FAQ owner review and deferred desktop Fit Profile verification remain open.
+The owner reviews desktop/mobile Explore and fixture-mode New Fit Report, then My Circle, LikeLocker, shared navigation, reporting, photo moderation, notifications, and catalog-conflict locking in the protected test environment. Apply feedback only on this same canonical line. Do not merge or promote production without explicit owner authorization. FAQ owner review and deferred desktop Fit Profile verification remain open.

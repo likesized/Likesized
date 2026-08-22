@@ -37,7 +37,7 @@ Current rule:
 - historical branches are inspection/salvage sources only until classified; never copy an old file wholesale back into current source.
 - do not merge/promote PR #47 until the current intake/catalog checkpoint is coherent, CI/migration replay/Preview pass, and the owner explicitly authorizes production.
 
-## PR #48 salvage — COMPLETE / CLOSE WITHOUT MERGE
+## PR #48 salvage — COMPLETE / HISTORICAL ONLY
 PR #48 (`owner-decision-retail-affiliate-plan`) was created from stale `main` while PR #47 was already the active line. It contained documentation-only retail/affiliate decisions.
 
 The PR #48 diff was reviewed against current PR #47 canonical docs. Every unique approved decision has been preserved on PR #47:
@@ -52,7 +52,7 @@ The PR #48 diff was reviewed against current PR #47 canonical docs. Every unique
 - Fit Report / Wish Locker / Gift List shopping uses the same conditional behavior;
 - exact disclosure: **“LikeSized may earn a commission from purchases made through our shopping links.”**
 
-No unique approved product decision remains solely on PR #48. Therefore PR #48 should be **closed without merge**. Its commits remain inert Git history/salvage evidence and must not be used as a development base.
+No unique approved product decision remains solely on PR #48. PR #48 is therefore **closed without merge**. Its commits remain inert Git history/salvage evidence and its branch must not be used as a development base.
 
 # ACTIVE OWNER DIRECTION — CONTROLLED CATALOG + SUBMISSION-FIRST INTAKE
 
@@ -1248,9 +1248,8 @@ Still incomplete for the broader roadmap:
 2. Fix only source/schema/test failures exposed by that gate on PR #47; do not create a side branch.
 3. Add database behavior tests for unresolved submission recording, candidate aggregation, admin-only mapping/creation, immutable Fit state preservation and starter-150 transition safety.
 4. Integrate reviewed Product aliases into canonical intake search without surfacing pending candidates as Product results.
-5. Close PR #48 without merge now that equivalence is documented/proven; treat its branch as historical only.
-6. Build the branch salvage ledger and classify historical branches before any branch removal.
-7. Strengthen repository/canonical workflow safeguards against stale-base side branches and wholesale recovery from old branches.
-8. Add browser-level behavioral coverage where practical and require owner Preview interaction verification for scanner opening, repeat search, exact selection and pending fallback.
-9. Produce one protected/current PR #47 Preview tied to the exact passing commit and perform owner desktop/mobile intake review.
-10. **STOP before production.** Do not merge to `main` or promote production until the owner explicitly authorizes that final consolidation promotion.
+5. Build the branch salvage ledger and classify historical branches before any branch removal.
+6. Strengthen repository/canonical workflow safeguards against stale-base side branches and wholesale recovery from old branches.
+7. Add browser-level behavioral coverage where practical and require owner Preview interaction verification for scanner opening, repeat search, exact selection and pending fallback.
+8. Produce one protected/current PR #47 Preview tied to the exact passing commit and perform owner desktop/mobile intake review.
+9. **STOP before production.** Do not merge to `main` or promote production until the owner explicitly authorizes that final consolidation promotion.

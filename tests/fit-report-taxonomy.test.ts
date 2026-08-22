@@ -9,6 +9,8 @@ const size=readFileSync("app/closet/add/GarmentSizeFields.tsx","utf8");
 const actions=readFileSync("app/closet/actions.ts","utf8");
 const taxonomyMigration=readFileSync("supabase/migrations/20260822004901_add_controlled_fit_report_taxonomy.sql","utf8");
 const communityMigration=readFileSync("supabase/migrations/20260822073000_community_catalog_intake_and_seed.sql","utf8");
+const pendingMigration=readFileSync("supabase/migrations/20260822162000_submission_first_catalog_foundation.sql","utf8");
+const seedTransition=readFileSync("supabase/migrations/20260822162100_reclassify_starter_seed_as_candidates.sql","utf8");
 
 test("every garment keeps the approved maximum-four controlled question set",()=>{
  for(const garment of GARMENT_TYPES){
@@ -22,23 +24,47 @@ test("every garment keeps the approved maximum-four controlled question set",()=
  assert.ok(!isAllowedGarmentAnswer("polo","cut","bootcut"));
 });
 
-test("final intake order keeps fit essentials above optional catalog enrichment",()=>{
+test("final intake order keeps fit essentials above optional catalog evidence",()=>{
  for(const required of ["Brand / Make","Item / Model","Garment type","Color","Overall Fit Result","Condition","Fit photo","Fit notes"])assert.match(intake+catalog,new RegExp(required));
- assert.match(catalog,/Want to help build the LikeSized catalog/);
+ assert.match(catalog,/Want to help us identify\/build this item\?/);
  for(const optional of ["Retail link","UPC / barcode","Manufacturer Style / Article Number","Material / Fabric Composition","Product photo","Department"])assert.match(catalog,new RegExp(optional));
  assert.ok(intake.indexOf("Overall Fit Result") < intake.indexOf("Condition"));
  assert.ok(intake.indexOf("Condition") < intake.indexOf("Fit photo"));
- assert.ok(intake.indexOf("Fit notes") < intake.indexOf("CatalogCommunityEnrichment"));
+ assert.ok(intake.indexOf("Fit notes") < intake.indexOf("<CatalogCommunityEnrichment"));
  assert.doesNotMatch(catalog,/Search retail catalog|Imported from retail catalog|catalog_source_provider|catalog_source_record/);
  assert.doesNotMatch(actions,/record_catalog_source_selection|catalog_source_provider|importedColorLabels/);
 });
 
-test("barcode is LikeSized-only and survives an unknown scan into manual creation",()=>{
+test("barcode is LikeSized-only and an unknown scan stays with the pending submission",()=>{
  assert.match(catalog,/Scan barcode/);
  assert.match(catalog,/LikeSized checks its own community catalog/);
- assert.match(catalog,/We don’t have information for this barcode yet/);
+ assert.match(catalog,/We don’t have this barcode in LikeSized yet/);
  assert.match(catalog,/name="scanned_barcode"/);
  assert.match(actions,/const identifier = scannedBarcode \|\| typedUpc/);
+ assert.match(actions,/p_identifier_value: identifier \|\| null/);
+ assert.doesNotMatch(catalog,/serpapi|google shopping/i);
+});
+
+test("unresolved manual intake records a pending garment submission and does not create a Product",()=>{
+ assert.match(actions,/product_id: null, variant_id: null/);
+ assert.match(actions,/record_pending_garment_submission/);
+ assert.match(pendingMigration,/create table public\.catalog_candidates/);
+ assert.match(pendingMigration,/create table public\.garment_submissions/);
+ assert.match(pendingMigration,/create table public\.catalog_review_flags/);
+ assert.match(pendingMigration,/record_pending_garment_submission/);
+ assert.match(pendingMigration,/admin_map_catalog_candidate/);
+ assert.match(pendingMigration,/admin_create_product_from_candidate/);
+ assert.doesNotMatch(actions,/from\("products"\)\.insert/);
+ assert.doesNotMatch(actions,/from\("brands"\)\.insert/);
+ assert.doesNotMatch(actions,/from\("product_families"\)\.insert/);
+});
+
+test("starter 150 remains research input instead of blindly authoritative Products",()=>{
+ assert.match(seedTransition,/insert into public\.catalog_candidates/);
+ assert.match(seedTransition,/'needs_enrichment'/);
+ assert.match(seedTransition,/source.*'starter_seed'/s);
+ assert.match(seedTransition,/not exists\(select 1 from public\.closet_items ci where ci\.product_id=p\.id\)/);
+ assert.match(seedTransition,/not exists\(select 1 from public\.fit_reports fr where fr\.product_id=p\.id\)/);
 });
 
 test("size requires an explicit system and is asked once",()=>{

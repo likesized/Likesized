@@ -39,26 +39,121 @@ Never blend the two contexts.
 - My Circle and Style Feed eligibility are driven by Following. Fit Twin is a designation within that followed set, not a separate subscription.
 - Legacy source/function/database identifiers containing `fit_twin` are implementation debt and do not redefine product meaning.
 
-# 4. Garment identity and controlled taxonomy
+# 4. Community-built garment catalog and identity — LOCKED
 
-- `brands` uses normalized identity/aliases.
-- `products` are canonical products; retailer URLs are not product identity.
-- product families are explicit compatible same-fit/cut groups, never fuzzy-name grouping.
-- retailer listings, product identifiers, variants, and manufacturer style/model identifiers attach to canonical products.
+LikeSized V1 uses a **community-built catalog**. External/API product import is retired as an active intake strategy. Historical migrations from the failed import experiments may remain immutable migration history where already applied, but they do not define current product behavior and must be retired by later canonical migrations rather than rewritten or deleted.
+
+Core catalog rule:
+**A clothing catalog built by the people who actually wear it. Tell us what you know. Leave what you do not. Each independent contribution can improve the Product record for the next person.**
+
+- `brands` has one canonical identity plus hidden aliases for normalized punctuation, spelling variants, and reviewed common typos.
+- `products` are canonical products. Retailer URLs are listings/evidence, not Product identity.
+- Product families are explicit compatible same-fit/cut groups, never fuzzy-name grouping.
+- Retailer listings, product identifiers, variants, manufacturer Style/Article Numbers, Product photos, controlled Department, and community material evidence attach to canonical Products.
 - SKU is not assumed globally unique product identity.
-- Product resolution order from the Fit Match audit is:
-  **explicit canonical Product → UPC/barcode → normalized Product URL → Brand + manufacturer Style ID → normalized Brand + Product fallback/new provisional Product**.
 - Product facts use provenance states such as provisional / corroborated / verified / rejected.
 - Repeat submissions by the same member do not count as independent corroboration.
 - Conflicts trigger review instead of silently replacing stronger facts.
+- Admin-locked facts cannot be overwritten by later member submissions. Later disagreement remains evidence for review.
 
-## External catalog import — OWNER LOCKED
+## Product resolution and duplicate prevention
 
-Manual item creation is the final fallback, not the first identification step. New Fit Report checks the canonical LikeSized catalog first, then uses the approved external-source waterfall: barcode/GTIN lookup; exact product-link extraction; brand + Item name/Style ID shopping search; and, when approved, retailer/affiliate catalog feeds. A person selects the exact candidate; LikeSized imports only explicit source facts into the one canonical Product/provenance system, then asks only for their personal Fit Report facts.
+Resolution should reuse an existing canonical Product whenever identity is sufficiently supported. Strong signals include:
+1. explicit canonical Product selection;
+2. UPC/barcode;
+3. Brand + manufacturer Style/Article Number;
+4. normalized retailer listing URL as supporting identity evidence;
+5. normalized canonical Brand/alias + Item/Model plus compatible Garment Type and controlled Product characteristics.
 
-There is no single universal clothing database. Search/discovery results are candidates, not automatic catalog truth. Manufacturer and approved retailer/feed facts outrank aggregate barcode/search results; missing or uncertain controlled attributes remain Not sure. External product images/URLs are used only under the applicable source/feed rights and provenance rules.
+The duplicate engine may combine multiple signals, including UPC, Style/Article Number, canonical Brand/aliases, normalized Item/Model, Garment Type, Department, controlled attributes, and retailer URLs.
 
-Every external provider is disabled by default, has an owner-controlled hard monthly request cap, and has **no automatic paid overage, upgrade, or billing action**. Brave Search is capped at its $5 monthly credit / 1,000-search allowance unless the owner deliberately changes that cap. The admin queue warns at 80%, becomes critical at 95%, and records a hard-limit alert when a provider stops. One provider reaching its limit routes to enabled no-cost/local alternatives; it never exposes a provider/billing error to a member or forces manual entry while a valid fallback remains.
+- Hard/strong identity evidence may resolve to the existing canonical Product.
+- Soft/fuzzy similarity must create a **Possible Duplicate** review candidate rather than blindly merge Products.
+- If a duplicate Brand or Product is later caught, admin can merge it into the canonical record while preserving useful aliases, evidence, retailer listings, Fit Reports, and audit history.
+- If items were wrongly combined, admin must be able to **split** them without destroying historical evidence.
+
+## Barcode opening path
+
+New Fit Report begins with a simple choice immediately above manual entry:
+- **Scan barcode**
+- **Enter item manually**
+
+Barcode scanning searches **LikeSized's own catalog only**. It does not call an external retail/catalog provider.
+
+When a scanned barcode matches a LikeSized Product:
+- load that canonical Product;
+- prefill known Product facts;
+- keep existing known Product facts locked/read-only by default;
+- allow a member to use a field-level **Report an issue / This is incorrect** action to submit an alternative value as evidence rather than silently overwrite the Product.
+
+When a scanned barcode does not match:
+- explain that LikeSized does not have information for that barcode yet;
+- open normal manual/community intake;
+- retain the scanned barcode behind the scenes and save it automatically with the new Product/identifier evidence when the Fit Report succeeds;
+- never make the member scan or type the same barcode twice.
+
+## Manual entry opening path
+
+Manual entry starts with:
+1. **Brand / Make** — required. Typeahead searches canonical LikeSized Brands and aliases first. A genuinely new Brand can be created only when no real match exists.
+2. **Item / Model** — required. Suggestions are narrowed to Products already associated with the selected Brand. A genuinely new Product remains provisional.
+
+The goal is to prevent duplicate identities such as `Levis`, `Levi's`, `Levi’s®`, and capitalization/punctuation variants from becoming separate Brands when they refer to the same Brand.
+
+## Final New Fit Report order — LOCKED
+
+The main Fit Report section is intentionally short and asks the member to make an explicit selection for each required controlled question.
+
+1. **Brand / Make** — required.
+2. **Item / Model** — required.
+3. **Garment Type** — required and specific/member-facing. LikeSized derives the broader Category.
+4. **Garment-specific controlled questions** — up to four for that Garment Type. Each displayed question requires a physical selection. The default is blank/disabled **Select an answer**; **Not sure** is always the final option and is never preselected. Selecting Not sure satisfies the interaction requirement but records no positive Product claim for that field.
+5. **Color family** — required and controlled.
+6. **Exact Size** — required using the canonical structured size controls. The size-system selector starts blank with **Choose your measurement system**; no size system or size is preselected.
+7. **Overall Fit Result** — required: Too Small / Snug / Just Right / Relaxed / Too Big.
+8. **Condition** — required: New / Used / Altered.
+9. **Fit Photo** — optional but remains grouped with the primary Fit Report because LikeSized wants this evidence. Uploaded Fit Photos follow the Shared evidence rule.
+10. **Fit notes** — optional.
+
+Then show a clear visual break:
+
+**Want to help build the LikeSized catalog?**
+*Everything below is optional. Add anything you know to help make this item's record better for the next person.*
+
+Optional community-catalog enrichment follows in this order:
+1. **Retail link**
+2. **UPC / Barcode** — omitted/hidden as a duplicate input when a barcode was already scanned; the scanned value is retained automatically.
+3. **Manufacturer Style / Article Number**
+4. **Material / Fabric Composition** — controlled add-material input so blends can be represented uniformly; no free-form material spelling variants. Percentages may be stored when explicitly supplied but are not required.
+5. **Product photo** — clear image of the product itself, separate from the member's Fit Photo and subject to moderation.
+6. **Department** — controlled.
+
+Initial controlled Department choices are:
+- Women's
+- Men's
+- Unisex
+- Girls'
+- Boys'
+- Kids / Unisex
+- Baby / Toddler
+- Not sure
+
+Department starts blank and **Not sure** is last.
+
+Initial controlled Material/Fabric vocabulary includes canonical values such as Cotton, Organic Cotton, Polyester, Recycled Polyester, Nylon, Recycled Nylon, Wool, Merino Wool, Cashmere, Linen, Rayon, Viscose, Modal, Lyocell/Tencel, Elastane/Spandex, Acrylic, Silk, Leather, Suede, Synthetic Leather, Other, and Not sure. The application must use one canonical controlled vocabulary rather than user-created spelling variants.
+
+## Existing/partial Product guidance
+
+The intake copy adapts to Product completeness:
+- **New Product:** tell the member they may be the first person helping build this Product's LikeSized record.
+- **Partially completed Product:** show known facts and invite the member to fill any missing information they know.
+- **Well-completed Product:** show the existing community-built facts locked by default; the member focuses on their own Fit Report and may report a specific incorrect Product field if necessary.
+
+Existing Product facts must not be hidden behind a generic yes/no confirmation question. The member should see the actual facts being relied on.
+
+## Starter catalog seed — LOCKED
+
+The owner-supplied initial Brand/Model seed list is part of launch preparation. Seed Products receive only the known starter facts—canonical Brand + Item/Model + Garment Type. Do not invent Color, material, identifiers, Department, attributes, descriptions, or retailer links merely to make a seed Product look complete. Community evidence fills those facts over time.
 
 ## V1 taxonomy
 Explore and New Fit Report must share one controlled garment taxonomy. No parallel category/type/style systems.
@@ -74,29 +169,27 @@ Top-level categories:
 
 Accessories are not V1.
 
-New Fit Report asks for the specific physical Type only; LikeSized derives the broad Category. Explore asks for the broad Category first, then exposes only Types in that Category. After a Type is selected, Explore and intake share the same zero-to-four optional controlled questions for that Type. **Not sure** is the first/default intake choice and records no claim. Color is required, controlled, and separate from the four-question ceiling.
+New Fit Report asks for the specific physical Type only; LikeSized derives the broad Category. Explore asks for the broad Category first, then exposes only Types in that Category. After a Type is selected, Explore and intake share the same zero-to-four controlled questions for that Type. In intake, displayed questions start blank, require a selection, and place **Not sure** last. Color is required, controlled, and separate from the four-question ceiling.
 
 The database keeps the approved member-facing Type set separate from legacy matching compatibility. `garment_types.intake_active` controls the Types selectable in New Fit Report and Explore. The older `active` flag and historical umbrella/plural keys may remain available internally so existing Products and calibrated matching rules keep working; those keys must not reappear as member-facing choices.
 
-The core New Fit Report intake is Brand, Item name, specific Garment type, applicable optional controlled questions, Color, exact Size, optional Product link/barcode/Style ID, Overall Fit Result, Garment condition, optional Shared Fit photo, and optional Fit notes. It does not ask for Market/cut segment, Fit Family, product description, visibility, buy-again, times worn, or a broad construction/fit-dimension questionnaire.
-
-New Fit Report starts with one **Find your item** search, not separate Brand/Item fields. It searches the canonical LikeSized catalog first. A member may then explicitly search the retail catalog if none of those cards is exact; this deliberate action avoids spending an external-catalog request on every broad keystroke. **Enter item manually** remains visible throughout as the final fallback. A selected retail card retains its full available Channel3 source payload, product ID, source URL, image URL, offers, variants, and structured attributes as private provenance attached to the one canonical Product. It does not create a provider-specific second catalog or automatically turn source text into member-controlled facts.
-
-For jeans/pants, owner review identified a need for explicit controlled structural descriptors such as:
+For jeans/pants, owner review identified explicit controlled structural descriptors such as:
 - leg shape/cut: Skinny, Slim, Straight, Relaxed, Wide, Bootcut, Flare;
 - rise: Low, Mid, High where applicable.
 
 The complete owner-approved per-Type mapping is recorded in the canonical master and implemented once in `lib/garment-taxonomy.ts`; do not create a second pants-only or Explore-only taxonomy.
 
 ## Material / stretch boundary
-- Material composition may be retained only from reliable manufacturer/product sources as background data.
-- Members do not enter/verify material and Material is not a V1 Browse filter.
+- Material/Fabric Composition is now an **optional community-catalog enrichment field** using controlled values; it is not part of the required Fit Report and must not become free text.
+- Community material evidence follows the same provenance/conflict rules as other Product facts.
+- Material does not affect the calibrated Fit Match/recommendation engine unless a later owner-approved audit explicitly adds it.
+- Material is not automatically a V1 Explore filter merely because it is stored; filter exposure requires its own approved product decision.
 - **Do not collect, classify, infer, or expose stretch as a current V1 member field/filter.**
 - Legacy stretch schema/PR #36 logic may remain dormant only for compatibility until deliberately audited. Dormant support does not make stretch a current product feature.
 
 # 5. Size normalization
 
-- Preserve original manufacturer/retailer size labels.
+- Preserve useful original manufacturer size labels when deliberately provided, but do not ask the member for the same size twice.
 - Normalize logical identities for alpha, numeric, waist×inseam, dress/work shirt, jacket, bra, shoe, length designation, and fallback sizes.
 - Formatting variants such as `3030`, `30x30`, `30 X 30`, `30×30`, and `30 x 30` normalize to one logical waist/inseam identity when appropriate.
 - Work shirts can decompose collar + sleeve, jackets chest + length, bras band + cup + sizing system.
@@ -296,9 +389,9 @@ Fit Alert remains separate at 85%+ garment-specific Match with legitimate releva
 - Color remains browsable/searchable even when card UI displays color separately from taxonomy tags;
 - Brand/Item name remain first-class canonical metadata;
 - no V1 stretch filter;
-- no member material filter.
+- Material storage does not automatically create a Material filter.
 
-## Garment card interaction
+## Garment card interaction and shopping
 - image priority: Shared wearer fit photo → valid canonical/product image → LikeSized garment-type fallback;
 - blank image state is invalid;
 - product/image → Garment Quick-Detail;
@@ -306,8 +399,11 @@ Fit Alert remains separate at 85%+ garment-specific Match with legitimate releva
 - **heart = Like**;
 - **wishlist control = wishlist/save action**;
 - heart likes save ordinary garment inspiration to LikeLocker → Garments; the Wish Locker control records separate purchase intent in LikeLocker → Wish Locker; future Gift Lists may reuse canonical products but must not collapse these private intents;
+- when the canonical Product has at least one valid retailer listing, relevant garment imagery/surfaces show the three-action set **Like + Wishlist + Shopping Cart/Shop**;
+- when no valid retailer listing exists, the Shopping Cart/Shop action disappears entirely rather than showing a dead or disabled purchase control;
+- the same conditional retail-link behavior applies to **Shop Here** or equivalent CTAs under Fit Reports/Product details and to shopping links presented from Wish Locker/Gift Lists;
 - Notify is not shown as a permanent normal action when useful Fit Matches exist; it appears in insufficient/no-useful-fit-evidence fallback states;
-- Like/Wishlist/Notify must be distinct tap targets and never open detail accidentally;
+- Like/Wishlist/Shop/Notify must be distinct tap targets and never open detail accidentally;
 - no stars.
 
 ## Mobile mini-browser
@@ -316,7 +412,22 @@ Fit Alert remains separate at 85%+ garment-specific Match with legitimate releva
 - underlying Explore state preserved but visually hidden;
 - overlay history supports garment/person/outfit/report exploration.
 
-# 11. LikeLocker / Wishlist / Gift Lists
+# 11. Retail listings, affiliate monetization, LikeLocker and Gift Lists
+
+## Retail listings — LOCKED
+- A canonical Product may have **multiple retailer listings**.
+- A newly contributed legitimate retail URL appends; it never overwrites another retailer/version.
+- Normalize URLs so the same effective listing is not duplicated repeatedly.
+- Preserve the original retailer URL/provenance even when an affiliate/tracking layer is later applied.
+- The same retailer URL attached to apparently different Products is a strong duplicate/conflict signal for review.
+- Dead or invalid links may later be marked inactive without erasing historical provenance.
+
+## Skimlinks / affiliate retail monetization — ROADMAP LOCKED
+- LikeSized plans to monetize eligible outbound retail traffic through **Skimlinks or an owner-approved equivalent affiliate layer**.
+- Affiliate monetization is a commerce layer over canonical retailer listings, never a Product-identity system.
+- The original canonical retailer URL/listing remains preserved; affiliate routing/tracking must not replace the underlying Product/listing evidence.
+- Affiliate disclosure, eligibility, click behavior, privacy/cookie implications, retailer exceptions, and production integration must be audited against the then-current Skimlinks requirements before launch.
+- No affiliate system may fabricate a Shop action when a valid retail listing does not exist.
 
 ## LikeLocker
 - previously approved private saved-fashion destination for canonical products/garments and saved Outfits;
@@ -337,7 +448,8 @@ Fit Alert remains separate at 85%+ garment-specific Match with legitimate releva
 - owner-controlled sharing only;
 - random member search must never reveal another person's recommended size;
 - raw measurements never exposed;
-- below sufficient confidence, say there is not enough fit data rather than fabricate a recommendation.
+- below sufficient confidence, say there is not enough fit data rather than fabricate a recommendation;
+- eligible retail links may be surfaced conditionally using the same canonical retailer/affiliate layer.
 
 # 12. Outfits / social content
 
@@ -350,14 +462,32 @@ Fit Alert remains separate at 85%+ garment-specific Match with legitimate releva
 - Owned Outfits live in My Closet.
 - Fit Twin designation never creates a second subscription; it can only exist for someone already followed.
 
-# 13. Moderation and catalog verification
+# 13. Admin moderation, duplicate review and catalog verification — LOCKED
 
-- Members can report Outfit posts and shared Fit Report photos with a controlled reason and optional details.
-- Only explicitly authorized admins can review all reports, dismiss reports, remove reported content, or resolve disputed catalog facts.
-- Removing inappropriate photo content removes its member-visible record and private Storage files; the moderation action remains in an append-only audit trail.
-- Member-supplied missing garment facts are provisional. Independent agreement corroborates them; disagreement automatically marks the canonical Product for admin review.
-- Admin-reviewed controlled tags become verified/locked values. Later member evidence cannot overwrite them and remains available only as conflict evidence.
-- Product confirmation, conflict review, and locking extend the one canonical Product evidence/provenance system. They never create a second catalog.
+Only explicitly authorized admins may use the administrative review surfaces.
+
+Admin must have distinct review queues/tabs for at least:
+- **Conflicting Product Facts**
+- **Possible Duplicates**
+- **Reported / Spam Content**
+- **Review / Moderation History**
+
+Catalog powers:
+- inspect competing field values, supporting independent members, evidence status, identifiers, retailer listings, and relevant Product/Fit Report context;
+- merge duplicate Brands/Products into the correct canonical record while retaining aliases, evidence, retailer links, Fit Reports, and history;
+- **split** a Product that was incorrectly combined, moving the correct identifiers/listings/evidence/reports to the resulting Product records without silent data loss;
+- choose/override the correct canonical Product value or description;
+- permanently **verify/lock** a Product field/description when the answer is known;
+- reopen a field only through an authorized audited admin action;
+- preserve later member disagreement as evidence without allowing it to overwrite a locked value.
+
+Content/moderation powers:
+- review reported Outfit posts, Fit Photos, Product Photos, spam intakes, and spam Fit Reports;
+- remove inappropriate or spam content and associated member-visible photo files where applicable;
+- close duplicate reports on the same removed target while preserving the report/action history;
+- retain an append-only accountable audit trail of who acted, when, what changed/was removed, and why.
+
+Member reports/flags never directly rewrite canonical Product truth or permanently delete content without the applicable authorized moderation path.
 
 # 14. Images / sharing
 
@@ -365,36 +495,42 @@ Fit Alert remains separate at 85%+ garment-specific Match with legitimate releva
 - If uploaded, the garment is Shared and the photo is visible to authenticated LikeSized members.
 - There is no private fit-photo mode.
 - Never use another member's personal fit photo as a generic product fallback.
+- Product Photo is a separate optional community-catalog image of the item itself and is subject to the Product evidence/moderation rules.
 - Outfit photo intake may accept JPEG, PNG, or WebP files up to 8 MB, but the original must not be stored directly.
 - Before upload, new outfit photos are converted to WebP as a display image capped at 600 KB and a feed image capped at 220 KB.
 - Outfit and Following feeds use the feed-sized image. The display image is reserved for detail/full presentation.
 - Existing legacy outfit-photo paths remain readable; new optimized paths must not break older posts.
 - Both files remain in the private, authenticated-member-readable `outfit-photos` bucket with owner-only writes/deletes.
 
-## Public homepage — LOCKED
+## Public homepage / FAQ — LOCKED
 
 - The public homepage remains useful without registration and includes the FAQ inline; public visitors must not need an account or an unfinished Help route to read it.
 - Homepage section order after the hero is **The Loop → What LikeSized Does → Help / FAQ**.
 - The three capability calls to action are **Find My Matches → / Shop Smarter → / Get Inspired →**.
 - Public Fit Twin, Following, Match, Fit Result, and privacy explanations must agree with the canonical product definitions and must not expose raw measurements.
+- Community-catalog copy should frame LikeSized as **a clothing catalog built by the people who actually wear it** and explain that members contribute what they confidently know while later independent members can strengthen or correct the record.
+- FAQ must explain that unknown Product details may be left blank in the optional community section, while the simple required observable garment questions still require an explicit answer or Not sure selection.
+- FAQ must explain that disagreement is preserved/reviewed rather than one member silently replacing another member's Product facts.
 
-# 14. Data-quality rule
+# 15. Data-quality rule
 
 **Controlled when possible. Normalize when necessary. Free text only when useful.**
 
-Search/autocomplete must prefer canonical brands/products before creation. Identifiers/URLs are normalized for matching while useful human-facing original values are preserved.
+Search/autocomplete must prefer canonical brands/products before creation. Identifiers/URLs are normalized for matching while useful human-facing original values are preserved. Hidden aliases handle reviewed spelling/punctuation variants without exposing duplicate Brands as separate catalog identities.
 
-# 15. Current V1 loop
+# 16. Current V1 loop
 
 1. Create/update a private versioned Fit Profile.
 2. Receive garment-relevant current-person Match context and eventual Fit Twin designation.
 3. Browse strong real-world historical garment evidence first.
 4. When strong same-product evidence is insufficient, use Help Me Size It as a clearly labeled fallback estimate and inspect Other Fit Reports.
-5. Log garments using canonical product identity, normalized size, Fit Result, optional controlled fit details/condition, and optional Shared photo; preserve immutable body state from that try-on.
-6. Follow useful people into My Circle; LikeSized may designate the strongest followed body matches as Fit Twins.
-7. Consume followed-person style/activity while keeping current-person matching separate from historical garment matching.
-8. Save ordinary garment and Outfit inspiration in LikeLocker; use Wish Locker separately for products specifically wanted for purchase.
-9. Create/share Outfits using existing Closet garments.
-10. Gift Lists may later share owner-approved wanted products with confidence-gated recommended sizes without revealing raw measurements.
+5. Log a garment by scanning a barcode against LikeSized or entering Brand/Make + Item/Model manually; complete the required observable Product/Fit fields and optional catalog-enrichment section; preserve the immutable body state from that try-on.
+6. Each independent contribution can improve the one canonical Product record; conflicts and possible duplicates flow to admin review rather than silent overwrite/merge.
+7. Follow useful people into My Circle; LikeSized may designate the strongest followed body matches as Fit Twins.
+8. Consume followed-person style/activity while keeping current-person matching separate from historical garment matching.
+9. Save ordinary garment and Outfit inspiration in LikeLocker; use Wish Locker separately for products specifically wanted for purchase.
+10. When a valid retailer listing exists, expose the conditional Shop action and route eligible outbound commerce through the approved affiliate layer without changing Product identity.
+11. Create/share Outfits using existing Closet garments.
+12. Gift Lists may later share owner-approved wanted products with confidence-gated recommended sizes and eligible retail links without revealing raw measurements.
 
 For recovery status, roadmap order, implementation completeness, deployment state, and exact next work, read `docs/AI_MASTER_LOG.md`.

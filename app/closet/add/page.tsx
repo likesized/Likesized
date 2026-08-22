@@ -27,7 +27,7 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
     brand_name: product.brand.name,
     garment_type_key: product.garment_type_key,
     manufacturer_style_number: null,
-    market_segment: product.market_segment,
+    market_segment: "unknown",
     department_key: null,
     image_url: product.image_url,
     attributes: [],

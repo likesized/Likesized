@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SIZE_KINDS, type GarmentSizeKind } from "@/lib/domain";
+import { useCatalogGarment } from "./CatalogGarmentFields";
 import styles from "./fitReport.module.css";
 
 const NOT_SURE = "not_sure";
@@ -52,6 +53,7 @@ function FixedOptions({ values }: { values: string[] }) {
 }
 
 export function GarmentSizeFields() {
+  const { product } = useCatalogGarment();
   const [kind, setKind] = useState<GarmentSizeKind | "">("");
   const [alpha, setAlpha] = useState("");
   const [numeric, setNumeric] = useState("");
@@ -86,6 +88,25 @@ export function GarmentSizeFields() {
     setLength("");
     setFreeform("");
   }
+
+  useEffect(() => {
+    setKind(product?.default_size_kind ?? "");
+    setAlpha("");
+    setNumeric("");
+    setWaist("");
+    setInseam("");
+    setCollar("");
+    setSleeve("");
+    setJacket("");
+    setJacketLength("");
+    setBraBand("");
+    setBraCup("");
+    setBraSystem("");
+    setShoe("");
+    setShoeSystem("");
+    setLength("");
+    setFreeform("");
+  }, [product?.id, product?.default_size_kind]);
 
   const normalizedLabel = useMemo(() => {
     switch (kind) {
@@ -123,6 +144,7 @@ export function GarmentSizeFields() {
           <option value="" disabled>Choose your measurement system</option>
           {SIZE_KINDS.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}
         </select>
+        {product?.default_size_kind ? <span className="fieldHelp">Preselected from prior Fit Reports. Change it if your item uses a different size system.</span> : null}
       </label>
 
       {kind === "alpha" ? <label>Letter size

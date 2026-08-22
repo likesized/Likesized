@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { addGarment } from "@/app/closet/actions";
 import { CatalogColorField, CatalogCommunityEnrichment, CatalogGarmentFields } from "@/app/closet/add/CatalogGarmentFields";
 import { FitReportForm } from "@/app/closet/add/FitReportForm";
+import { FitReportSuccessModal } from "@/app/closet/add/FitReportSuccessModal";
 import { GarmentSizeFields } from "@/app/closet/add/GarmentSizeFields";
 import styles from "@/app/closet/add/fitReport.module.css";
 import { EXPLORE_FIXTURE_PRODUCTS, allowExploreFixtures } from "@/lib/explore-fixtures";
@@ -69,17 +69,7 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
         : null;
 
   return <main className="pageShell addGarmentShell">
-    {successClosetItemId ? <div className={styles.successOverlay} role="dialog" aria-modal="true" aria-labelledby="fit-report-success-title">
-      <div className={styles.successCard}>
-        <span className="eyebrow">{wasUpdated ? "FIT REPORT UPDATED" : "FIT REPORT ADDED"}</span>
-        <h2 id="fit-report-success-title">{wasUpdated ? "Thanks! Your existing Fit Report has been updated." : "Thanks! Your Fit Report has been added."}</h2>
-        <p>{wasUpdated ? "This matched the same item, size, objective garment variant, and body profile, so LikeSized updated your existing report instead of counting a duplicate." : "You can view it in your Closet or start styling the item right now."}</p>
-        <div className={styles.successActions}>
-          <Link className="secondaryButton" href="/closet">View it in My Closet</Link>
-          <Link className="primaryButton" href={`/outfits/new?closet_item_id=${encodeURIComponent(successClosetItemId)}`}>Style this item</Link>
-        </div>
-      </div>
-    </div> : null}
+    {successClosetItemId ? <FitReportSuccessModal closetItemId={successClosetItemId} wasUpdated={wasUpdated} /> : null}
 
     <div className={`pageTitle ${styles.hero}`}><span className="eyebrow">MY CLOSET · NEW FIT REPORT</span><h1>Share how an item actually fits.</h1><p>Tell us a little about the garment so we can make your Fit Report useful to others.</p></div>
     <FitReportForm action={fixtureMode ? undefined : addGarment}>

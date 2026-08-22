@@ -445,7 +445,7 @@ Rules:
 - broad/generic entries must remain Pending / Needs Enrichment / Needs Review until resolved rather than falsely presented as verified exact Products;
 - reuse existing cached benchmark results before spending another search.
 
-Current branch seed behavior that directly inserts all starter entries into `products` is implementation debt under this new architecture and must be reconciled before production through later canonical migration/state handling. Do not rewrite an already-applied migration.
+The branch now uses a later canonical reconciliation migration after the earlier provisional seed migration: it retains the 150 in the catalog-candidate/enrichment pipeline and removes only empty/unreferenced provisional seed Products. Any starter Product that already gained real evidence remains preserved for review. This branch state is not production truth until fresh replay and owner-approved promotion pass.
 
 # 13. Controlled garment taxonomy — LOCKED
 
@@ -642,30 +642,49 @@ Fit Alert remains separate at 85%+ garment-specific Match with legitimate releva
 - Like, Wishlist, Shop and Notify are distinct tap targets;
 - no stars.
 
-# 20. Retail listings + affiliate monetization — LOCKED ROADMAP
+# 20. Retail listings + affiliate monetization — OWNER LOCKED
 
-## Retail listings
-- one canonical Product may have multiple retailer listings;
-- new valid listing appends/dedupes rather than overwriting another retailer;
-- normalize URLs;
+## Retail destinations
+A canonical Product may have **zero, one, or multiple** valid retailer listings/destinations.
+
+- retailer URLs are listing/destination data, never Product identity;
+- member-provided retailer URLs are accepted only after validation/normalization and retailer/domain recognition;
+- store the clean provider-independent destination; members never need to paste affiliate-formatted URLs;
+- append/dedupe legitimate destinations rather than overwriting another retailer;
 - preserve original URL/provenance;
-- pending-submission retailer URL remains candidate evidence until Product mapping;
-- same URL on apparently different Products is a strong duplicate/conflict signal;
-- dead links may later be marked inactive without erasing history.
+- pending-submission retailer URLs remain candidate evidence until Product mapping;
+- same normalized URL on apparently different Products is a strong duplicate/conflict signal;
+- dead links may later be marked inactive without erasing history;
+- a legitimate retailer that is not currently affiliate-monetizable may still be a normal outbound destination.
 
-## Conditional shopping UI
-When a valid canonical retailer listing exists, relevant garment surfaces show:
+## Conditional shopping behavior
+- **Zero valid retailer links:** no cart/Shop action renders anywhere for that Product. No disabled placeholder or dead-end control.
+- **Exactly one valid retailer link:** the cart/Shop action routes directly to that retailer.
+- **Multiple valid retailer links:** the cart/Shop action opens one compact retailer picker showing the valid retailer choices for that exact canonical Product.
+- member-facing UI shows a clean retailer name such as **Nordstrom**, **Macy's**, or **Levi's**, never a raw URL as the shopping label.
+- do not silently choose or rank a retailer because it pays LikeSized more commission. Future ordering may use shopper-value signals such as exact variant match, reliable availability, or price when those data are trustworthy.
+
+Where a valid destination exists, relevant garment actions use:
 **Like + Wishlist + Shopping Cart/Shop**.
 
-No valid listing → no Shop action.
+The same zero/one/multiple-destination behavior applies to:
+- garment images/cards/details where shopping is approved;
+- Product/Garment detail;
+- **Shop Here** under Product/Fit Report surfaces;
+- Wish Locker;
+- Gift Lists;
+- other approved shopping surfaces.
 
-Apply consistently to Product/Garment detail, Wish Locker, Gift Lists and other approved shopping surfaces.
+Like/Wishlist/Shopping/Notify are distinct targets and must never open detail accidentally.
 
 ## Skimlinks / affiliate layer
 - integrate Skimlinks or owner-approved equivalent only after canonical retailer-listing behavior is stable;
-- preserve original retailer URL beneath affiliate routing;
-- audit current disclosure/privacy/cookie/merchant requirements before production;
-- affiliate commission never affects Match, size recommendation, Product identity, search relevance or ranking.
+- aggregator routing may later be overridden by direct affiliate programs without changing the canonical clean retailer destination;
+- preserve the original retailer URL beneath affiliate routing;
+- internal click/source tracking may identify the LikeSized surface producing the click, but **private body measurements must never be exposed to retailers or affiliate providers**;
+- audit then-current disclosure/privacy/cookie/merchant eligibility requirements before production;
+- affiliate commission never affects Match, size recommendation, Product identity, retailer selection, search relevance or ranking;
+- locked disclosure copy: **“LikeSized may earn a commission from purchases made through our shopping links.”** It should be unobtrusive but visible wherever required for the shopping/affiliate experience.
 
 # 21. LikeLocker / Wish Locker / Gift Lists
 
@@ -682,7 +701,8 @@ LikeSized Gift Lists remain roadmap-locked after Product/retailer/save/recommend
 - no raw measurements;
 - owner-controlled sharing;
 - insufficient confidence → no invented size;
-- eligible retailer/affiliate links allowed without influencing sizing/ranking.
+- eligible retailer/affiliate links allowed without influencing sizing/ranking;
+- shopping follows the same zero/one/multiple-retailer behavior and shared retailer picker.
 
 # 22. Outfits / Style Feed — V1 RETAINED
 
@@ -748,7 +768,7 @@ Search/autocomplete prefers canonical Brands/Products before fallback. Identifie
 11. Duplicate/conflicting data flows to audited review/merge/split/lock behavior.
 12. Follow useful people into My Circle; LikeSized may designate strongest followed body matches as Fit Twins.
 13. Save inspiration to LikeLocker and purchase intent to Wish Locker.
-14. Valid retailer listings enable Shop and later affiliate routing without affecting fit/search logic.
+14. Valid retailer listings enable direct shopping or the shared retailer picker and later affiliate routing without affecting fit/search logic or retailer choice by commission.
 15. Create/share Outfits from owned Closet garments.
 16. Gift Lists may later share owner-approved wanted Products with confidence-gated recommended sizes and eligible retail links without exposing raw measurements.
 

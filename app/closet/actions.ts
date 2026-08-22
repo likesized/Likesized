@@ -45,8 +45,31 @@ function externalCatalogRecord(raw: string) {
     const value = JSON.parse(raw) as { externalProductId?: unknown; sourceRecord?: unknown; imageUrl?: unknown };
     if (typeof value.externalProductId !== "string" || !value.externalProductId.trim() || value.externalProductId.length > 200 || !value.sourceRecord || typeof value.sourceRecord !== "object" || Array.isArray(value.sourceRecord)) return null;
     if (JSON.stringify(value.sourceRecord).length > 512_000) return null;
-    return { externalProductId: value.externalProductId.trim(), sourceRecord: value.sourceRecord, imageUrl: typeof value.imageUrl === "string" && value.imageUrl.length <= 1000 ? value.imageUrl : null };
+    return { externalProductId: value.externalProductId.trim(), sourceRecord: value.sourceRecord as Record<string, unknown>, imageUrl: typeof value.imageUrl === "string" && value.imageUrl.length <= 1000 ? value.imageUrl : null };
   } catch { return null; }
+}
+function importedColorLabels(value: unknown, labels = new Set<string>()): string[] {
+  if (Array.isArray(value)) { for (const child of value) importedColorLabels(child, labels); return [...labels].slice(0, 120); }
+  if (!value || typeof value !== "object") return [...labels].slice(0, 120);
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    if (/color|colour|swatch|shade|wash/i.test(key)) {
+      if (typeof child === "string" && child.trim() && child.trim().length <= 120) labels.add(child.trim());
+      if (Array.isArray(child)) for (const option of child) if (typeof option === "string" && option.trim() && option.trim().length <= 120) labels.add(option.trim());
+    }
+    importedColorLabels(child, labels);
+  }
+  return [...labels].slice(0, 120);
+}
+function colorFamilyForImportedLabel(label: string): string | null {
+  const value = label.toLowerCase();
+  if (/black/.test(value)) return "black"; if (/white/.test(value)) return "white"; if (/grey|gray/.test(value)) return "gray";
+  if (/silver/.test(value)) return "silver"; if (/brown|chocolate|mocha|espresso|camel/.test(value)) return "brown";
+  if (/tan|beige|khaki|nude/.test(value)) return "tan_beige"; if (/cream|ivory|off.white|ecru/.test(value)) return "cream_ivory";
+  if (/red|burgundy|maroon|wine|crimson|coral/.test(value)) return "red"; if (/orange|rust/.test(value)) return "orange";
+  if (/yellow|mustard/.test(value)) return "yellow"; if (/green|olive|sage|mint/.test(value)) return "green";
+  if (/blue|navy|teal|aqua|turquoise/.test(value)) return "blue"; if (/purple|violet|lilac|lavender/.test(value)) return "purple";
+  if (/pink|rose|blush|magenta/.test(value)) return "pink"; if (/gold/.test(value)) return "gold"; if (/multi|print|pattern/.test(value)) return "multicolor";
+  return null;
 }
 
 async function findBrand(supabase: SupabaseClient, name: string) {
@@ -172,16 +195,29 @@ async function getNormalizedSize(supabase: SupabaseClient, structuredLabel: stri
   throw insertError;
 }
 
-async function getOrCreateVariant(supabase: SupabaseClient, productId: string, normalizedSizeId: string, originalSizeLabel: string, colorFamily: string, marketSegment: GarmentMarketSegment, sku: string | null) {
-  const colorLabel = COLOR_FAMILIES.find((item) => item.value === colorFamily)?.label ?? colorFamily;
-  const colorNormalized = normalizeSearchText(colorLabel);
-  const { data: existing, error } = await supabase.from("product_variants").select("id").eq("product_id", productId).eq("normalized_size_id", normalizedSizeId).eq("color_family_key", colorFamily).maybeSingle();
+async function getOrCreateVariant(supabase: SupabaseClient, productId: string, normalizedSizeId: string, originalSizeLabel: string, colorFamily: string | null, marketSegment: GarmentMarketSegment, sku: string | null) {
+  const colorLabel = colorFamily ? (COLOR_FAMILIES.find((item) => item.value === colorFamily)?.label ?? colorFamily) : null;
+  const colorNormalized = colorLabel ? normalizeSearchText(colorLabel) : null;
+  let lookup = supabase.from("product_variants").select("id").eq("product_id", productId).eq("normalized_size_id", normalizedSizeId);
+  lookup = colorFamily ? lookup.eq("color_family_key", colorFamily) : lookup.is("color_family_key", null);
+  const { data: existing, error } = await lookup.maybeSingle();
   if (error) throw error;
   if (existing) return existing.id as string;
   const { data, error: insertError } = await supabase.from("product_variants").insert({ product_id: productId, normalized_size_id: normalizedSizeId, size_label: originalSizeLabel, color_label: colorLabel, color_normalized: colorNormalized, color_family_key: colorFamily, market_segment: marketSegment, sku }).select("id").single();
   if (!insertError) return data.id as string;
   if (insertError.code === "23505") { const { data: raced } = await supabase.from("product_variants").select("id").eq("product_id", productId).eq("normalized_size_id", normalizedSizeId).eq("color_family_key", colorFamily).single(); return raced!.id as string; }
   throw insertError;
+}
+
+async function saveImportedColorVariants(supabase: SupabaseClient, productId: string, marketSegment: GarmentMarketSegment, sourceRecord: Record<string, unknown>) {
+  for (const colorLabel of importedColorLabels(sourceRecord)) {
+    const colorNormalized = normalizeSearchText(colorLabel);
+    const { data: existing, error } = await supabase.from("product_variants").select("id").eq("product_id", productId).eq("color_normalized", colorNormalized).limit(1).maybeSingle();
+    if (error) throw error;
+    if (existing) continue;
+    const { error: insertError } = await supabase.from("product_variants").insert({ product_id: productId, size_label: "Imported color", color_label: colorLabel, color_family_key: colorFamilyForImportedLabel(colorLabel), market_segment: marketSegment });
+    if (insertError && insertError.code !== "23505") throw insertError;
+  }
 }
 
 async function recordIdentifier(supabase: SupabaseClient, productId: string, variantId: string, original: string, kind: "manufacturer_style" | "sku" | "upc" | "barcode") {
@@ -249,7 +285,8 @@ export async function addGarment(formData: FormData) {
   const fitNotes = text(formData, "fit_notes") || null;
   const wearsCount = 0;
 
-  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId&&!UUID.test(existingProductId)) || !GARMENT_TYPE_BY_KEY.has(garmentType) || (existingProductId&&!CATALOG_CONFIRMATIONS.has(catalogConfirmation)) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || !originalSizeLabel || originalSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !COLOR_FAMILY_KEYS.has(colorFamily) || !FIT_RESULTS.has(fit) || !REPORTED_CONDITIONS.has(reportedCondition) || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000) || (catalogSourceUrl && catalogSourceUrl.length > 1000) || (catalogSourceProvider && !EXTERNAL_CATALOG_PROVIDERS.has(catalogSourceProvider)) || (catalogSourceRecord && !catalogSourceProvider) || identifier.length>120 || (styleNumber&&styleNumber.length>100)) fail("invalid_fields");
+  const importedColors = catalogSourceRecord ? importedColorLabels(catalogSourceRecord.sourceRecord) : [];
+  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId&&!UUID.test(existingProductId)) || !GARMENT_TYPE_BY_KEY.has(garmentType) || (existingProductId&&!CATALOG_CONFIRMATIONS.has(catalogConfirmation)) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || !originalSizeLabel || originalSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || (!COLOR_FAMILY_KEYS.has(colorFamily) && !importedColors.length) || !FIT_RESULTS.has(fit) || !REPORTED_CONDITIONS.has(reportedCondition) || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000) || (catalogSourceUrl && catalogSourceUrl.length > 1000) || (catalogSourceProvider && !EXTERNAL_CATALOG_PROVIDERS.has(catalogSourceProvider)) || (catalogSourceRecord && !catalogSourceProvider) || identifier.length>120 || (styleNumber&&styleNumber.length>100)) fail("invalid_fields");
   if (productUrl) { try { normalizeProductUrl(productUrl); } catch { fail("invalid_fields"); } }
   if (catalogSourceUrl) { try { normalizeProductUrl(catalogSourceUrl); } catch { fail("invalid_fields"); } }
 
@@ -297,7 +334,8 @@ export async function addGarment(formData: FormData) {
 
     const normalizedSizeId = await getNormalizedSize(supabase, structuredSizeLabel, sizeKind, sizingSystem);
     const identifierKind = identifier && /^\d{8}$|^\d{12,14}$/.test(normalizeIdentifier(identifier)) ? "upc" : "sku";
-    const variantId = await getOrCreateVariant(supabase, product.id, normalizedSizeId, originalSizeLabel, colorFamily, product.market_segment, identifierKind === "sku" ? identifier || null : null);
+    if (catalogSourceRecord) await saveImportedColorVariants(supabase, product.id, product.market_segment, catalogSourceRecord.sourceRecord);
+    const variantId = await getOrCreateVariant(supabase, product.id, normalizedSizeId, originalSizeLabel, COLOR_FAMILY_KEYS.has(colorFamily) ? colorFamily : null, product.market_segment, identifierKind === "sku" ? identifier || null : null);
 
     const { error: closetError } = await supabase.from("closet_items").insert({ id: closetItemId, user_id: userId, product_id: product.id, variant_id: variantId, size_label: originalSizeLabel, normalized_size_id: normalizedSizeId, visibility, wears_count: wearsCount });
     if (closetError) throw closetError;

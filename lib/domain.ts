@@ -1,5 +1,5 @@
 export type GarmentMarketSegment = "mens" | "womens" | "unisex" | "kids_youth" | "unknown";
-export type GarmentSizeKind = "alpha" | "numeric" | "waist_inseam" | "dress_shirt" | "jacket" | "bra" | "shoe" | "length_designation" | "freeform";
+export type GarmentSizeKind = "alpha" | "numeric" | "waist_inseam" | "dress_shirt" | "jacket" | "bra" | "shoe" | "length_designation" | "freeform" | "not_sure";
 export type ClosetVisibility = "private" | "shared";
 export type EvidenceLevel = "exact_variant" | "exact_product" | "product_family" | "similar_garments" | "brand_garment_type" | "category_fit";
 export type MeasurementUnit = "in" | "cm" | "lb" | "kg";
@@ -23,7 +23,8 @@ export const SIZE_KINDS: ReadonlyArray<{ value: GarmentSizeKind; label: string }
   { value: "bra", label: "Bra" },
   { value: "shoe", label: "Shoe" },
   { value: "length_designation", label: "Petite / regular / tall / length" },
-  { value: "freeform", label: "Other manufacturer size" },
+  { value: "freeform", label: "Other" },
+  { value: "not_sure", label: "Not sure" },
 ];
 
 export const EVIDENCE_LABELS: Record<EvidenceLevel, string> = {

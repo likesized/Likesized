@@ -2,6 +2,7 @@
 
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { COLOR_FAMILIES, GARMENT_CATEGORIES, GARMENT_TYPES, questionsForGarmentType } from "@/lib/garment-taxonomy";
+import styles from "./fitReport.module.css";
 
 type Brand = { id: string; name: string };
 type ProductAttribute = { attribute_key: string; option_key: string; source_status: string };
@@ -29,6 +30,7 @@ type CatalogContextValue = {
   scannedBarcode: string;
 };
 const CatalogContext = createContext<CatalogContextValue>({ product: null, scannedBarcode: "" });
+const PERCENTAGES = Array.from({ length: 100 }, (_, index) => String(index + 1));
 
 function productAttributes(product: CatalogProduct | null) {
   const values: Record<string, string> = {};
@@ -42,11 +44,14 @@ function applicableQuestions(typeKey: string, answers: Record<string, string>) {
 }
 
 export function CatalogColorField() {
-  return <label>Color<select name="color_family" defaultValue="" required><option value="" disabled>Select a color</option>{COLOR_FAMILIES.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>;
+  const colors = [...COLOR_FAMILIES].sort((a, b) => a.label.localeCompare(b.label));
+  return <label>Color<select name="color_family" defaultValue="" required><option value="" disabled>Select a color</option>{colors.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>;
 }
 
 export function CatalogCommunityEnrichment({ materials, departments }: { materials: CatalogOption[]; departments: CatalogOption[] }) {
   const { product, scannedBarcode } = useContext(CatalogContext);
+  const sortedMaterials = useMemo(() => [...materials].sort((a, b) => a.label.localeCompare(b.label)), [materials]);
+  const sortedDepartments = useMemo(() => [...departments].sort((a, b) => a.label.localeCompare(b.label)), [departments]);
   const knownMaterials = useMemo(() => (product?.materials ?? []).filter((row) => row.source_status !== "rejected"), [product]);
   const knownDepartment = product?.department_key ?? "";
   const knownStyle = product?.manufacturer_style_number ?? "";
@@ -78,8 +83,8 @@ export function CatalogCommunityEnrichment({ materials, departments }: { materia
 
   return <section className="fitDimensionFields catalogOptionalSection">
     <div className="privacyNote">
-      <b>Want to help us identify/build this item?</b>
-      <div>Everything below is optional. Add anything you know to help LikeSized resolve or enrich the catalog record.</div>
+      <b>Help us learn more about this item</b>
+      <div>Share any extra details you know. Every bit of information helps us build a better garment listing.</div>
     </div>
 
     <label>Retail link <span className="muted inlineMuted">optional</span>
@@ -106,10 +111,14 @@ export function CatalogCommunityEnrichment({ materials, departments }: { materia
       ? <label>Manufacturer Style / Article Number <span className="muted inlineMuted">saved</span><input value={knownStyle} readOnly /><button className="catalogBackButton" type="button" onClick={() => setStyleIssue(true)}>Report an issue</button></label>
       : <label>Manufacturer Style / Article Number <span className="muted inlineMuted">optional</span><input name={product && knownStyle ? "identity_issue_style" : "style_number"} maxLength={100} defaultValue={product && knownStyle ? "" : knownStyle} placeholder={product && knownStyle ? "Enter what you believe is correct" : "Style, article, or model number"} /></label>}
 
+    {product && knownDepartment && !departmentIssue
+      ? <label>Department <span className="muted inlineMuted">saved</span><input value={sortedDepartments.find((item) => item.key === knownDepartment)?.label ?? knownDepartment} readOnly /><button className="catalogBackButton" type="button" onClick={() => setDepartmentIssue(true)}>Report an issue</button></label>
+      : <label>Department <span className="muted inlineMuted">optional</span><select name="department" defaultValue=""><option value="">Choose a department</option>{sortedDepartments.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}<option value="not_sure">Not sure</option></select></label>}
+
     <fieldset className="fitDimensionFields">
       <legend>Material / Fabric Composition <span className="muted inlineMuted">optional</span></legend>
       {knownMaterials.length && !materialIssue ? <>
-        <p className="fieldHelp">Saved: {knownMaterials.map((row) => `${materials.find((item) => item.key === row.material_key)?.label ?? row.material_key}${row.percentage == null ? "" : ` ${row.percentage}%`}`).join(" · ")}</p>
+        <p className="fieldHelp">Saved: {knownMaterials.map((row) => `${sortedMaterials.find((item) => item.key === row.material_key)?.label ?? row.material_key}${row.percentage == null ? "" : ` ${row.percentage}%`}`).join(" · ")}</p>
         <button className="catalogBackButton" type="button" onClick={() => setMaterialIssue(true)}>Report an issue</button>
       </> : null}
       {materialsEditable ? <>
@@ -117,10 +126,13 @@ export function CatalogCommunityEnrichment({ materials, departments }: { materia
           {materialRows.map((row, index) => <div className="fieldPair" key={index}>
             <label>Material<select value={row.material_key} onChange={(event) => setMaterialRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, material_key: event.target.value } : item))}>
               <option value="">Choose a material</option>
-              {materials.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
+              {sortedMaterials.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
               <option value="not_sure">Not sure</option>
             </select></label>
-            <label>Percentage <span className="muted inlineMuted">optional</span><input type="number" inputMode="decimal" min="0" max="100" step="0.1" value={row.percentage} disabled={!row.material_key || row.material_key === "not_sure"} onChange={(event) => setMaterialRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, percentage: event.target.value } : item))} placeholder="e.g. 98" /></label>
+            <label>Percentage <span className="muted inlineMuted">optional</span><select value={row.percentage} disabled={!row.material_key || row.material_key === "not_sure"} onChange={(event) => setMaterialRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, percentage: event.target.value } : item))}>
+              <option value="">Leave blank if unknown</option>
+              {PERCENTAGES.map((value) => <option value={value} key={value}>{value}%</option>)}
+            </select></label>
             {materialRows.length > 1 ? <button className="catalogBackButton" type="button" onClick={() => setMaterialRows((current) => current.filter((_, rowIndex) => rowIndex !== index))}>Remove material</button> : null}
           </div>)}
         </div>
@@ -134,10 +146,6 @@ export function CatalogCommunityEnrichment({ materials, departments }: { materia
       <input name="product_photo" type="file" accept="image/jpeg,image/png,image/webp" />
       <span className="fieldHelp">A clear photo of the item by itself helps LikeSized identify the exact product.</span>
     </label>
-
-    {product && knownDepartment && !departmentIssue
-      ? <label>Department <span className="muted inlineMuted">saved</span><input value={departments.find((item) => item.key === knownDepartment)?.label ?? knownDepartment} readOnly /><button className="catalogBackButton" type="button" onClick={() => setDepartmentIssue(true)}>Report an issue</button></label>
-      : <label>Department <span className="muted inlineMuted">optional</span><select name="department" defaultValue=""><option value="">Choose a department</option>{departments.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}<option value="not_sure">Not sure</option></select></label>}
   </section>;
 }
 
@@ -218,7 +226,7 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
       stopScanner();
       resetDetails();
       setScannedBarcode(barcode);
-      setNotice("We don’t have this barcode in LikeSized yet. Fill in the basics and keep going. We’ll keep the barcode with your submission for catalog review.");
+      setNotice("We don’t have this item yet, but no problem — you can help us add it with just a few quick questions.");
       setStep("details");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Barcode lookup failed. Enter the item manually instead.");
@@ -283,16 +291,19 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
     setStep("start");
   }
 
-  if (step === "start") return <section className="fitDimensionFields">
-    <div className="privacyNote"><b>Search the LikeSized catalog first.</b><div>Scan the barcode if you have the item handy, or enter it manually. If we don’t know the exact Product yet, you can still log your garment.</div></div>
-    <button className="catalogSearchButton" type="button" onClick={() => { setError(""); setStep("scan"); }}>Scan barcode</button>
-    <div className="fieldHelp">or</div>
-    <button className="catalogManualButton" type="button" onClick={beginManual}>Enter item manually</button>
+  if (step === "start") return <section className={`fitDimensionFields ${styles.catalogStart}`}>
+    <b className={styles.catalogStartTitle}>Search the LikeSized catalog first.</b>
+    <div className={styles.catalogStartActions}>
+      <button className="catalogSearchButton" type="button" onClick={() => { setError(""); setStep("scan"); }}>Scan barcode</button>
+      <span className="fieldHelp">or</span>
+      <button className="catalogManualButton" type="button" onClick={beginManual}>Enter item manually</button>
+    </div>
+    <p className={styles.catalogStartCopy}>Have the item with you? Scan the barcode. Otherwise, enter it manually and we’ll take it from there.</p>
   </section>;
 
-  if (step === "scan") return <section className="fitDimensionFields">
+  if (step === "scan") return <section className={`fitDimensionFields ${styles.scanSection}`}>
     <button className="catalogBackButton" type="button" onClick={() => { stopScanner(); setError(""); setStep("start"); }}>← Back</button>
-    <p className="fieldHelp">Scan the barcode on the item. LikeSized checks its own community catalog.</p>
+    <p className="fieldHelp">Scan the barcode and we’ll check the LikeSized catalog.</p>
     <video className="barcodeScanner" ref={scannerVideo} muted playsInline />
     {loadingBarcode ? <p className="fieldHelp" role="status">Checking LikeSized…</p> : null}
     {error ? <p className="fieldHelp" role="status">{error}</p> : null}
@@ -306,14 +317,14 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
     ? isComplete
       ? "This item’s community record is filled in. Review the locked details, report anything that looks wrong, then tell us how it fits."
       : "Built by the community. Fill in anything you know that’s still missing, and report anything that looks wrong."
-    : notice || "Don’t see it yet? Add the basics and keep going. Your garment saves immediately while LikeSized reviews the catalog identity.";
+    : notice || "We don’t have this item yet, but no problem — you can help us add it with just a few quick questions.";
 
   return <>
     <input type="hidden" name="existing_product_id" value={product?.id ?? ""}/>
     <CatalogContext.Provider value={{ product, scannedBarcode }}>
       <section className="fitDimensionFields">
         <button className="catalogBackButton" type="button" onClick={reset}>← Start over</button>
-        <div className="privacyNote"><b>{product ? "Community-built product info" : "Product not resolved yet"}</b><div>{guidance}</div><div>Every Fit Report makes LikeSized smarter.</div></div>
+        <div className="privacyNote">{product ? <><b>Community-built product info</b><div>{guidance}</div></> : <b>{guidance}</b>}</div>
         {product?.image_url ? <div className="catalogSelectedItem"><img src={product.image_url} alt=""/><span><small>Selected item</small><b>{product.brand_name} · {product.name}</b></span></div> : null}
 
         <div className="fieldPair">

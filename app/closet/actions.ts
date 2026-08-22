@@ -9,7 +9,8 @@ import type { GarmentMarketSegment, GarmentSizeKind } from "@/lib/domain";
 const FIT_RESULTS = new Set(["too_small", "snug", "just_right", "relaxed", "too_big"]);
 const REPORTED_CONDITIONS = new Set(["new", "used", "altered"]);
 const COLOR_FAMILY_KEYS = new Set(COLOR_FAMILIES.map((item) => item.value));
-const SIZE_KINDS = new Set(["alpha", "numeric", "waist_inseam", "dress_shirt", "jacket", "bra", "shoe", "length_designation", "freeform"]);
+const SIZE_KINDS = new Set(["alpha", "numeric", "waist_inseam", "dress_shirt", "jacket", "bra", "shoe", "length_designation", "freeform", "not_sure"]);
+const ADULT_DEPARTMENTS = new Set(["womens", "mens", "unisex"]);
 const PHOTO_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const TRACKING_PARAMS = new Set(["fbclid", "gclid", "dclid", "mc_cid", "mc_eid", "msclkid"]);
 const PRODUCT_ATTRIBUTE_PREFIX = "product_attribute__";
@@ -48,7 +49,7 @@ function parseMaterials(raw: string): MaterialClaim[] {
     const materialKey = typeof record.material_key === "string" ? record.material_key.trim() : "";
     const percentageRaw = record.percentage;
     const percentage = percentageRaw === null || percentageRaw === "" || percentageRaw === undefined ? null : Number(percentageRaw);
-    if (!materialKey || materialKey.length > 80 || (percentage !== null && (!Number.isFinite(percentage) || percentage < 0 || percentage > 100))) throw new Error("Invalid materials");
+    if (!materialKey || materialKey.length > 80 || (percentage !== null && (!Number.isInteger(percentage) || percentage < 1 || percentage > 100))) throw new Error("Invalid materials");
     rows.push({ material_key: materialKey, percentage });
   }
   if (new Set(rows.map((row) => row.material_key)).size !== rows.length) throw new Error("Duplicate materials");
@@ -191,6 +192,7 @@ export async function addGarment(formData: FormData) {
 
   if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId && !UUID.test(existingProductId)) || !GARMENT_TYPE_BY_KEY.has(garmentType) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !COLOR_FAMILY_KEYS.has(colorFamily) || !FIT_RESULTS.has(fit) || !REPORTED_CONDITIONS.has(reportedCondition) || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000) || identifier.length > 120 || (styleNumber && styleNumber.length > 100) || (styleIssue && styleIssue.length > 180) || (barcodeIssue && barcodeIssue.length > 120)) fail("invalid_fields");
   if ((identifier && !/^\d{6,32}$/.test(identifier.replace(/\D/g, ""))) || (barcodeIssue && !/^\d{6,32}$/.test(barcodeIssue.replace(/\D/g, "")))) fail("invalid_fields");
+  if (department && !ADULT_DEPARTMENTS.has(department)) fail("invalid_fields");
   let normalizedProductUrl: string | null = null;
   if (productUrl) { try { normalizedProductUrl = normalizeProductUrl(productUrl); } catch { fail("invalid_fields"); } }
 
@@ -364,5 +366,5 @@ export async function addGarment(formData: FormData) {
     fail("save_failed");
   }
 
-  redirect("/closet?added=1");
+  redirect(`/closet/add?added=${encodeURIComponent(closetItemId)}`);
 }

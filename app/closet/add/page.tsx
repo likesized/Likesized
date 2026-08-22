@@ -2,11 +2,15 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { addGarment } from "@/app/closet/actions";
 import { CatalogColorField, CatalogCommunityEnrichment, CatalogGarmentFields } from "@/app/closet/add/CatalogGarmentFields";
+import { FitReportForm } from "@/app/closet/add/FitReportForm";
 import { GarmentSizeFields } from "@/app/closet/add/GarmentSizeFields";
+import styles from "@/app/closet/add/fitReport.module.css";
 import { EXPLORE_FIXTURE_PRODUCTS, allowExploreFixtures } from "@/lib/explore-fixtures";
 import { createClient } from "@/lib/supabase/server";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+const ADULT_DEPARTMENT_KEYS = new Set(["womens", "mens", "unisex"]);
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function first(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
 
 export default async function AddGarmentPage({ searchParams }: { searchParams: SearchParams }) {
@@ -15,6 +19,8 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
   if (!claimsData?.claims?.sub) redirect("/login?next=/closet/add");
   const params = await searchParams;
   const fixtureMode = allowExploreFixtures(first(params.preview) === "fixtures");
+  const addedRaw = first(params.added) ?? "";
+  const addedClosetItemId = UUID.test(addedRaw) ? addedRaw : "";
   const [{ data: brands }, { data: materials }, { data: departments }] = await Promise.all([
     supabase.from("brands").select("id,name").order("name").limit(2000),
     supabase.from("materials").select("key,label").order("label"),
@@ -39,19 +45,32 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
   const brandOptions = [...(brands ?? [])];
   if (fixtureMode) for (const product of EXPLORE_FIXTURE_PRODUCTS) if (!brandOptions.some((brand) => brand.name === product.brand.name)) brandOptions.push({ id: product.brand_id, name: product.brand.name });
   brandOptions.sort((a, b) => a.name.localeCompare(b.name));
+  const adultDepartments = (departments ?? []).filter((item) => ADULT_DEPARTMENT_KEYS.has(item.key));
 
   const error = first(params.error);
   const errorMessage = error === "invalid_fields"
-    ? "Check the required item, garment details, size, fit, and condition, then try again."
+    ? "Something still needs your attention. Review the highlighted fields below and try again."
     : error === "invalid_photo"
       ? "Photos must be JPEG, PNG, or WebP and no larger than 8 MB."
       : error === "save_failed"
-        ? "That Fit Report could not be saved."
+        ? "That Fit Report could not be saved. Please try again."
         : null;
 
   return <main className="pageShell addGarmentShell">
-    <div className="pageTitle rowTitle"><div><span className="eyebrow">MY CLOSET · NEW FIT REPORT</span><h1>Share how an item actually fits.</h1><p>Answer the required fit details, then add any optional catalog information you know. If a simple item question truly isn’t clear, choose Not sure.</p></div><Link className="secondaryButton" href="/closet">Back to My Closet</Link></div>
-    <form className="garmentForm" action={fixtureMode ? undefined : addGarment}>
+    {addedClosetItemId ? <div className={styles.successOverlay} role="dialog" aria-modal="true" aria-labelledby="fit-report-success-title">
+      <div className={styles.successCard}>
+        <span className="eyebrow">FIT REPORT ADDED</span>
+        <h2 id="fit-report-success-title">Thanks! Your Fit Report has been added.</h2>
+        <p>You can view it in your Closet or start styling the item right now.</p>
+        <div className={styles.successActions}>
+          <Link className="secondaryButton" href="/closet">View it in My Closet</Link>
+          <Link className="primaryButton" href={`/outfits/new?closet_item_id=${encodeURIComponent(addedClosetItemId)}`}>Style this item</Link>
+        </div>
+      </div>
+    </div> : null}
+
+    <div className={`pageTitle ${styles.hero}`}><span className="eyebrow">MY CLOSET · NEW FIT REPORT</span><h1>Share how an item actually fits.</h1><p>Tell us a little about the garment so we can make your Fit Report useful to others.</p></div>
+    <FitReportForm action={fixtureMode ? undefined : addGarment}>
       {fixtureMode ? <div className="authMessage"><b>Owner-review test environment.</b> Temporary garment choices are labeled through the preview and this form cannot save or write to Supabase.</div> : null}
       {errorMessage ? <div className="authMessage error">{errorMessage}</div> : null}
       <CatalogGarmentFields brands={brandOptions} fixtureProducts={fixtureProducts}>
@@ -60,12 +79,12 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
         <label>Overall Fit Result<select name="fit" defaultValue="" required><option value="" disabled>Select physical fit</option><option value="too_small">Too small</option><option value="snug">Snug</option><option value="just_right">Just right</option><option value="relaxed">Relaxed</option><option value="too_big">Too big</option></select><span className="fieldHelp">Bad fits are useful evidence too.</span></label>
         <label>Condition<select name="reported_condition" defaultValue="" required><option value="" disabled>Select condition</option><option value="new">New</option><option value="used">Used</option><option value="altered">Altered</option></select><span className="fieldHelp">Altered items stay in Fit History but are not treated as normal sizing evidence for other people.</span></label>
         <label>Fit photo <span className="muted inlineMuted">optional</span><input name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><span className="fieldHelp"><b>Fit photos are shared with the LikeSized community. Don’t upload a photo you do not want other people to see.</b></span></label>
-        <label>Fit notes <span className="muted inlineMuted">optional</span><textarea name="fit_notes" maxLength={1000} rows={5} placeholder="Roomy in the thighs, right at the waist..." /></label>
+        <label>Fit notes <span className="muted inlineMuted">optional</span><textarea name="fit_notes" maxLength={1000} rows={5} placeholder="Roomy in the thighs, right at the waist..." /><span className="fieldHelp">Tell us more about how it fits. You can also share styling tips, wash or dry advice, or anything else that might help someone considering this item.</span></label>
 
-        <CatalogCommunityEnrichment materials={(materials ?? []).map((item) => ({ key: item.key, label: item.label }))} departments={(departments ?? []).map((item) => ({ key: item.key, label: item.label }))} />
+        <CatalogCommunityEnrichment materials={(materials ?? []).map((item) => ({ key: item.key, label: item.label }))} departments={adultDepartments.map((item) => ({ key: item.key, label: item.label }))} />
 
         <button className="primaryButton fullButton" type="submit" disabled={fixtureMode}>{fixtureMode ? "Preview only — saving disabled" : "Add Fit Report →"}</button>
       </CatalogGarmentFields>
-    </form>
+    </FitReportForm>
   </main>;
 }

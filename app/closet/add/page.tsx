@@ -10,6 +10,11 @@ import { createClient } from "@/lib/supabase/server";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 const ADULT_DEPARTMENT_KEYS = new Set(["womens", "mens", "unisex"]);
+const DEFAULT_ADULT_DEPARTMENTS = [
+  { key: "womens", label: "Women’s" },
+  { key: "mens", label: "Men’s" },
+  { key: "unisex", label: "Unisex" },
+] as const;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function first(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
 
@@ -45,7 +50,10 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
   const brandOptions = [...(brands ?? [])];
   if (fixtureMode) for (const product of EXPLORE_FIXTURE_PRODUCTS) if (!brandOptions.some((brand) => brand.name === product.brand.name)) brandOptions.push({ id: product.brand_id, name: product.brand.name });
   brandOptions.sort((a, b) => a.name.localeCompare(b.name));
-  const adultDepartments = (departments ?? []).filter((item) => ADULT_DEPARTMENT_KEYS.has(item.key));
+  const databaseAdultDepartments = (departments ?? []).filter((item) => ADULT_DEPARTMENT_KEYS.has(item.key));
+  const adultDepartments = DEFAULT_ADULT_DEPARTMENTS.map(
+    (fallback) => databaseAdultDepartments.find((item) => item.key === fallback.key) ?? fallback,
+  );
 
   const error = first(params.error);
   const errorMessage = error === "invalid_fields"

@@ -15,36 +15,38 @@ GitHub `likesized/Likesized` is the source of truth. Current files describe curr
 # CURRENT STATUS — 2026-08-22
 
 ## Canonical production baseline
-- Production/canonical `main` contains the completed canonical recovery plus later owner-authorized PR #44, #45 and #46 work.
-- Last owner-recorded production merge in this master: PR #46 → `main` commit `ec987f5a22575b54806341615309a150558467dc`.
+- Production/canonical `main` remains at commit `36205c2731e9d1dc863934c065c9a281a57c37b9` and contains the completed canonical recovery plus owner-authorized PR #44, #45 and #46 work.
+- Last owner-recorded production feature merge: PR #46 → `main` commit `ec987f5a22575b54806341615309a150558467dc`, followed by the recorded production repair/status commit above.
 - Recorded Vercel production deployment for PR #46: `dpl_FZ2MeLLXaecG8QYVoK284e1n4x2E` — READY.
 - PR #47 is **not authorized for production**.
 
-## Primary active implementation line
+## Sole active implementation line
 - PR #47
 - branch: `correct-grouped-menu-layout`
-- current head at this reconciliation: `a414226e89d24bd2d8f94f0f3e473fb38e291415`
+- last implementation checkpoint before this documentation reconciliation: `0a477698da93fb95c136a0750ef63aff0f6a6fbb`; the live GitHub PR #47 branch HEAD is authoritative for later commits.
 - PR remains open/unmerged.
-- purpose: Phase 6.5 owner-preview work plus the catalog/New Fit Report redesign.
+- purpose: controlled consolidation of Phase 6.5 work plus the submission-first catalog/New Fit Report architecture.
 - production merge/promotion: **NOT AUTHORIZED**.
 
-## Current stop point
-The owner has one more product-direction item to add before implementation continues.
+## Active consolidation directive — OWNER AUTHORIZED
+The owner explicitly authorized the cleanup/consolidation work with the goal of getting LikeSized back on solid canonical ground.
 
-Therefore, after this canonical documentation reconciliation:
-- **STOP implementation work.**
-- do not change the intake/database/admin implementation again until the owner provides the next addition and explicitly authorizes continuation.
-- do not merge/promote PR #47.
+Current rule:
+- PR #47 is the **only active development lineage**.
+- do not create another implementation/decision/retry branch while this consolidation is active.
+- PR #48 must be treated as a salvage source only; preserve every unique approved retail/affiliate decision on PR #47, prove equivalence, then close the parallel PR.
+- historical branches are inspection/salvage sources only until classified; never copy an old file wholesale back into current source.
+- do not merge/promote PR #47 until the current intake/catalog checkpoint is coherent, CI/migration replay/Preview pass, and the owner explicitly authorizes production.
 
 # ACTIVE OWNER DIRECTION — CONTROLLED CATALOG + SUBMISSION-FIRST INTAKE
 
 The earlier member-facing external/API import strategy is superseded.
 
-The newer community-catalog concept is retained but tightened:
+The community-catalog concept is retained but tightened:
 
 > **Members contribute garments and Fit Reports. Members do not directly create canonical Products.**
 
-SerpAPI is now approved only as an **admin-side discovery/research/enrichment tool**, not as a member-facing search/import authority.
+SerpAPI is approved only as an **admin-side discovery/research/enrichment tool**, not as a member-facing search/import authority.
 
 The desired system is a controlled canonical catalog that compounds over time from member demand plus admin resolution.
 
@@ -447,45 +449,54 @@ Current reconciliation:
 - broad/generic/ambiguous entries exposed by the benchmark must be treated as Pending / Needs Enrichment / Needs Review until resolved rather than falsely presented as verified exact Products;
 - reuse the already-cached SerpAPI benchmark results for these entries before spending another search.
 
-**Important current implementation debt:** the existing branch seed migration currently inserts the starter entries into `products`. Under the new submission-first controlled-catalog direction, this migration/seed behavior must be reconciled before production so ambiguous research seeds are not falsely elevated to authoritative canonical Products.
+The earlier branch migration seeds the 150 as provisional Products for replay/history. The later submission-first reconciliation migration must reclassify them into catalog candidates and remove only empty/unreferenced provisional seed Products. Any starter Product that already gained real evidence must be preserved and reviewed rather than destructively erased.
 
 Do not rewrite/delete an already-applied migration. Use a later canonical migration/data-state transition where required.
 
-# RETAILER LISTINGS + SHOPPING
+# RETAILER LISTINGS + SHOPPING — OWNER LOCKED
 
 ## One-to-many retailer listings
-A canonical Product may accumulate many valid retailer destinations.
+A canonical Product may have zero, one, or multiple valid retailer destinations.
 
 Rules:
 - append/dedupe; do not overwrite one retailer with another;
-- normalize URLs;
-- preserve original URL/provenance;
+- validate/normalize member-provided retailer URLs and preserve the clean provider-independent destination;
+- members never need to provide an affiliate-formatted URL;
+- preserve original retailer URL/provenance;
 - pending submission retailer URLs remain candidate evidence until Product mapping;
 - when mapping is resolved, reviewed legitimate URLs may be attached to the correct canonical Product;
 - same URL apparently attached to different Products creates identity/duplicate review evidence;
-- dead/invalid links may be marked inactive later without erasing history.
+- dead/invalid links may be marked inactive later without erasing history;
+- a valid retailer does not need to be affiliate-monetizable to remain a valid shopping destination.
 
 ## Conditional shopping UI
-When at least one valid retailer listing exists, relevant garment surfaces may show the approved action set:
+- **Zero valid retail links:** no cart/Shop action renders. No disabled placeholder or dead-end control.
+- **Exactly one valid retail link:** the cart/Shop action routes directly to that retailer.
+- **Multiple valid retail links:** the cart/Shop action opens a compact retailer picker for that exact canonical Product.
+- show a clean retailer name such as Nordstrom, Macy's, or Levi's; do not use the raw URL as the shopping label.
+- do not silently choose or rank a retailer because it pays LikeSized a larger commission. Future ordering may use shopper-value signals such as exact variant match, reliable availability, or price when trustworthy.
+
+Where a valid destination exists, the approved garment action set is:
 **Like + Wishlist + Shopping Cart/Shop**.
 
-If no valid retailer link exists, the Shop action disappears entirely.
-
-Apply consistently to:
+Apply the same zero/one/multiple-retailer behavior consistently to:
 - garment imagery/cards/details where approved;
 - Product/Garment detail;
+- Fit Report/Product **Shop Here** equivalent;
 - Wish Locker;
 - Gift Lists;
-- Fit Report/Product Shop Here equivalent.
+- other approved shopping surfaces.
 
-No fake disabled/dead Shop button.
+Like/Wishlist/Shopping/Notify remain distinct tap targets where present.
 
 ## Skimlinks / affiliate monetization — ROADMAP LOCKED
 After canonical retailer-listing behavior is stable:
-- integrate/audit Skimlinks or an owner-approved equivalent;
-- preserve original retailer URL beneath affiliate routing;
+- integrate/audit Skimlinks or an owner-approved equivalent aggregator; direct affiliate-program overrides may be added later without changing canonical retailer identity;
+- preserve the original clean retailer URL beneath affiliate routing;
+- affiliate/click-source tracking may identify the LikeSized source surface but must never expose private body measurements to retailers/affiliate providers;
 - audit then-current disclosure/privacy/cookie/merchant eligibility requirements before production;
-- commission never changes Match, recommendation, Product identity, search relevance or ranking.
+- commission never changes Match, recommendation, Product identity, retailer choice, search relevance or ranking;
+- locked disclosure copy: **“LikeSized may earn a commission from purchases made through our shopping links.”** Display it unobtrusively but visibly wherever required for the affiliate shopping experience.
 
 # CONTROLLED GARMENT TAXONOMY — PRESERVE
 
@@ -540,7 +551,7 @@ Global question behavior:
 - Relaxed
 - Too Big
 
-No V1 1–5-star Fit Rating UI.
+There is **no current V1 1–5-star Fit Rating UI**.
 
 ## Match semantics
 - Match % = garment-relevant body similarity, not probability a garment fits;
@@ -667,10 +678,10 @@ Also cover before Beta:
 
 ## CURRENT OWNER-PRIORITY INSERT — complete before returning to remaining page audits
 
-### 6.5 INSERT A — Reconcile final intake to submission-first model
-Current branch behavior is not yet the final target.
+### 6.5 INSERT A — Submission-first intake
+Branch implementation is now in progress and remains unverified until the complete gate passes.
 
-Required implementation after owner gives the next addition/authorization:
+Target/checklist:
 - internal LikeSized Product/barcode search only;
 - exact Product selection path;
 - manual fallback creates garment submission/pending candidate, **not a canonical Product**;
@@ -691,7 +702,7 @@ Required implementation after owner gives the next addition/authorization:
 - reuse cached benchmark evidence;
 - no invented metadata;
 - classify specific entries appropriately as verified/selectable vs Pending/Needs Enrichment/Needs Review;
-- reconcile current seed migration behavior so ambiguous generic research seeds are not falsely authoritative;
+- later reconciliation migration moves research seeds to candidate/enrichment state and removes only empty/unreferenced provisional seed Products;
 - fresh migration replay/data-state verification.
 
 ### 6.5 INSERT C — Pending candidate + flag architecture
@@ -709,7 +720,7 @@ Required implementation after owner gives the next addition/authorization:
 - audited split.
 
 ### 6.5 INSERT D — Admin catalog dashboard
-Implement authorized admin tabs:
+Authorized admin surface must cover:
 - Catalog Enrichment;
 - Conflicting Product Facts;
 - Possible Duplicates / Identity Review;
@@ -740,13 +751,14 @@ Include:
 - use existing 150-search cache before paying to repeat those searches.
 
 ### 6.5 INSERT F — Retail aggregation + monetization
-- multiple retailer listings per canonical Product;
+- zero/one/multiple retailer behavior exactly as locked above;
 - append/dedupe, never overwrite valid alternatives;
 - unresolved URLs stay candidate evidence until mapping;
 - conditional Shop action;
+- retailer picker for multiple valid destinations;
 - Skimlinks/approved equivalent after retail behavior stable;
 - disclosure/privacy/compliance audit;
-- commission never affects fit/search/ranking.
+- commission never affects fit/search/ranking/retailer choice.
 
 After the insert is owner-accepted, continue every audit below.
 
@@ -882,13 +894,15 @@ For one canonical Product:
 - admin conflict/duplicate integration behind authorized surfaces.
 
 ## 6.5.14 Retail links / commerce
-- one-to-many listings;
-- no overwrite;
-- hide shopping when no valid link;
+- zero valid listings → no Shop;
+- one valid listing → direct retailer route;
+- multiple valid listings → retailer picker;
+- no overwrite of alternate valid links;
+- clean retailer names, not raw URLs;
 - avoid fake stale price claims;
 - Skimlinks/affiliate layer;
-- disclosure/privacy/compliance;
-- commission has zero fit/search/ranking influence.
+- locked disclosure/privacy/compliance;
+- commission has zero fit/search/ranking/retailer-choice influence.
 
 ## 6.5.15 LikeLocker architecture
 - saved fashion, not people;
@@ -914,6 +928,7 @@ After Product/retailer/LikeLocker/recommendation foundations:
 - no raw measurements;
 - insufficient data → no invented recommendation;
 - eligible affiliate listings allowed without influencing sizing/ranking;
+- shopping uses the same zero/one/multiple-retailer behavior;
 - sharing/revoke/privacy audit.
 
 ## 6.5.18 V1 Outfits social-layer audit
@@ -1058,8 +1073,9 @@ Verify at minimum:
 - Outfits/Style Feed;
 - same-product matched wearers;
 - multiple retailer listings;
-- conditional Shop;
+- zero/one/multiple retailer Shop behavior;
 - Skimlinks/affiliate behavior if implemented;
+- locked affiliate disclosure if implemented;
 - Gift Lists if implemented;
 - content/spam moderation;
 - no stale member-facing external catalog-import implementation;
@@ -1102,12 +1118,31 @@ Representative Beta verification:
 
 # BRANCH / SOURCE HYGIENE — REQUIRED BEFORE PRODUCTION
 
-- PR #47 remains the sole primary active implementation line unless owner explicitly changes it.
-- no retry/fixed/v2 branch as a substitute for canonical correction.
-- compare/reconcile PR #47 with `main` before promotion.
+## Active-line rule
+- PR #47 is the sole primary active implementation line unless the owner explicitly changes it.
+- `main` is the deployed baseline while PR #47 is in progress; it is not a competing future and must not be used as the base for new side work.
+- no retry/fixed/v2/owner-decision side branch as a substitute for canonical correction.
+
+## PR #48 salvage
+PR #48 (`owner-decision-retail-affiliate-plan`) was created from stale `main` while PR #47 was active. It is a **salvage source, not an active product future**.
+
+Before closing PR #48, PR #47 must preserve and verify all unique approved retail/affiliate decisions, including:
+- zero/one/multiple retailer behavior;
+- compact retailer picker for multiple destinations;
+- clean retailer labels;
+- non-monetizable valid retailer links remain usable;
+- no commission-based retailer selection/ranking;
+- provider-independent canonical destinations;
+- click-source tracking cannot expose private measurements;
+- exact affiliate disclosure copy.
+
+Only after diff/equivalence proves no unique approved decision remains may PR #48 be closed and its branch classified safe to remove.
+
+## Historical branch salvage rule
+- inventory historical/retry/verification branches as **ACTIVE / SAFE TO REMOVE / HOLD**.
+- old branches may be inspected as historical evidence but their files must never be copied wholesale into current source.
+- any unique useful work must be extracted deliberately and adapted to current canonical files before the old branch is classified safe.
 - preserve applied migration history; supersede runtime behavior with later canonical migrations rather than rewriting history.
-- historical experimental branches may be removed only after salvage classification proves nothing unique is discarded and cleanup is authorized.
-- member-facing external-import experiments must not remain as active fallback paths.
 - the completed SerpAPI benchmark cache is retained as research evidence; temporary benchmark write surfaces are retired.
 - production promotion requires explicit owner authorization after full verification.
 
@@ -1177,28 +1212,38 @@ Earlier PR #47 heads had green CI/Preview checkpoints, including previously reco
 
 Those do **not** prove the current head is green because product direction changed afterward.
 
-# CURRENT BRANCH DATABASE/EXPERIMENT STATE — DO NOT MISSTATE
+# CURRENT CONSOLIDATION IMPLEMENTATION — BRANCH ONLY / UNVERIFIED
 
-Branch history currently includes:
-- historical external-provider migrations that remain immutable history;
-- `20260822073000_community_catalog_intake_and_seed.sql` — current branch community-catalog/seed migration from the previous direction;
-- `20260822073100_add_community_identity_evidence.sql` — identity disagreement evidence from the previous direction;
-- `20260822152000_add_serpapi_discovery_cache.sql` — private SerpAPI research cache;
-- temporary benchmark writer/control migrations used for the 150-item run;
-- `20260822154000_close_serpapi_benchmark_writer.sql` — closes/removes the temporary benchmark write surface while preserving the cache.
+PR #47 now contains branch implementation for the submission-first checkpoint, including:
+- `20260822162000_submission_first_catalog_foundation.sql` — nullable unresolved Product links, pending catalog candidates, garment submissions, typed catalog flags, resolution audit, Product aliases, pending-product photo storage, member submission RPC, duplicate-flag RPC, and admin map/create/status resolution RPCs;
+- `20260822162100_reclassify_starter_seed_as_candidates.sql` — keeps all 150 starter entries in the enrichment pipeline and removes only empty/unreferenced provisional research-seed Products after reclassification;
+- New Fit Report server action now has a known-Product path and an unresolved submission path that does not directly insert a Product;
+- unresolved Closet/Fit Report rows remain usable and display supplied Brand/Model plus catalog-review state;
+- moderation/admin surface now includes demand-prioritized catalog candidates, flags, evidence, map-to-existing and reviewed new-Product creation actions;
+- barcode identity disagreement evidence now includes the `barcode` field;
+- private SerpAPI research cache and completed 150-item benchmark remain preserved.
 
-**Important:** the submission-first pending-candidate architecture, full admin catalog dashboard, batch SerpAPI research controls, alias/merge/split system, and final manual-intake behavior are **not yet safe to claim as implemented**.
+These are **not yet verified**. CI #448 on implementation checkpoint `0a477698da93fb95c136a0750ef63aff0f6a6fbb` stopped at the canonical-doc guard before typecheck/build/replay because two required canonical phrases had been lost during documentation reconciliation. This documentation commit restores those truths; subsequent gates must still run.
 
-The current code still contains behavior from the prior community-catalog attempt and must be reconciled after the owner provides the next addition and authorizes continuation.
+Still incomplete for the broader roadmap:
+- full transactional Product-to-Product merge/split UI/data behavior;
+- final Product/Brand alias search integration;
+- admin SerpAPI single/batch UI/server workflow with usage caps;
+- full spam garment-submission/Fit Report moderation coverage;
+- complete Product-photo moderation/transfer behavior;
+- browser-level behavioral regression automation;
+- branch salvage ledger and removal of redundant branch pointers.
 
-# EXACT NEXT ACTION — PAUSED FOR OWNER ADDITION
+# EXACT NEXT ACTION — ACTIVE CONSOLIDATION
 
-1. This master/spec/schema reconciliation records the new submission-first + admin-SerpAPI direction.
-2. **STOP. Await the owner's additional directive.**
-3. After that directive is reconciled and owner authorizes continuation, update all owning canonical docs together if meaning changes again.
-4. Then audit PR #47 source against the final combined design before writing more implementation.
-5. Implement the final submission-first intake/pending-candidate/admin/flag/SerpAPI architecture canonically on the same active line—no parallel system.
-6. Reconcile starter 150 behavior and cached benchmark evidence.
-7. Run canonical integrity → typecheck → focused tests → production build → complete fresh Supabase migration replay → DB privacy/behavior/security tests.
-8. Produce protected PR #47 Preview for owner desktop/mobile review.
-9. Do not merge to `main` or promote production without explicit owner authorization.
+1. Re-run canonical integrity on the reconciled docs/source.
+2. Fix TypeScript/application-test/build failures exposed by the new submission-first code.
+3. Fresh-replay the entire migration directory and fix SQL/RLS/DB test failures without rewriting applied history.
+4. Strengthen New Fit Report regression tests so they explicitly prove unresolved intake does not insert canonical Products and pending mapping preserves historical Fit evidence; add browser-level interaction coverage where practical and require owner Preview interaction verification for scanner/repeat-search behavior.
+5. Integrate reviewed Product aliases into canonical intake search without surfacing pending candidates as Product results.
+6. Salvage every unique PR #48 retail/affiliate decision into PR #47 Product Spec/master, prove equivalence, then close PR #48.
+7. Build the branch salvage ledger and classify historical branches before any branch deletion/removal.
+8. Strengthen repository/canonical workflow safeguards against stale-base side branches and wholesale recovery from old branches.
+9. Run full canonical integrity → typecheck → focused tests → production build → complete fresh Supabase replay → DB privacy/behavior/security tests.
+10. Produce one protected/current PR #47 Preview tied to the exact passing commit and perform owner desktop/mobile intake review.
+11. **STOP before production.** Do not merge to `main` or promote production until the owner explicitly authorizes that final consolidation promotion.

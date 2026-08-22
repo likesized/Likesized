@@ -58,15 +58,21 @@ select throws_like(
  'members cannot submit manufacturer/verified garment facts'
 );
 select public.record_member_product_evidence(
- 'b2000000-0000-4000-8000-000000000001'::uuid,'t_shirt','unisex',
- '[{"attribute_key":"sleeve_length","option_key":"long"}]'::jsonb,
- '[{"material_key":"cotton","percentage":100}]'::jsonb,'member-label'
+ p_product_id := 'b2000000-0000-4000-8000-000000000001'::uuid,
+ p_garment_type := 't_shirt',
+ p_market_segment := 'unisex',
+ p_attributes := '[{"attribute_key":"sleeve_length","option_key":"long"}]'::jsonb,
+ p_materials := '[{"material_key":"cotton","percentage":100}]'::jsonb,
+ p_source_reference := 'member-label'
 );
 -- Same member logging the same Product again is not a second vote.
 select public.record_member_product_evidence(
- 'b2000000-0000-4000-8000-000000000001'::uuid,'t_shirt','unisex',
- '[{"attribute_key":"sleeve_length","option_key":"long"}]'::jsonb,
- '[{"material_key":"cotton","percentage":100}]'::jsonb,'member-label-repeat'
+ p_product_id := 'b2000000-0000-4000-8000-000000000001'::uuid,
+ p_garment_type := 't_shirt',
+ p_market_segment := 'unisex',
+ p_attributes := '[{"attribute_key":"sleeve_length","option_key":"long"}]'::jsonb,
+ p_materials := '[{"material_key":"cotton","percentage":100}]'::jsonb,
+ p_source_reference := 'member-label-repeat'
 );
 reset role;
 
@@ -84,9 +90,12 @@ set local role authenticated;
 set local request.jwt.claim.role='authenticated';
 set local request.jwt.claim.sub='b0000000-0000-4000-8000-000000000002';
 select public.record_member_product_evidence(
- 'b2000000-0000-4000-8000-000000000002'::uuid,'t_shirt','unisex',
- '[{"attribute_key":"sleeve_length","option_key":"long"}]'::jsonb,
- '[{"material_key":"cotton","percentage":100}]'::jsonb,'peer-label'
+ p_product_id := 'b2000000-0000-4000-8000-000000000002'::uuid,
+ p_garment_type := 't_shirt',
+ p_market_segment := 'unisex',
+ p_attributes := '[{"attribute_key":"sleeve_length","option_key":"long"}]'::jsonb,
+ p_materials := '[{"material_key":"cotton","percentage":100}]'::jsonb,
+ p_source_reference := 'peer-label'
 );
 insert into public.closet_items(id,user_id,product_id,size_label,visibility)
 values('b3000000-0000-4000-8000-000000000002'::uuid,'b0000000-0000-4000-8000-000000000002'::uuid,'b2000000-0000-4000-8000-000000000002'::uuid,'M','shared');
@@ -107,8 +116,22 @@ select is((select attribute_overlap from before_corroboration where user_id='b00
 set local role authenticated;
 set local request.jwt.claim.role='authenticated';
 set local request.jwt.claim.sub='b0000000-0000-4000-8000-000000000003';
-select public.record_member_product_evidence('b2000000-0000-4000-8000-000000000001'::uuid,'t_shirt','unisex','[{"attribute_key":"sleeve_length","option_key":"long"}]'::jsonb,'[{"material_key":"cotton","percentage":100}]'::jsonb,'second-member');
-select public.record_member_product_evidence('b2000000-0000-4000-8000-000000000002'::uuid,'t_shirt','unisex','[{"attribute_key":"sleeve_length","option_key":"long"}]'::jsonb,'[{"material_key":"cotton","percentage":100}]'::jsonb,'second-member');
+select public.record_member_product_evidence(
+ p_product_id := 'b2000000-0000-4000-8000-000000000001'::uuid,
+ p_garment_type := 't_shirt',
+ p_market_segment := 'unisex',
+ p_attributes := '[{"attribute_key":"sleeve_length","option_key":"long"}]'::jsonb,
+ p_materials := '[{"material_key":"cotton","percentage":100}]'::jsonb,
+ p_source_reference := 'second-member'
+);
+select public.record_member_product_evidence(
+ p_product_id := 'b2000000-0000-4000-8000-000000000002'::uuid,
+ p_garment_type := 't_shirt',
+ p_market_segment := 'unisex',
+ p_attributes := '[{"attribute_key":"sleeve_length","option_key":"long"}]'::jsonb,
+ p_materials := '[{"material_key":"cotton","percentage":100}]'::jsonb,
+ p_source_reference := 'second-member'
+);
 reset role;
 
 select is((select source_status::text from public.product_attribute_values where product_id='b2000000-0000-4000-8000-000000000001'::uuid and attribute_key='sleeve_length'),'corroborated','two independent members promote agreeing attribute evidence');
@@ -129,7 +152,14 @@ select ok((select attribute_overlap from after_corroboration where user_id='b000
 set local role authenticated;
 set local request.jwt.claim.role='authenticated';
 set local request.jwt.claim.sub='b0000000-0000-4000-8000-000000000004';
-select public.record_member_product_evidence('b2000000-0000-4000-8000-000000000001'::uuid,'t_shirt','unisex','[{"attribute_key":"sleeve_length","option_key":"short"}]'::jsonb,'[]'::jsonb,'conflicting-member');
+select public.record_member_product_evidence(
+ p_product_id := 'b2000000-0000-4000-8000-000000000001'::uuid,
+ p_garment_type := 't_shirt',
+ p_market_segment := 'unisex',
+ p_attributes := '[{"attribute_key":"sleeve_length","option_key":"short"}]'::jsonb,
+ p_materials := '[]'::jsonb,
+ p_source_reference := 'conflicting-member'
+);
 reset role;
 select ok((select catalog_review_needed from public.products where id='b2000000-0000-4000-8000-000000000001'::uuid),'conflicting member garment facts flag the Product for review');
 select is((select option_key from public.product_attribute_values where product_id='b2000000-0000-4000-8000-000000000001'::uuid and attribute_key='sleeve_length'),'long','one conflicting vote does not replace the stronger long-sleeve consensus');

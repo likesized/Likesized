@@ -270,7 +270,7 @@ export async function addGarment(formData: FormData) {
   if (versionError || !fitProfileVersionId) fail("save_failed");
 
   const newClosetItemId = randomUUID();
-  let savedClosetItemId = newClosetItemId;
+  let savedClosetItemId: string = newClosetItemId;
   let updatedExisting = false;
   let fitPhotoPath: string | null = null;
   let productPhotoPath: string | null = null;

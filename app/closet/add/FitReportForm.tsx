@@ -25,6 +25,31 @@ function showInvalidState(form: HTMLFormElement, scroll: boolean) {
   }
 }
 
+function normalizeRetailLink(form: HTMLFormElement) {
+  const field = form.elements.namedItem("product_url");
+  if (!(field instanceof HTMLInputElement)) return;
+  const value = field.value.trim();
+  if (!value) return;
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(value)) field.value = `https://${value}`;
+}
+
+function validateBarcodeField(field: HTMLInputElement) {
+  const value = field.value.trim();
+  if (!value) {
+    field.setCustomValidity("");
+    return;
+  }
+  const digits = value.replace(/\D/g, "");
+  field.setCustomValidity(/^\d{6,32}$/.test(digits) ? "" : "Enter 6–32 digits, or leave this field blank.");
+}
+
+function validateBarcodeFields(form: HTMLFormElement) {
+  for (const name of ["upc", "identity_issue_barcode"]) {
+    const field = form.elements.namedItem(name);
+    if (field instanceof HTMLInputElement) validateBarcodeField(field);
+  }
+}
+
 export function FitReportForm({ action, children }: { action?: ServerAction; children: ReactNode }) {
   return <form
     className={`garmentForm ${styles.form}`}
@@ -32,14 +57,30 @@ export function FitReportForm({ action, children }: { action?: ServerAction; chi
     noValidate
     onSubmit={(event) => {
       const form = event.currentTarget;
+      normalizeRetailLink(form);
+      validateBarcodeFields(form);
       if (!form.checkValidity()) {
         event.preventDefault();
         showInvalidState(form, true);
       }
     }}
+    onBlur={(event) => {
+      const form = event.currentTarget;
+      const target = event.target;
+      if (target instanceof HTMLInputElement && target.name === "product_url") {
+        normalizeRetailLink(form);
+        if (target.validity.valid) {
+          target.removeAttribute("aria-invalid");
+          target.closest("label")?.classList.remove("fieldInvalid");
+        }
+      }
+    }}
     onChange={(event) => {
       const form = event.currentTarget;
       const target = event.target;
+      if (target instanceof HTMLInputElement && (target.name === "upc" || target.name === "identity_issue_barcode")) {
+        validateBarcodeField(target);
+      }
       if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement) {
         if (target.validity.valid) {
           target.removeAttribute("aria-invalid");

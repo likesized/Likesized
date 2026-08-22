@@ -31,7 +31,7 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
   const errorMessage = error === "invalid_fields" ? "Check the required item, size, fit, condition, and controlled details, then try again." : error === "invalid_photo" ? "Fit photo must be JPEG, PNG, or WebP and no larger than 8 MB." : error === "save_failed" ? "That Fit Report could not be saved." : null;
 
   return <main className="pageShell addGarmentShell">
-    <div className="pageTitle rowTitle"><div><span className="eyebrow">MY CLOSET · NEW FIT REPORT</span><h1>Share how an item actually fits.</h1><p>LikeSized asks only for information that identifies the item and makes its Fit Report useful.</p></div><Link className="secondaryButton" href="/closet">Back to My Closet</Link></div>
+    <div className="pageTitle rowTitle"><div><span className="eyebrow">MY CLOSET · NEW FIT REPORT</span><h1>Share how an item actually fits.</h1><p>Clothing comes in countless styles and variations. Fill in as much as you confidently know—the more accurate the details, the better LikeSized works. If you’re unsure, leave it blank or choose ‘Not sure.’</p></div><Link className="secondaryButton" href="/closet">Back to My Closet</Link></div>
     <form className="garmentForm" action={fixtureMode ? undefined : addGarment}>
       {fixtureMode ? <div className="authMessage"><b>Owner-review test environment.</b> Temporary garment choices are labeled through the preview and this form cannot save or write to Supabase.</div> : null}
       {errorMessage ? <div className="authMessage error">{errorMessage}</div> : null}

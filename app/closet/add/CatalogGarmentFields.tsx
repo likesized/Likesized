@@ -32,6 +32,9 @@ type CatalogContextValue = {
 const CatalogContext = createContext<CatalogContextValue>({ product: null, scannedBarcode: "" });
 const PERCENTAGES = Array.from({ length: 100 }, (_, index) => String(index + 1));
 
+function normalizeCatalogText(value: string) {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
 function productAttributes(product: CatalogProduct | null) {
   const values: Record<string, string> = {};
   for (const row of product?.attributes ?? []) if (row.source_status !== "rejected") values[row.attribute_key] = row.option_key;
@@ -171,6 +174,9 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
 
   const selectedType = GARMENT_TYPES.find((item) => item.key === type);
   const questions = applicableQuestions(type, answers);
+  const brandSuggestions = brand.trim()
+    ? brands.filter((item) => normalizeCatalogText(item.name).includes(normalizeCatalogText(brand))).slice(0, 12)
+    : [];
 
   function stopScanner() {
     scannerControls.current?.stop();
@@ -258,14 +264,21 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
   }, [step]);
 
   useEffect(() => {
-    if (step !== "details" || product || !brand.trim()) { setItemSuggestions([]); return; }
+    if (step !== "details" || product || !brand.trim() || !itemName.trim()) { setItemSuggestions([]); return; }
+    setItemSuggestions([]);
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
         const response = await fetch(`/api/catalog/search?brand=${encodeURIComponent(brand)}&q=${encodeURIComponent(itemName)}`, { signal: controller.signal });
         const body = await response.json() as { local?: CatalogProduct[] };
-        const fixtures = fixtureProducts.filter((item) => item.brand_name.toLowerCase() === brand.trim().toLowerCase() && (!itemName.trim() || item.name.toLowerCase().includes(itemName.trim().toLowerCase())));
-        const merged = [...fixtures, ...(body.local ?? [])].filter((item, index, all) => all.findIndex((other) => other.id === item.id) === index);
+        const normalizedBrand = normalizeCatalogText(brand);
+        const normalizedItem = normalizeCatalogText(itemName);
+        const fixtures = fixtureProducts.filter((item) => normalizeCatalogText(item.brand_name) === normalizedBrand && normalizeCatalogText(item.name).includes(normalizedItem));
+        const merged = [...fixtures, ...(body.local ?? [])]
+          .filter((item) => normalizeCatalogText(item.brand_name) === normalizedBrand)
+          .filter((item, index, all) => all.findIndex((other) => other.id === item.id) === index);
+        const exactMatch = merged.find((item) => normalizeCatalogText(item.name) === normalizedItem);
+        if (exactMatch) { chooseProduct(exactMatch); return; }
         setItemSuggestions(merged.slice(0, 12));
       } catch (cause) {
         if ((cause as Error).name !== "AbortError") setItemSuggestions([]);
@@ -292,7 +305,6 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
   }
 
   if (step === "start") return <section className={`fitDimensionFields ${styles.catalogStart}`}>
-    <b className={styles.catalogStartTitle}>Search the LikeSized catalog first.</b>
     <div className={styles.catalogStartActions}>
       <button className="catalogSearchButton" type="button" onClick={() => { setError(""); setStep("scan"); }}>Scan barcode</button>
       <span className="fieldHelp">or</span>
@@ -329,17 +341,17 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
 
         <div className="fieldPair">
           <label>Brand / Make
-            <input name="brand" list="brand-options" maxLength={120} value={brand} readOnly={Boolean(product) && !brandIssue} onChange={(event) => setBrand(event.target.value)} required />
-            <datalist id="brand-options">{brands.map((item) => <option value={item.name} key={item.id}/>)}</datalist>
+            <input name="brand" list={brand.trim() && !product ? "brand-options" : undefined} maxLength={120} value={brand} readOnly={Boolean(product) && !brandIssue} onChange={(event) => { setBrand(event.target.value); setItemSuggestions([]); }} required />
+            <datalist id="brand-options">{brandSuggestions.map((item) => <option value={item.name} key={item.id}/>)}</datalist>
             {product && !brandIssue ? <button className="catalogBackButton" type="button" onClick={() => { setBrandIssue(true); setBrand(""); }}>Report an issue</button> : null}
           </label>
           <label>Item / Model
-            <input name="product" maxLength={180} value={itemName} readOnly={Boolean(product) && !itemIssue} onChange={(event) => setItemName(event.target.value)} required placeholder="e.g. 501 Original" />
+            <input name="product" maxLength={180} value={itemName} readOnly={Boolean(product) && !itemIssue} onChange={(event) => { setItemName(event.target.value); setItemSuggestions([]); }} required placeholder="e.g. 501 Original" />
             {product && !itemIssue ? <button className="catalogBackButton" type="button" onClick={() => { setItemIssue(true); setItemName(""); }}>Report an issue</button> : null}
           </label>
         </div>
 
-        {!product && brand.trim() && itemSuggestions.length ? <div className="catalogSuggestionList">{itemSuggestions.map((item) => <button className="catalogSuggestion" type="button" onClick={() => chooseProduct(item)} key={item.id}><span><b>{item.brand_name} · {item.name}</b><small>Already in LikeSized</small></span></button>)}</div> : null}
+        {!product && brand.trim() && itemName.trim() && itemSuggestions.length ? <div className="catalogSuggestionList">{itemSuggestions.map((item) => <button className="catalogSuggestion" type="button" onClick={() => chooseProduct(item)} key={item.id}><span><b>{item.brand_name} · {item.name}</b><small>Already in LikeSized</small></span></button>)}</div> : null}
 
         <label>Garment type
           <select name="garment_type" value={type} disabled={Boolean(product?.garment_type_key) && !typeIssue} onChange={(event) => { setType(event.target.value); setAnswers({}); setAttributeIssues({}); }} required>

@@ -126,8 +126,11 @@ begin
     perform set_config('likesized.catalog_resolution','on',true);
     update public.fit_reports set product_id=p_product_id,variant_id=v_variant_id,updated_at=now()
       where id=v_submission.fit_report_id and user_id=v_submission.user_id and product_id is null;
+    if not found then
+      perform set_config('likesized.catalog_resolution','off',true);
+      raise exception 'Pending Fit Report is no longer unresolved';
+    end if;
     perform set_config('likesized.catalog_resolution','off',true);
-    if not found then raise exception 'Pending Fit Report is no longer unresolved'; end if;
 
     update public.garment_submissions set resolved_product_id=p_product_id,resolved_at=now()
       where id=v_submission.id;

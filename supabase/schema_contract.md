@@ -3,338 +3,293 @@
 ## Canonical database source — LOCKED
 Ordered SQL files in `supabase/migrations/` are the executable database history and replay/deployment source.
 
-- Do not rewrite applied migrations.
+- Never rewrite or delete an applied migration to hide a superseded experiment.
 - Future database changes use new ordered migrations.
 - Do not hard-code migration count as architectural truth.
-- `supabase/schema.sql` is retired and must not be used as an alternate current-state schema.
-- `supabase/storage.sql` may remain a storage/reference aid only where consistent with migrations; it never overrides migration history.
+- `supabase/schema.sql` is retired and must not be treated as current schema authority.
+- `supabase/storage.sql` is reference/support only where consistent with applied migrations.
 
-This contract owns database behavior/privacy and explicitly records implementation debt when current migrations/source have not yet caught up with owner-approved product meaning.
+This file owns current database behavior/privacy plus explicit implementation debt. Product meaning lives in `docs/V1_PRODUCT_SPEC.md`; roadmap/status/audit order live in `docs/AI_MASTER_LOG.md`.
 
-Product meaning: `docs/V1_PRODUCT_SPEC.md`.
-Roadmap/status: `docs/AI_MASTER_LOG.md`.
+# Production checkpoint — 2026-08-22
 
-# Current stable foundations to preserve
+The production Supabase project has the submission-first catalog foundation and subsequent Fit Report identity migrations applied.
+
+Latest production migration tail observed during canonical reconciliation:
+- `20260822231014` — `restore_state_based_body_report_identity`
+- `20260822230502` — `compare_body_change_to_latest_report` — historical applied experiment, superseded by the later restore migration
+- `20260822225515` — `roll_fit_report_body_identity_baseline`
+- `20260822224350` — `fix_body_identity_conflict_target`
+- `20260822223342` — `garment_relevant_body_report_identity`
+- `20260822210009` — `count_all_distinct_fit_situations`
+- `20260822205854` — `consensus_material_defaults_and_identity_flags`
+- `20260822203208` — `accept_report_scoped_attribute_variants`
+- `20260822203048` — `harden_report_scoped_evidence_writer`
+- `20260822202955` — `fit_report_variant_deduplication`
+- `20260822195045` — `add_product_size_kind_default_rpc`
+- submission-first catalog/admin migrations are also applied in production.
+
+Local migration filenames remain the canonical replay history. Supabase-assigned production version timestamps may differ from local filenames; do not rename applied local files to match generated production timestamps.
+
+# 1. Privacy/body-state foundations
 
 - `profiles` stores member identity under existing authorization boundaries.
-- `fit_profiles` is a profile shell; raw body values belong in normalized owner-private measurement structures.
+- `fit_profiles` is a profile shell; raw body values live in normalized owner-private measurement structures.
 - immutable Fit Profile version tables preserve historical owner-private body state.
-- `fit_reports.fit_profile_version_id` preserves the body state of each try-on; later body edits do not rewrite history.
-- current-person matching returns safe derived scores/coverage only; raw measurements remain private.
-- historical Product/Fit Report matching uses immutable snapshots.
+- `fit_reports.fit_profile_version_id` is the immutable original try-on snapshot.
+- `fit_reports.match_fit_profile_version_id` is the current match/body-state evidence pointer for safe enrichment/rolling behavior and does not rewrite the original historical snapshot.
+- `private.fit_report_body_identity_measurements` stores the established garment-relevant baseline values used to decide whether an existing report represents the current body-fit state.
+- current-person and historical-garment matching return derived scores/context; raw measurements remain private.
 - Private Closet evidence remains owner-only; Shared evidence follows current RLS rules.
-- fit/reference photos follow the current Shared evidence boundary.
-- **`follows` is the one canonical **Following** relationship**; Fit Twin is a derived designation within the followed set, not another relationship table.
-- LikeLocker Product Likes, Outfit Likes and Wish Locker remain separate intents.
-- canonical Outfit structures/storage/likes remain in V1.
 
-# Controlled taxonomy foundation
+# 2. Controlled taxonomy foundations
 
 - `garment_types`, `garment_attribute_definitions`, and `garment_attribute_options` hold database vocabulary aligned with the one canonical application taxonomy.
-- `garment_types.intake_active` controls member-facing Type availability without breaking historical/matching compatibility keys.
-- `color_families` stores controlled Color families.
-- `product_variants.color_family_key` stores canonical color family where a resolved Product/variant exists.
+- `garment_types.intake_active` controls member-facing Type availability while preserving historical compatibility keys.
+- `color_families` stores controlled colors.
+- `product_variants.color_family_key` stores resolved Product/variant color where applicable.
 - `fit_reports.reported_condition` preserves New / Used / Altered.
-- Altered evidence remains personal history but is excluded from normal Product recommendation evidence.
-- Material/Fabric Composition may be controlled evidence but does not become Match/recommendation input or an Explore filter without a later owner-approved change.
-- Stretch remains outside current V1 member input/filter behavior.
+- Altered observations remain history but are excluded from normal recommendation evidence.
+- Material may be controlled Product/report evidence but is not a Match input or automatic Explore filter.
+- Stretch is not current V1 member-facing behavior.
 
-# Submission-first catalog direction — OWNER LOCKED / BRANCH IMPLEMENTATION IN PROGRESS
+# 3. Submission-first catalog — LIVE PRODUCTION
 
-The canonical architecture separates:
+The database separates:
+1. member garment submission / Fit Report;
+2. pending catalog candidate;
+3. canonical Product.
 
-1. **member garment submission / Fit Report**
-2. **pending catalog candidate**
-3. **canonical Product**
+Members do not directly create canonical Products from manual fallback.
 
-Members must not directly create canonical Products from manual fallback.
+## Known Product
+- Closet item/Fit Report references the canonical Product.
+- Reviewed Product facts remain canonical.
+- Member disagreement becomes evidence/review rather than a silent Product overwrite.
 
-## Required database behavior
+## Unresolved Product
+- `closet_items.product_id` and `fit_reports.product_id` may be NULL for unresolved submissions where permitted by the canonical RLS/invariant functions.
+- `garment_submissions` preserves member-supplied identity/enrichment evidence.
+- `catalog_candidates` holds pending candidate state.
+- `catalog_review_flags` holds typed review reasons.
+- `catalog_resolution_actions` holds accountable resolution history.
+- unresolved member work remains usable without pretending the Product identity is verified.
+- ordinary exact-Product search/aggregation excludes unresolved pseudo-Products.
 
-When an exact canonical Product is known:
-- Closet item/Fit Report references that Product normally;
-- reviewed Product facts remain canonical;
-- member disagreement is stored as evidence/flagging rather than silent Product overwrite.
+Authorized resolution may map pending work to a canonical Product once, preserving the original member evidence and immutable body snapshot.
 
-When Product identity is unresolved:
-- persist the member's garment submission and Fit Report without blocking the member;
-- preserve best-known Brand/Model/Type and optional identity/enrichment evidence;
-- associate the submission with a pending catalog candidate;
-- **do not create a canonical Product solely because the member submitted manual text**;
-- do not include the unresolved item in exact canonical Product search/aggregation as if its identity were verified.
-
-Later catalog resolution must be able to:
-- map one or many submissions to an existing Product;
-- create one genuinely new canonical Product through an authorized catalog-resolution path;
-- preserve immutable Fit Report/body snapshot while assigning the canonical Product;
-- preserve original submission/evidence/audit history;
-- split incorrectly grouped submissions/Products without silent loss.
-
-## Branch implementation now present
-Migration `20260822162000_submission_first_catalog_foundation.sql` is the current branch implementation foundation. It is **not production truth until full replay/tests/owner-authorized promotion pass**.
-
-It currently proposes:
-- nullable `closet_items.product_id` and `fit_reports.product_id` for unresolved submissions;
-- `catalog_candidates` as the one pending-candidate queue/state graph;
-- `garment_submissions` as member-supplied unresolved identity/enrichment evidence linked to the real Closet item/Fit Report;
-- `catalog_review_flags` as typed review flags;
-- `catalog_resolution_actions` as catalog-resolution audit history;
-- `product_aliases` as reviewed hidden Product-name aliases;
-- private `catalog-submission-photos` storage for unresolved Product Photo evidence;
-- `record_pending_garment_submission(...)` for authenticated pending submission recording/aggregation;
-- `flag_catalog_possible_duplicate(...)` for the authorized duplicate-flag write boundary;
-- admin map/create/status RPCs for resolving candidates.
-
-Application source on PR #47 now has a separate known-Product path and unresolved-submission path. The unresolved path writes nullable Product references and candidate evidence instead of inserting into `products` directly.
-
-**This implementation remains unverified until canonical CI, typecheck, build, complete fresh migration replay and database behavior/privacy tests pass.**
-
-## Pending-candidate lifecycle
-The one candidate state model currently uses:
+Candidate lifecycle values in the current model include:
 - `pending`
 - `needs_enrichment`
 - `needs_review`
 - `merged`
 
-A resolved canonical Product is the **Verified Catalog Item** state rather than another duplicate candidate status.
+A resolved canonical Product is the Verified Catalog Item rather than another candidate status.
 
-Candidates support submission count and recency for demand prioritization.
+# 4. Canonical Product identity / aliases / identifiers
 
-# Canonical Product / identity foundation
-
-- `brands` and `products` remain the one canonical Product identity graph.
-- Product aliases/Brand aliases normalize reviewed spelling/punctuation/common typo variants without creating duplicate public identities.
+- `brands` and `products` remain the one canonical Product graph.
+- reviewed `brand_aliases` and `product_aliases` normalize proven naming variants without creating duplicate public identities.
 - Product families are explicit compatible groups, not fuzzy-title buckets.
-- `product_identifiers` provide UPC/barcode/other identifier evidence where applicable.
-- manufacturer Style/Article values are evidence and are not globally unique Product IDs by default.
-- SKU is not assumed globally unique Product identity.
-- `retailer_listings` is the one-to-many relationship for legitimate canonical Product/variant retail destinations.
+- `product_identifiers` stores UPC/barcode/other identifier evidence.
+- Style/Article Number is evidence and is not globally unique Product identity by default.
+- `retailer_listings` is the one-to-many canonical retailer destination relationship for resolved Products/variants.
 
-Identity resolution must be conservative:
-- different manufacturer Style/Article IDs may still belong to one base Product as variants/SKUs;
-- shared broad model wording may contain multiple fit-distinct Products;
-- no fuzzy-title-only automatic merge;
-- ambiguous identity creates review state/flag.
+Identity resolution is conservative:
+- fuzzy title alone cannot force merge;
+- different Style/Article IDs may be variants/SKUs of one base Product;
+- one broad model word may contain multiple fit-distinct Products;
+- color/size/retailer differences normally do not define separate base Products.
 
-`product_identity_evidence` includes Brand, Item/Model, manufacturer Style/Article and barcode disagreement evidence. Barcode disagreement uses identifier normalization rather than Product-name normalization.
+# 5. Fit Report counted identity — LIVE PRODUCTION
 
-# Duplicate / alias / merge / split
+`public.save_known_fit_report(...)` is the authoritative resolved-Product save boundary for counted Fit Report reuse/creation.
 
-The branch now has a canonical typed flag model and candidate→Product mapping foundation. The complete owner-required duplicate system still must support:
+A compatible report lookup is scoped by:
+- authenticated member;
+- exact Product;
+- normalized Size;
+- `objective_variant_key`;
+- compatible garment-relevant body state.
 
-- reviewed Brand aliases;
-- reviewed Product aliases;
-- possible-duplicate candidate/Product flags and identity reasons;
-- audited duplicate dismissal;
-- audited candidate→existing Product mapping;
-- audited new Product creation from a reviewed candidate;
-- transactional canonical Product-to-Product merge;
-- transactional canonical Product/candidate split;
-- preservation/reassignment of submissions, Fit Reports, identifiers, retailer listings, aliases, evidence and photos as appropriate.
+Color/variant ID is not part of the counted report lookup even though a Closet item may reference a Product variant.
 
-A merge/split must never silently destroy Fit Report history or immutable body-version links.
+## Objective fingerprint
+The application computes the objective fingerprint from applicable controlled answers after excluding:
+- filter-only `intended_fit`;
+- `not_sure` positive claims.
 
-`catalog_review_flags`, `product_identity_evidence`, and `products.catalog_review_needed` must be used as one coherent review architecture rather than parallel independent systems.
+A physical objective-answer change can therefore create a distinct counted report, while Intended Fit alone cannot.
 
-# Product evidence / field conflict
+## Body relevance source
+`private.product_match_measurements(product_id)` is the canonical Product-specific measurement map used by Fit Match and Fit Report body-state identity.
+
+The report identity implementation must not maintain a separate hard-coded relevance list.
+
+## 2% comparison
+For an established baseline measurement, a candidate report is disqualified when current relevant measurement data exists and:
+
+`abs(current - baseline) / abs(baseline) >= 0.02`
+
+Any one established relevant measurement crossing that threshold disqualifies that candidate state.
+
+Missing current relevant measurements do not themselves force a split.
+
+## Candidate state selection
+Among compatible reports for the same member + Product + normalized Size + objective fingerprint, production currently prefers:
+1. the report with the greatest count of established baseline measurements also present in the current profile;
+2. then most recent `updated_at`;
+3. then report ID for deterministic ordering.
+
+This is state-based reuse, not chronological-episode identity. The applied chronological-only experiment remains in immutable migration history but is superseded by the later restore migration.
+
+## Blank/enrichment behavior
+When an existing report is compatible:
+- newly supplied relevant measurements may be inserted into `private.fit_report_body_identity_measurements` without creating another report;
+- missing current measurements do not erase prior baseline evidence;
+- `match_fit_profile_version_id` may advance when the current profile can safely strengthen/preserve the report's matching evidence.
+
+## Rolling baseline
+`private.roll_fit_report_body_identity_baseline()` runs after `match_fit_profile_version_id` updates and upserts current Product-relevant measurements into the report baseline.
+
+Therefore an accepted under-2% body change can move the active state baseline while the immutable `fit_profile_version_id` remains unchanged.
+
+# 6. Distinct Fit Report evidence counting — LIVE
+
+Product fit summary/evidence functions count legitimate distinct Fit Report situations rather than collapsing all reports by member.
+
+This allows one member to contribute multiple valid body-fit states or distinct physical variants when they satisfy the counted identity rules.
+
+Presentation surfaces that require unique people should dedupe/choose unique wearers separately from evidence counting.
+
+# 7. Garment Type conflicts — LIVE
+
+`public.flag_known_product_garment_type_conflict(...)` enforces the current known-Product Type-conflict behavior.
+
+When submitted Garment Type differs from canonical Product Type:
+- the member Fit Report remains unresolved (`product_id IS NULL`);
+- the candidate is moved to `needs_review`;
+- the canonical Product receives `catalog_review_needed = true`;
+- an `ambiguous_identity` review flag records canonical vs submitted Type and the pending Fit Report/submission;
+- the conflict cannot silently rewrite the Product.
+
+Admin must later correct the Product, map the submission to a different Product, or dismiss/reject the disputed identity.
+
+# 8. Product material default — LIVE
+
+`private.refresh_product_material_default(product_id)` chooses the current member-derived Product material default from **exact complete Fit Report recipe signatures**.
+
+Rules implemented today:
+- group non-rejected member material evidence by counted Fit Report;
+- compose an exact signature from material key + supplied percentage/unknown percentage;
+- choose the unique most-common signature;
+- tie → remove the non-verified member-derived Product material default;
+- verified Product material rows outrank and suppress non-verified defaults;
+- the representative winning Fit Report recipe is copied exactly; no percentage averaging;
+- a single winning report is `provisional` with current confidence .55;
+- 2+ winning report votes are currently marked `corroborated` with current confidence .80.
+
+Important implementation debt: **recipe-frequency selection and independent-member corroboration are different concepts.** Current production uses Fit Report vote count for both the winning recipe and the `corroborated` status threshold. Owner-observed behavior accepts report-frequency selection for the default; distinct-member trust/corroboration semantics still require later audit before changing production behavior.
+
+# 9. Size-system default — LIVE
+
+`public.get_product_default_size_kinds(product_ids)` derives one Product size-system default from existing normalized Fit Report sizes.
+
+- exclude `not_sure`;
+- count Fit Reports by normalized size kind;
+- unique highest-vote kind → return it;
+- tied top kinds → return NULL.
+
+The New Fit Report API returns this as `default_size_kind`; the UI may preselect that kind for a known Product while leaving the actual size value blank and editable.
+
+# 10. Preferred Fit — LEGACY / INERT
+
+Legacy structures such as `user_garment_fit_preferences` and the `p_fit_preferences` argument on `save_fit_profile(...)` remain in applied schema history.
+
+Current behavior:
+- the Fit Profile UI does not expose Preferred Fit;
+- the current server action reads existing legacy rows only to preserve them unchanged during normal measurement saves;
+- production function inspection during reconciliation found `user_garment_fit_preferences` referenced by `save_fit_profile(...)` but not by current Match/recommendation functions;
+- Preferred Fit is therefore not a current matching/recommendation input.
+
+Do not drop or repurpose legacy schema casually. Any eventual removal requires a new additive migration and data/compatibility review.
+
+# 11. Product evidence / field conflicts
 
 Shared Product facts resolve field by field.
 
-Existing evidence lifecycle concepts such as provisional / corroborated / verified / rejected remain valid where applicable.
+Evidence lifecycle statuses such as provisional / corroborated / verified / rejected remain valid where applicable.
 
-Rules:
-- repeat claims by one member do not count as independent corroboration;
-- independent agreement may strengthen a value;
-- materially competing values trigger Product/candidate review;
-- admin-verified/locked facts cannot be silently overwritten by later member evidence;
+- one member claim is evidence, not unquestionable Product truth;
+- admin-verified/locked facts cannot be silently overwritten;
 - later disagreement remains auditable evidence;
-- if conflict may represent different Products/variants, duplicate/split review takes precedence over simple consensus voting.
+- if disagreement may represent different Products/variants, identity/duplicate review takes precedence over simple voting.
 
-`product_identity_evidence`, metadata/attribute/material/description evidence, and moderation history should be extended/reused rather than replaced by a second graph.
+`product_identity_evidence`, metadata/attribute/material/description evidence, `catalog_review_flags`, and moderation history are one coherent evidence/review architecture and must not be replaced by parallel graphs.
 
-# Flag/review model — OWNER LOCKED
+# 12. Admin authorization / moderation
 
-`catalog_review_flags.flag_type` must distinguish at least:
+- `private.admin_users` remains the explicit admin authorization boundary unless deliberately replaced by a later canonical role model.
+- ordinary members cannot obtain admin powers through client-controlled state.
+- catalog/moderation changes require authorized server/database boundaries.
+- accountable audit/history records actor, time, target, action, and reason/context as appropriate.
 
-## Possible Duplicate
-Potential equivalent Brands/Products/candidates without enough evidence for safe auto-merge.
+Current production foundation supports candidate visibility, mapping to an existing Product, reviewed new-Product creation, status controls, evidence/flags, aliases, Product-photo actions, and content moderation foundations.
 
-## Conflicting Product Fact
-Competing Brand/Model/Type/attribute/Department/material/Style/description or other shared Product values.
+The complete owner-required admin operating surface remains under re-audit and still has implementation gaps listed below.
 
-## Ambiguous Catalog Identity / Needs Review
-Unresolved candidate identity or broad/generic naming that requires judgment/research.
+# 13. SerpAPI discovery cache
 
-## Reported / Spam Content
-Supported inappropriate/spam Fit Photos, Product Photos, Outfit content, garment submissions and Fit Reports.
+`private.serpapi_discovery_cache` is reusable private external research evidence.
 
-## Retail / Identifier Conflict
-Conflicting UPC/Style/listing identity evidence, including one normalized retailer URL associated with apparently different Products.
+- it is not a member-visible shadow catalog;
+- cache rows do not create/update/merge `products`;
+- raw Google Shopping title and `product_id` are not LikeSized Product identity;
+- the completed 150-item benchmark remains reusable research evidence;
+- temporary benchmark write surfaces were retired after the one-time run.
 
-Flags themselves do not rewrite data or remove content. Resolution actions are authorized/audited.
+Final admin research must check cache first, dedupe equivalent queries, show cached/new status, respect usage caps, preserve successful results, and require explicit catalog-resolution action after research.
 
-# Admin authorization / audit
+# 14. Starter catalog
 
-- `private.admin_users` remains the explicit admin allowlist/authorization boundary unless deliberately replaced by a later canonical admin-role model.
-- ordinary members must never gain admin catalog powers through client-controlled state.
-- moderation/catalog actions require authorized server/database boundaries.
-- append-only audit/history records actor, time, target, action and reason/context appropriate to the action.
+The owner-supplied starter catalog remains in the research/enrichment pipeline. The later reconciliation migration moved empty/unreferenced provisional seed records into candidate workflow while preserving any Product that had real evidence/references.
 
-Current branch admin foundation includes candidate queue reads and RPCs to map a candidate to an existing Product, create one reviewed Product from a candidate, and update candidate queue status. These actions remain branch-only/unverified.
+Do not invent missing metadata merely to make starter entries look complete.
 
-Required complete admin capabilities include:
-- inspect candidate submissions/evidence and demand count;
-- map pending candidate/submissions to existing Product;
-- create one new canonical Product through authorized resolution;
-- merge/split;
-- create aliases;
-- verify/override/lock Product fields/descriptions;
-- audited reopen;
-- dismiss false flags;
-- remove supported inappropriate/spam content;
-- append/dedupe legitimate retailer listings;
-- inspect/use cached SerpAPI research;
-- trigger controlled SerpAPI research batches through the application/server boundary.
+# 15. Retailer listings / shopping data
 
-# SerpAPI discovery cache — CURRENT BRANCH FOUNDATION
+- `retailer_listings` is one-to-many for resolved Products/variants.
+- valid retailer destinations append/dedupe; they do not overwrite one another.
+- unresolved retailer URLs remain candidate evidence until Product mapping.
+- normalized URL conflicts can trigger identity/duplicate review.
+- affiliate routing must preserve the clean canonical retailer destination/provenance.
+- commission must never influence Match, recommendation, Product identity, search rank, or retailer choice.
 
-Migration `20260822152000_add_serpapi_discovery_cache.sql` creates `private.serpapi_discovery_cache` for reusable external research evidence.
+# 16. Following / Fit Twin / feed
 
-The cache is private and must never become a member-visible shadow catalog.
-
-The owner-approved 150-item benchmark populated reusable research responses. Later temporary benchmark writer/control migrations existed only to perform that one-time run; `20260822154000_close_serpapi_benchmark_writer.sql` removes the temporary public write functions/control table while preserving the cache.
-
-Required semantics:
-- cached raw SerpAPI responses are evidence/candidate data only;
-- cache row does not create/update/merge canonical `products`;
-- Google Shopping `product_id` is not LikeSized Product identity;
-- raw Shopping titles are not canonical Product names.
-
-# Admin SerpAPI batch research — REQUIRED TARGET / NOT YET COMPLETE
-
-The final admin research system must use the private cache first.
-
-Before a paid query:
-1. normalize intended query;
-2. check for equivalent cached research;
-3. reuse suitable cache;
-4. make a SerpAPI call only when missing or an authorized refresh is justified.
-
-Batch research must:
-- accept explicit admin-selected candidates;
-- dedupe equivalent queries inside the batch;
-- show cached vs newly fetched status;
-- respect configurable usage warnings/caps/hard stop;
-- preserve successful responses for reuse;
-- allow no-useful-result caching with a shorter freshness policy if implemented;
-- never convert bulk research into bulk Product creation/approval;
-- require explicit catalog-resolution actions after research.
-
-The current private cache and completed benchmark do **not** by themselves satisfy the final admin batch-research feature.
-
-# Starter 150 — CURRENT DATABASE DIRECTIVE
-
-The owner-supplied 150 starter entries remain launch-preparation data.
-
-Migration `20260822073000_community_catalog_intake_and_seed.sql` is retained in ordered branch history and seeds those entries into the prior provisional Product model during replay.
-
-Migration `20260822162100_reclassify_starter_seed_as_candidates.sql` is the later canonical branch transition for the new direction. It:
-- inserts/reuses all 150 as `catalog_candidates` / enrichment research input;
-- preserves the already-cached SerpAPI benchmark evidence independently;
-- removes only empty/unreferenced provisional seed Products created by the earlier seed migration;
-- preserves any starter Product that already gained real Closet/Fit/variant/identifier/listing/evidence/photo references for review rather than destructive deletion;
-- removes only orphaned seed Product families after Product cleanup.
-
-The full replay must prove this transition behaves exactly as intended before production.
-
-# Barcode behavior — OWNER LOCKED
-
-Member barcode scanning queries LikeSized only.
-
-Known barcode:
-- resolve to canonical Product.
-
-Unknown barcode:
-- preserve barcode on unresolved garment submission/candidate evidence;
-- continue member Fit Report;
-- do not directly create Product;
-- do not call SerpAPI from member intake.
-
-Conflicting barcode evidence routes to identity/duplicate review.
-
-# Retailer listing foundation — OWNER LOCKED
-
-- `retailer_listings` remains the canonical one-to-many listing relationship for resolved Products/variants.
-- a Product may have zero, one or multiple valid retailer listings.
-- a new valid retailer URL appends/dedupes; it must not overwrite another valid retailer listing.
-- normalized URLs support dedupe/identity review.
-- a retailer URL submitted with an unresolved garment remains candidate evidence until Product mapping.
-- same normalized URL apparently tied to different Products is a strong identity/duplicate flag.
-- future affiliate routing must preserve the original clean canonical retailer URL/listing.
-- valid retailer destinations remain valid even when not currently affiliate-monetizable.
-- retailer selection/order must not be driven by commission.
-- affiliate/click-source metadata must never disclose private body measurements.
-
-# Product photos
-
-- Product Photo is separate from personal Fit Photo.
-- Product photos are candidate/Product evidence subject to moderation.
-- unresolved Product Photo is stored under the private pending-submission boundary and must not be silently attached to an arbitrary canonical Product before mapping.
-- resolved Product photos may use the existing canonical Product-photo evidence pipeline where applicable.
-- authorized admins need deletion/moderation boundaries and audit history.
-
-# Following vs Fit Twin database semantics
-
-- `follows` = user-controlled `follower_id → followed_id` relationship.
-- `follows` does not itself mean Fit Twin.
-- Fit Twin is a derived strong current-person Match designation inside the followed set.
-- initial configurable threshold remains 85% Overall Match under the current product decision.
-- do not create a second Fit Twin relationship graph.
-- legacy function/table names containing `fit_twin` remain naming debt until deliberately migrated.
-
-# Feed / notification foundation
-
-- Following activity remains based on `follows` + Shared content visibility.
+- `follows` is the one user-controlled relationship graph.
+- Fit Twin is derived from current-person Match among followed members.
+- no second Fit Twin subscription graph may be created.
+- feed visibility remains constrained by Following + content visibility.
 - private/deleted source content must not continue exposing activity.
-- Fit-Twin-named helper identifiers are legacy naming debt, not product semantics.
-- `product_evidence_notifications` remains an owner-scoped insufficient-evidence watch mechanism where applicable; it is not a second recommendation engine.
 
-# LikeLocker foundation
+# 17. LikeLocker / Outfit foundations
 
-- `product_likes` = private ordinary Product likes.
+- `product_likes` = ordinary private Product likes.
 - `outfit_likes` = Outfit likes.
 - `wish_locker_items` = private purchase intent.
-- LikeLocker exposes these distinct states in one destination.
-- Shop/affiliate actions are presentation over valid retailer listings, not a second save graph.
+- these remain separate intents surfaced through LikeLocker.
+- canonical Outfit posts/links/likes remain V1 and must remain transactional/visibility-safe.
 
-# Outfit foundation
+# 18. Search foundations
 
-- existing canonical Outfit posts/links/likes remain preserved.
-- Outfit item links expose garment evidence only under valid visibility rules.
-- Outfit likes remain distinct from Product likes.
-- existing atomic Outfit creation behavior must remain transactional.
-
-# Search foundation
-
-- member catalog search uses canonical Products/Brands/identifiers/listings and does not treat unresolved pending submissions as independent Product results.
-- grouped Explore search may include Garments, Outfits and People while preserving privacy.
+- member catalog search uses canonical Products/Brands/identifiers/listings/reviewed aliases.
+- unresolved pending submissions are not independent Product results.
 - ordinary Product search deduplicates to one canonical Product result.
-- New Fit Report suggestions prefer canonical Brands/Products/reviewed aliases.
-- `product_aliases` must be integrated into canonical search/resolution before the alias feature is called complete.
-- search must not expose raw Fit Profile measurements/private size references.
+- New Fit Report suggestions can resolve reviewed Brand/Product aliases.
+- raw Fit Profile measurements/private size references must never be exposed through search.
 
-# Fit Result / legacy identifier
-
-Current physical values:
-- Too Small
-- Snug
-- Just Right
-- Relaxed
-- Too Big
-
-Legacy identifiers containing `fit_rating` may remain for these physical outcomes. There is **no current V1 1–5-star Fit Rating UI**.
-
-# Recommendation foundation
+# 19. Recommendation foundations
 
 Evidence hierarchy:
 - exact_variant
@@ -344,71 +299,64 @@ Evidence hierarchy:
 - brand_garment_type
 - category_fit
 
-`lib/recommendation.ts::recommendSize()` remains the recovered canonical application recommendation implementation unless later owner-approved work changes it.
+Help Me Size It reuses the canonical recommendation architecture; no second sizing engine/table.
 
-Help Me Size It reuses the same architecture; no second sizing engine/table.
+`Would Buy Again` does not affect size recommendation/confidence.
 
-`Would Buy Again` does not influence size recommendation/confidence.
+Pending/unmapped submissions do not count as exact canonical Product evidence until mapped.
 
-**Pending/unmapped garment submissions must not count as exact Product evidence until safely mapped.**
+# 20. Current implementation debt / open verification
 
-# Moderation foundation
+Do not claim these complete merely because foundations exist:
+- barcode scanner owner interaction verification;
+- full Product-to-Product merge tooling;
+- audited Product/candidate split tooling;
+- richer duplicate-detection/review UX;
+- complete admin queue/tab information architecture;
+- complete alias management UX;
+- complete spam garment-submission/Fit Report moderation controls;
+- complete pending→canonical Product-photo transfer/review workflow;
+- complete field lock/reopen UX across all intended Product facts;
+- admin SerpAPI single/batch research UI, cache indicators, and cap handling;
+- starter-catalog item-by-item enrichment/review;
+- Department consensus/default behavior beyond currently verified Product evidence behavior;
+- material `corroborated` trust semantics vs same-member multiple Fit Report votes;
+- browser-level behavioral regression coverage across the reworked site;
+- full owner page-by-page re-audit.
 
-Existing moderation tables/actions remain useful foundations where compatible:
-- `content_reports`
-- `moderation_actions`
-- `catalog_moderation_actions`
-- Product evidence review structures
-- `product_identity_evidence`
-- `catalog_review_flags`
-- `catalog_resolution_actions`
+# 21. Verification contract
 
-Final admin work must extend these rather than create a parallel moderation/catalog system.
-
-Current owner-required behavior still not safe to claim complete includes:
-- full Product-to-Product merge/split;
-- admin batch SerpAPI UI/server workflow;
-- Product alias search integration;
-- field lock/reopen coverage across final shared facts;
-- spam garment-submission/Fit Report coverage;
-- complete pending→canonical Product-photo transfer/moderation integration;
-- full browser-level behavioral regression verification.
-
-# Verification contract
-
-Before current catalog work is called complete, canonical CI/verification must prove:
-1. canonical integrity/drift checks;
-2. typecheck;
+Before a surface or major database behavior is called complete, verification should prove as applicable:
+1. canonical integrity/drift guard;
+2. TypeScript/typecheck;
 3. focused application tests;
 4. production build;
-5. complete fresh replay of the canonical migration directory;
+5. fresh replay of the complete canonical migration directory;
 6. canonical DB privacy/behavior/security tests;
-7. submission-first member fallback does not create canonical Product directly;
-8. pending Fit Reports remain usable and preserve immutable body state;
-9. candidate→Product mapping is auditable/safe;
-10. aliases/duplicate flags/merge/split preserve evidence/history;
-11. SerpAPI admin research checks cache first and cannot directly write Products;
-12. starter 150 state is reconciled;
+7. member manual fallback does not create Product directly;
+8. pending Fit Reports remain usable and preserve immutable history;
+9. candidate→Product resolution is authorized/audited;
+10. counted Fit Report state reuse follows the Product's actual match-measurement map;
+11. size/objective/body-state changes split only under the locked identity rules;
+12. admin/SerpAPI boundaries do not bypass canonical Product review;
 13. retailer listings append/dedupe rather than overwrite;
-14. admin moderation/auth boundaries hold.
+14. owner interaction review for the actual surface.
 
-Historical green CI on another commit is preservation evidence only. Current head must pass its own gate.
-
-# Forbidden regressions
+# 22. Forbidden regressions
 
 Do not:
 - add fixed raw body columns back to `fit_profiles` as current architecture;
-- blend current-person Match with historical garment Match;
-- expose raw body data through search/social/feed/notifications;
+- blend current-person Match and historical garment Match;
+- expose raw body measurements through social/search/feed/notifications;
 - create a second follow/catalog/sizing/moderation system;
-- let member manual fallback directly create canonical Product;
+- let manual fallback directly create canonical Product;
 - call SerpAPI from ordinary member intake;
-- let SerpAPI raw result/title/Google Product ID directly define Product identity;
+- let raw SerpAPI/Google identity define Product truth;
 - auto-merge fuzzy duplicates without sufficient evidence/review;
 - let member disagreement silently overwrite canonical facts;
 - overwrite one valid retailer listing with another;
-- rewrite/delete applied migrations to hide superseded experiments;
-- reintroduce private Fit Photo state;
-- reintroduce star Fit Rating UI from legacy identifiers;
+- rewrite applied migrations;
+- reintroduce star Fit Rating UI;
+- reintroduce Preferred Fit member UI/recommendation behavior without a new owner decision;
 - treat `supabase/schema.sql` as canonical;
 - expose dormant stretch logic as current V1 without a new owner decision.

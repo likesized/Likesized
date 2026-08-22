@@ -4,6 +4,8 @@ import test from "node:test";
 
 const migration=readFileSync("supabase/migrations/20260822000129_add_content_moderation.sql","utf8");
 const submissionMigration=readFileSync("supabase/migrations/20260822162000_submission_first_catalog_foundation.sql","utf8");
+const adminControlsMigration=readFileSync("supabase/migrations/20260822174500_add_admin_catalog_operating_controls.sql","utf8");
+const aliasHardeningMigration=readFileSync("supabase/migrations/20260822174600_harden_reviewed_brand_alias_writes.sql","utf8");
 const page=readFileSync("app/moderation/page.tsx","utf8");
 const actions=readFileSync("app/moderation/actions.ts","utf8");
 const report=readFileSync("components/ReportContentForm.tsx","utf8");
@@ -47,4 +49,29 @@ test("pending catalog candidates are admin-reviewable without becoming a second 
  assert.match(page,/Create verified Product \+ map/);
  assert.match(actions,/mapCatalogCandidate/);
  assert.match(actions,/createProductFromCandidate/);
+});
+
+test("reviewed alias, flag, and Product Photo controls stay behind the audited admin boundary",()=>{
+ assert.match(adminControlsMigration,/admin_dismiss_catalog_review_flag/);
+ assert.match(adminControlsMigration,/admin_add_product_alias/);
+ assert.match(adminControlsMigration,/admin_add_brand_alias/);
+ assert.match(adminControlsMigration,/admin_clear_pending_product_photo/);
+ assert.match(adminControlsMigration,/admin_remove_product_photo_evidence/);
+ assert.match(adminControlsMigration,/private\.is_admin\(\)/);
+ assert.match(aliasHardeningMigration,/drop policy if exists "authenticated add brand alias"/);
+ assert.match(aliasHardeningMigration,/revoke insert on public\.brand_aliases from authenticated/);
+ assert.match(actions,/dismissCatalogFlag/);
+ assert.match(actions,/addProductAlias/);
+ assert.match(actions,/addBrandAlias/);
+ assert.match(actions,/removePendingProductPhoto/);
+ assert.match(actions,/removeCanonicalProductPhoto/);
+ assert.match(actions,/storage\.from\("catalog-submission-photos"\)\.remove/);
+ assert.match(actions,/storage\.from\("product-photos"\)\.remove/);
+ assert.match(page,/Possible duplicates \/ identity review/);
+ assert.match(page,/Reviewed aliases/);
+ assert.match(page,/Product Photo moderation/);
+ assert.match(page,/Dismiss flag/);
+ assert.match(page,/Add Brand alias/);
+ assert.match(page,/Add Product alias/);
+ assert.match(page,/Remove Product Photo/);
 });

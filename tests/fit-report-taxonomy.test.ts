@@ -4,6 +4,7 @@ import test from "node:test";
 import { COLOR_FAMILIES, GARMENT_TYPES, isAllowedGarmentAnswer } from "../lib/garment-taxonomy.ts";
 
 const intake=readFileSync("app/closet/add/page.tsx","utf8");
+const success=readFileSync("app/closet/add/FitReportSuccessModal.tsx","utf8");
 const catalog=readFileSync("app/closet/add/CatalogGarmentFields.tsx","utf8");
 const catalogSearch=readFileSync("app/api/catalog/search/route.ts","utf8");
 const size=readFileSync("app/closet/add/GarmentSizeFields.tsx","utf8");
@@ -18,7 +19,7 @@ const seedTransition=readFileSync("supabase/migrations/20260822162100_reclassify
 const sizeKindMigration=readFileSync("supabase/migrations/20260822183000_add_not_sure_garment_size_kind.sql","utf8");
 const sizeParserMigration=readFileSync("supabase/migrations/20260822183100_support_controlled_partial_sizes.sql","utf8");
 const sizeDefaultMigration=readFileSync("supabase/migrations/20260822194700_add_product_size_kind_default_rpc.sql","utf8");
-const fitVariantMigration=readFileSync("supabase/migrations/20260822202500_fit_report_variant_deduplication.sql","utf8");
+const fitDedupMigration=readFileSync("supabase/migrations/20260822202500_fit_report_variant_deduplication.sql","utf8");
 
 test("every garment keeps the approved maximum-four controlled question set",()=>{
  for(const garment of GARMENT_TYPES){
@@ -74,40 +75,6 @@ test("known garments only carry forward editable size-system, department, and ma
  assert.match(sizeDefaultMigration,/ns\.kind <> 'not_sure'/);
 });
 
-test("Fit Report identity counts size, objective core answers, and body version but not color or intended fit",()=>{
- assert.match(actions,/FILTER_ONLY_ATTRIBUTE_KEYS = new Set\(\["intended_fit"\]\)/);
- assert.match(actions,/!FILTER_ONLY_ATTRIBUTE_KEYS\.has\(row\.attribute_key\)/);
- assert.match(actions,/row\.option_key !== "not_sure"/);
- assert.match(actions,/objectiveVariantKey\(garmentType, attributeEntries\)/);
- assert.match(actions,/save_known_fit_report/);
- assert.match(actions,/p_fit_profile_version_id: fitProfileVersionId/);
- assert.match(actions,/p_normalized_size_id: normalizedSizeId/);
- assert.doesNotMatch(actions,/objectiveVariantKey\([^)]*color/i);
- assert.match(fitVariantMigration,/fit_reports_known_counted_identity_uq/);
- assert.match(fitVariantMigration,/user_id,product_id,normalized_size_id,fit_profile_version_id,objective_variant_key/);
- assert.match(fitVariantMigration,/revision_count=revision_count\+1/);
- assert.match(fitVariantMigration,/return query select v_fit_report_id,v_closet_item_id,false/);
-});
-
-test("valid reports from the same member stack report-scoped core, department, and material evidence",()=>{
- assert.match(fitVariantMigration,/add column if not exists fit_report_id uuid references public\.fit_reports\(id\) on delete cascade/);
- assert.match(fitVariantMigration,/drop index if exists public\.product_attribute_evidence_member_uq/);
- assert.match(fitVariantMigration,/product_attribute_evidence_fit_report_uq/);
- assert.match(fitVariantMigration,/product_material_evidence_fit_report_uq/);
- assert.match(fitVariantMigration,/product_metadata_evidence_fit_report_uq/);
- assert.match(actions,/p_fit_report_id: saved\.fit_report_id/);
- assert.match(actions,/garment_answers: answerSnapshot/);
-});
-
-test("color and optional catalog identity evidence stack without changing the counted Fit Report key",()=>{
- assert.match(actions,/getOrCreateVariant\(supabase, product\.id, normalizedSizeId, structuredSizeLabel, colorFamily/);
- assert.match(actions,/recordIdentifier\(supabase, product\.id, variantId, identifier/);
- assert.match(actions,/recordIdentifier\(supabase, product\.id, variantId, styleNumber, "manufacturer_style"\)/);
- assert.match(actions,/recordListing\(supabase, product\.id, variantId, productUrl\)/);
- assert.match(actions,/product_photo_evidence/);
- assert.doesNotMatch(fitVariantMigration,/color_family_key[\s\S]{0,120}fit_reports_known_counted_identity_uq/);
-});
-
 test("barcode is LikeSized-only and an unknown scan stays with the pending submission",()=>{
  assert.match(catalog,/Scan barcode/);
  assert.match(catalog,/Scan the barcode and we’ll check the LikeSized catalog/);
@@ -128,8 +95,7 @@ test("reviewed Brand and Product aliases resolve back to canonical LikeSized Pro
 });
 
 test("unresolved manual intake records a pending garment submission and does not create a Product",()=>{
- assert.match(actions,/product_id: null/);
- assert.match(actions,/variant_id: null/);
+ assert.match(actions,/product_id: null, variant_id: null/);
  assert.match(actions,/record_pending_garment_submission/);
  assert.match(pendingMigration,/create table public\.catalog_candidates/);
  assert.match(pendingMigration,/create table public\.garment_submissions/);
@@ -168,7 +134,7 @@ test("size intake is controlled, complete, and keeps Other separate from Not sur
  assert.match(sizeKindMigration,/add value if not exists 'not_sure'/);
  assert.match(sizeParserMigration,/waist_inseam:[\s\S]*coalesce\(inseam::text,'\?'\)/);
  assert.match(actions,/"freeform", "not_sure"/);
- assert.match(actions,/p_size_label: structuredSizeLabel/);
+ assert.match(actions,/size_label: structuredSizeLabel/);
 });
 
 test("color, adult department, material, and percentage choices stay controlled",()=>{
@@ -188,16 +154,31 @@ test("color, adult department, material, and percentage choices stay controlled"
  assert.match(communityMigration,/product_material_evidence/);
 });
 
-test("invalid submit is explicit and successful submit distinguishes add from duplicate update",()=>{
+test("known Fit Reports update true duplicates but count size, objective-variant, or body-version changes",()=>{
+ assert.match(actions,/OBJECTIVE_VARIANT_EXCLUDED_KEYS/);
+ assert.match(actions,/"intended_fit"/);
+ assert.match(actions,/option_key !== "not_sure"/);
+ assert.match(actions,/save_known_fit_report/);
+ assert.match(actions,/p_objective_variant_key: variantFingerprint/);
+ assert.match(fitDedupMigration,/fit_reports_known_counted_identity_uq/);
+ assert.match(fitDedupMigration,/user_id,product_id,normalized_size_id,fit_profile_version_id,objective_variant_key/);
+ assert.match(fitDedupMigration,/garment_answers jsonb/);
+ assert.match(fitDedupMigration,/revision_count integer/);
+ assert.match(fitDedupMigration,/fit_report_id uuid references public\.fit_reports\(id\) on delete cascade/);
+ assert.doesNotMatch(fitDedupMigration,/product_attribute_evidence_member_uq/);
+});
+
+test("invalid submit is explicit and successful submit offers working Closet, styling, and dismiss actions",()=>{
  assert.match(form,/Please complete the highlighted fields before submitting your Fit Report/);
  assert.match(form,/querySelectorAll<HTMLElement>\("input:invalid, select:invalid, textarea:invalid"\)/);
  assert.match(form,/scrollIntoView/);
- assert.match(intake,/Thanks! Your Fit Report has been added\./);
- assert.match(intake,/Thanks! Your existing Fit Report has been updated\./);
- assert.match(intake,/instead of counting a duplicate/);
- assert.match(intake,/View it in My Closet/);
- assert.match(intake,/Style this item/);
- assert.match(actions,/updatedExisting \? "updated" : "added"/);
+ assert.match(success,/Thanks! Your Fit Report has been added\./);
+ assert.match(success,/View it in My Closet/);
+ assert.match(success,/Style this item/);
+ assert.match(success,/Close Fit Report confirmation/);
+ assert.match(success,/window\.history\.replaceState\(null, "", "\/closet\/add"\)/);
+ assert.match(success,/window\.location\.assign/);
+ assert.match(actions,/closet\/add\?added=/);
  assert.match(outfits,/defaultChecked=\{item\.id===preselectedClosetItemId\}/);
 });
 

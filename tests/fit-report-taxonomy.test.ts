@@ -36,3 +36,11 @@ test("color and condition are controlled and persisted separately",()=>{
  assert.match(taxonomyMigration,/color_family_key/);
  assert.match(taxonomyMigration,/reported_condition/);
 });
+
+test("fixture-mode intake is interactive but cannot write preview data",()=>{
+ assert.match(intake,/allowExploreFixtures/);
+ assert.match(intake,/EXPLORE_FIXTURE_PRODUCTS/);
+ assert.match(intake,/action=\{fixtureMode \? undefined : addGarment\}/);
+ assert.match(intake,/disabled=\{fixtureMode\}/);
+ assert.match(intake,/cannot save or write to Supabase/);
+});

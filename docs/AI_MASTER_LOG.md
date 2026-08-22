@@ -23,7 +23,7 @@ GitHub `likesized/Likesized` is the source of truth. Current files describe curr
 ## Sole active implementation line
 - PR #47
 - branch: `correct-grouped-menu-layout`
-- last implementation checkpoint before this documentation reconciliation: `0a477698da93fb95c136a0750ef63aff0f6a6fbb`; the live GitHub PR #47 branch HEAD is authoritative for later commits.
+- current development lineage; live GitHub PR #47 branch HEAD is authoritative for exact commit status.
 - PR remains open/unmerged.
 - purpose: controlled consolidation of Phase 6.5 work plus the submission-first catalog/New Fit Report architecture.
 - production merge/promotion: **NOT AUTHORIZED**.
@@ -34,9 +34,25 @@ The owner explicitly authorized the cleanup/consolidation work with the goal of 
 Current rule:
 - PR #47 is the **only active development lineage**.
 - do not create another implementation/decision/retry branch while this consolidation is active.
-- PR #48 must be treated as a salvage source only; preserve every unique approved retail/affiliate decision on PR #47, prove equivalence, then close the parallel PR.
 - historical branches are inspection/salvage sources only until classified; never copy an old file wholesale back into current source.
 - do not merge/promote PR #47 until the current intake/catalog checkpoint is coherent, CI/migration replay/Preview pass, and the owner explicitly authorizes production.
+
+## PR #48 salvage — COMPLETE / CLOSE WITHOUT MERGE
+PR #48 (`owner-decision-retail-affiliate-plan`) was created from stale `main` while PR #47 was already the active line. It contained documentation-only retail/affiliate decisions.
+
+The PR #48 diff was reviewed against current PR #47 canonical docs. Every unique approved decision has been preserved on PR #47:
+- zero valid retailer links → no Shop/cart;
+- exactly one valid retailer → direct route;
+- multiple valid retailers → compact retailer picker;
+- clean retailer names rather than raw URLs;
+- valid non-monetizable retailer links remain usable;
+- no commission-based retailer selection/ranking;
+- provider-independent clean canonical retailer destinations;
+- click-source tracking must never expose private body measurements;
+- Fit Report / Wish Locker / Gift List shopping uses the same conditional behavior;
+- exact disclosure: **“LikeSized may earn a commission from purchases made through our shopping links.”**
+
+No unique approved product decision remains solely on PR #48. Therefore PR #48 should be **closed without merge**. Its commits remain inert Git history/salvage evidence and must not be used as a development base.
 
 # ACTIVE OWNER DIRECTION — CONTROLLED CATALOG + SUBMISSION-FIRST INTAKE
 
@@ -1123,21 +1139,6 @@ Representative Beta verification:
 - `main` is the deployed baseline while PR #47 is in progress; it is not a competing future and must not be used as the base for new side work.
 - no retry/fixed/v2/owner-decision side branch as a substitute for canonical correction.
 
-## PR #48 salvage
-PR #48 (`owner-decision-retail-affiliate-plan`) was created from stale `main` while PR #47 was active. It is a **salvage source, not an active product future**.
-
-Before closing PR #48, PR #47 must preserve and verify all unique approved retail/affiliate decisions, including:
-- zero/one/multiple retailer behavior;
-- compact retailer picker for multiple destinations;
-- clean retailer labels;
-- non-monetizable valid retailer links remain usable;
-- no commission-based retailer selection/ranking;
-- provider-independent canonical destinations;
-- click-source tracking cannot expose private measurements;
-- exact affiliate disclosure copy.
-
-Only after diff/equivalence proves no unique approved decision remains may PR #48 be closed and its branch classified safe to remove.
-
 ## Historical branch salvage rule
 - inventory historical/retry/verification branches as **ACTIVE / SAFE TO REMOVE / HOLD**.
 - old branches may be inspected as historical evidence but their files must never be copied wholesale into current source.
@@ -1220,10 +1221,17 @@ PR #47 now contains branch implementation for the submission-first checkpoint, i
 - New Fit Report server action now has a known-Product path and an unresolved submission path that does not directly insert a Product;
 - unresolved Closet/Fit Report rows remain usable and display supplied Brand/Model plus catalog-review state;
 - moderation/admin surface now includes demand-prioritized catalog candidates, flags, evidence, map-to-existing and reviewed new-Product creation actions;
-- barcode identity disagreement evidence now includes the `barcode` field;
+- barcode identity disagreement evidence includes the `barcode` field;
 - private SerpAPI research cache and completed 150-item benchmark remain preserved.
 
-These are **not yet verified**. CI #448 on implementation checkpoint `0a477698da93fb95c136a0750ef63aff0f6a6fbb` stopped at the canonical-doc guard before typecheck/build/replay because two required canonical phrases had been lost during documentation reconciliation. This documentation commit restores those truths; subsequent gates must still run.
+Verification evidence so far:
+- canonical documentation guard passed after reconciliation;
+- TypeScript passed on the first submission-first verification run;
+- existing recommendation, Fit Match UI, Outfit photo, homepage, navigation and Explore/My Circle/LikeLocker safeguards passed on that run;
+- the first Fit Report/community-catalog test failure was a test-indexing bug (matching the import name instead of rendered component placement) and was corrected;
+- the next Preview failure was isolated to an unsupported RegExp `s` flag inside the strengthened test file; application build reached TypeScript test compilation and the test regex was replaced with an equivalent target-safe expression.
+
+**The latest current branch head still requires a complete fresh CI run through build, migration replay and DB tests. Do not call this consolidation green yet.**
 
 Still incomplete for the broader roadmap:
 - full transactional Product-to-Product merge/split UI/data behavior;
@@ -1236,14 +1244,13 @@ Still incomplete for the broader roadmap:
 
 # EXACT NEXT ACTION — ACTIVE CONSOLIDATION
 
-1. Re-run canonical integrity on the reconciled docs/source.
-2. Fix TypeScript/application-test/build failures exposed by the new submission-first code.
-3. Fresh-replay the entire migration directory and fix SQL/RLS/DB test failures without rewriting applied history.
-4. Strengthen New Fit Report regression tests so they explicitly prove unresolved intake does not insert canonical Products and pending mapping preserves historical Fit evidence; add browser-level interaction coverage where practical and require owner Preview interaction verification for scanner/repeat-search behavior.
-5. Integrate reviewed Product aliases into canonical intake search without surfacing pending candidates as Product results.
-6. Salvage every unique PR #48 retail/affiliate decision into PR #47 Product Spec/master, prove equivalence, then close PR #48.
-7. Build the branch salvage ledger and classify historical branches before any branch deletion/removal.
-8. Strengthen repository/canonical workflow safeguards against stale-base side branches and wholesale recovery from old branches.
-9. Run full canonical integrity → typecheck → focused tests → production build → complete fresh Supabase replay → DB privacy/behavior/security tests.
-10. Produce one protected/current PR #47 Preview tied to the exact passing commit and perform owner desktop/mobile intake review.
-11. **STOP before production.** Do not merge to `main` or promote production until the owner explicitly authorizes that final consolidation promotion.
+1. Complete the current CI gate on the latest PR #47 head: canonical integrity → typecheck → focused tests → build → fresh Supabase replay → DB tests.
+2. Fix only source/schema/test failures exposed by that gate on PR #47; do not create a side branch.
+3. Add database behavior tests for unresolved submission recording, candidate aggregation, admin-only mapping/creation, immutable Fit state preservation and starter-150 transition safety.
+4. Integrate reviewed Product aliases into canonical intake search without surfacing pending candidates as Product results.
+5. Close PR #48 without merge now that equivalence is documented/proven; treat its branch as historical only.
+6. Build the branch salvage ledger and classify historical branches before any branch removal.
+7. Strengthen repository/canonical workflow safeguards against stale-base side branches and wholesale recovery from old branches.
+8. Add browser-level behavioral coverage where practical and require owner Preview interaction verification for scanner opening, repeat search, exact selection and pending fallback.
+9. Produce one protected/current PR #47 Preview tied to the exact passing commit and perform owner desktop/mobile intake review.
+10. **STOP before production.** Do not merge to `main` or promote production until the owner explicitly authorizes that final consolidation promotion.

@@ -545,7 +545,7 @@ Status: **COMPLETE / DEPLOYED / VERIFIED**.
 
 # ACTIVE OWNER PREVIEW — EXPLORE / MY CIRCLE / LIKELOCKER
 
-Status: **BRANCH-ONLY / REBUILD VERIFICATION IN PROGRESS / NOT PRODUCTION**.
+Status: **BRANCH-ONLY / COMPLETE PREVIEW READY FOR OWNER REVIEW / NOT PRODUCTION**.
 
 - Active line: PR #47, `correct-grouped-menu-layout`.
 - Desktop and mobile use the same one Menu + one fixed notification bell control.
@@ -563,8 +563,9 @@ Status: **BRANCH-ONLY / REBUILD VERIFICATION IN PROGRESS / NOT PRODUCTION**.
 - Current branch work connects existing member Product-evidence confirmation/conflict rules to an admin garment-information queue and final verified/locked decisions, including controlled tags and member-supplied product descriptions.
 - On **2026-08-21**, the owner explicitly authorized the additive moderation/catalog-confirmation database foundation for the review preview. Live Supabase now records `20260822000129_add_content_moderation`, `20260822000737_index_moderation_relationships`, `20260822001113_add_product_evidence_notifications`, and `20260822001218_bootstrap_first_admin_safely`; the owner account is the sole bootstrapped admin and later signups cannot self-promote.
 - Post-DDL verification confirms RLS on report, audit/evidence, and notification tables; admin-only deletion policies for both private photo buckets; the admin-lock RPC; and the product-evidence notification trigger. Supabase advisors found no missing RLS or unindexed foreign key introduced by this work. The intentionally exposed admin RPCs remain guarded by `private.is_admin`.
-- Local canonical integrity, TypeScript, focused application tests, production build, and the new database behavior test source pass/compile. Fresh full migration replay and the owner preview remain pending the next PR #47 CI run; this is not production code.
+- PR #47 head `95e8e34f0e9eb7194f4b3d784c5a3887c5bfc1aa` passed CI run **#381** end-to-end: canonical integrity, TypeScript, all focused safeguards, production build, complete fresh migration replay, and every database privacy/behavior test including `moderation_and_evidence_notifications.test.sql`.
+- Vercel preview deployment `dpl_EKLzUtVFHDerEf7ywJ8kfoGUN7au` for that exact commit reached **READY**. This is an owner-review preview only; no code from PR #47 has been merged or promoted to production.
 - Public homepage five-question FAQ owner review remains pending.
 
 ## Exact next action
-Publish the completed PR #47 rebuild, require full CI including fresh migration replay/privacy tests, then create and visually verify one owner-accessible preview covering Explore, My Circle, LikeLocker, shared navigation, member reporting, photo moderation, evidence notifications, and catalog-conflict locking. Do not merge or promote production without explicit owner authorization. FAQ owner review and deferred desktop Fit Profile verification remain open.
+Owner reviews PR #47 on desktop and mobile across Explore, My Circle, LikeLocker, shared navigation, member reporting, photo moderation, evidence notifications, and catalog-conflict locking. Apply owner feedback on this same canonical line. Do not merge or promote production without explicit owner authorization. FAQ owner review and deferred desktop Fit Profile verification remain open.

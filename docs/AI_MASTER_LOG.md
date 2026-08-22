@@ -235,15 +235,153 @@ LikeSized prioritizes real-world garment evidence from people with garment-relev
 - Current V1 does **not** collect, classify, infer, or expose stretch as a member field/filter.
 - Legacy schema/PR #36 stretch logic may remain dormant only if required for compatibility during recovery; it must not be reintroduced as active V1 behavior without a new owner decision.
 
-### Garment condition / changed state — OWNER LOCKED
-Question: **Has this garment changed from its original fit?**
-Options:
-- No / Normal wear
-- Shrunk
-- Stretched out
-- Altered / Tailored
+### Garment condition — OWNER LOCKED, LATER OWNER DECISION SUPERSEDES THE EARLIER CHANGED-STATE QUESTION
+The Fit Report uses exactly these controlled condition choices:
+- New
+- Used
+- Altered
 
-Changed-state observations stay in personal Fit History but are excluded from normal-new-product community summaries/recommendation evidence. Filtering occurs before unique-wearer selection so an earlier normal observation from the same physical garment can remain valid.
+Altered observations stay in personal Fit History but are excluded from normal new/used-product community summaries and recommendation evidence. Filtering occurs before unique-wearer selection so an earlier unaltered observation from the same physical garment can remain valid.
+
+### New Fit Report intake — OWNER LOCKED
+For an unidentified item, request only the information required to identify the garment and record its fit:
+- **Brand** — required.
+- **Item name** — required.
+- **Garment type** — required and specific/member-facing (for example, Jeans rather than Bottoms). LikeSized derives and stores the broader Category behind the scenes.
+- **Garment-specific controlled questions** — shown only after Garment type is selected. Each garment type may have no more than four garment-specific Style questions; four is a ceiling, not a target. Every such question is optional. **Not sure** is the first and default UI choice. Not sure/blank stores no Product attribute or evidence claim and therefore cannot affect filters, corroboration, conflict flags, or matching. The exact useful question set must be owner-approved per garment type before the form or Explore filters are rebuilt. A global Style question or universal option list is prohibited.
+- **Color family** — required and separate from the garment-specific Style-question limit.
+- **Exact size** — required, using the canonical structured size controls.
+- **Product link, barcode, or manufacturer Style ID** — optional identifiers when available.
+- **Overall Fit Result** — required, using Too Small / Snug / Just Right / Relaxed / Too Big.
+- **Garment condition** — required, using New / Used / Altered.
+- **Fit Photo** — optional. There is no photo-visibility choice: an uploaded Fit Photo is shared with LikeSized members; members who do not want to share a photo do not upload one. LikeSized does not retain a private Fit Photo for the member.
+- **Fit notes** — optional.
+
+The normal Fit Report must not ask members to complete a broad catalog questionnaire. Manufacturer/retailer facts are acquired from trustworthy product sources first. Important missing facts use the canonical provisional → independent confirmation → conflict flag → admin verified/locked evidence flow.
+
+Controlled input is the default wherever a finite or canonical choice exists:
+- Garment type, garment-specific attributes, Color family, structured size components, Overall Fit Result, and Garment condition use fixed controlled options.
+- Brand and Item name search/suggest canonical records first. A member may enter a new value only after no existing result is found; the new value is normalized and remains provisional pending corroboration or admin verification.
+- Product link, barcode, and manufacturer Style ID use validated identifier inputs rather than uncontrolled catalog-description fields.
+- Fit notes are the intentional free-text exception.
+- Fixed options are garment-specific and context-dependent. The application must never reuse one global option list for every garment type.
+- Every applicable Sleeve question includes 3/4 Sleeve alongside the other type-appropriate controlled sleeve lengths.
+- Neckline is available only for garment Types where it is a meaningful broad distinction (for example, V-neck or Turtleneck); it is not forced onto every Top.
+- Garment Types with meaningful opening/closure variation may use a broad controlled Closure question such as Pullover / Quarter-zip / Full-zip.
+
+The owner-approved controlled Color families are:
+- Black
+- White
+- Gray
+- Silver
+- Brown
+- Tan / Beige
+- Cream / Ivory
+- Red
+- Orange
+- Yellow
+- Green
+- Blue
+- Purple
+- Pink
+- Gold
+- Multicolor
+
+The controlled Color family is the member-facing input and Explore filter. When trustworthy manufacturer/retailer data supplies an exact marketed color or wash name (for example, Midnight Navy or Medium Stonewash), LikeSized stores that exact source value separately and maps it to the approved Color family. Members do not free-type custom Color values.
+
+Garment taxonomy uses one canonical Category → Type hierarchy in two different interfaces:
+- **New Fit Report:** the member selects only the specific physical Type, such as Jeans or Bra. LikeSized automatically derives and stores the broader Category, such as Bottoms or Intimates.
+- **Explore:** the member selects the broad Category first. The Type filter then dynamically exposes only Types assigned to that Category. Selecting Bottoms before Jeans is the owner-approved interaction.
+- Activewear is not a physical garment Type. An active item uses its actual Type (for example, T-shirt, Tank, Shorts, Joggers, Leggings, Sports Bra, or Jacket).
+- The prior umbrella Types Swimwear, Bras / Intimate Apparel, and Shoes must be replaced with specific physical Types before the intake/filter rebuild.
+- Approved Swimwear Types: One-piece Swimsuit, Bikini Top, Bikini Bottom, Tankini Top, Swim Trunks, Board Shorts.
+- Approved Intimates Types: Bra, Bralette, Sports Bra, Underwear, Shapewear.
+- Approved Shoes Types: Sneakers, Boots, Dress Shoes, Loafers, Flats, Heels, Sandals, Slides, Clogs.
+- Vest, Overalls, and Coveralls are approved missing physical Types.
+- **Work Pants is superseded and removed as a member-facing Type. Cargo Pants replaces it.**
+- **Sweatpants** is an approved separate Bottoms Type and must not be forced into Joggers.
+- **Skirt** includes the controlled question **Skort (Yes / No)** in addition to its other owner-reviewed broad questions.
+- **Jacket and Coat are combined into one member-facing Type: Jacket / Coat.** Members are not required to understand the inconsistent jacket-versus-coat distinction. Trustworthy manufacturer wording may remain as source metadata behind the scenes. Suit Jacket and Blazer remain separate Types.
+
+#### Approved garment-specific questions: Tops
+Color family remains required and separate for every Type.
+- **T-shirt:** Intended Fit (Fitted / Regular / Oversized); Cropped (Yes / No); Sleeve (Short / 3/4 / Long); Neckline (Crew / V-neck / Scoop / Square / Turtleneck).
+- **Polo:** Intended Fit (Slim / Regular / Relaxed); Sleeve (Short / 3/4 / Long); Opening (Button Placket / Quarter-zip / Full-zip).
+- **Dress Shirt:** Intended Fit (Slim / Regular / Relaxed); Sleeve (Short / 3/4 / Long).
+- **Work Shirt:** Intended Fit (Slim / Regular / Relaxed); Sleeve (Short / 3/4 / Long).
+- **Casual Button-down:** Intended Fit (Slim / Regular / Relaxed); Sleeve (Short / 3/4 / Long).
+- **Flannel Shirt:** Intended Fit (Slim / Regular / Oversized); Sleeve (Short / 3/4 / Long). There is no Worn-as question. Flannel remains trustworthy manufacturer material metadata when available rather than a member-entered material field.
+- **Blouse:** Intended Fit (Fitted / Regular / Oversized); Cropped (Yes / No); Sleeve (Sleeveless / Short / 3/4 / Long); Neckline (Crew / V-neck / Scoop / Square / Turtleneck / Cowl / Boat Neck).
+- **Tank Top:** Intended Fit (Fitted / Regular / Loose); Cropped (Yes / No); Neckline (Crew / V-neck / Scoop / Square).
+- **Camisole:** Intended Fit (Fitted / Regular / Loose); Cropped (Yes / No); Neckline (V-neck / Scoop / Square).
+- **Strapless Top:** Shape (Fitted / Flowy); Cropped (Yes / No). Tube Tops are included in this specific Tops Type rather than forced into T-shirt, Tank Top, or Camisole.
+- **Halter Top:** Shape (Fitted / Flowy); Cropped (Yes / No); Neckline (High / Low). Halter Tops remain a separate physical Type from Strapless Tops.
+- **Sweater:** Intended Fit (Fitted / Regular / Oversized); Cropped (Yes / No); Sleeve (Short / 3/4 / Long); Neck/Opening (Crew / V-neck / Turtleneck / Quarter-zip / Full-zip).
+- **Cardigan:** Intended Fit (Fitted / Regular / Oversized); Length (Cropped / Regular / Long); Sleeve (Short / 3/4 / Long); Closure (Open-front / Button / Zip / Tie).
+- **Sweatshirt:** Intended Fit (Fitted / Regular / Oversized); Cropped (Yes / No); Sleeve (Short / 3/4 / Long); Closure (Pullover / Quarter-zip / Full-zip).
+- **Hoodie:** Intended Fit (Fitted / Regular / Oversized); Cropped (Yes / No); Closure (Pullover / Quarter-zip / Full-zip).
+
+#### Approved garment-specific questions: Bottoms
+Color family remains required and separate for every Type.
+- **Jeans:** Cut (Skinny / Slim / Straight / Relaxed / Wide / Bootcut / Flare); Rise (Low / Mid / High); Length (Cropped / Ankle / Regular / Long).
+- **Chinos:** Cut (Slim / Tapered / Straight / Relaxed); Rise (Low / Mid / High); Length (Cropped / Ankle / Regular / Long).
+- **Dress Pants:** Cut (Slim / Straight / Wide / Flare); Rise (Low / Mid / High); Length (Cropped / Ankle / Regular / Long); Pleated (Yes / No).
+- **Trousers:** Cut (Slim / Straight / Wide / Relaxed); Rise (Low / Mid / High); Length (Cropped / Ankle / Regular / Long); Pleated (Yes / No).
+- **Cargo Pants:** Intended Fit (Slim / Regular / Relaxed); Rise (Low / Mid / High); Length (Cropped / Ankle / Regular / Long). Cargo Pants supersedes the removed Work Pants Type.
+- **Shorts:** Intended Fit (Slim / Regular / Relaxed); Rise (Low / Mid / High); Length (Short / Mid / Long).
+- **Joggers:** Intended Fit (Slim / Regular / Relaxed); Rise (Low / Mid / High); Length (Cropped / Full).
+- **Sweatpants:** Intended Fit (Slim / Regular / Relaxed); Rise (Low / Mid / High); Leg Opening (Cuffed / Open).
+- **Leggings:** Rise (Low / Mid / High); Length (Capri / 7/8 / Full); Leg Shape (Fitted / Bootcut / Flare).
+- **Skirt:** Shape (Straight / A-line / Pencil / Full / Pleated / Wrap); Rise (Low / Mid / High); Length (Mini / Knee / Midi / Maxi); Skort (Yes / No).
+
+#### Approved garment-specific questions: Dresses & One-Pieces
+Color family remains required and separate for every Type.
+- **Dress:** Shape (Fitted / Flowy); Length (Mini / Knee / Midi / Maxi); Top/Sleeve (Strapless / Halter / Sleeveless / Short / 3/4 / Long); Neckline (High / Low). Neckline is conditional and hidden when Strapless is selected.
+- **Jumpsuit:** Shape (Fitted / Flowy); Leg Shape (Slim / Straight / Wide / Flare); Length (Cropped / Full); Top/Sleeve (Strapless / Halter / Sleeveless / Short / 3/4 / Long).
+- **Romper:** Shape (Fitted / Flowy); Top/Sleeve (Strapless / Halter / Sleeveless / Short / 3/4 / Long); Neckline (High / Low).
+- **Bodysuit:** Top/Sleeve (Strapless / Halter / Sleeveless / Short / 3/4 / Long); Neckline (High / Low); Bottom Coverage (Thong / Brief).
+- **Overalls:** Intended Fit (Slim / Regular / Relaxed); Leg Shape (Straight / Wide / Flare); Length (Shorts / Cropped / Full).
+- **Coveralls:** Intended Fit (Slim / Regular / Relaxed); Sleeve (Short / 3/4 / Long); Length (Cropped / Full).
+- Dependent questions are dynamic: when an earlier controlled answer makes a later question invalid, the invalid question is hidden and is not stored.
+
+#### Approved garment-specific questions: Outerwear
+Color family remains required and separate for every Type.
+- **Suit Jacket:** Intended Fit (Slim / Regular / Relaxed); Length (Cropped / Regular / Long); Front (Single-breasted / Double-breasted).
+- **Blazer:** Intended Fit (Slim / Regular / Oversized); Length (Cropped / Regular / Long); Front (Single-breasted / Double-breasted).
+- **Jacket / Coat:** Style (Denim / Leather / Bomber / Puffer / Rain / Utility / Trench / Peacoat / Overcoat); Intended Fit (Slim / Regular / Oversized); Length (Cropped / Waist / Hip / Mid-thigh / Knee / Long); Hooded (Yes / No).
+- **Vest:** Style (Puffer / Tailored / Utility); Intended Fit (Slim / Regular / Oversized); Length (Cropped / Regular / Long); Hooded (Yes / No).
+- **Wrap / Shawl:** Length (Short / Regular / Long); Closure (Open / Fastened / Belted).
+
+#### Approved garment-specific questions: Swimwear
+Color family remains required and separate for every Type. Swim Dress and Rash Guard are explicitly excluded from this intake taxonomy.
+- **One-piece Swimsuit:** Top (Strapless / Halter / Straps); Neckline (High / Low); Leg Cut (Low / Regular / High); Coverage (Minimal / Moderate / Full). Neckline is hidden when Strapless makes it inapplicable.
+- **Bikini Top:** Style (Bandeau / Halter / Triangle / Bra-style); Support (Light / Medium / High); Coverage (Minimal / Moderate / Full); Underwire (Yes / No).
+- **Bikini Bottom:** Rise (Low / Mid / High); Coverage (Minimal / Moderate / Full); Leg Cut (Low / Regular / High); Skirted (Yes / No).
+- **Tankini Top:** Intended Fit (Fitted / Flowy); Length (Cropped / Regular / Long); Top (Strapless / Halter / Straps); Support (Light / Medium / High).
+- **Swim Trunks:** Intended Fit (Slim / Regular / Relaxed); Length (Short / Mid / Long); Liner (Yes / No).
+- **Board Shorts:** Intended Fit (Slim / Regular / Relaxed); Length (Mid / Long); Closure (Pull-on / Drawstring / Fly).
+
+#### Approved garment-specific questions: Intimates
+Color family remains required and separate for every Type.
+- **Bra:** Style (T-shirt / Balconette / Plunge / Push-up / Strapless / Minimizer); Underwire (Yes / No); Padding (None / Light / Padded); Coverage (Minimal / Moderate / Full).
+- **Bralette:** Style (Triangle / Standard / Longline); Padding (Yes / No); Closure (Pull-on / Hook); Coverage (Minimal / Moderate / Full).
+- **Sports Bra:** Support (Light / Medium / High); Padding (Yes / No); Closure (Pull-on / Hook / Zip); Coverage (Minimal / Moderate / Full).
+- **Underwear:** Cut (Brief / Bikini / Hipster / Boyshort / Thong / Boxer / Boxer Brief / Trunk); Rise (Low / Mid / High); Coverage (Minimal / Moderate / Full).
+- **Shapewear:** Form (Brief / Shorts / Cami / Bodysuit); Target Area (Waist / Hips / Thighs / Full Body); Compression (Light / Medium / Firm).
+
+#### Approved garment-specific questions: Shoes
+Color family remains required and separate for every Type.
+- **Sneakers:** Height (Low / Mid / High); Use (Casual / Running / Training / Court); Closure (Lace / Slip-on / Hook-and-loop).
+- **Boots:** Style (Casual / Work / Hiking / Combat / Cowboy / Dress / Rain / Snow); Height (Ankle / Mid-calf / Knee / Over-the-knee); Heel (Flat / Low / Mid / High); Closure (Pull-on / Zip / Lace).
+- **Dress Shoes:** Style (Oxford / Derby / Monk-strap); Toe (Round / Pointed / Square).
+- **Loafers:** Style (Penny / Tassel / Bit); Toe (Round / Pointed / Square).
+- **Flats:** Style (Ballet / Mary Jane / Slingback); Toe (Round / Pointed / Square).
+- **Heels:** Heel Height (Low / Mid / High); Heel Style (Block / Stiletto / Wedge / Kitten); Toe (Round / Pointed / Square / Open).
+- **Sandals:** Style (Flat / Heeled / Platform); Closure (Slip-on / Ankle Strap / Back Strap).
+- **Slides:** Sole (Flat / Platform).
+- **Clogs:** Heel (Flat / Low / Mid / High); Back (Open / Strap / Closed).
+
+The owner completed and approved the full V1 Category → Type → controlled garment-question audit on 2026-08-21. The approved taxonomy is now the only source for the New Fit Report intake and Explore facets. Implementation must not revive the prior global Style/options list.
 
 ### Garment information/provenance — OWNER LOCKED
 - Resolution order: explicit canonical Product → UPC/barcode → normalized Product URL → Brand + manufacturer Style ID → normalized Brand + Product fallback/new provisional Product.
@@ -322,6 +460,13 @@ Notify is not a permanent normal garment-card action. It belongs to the insuffic
 - initial results: 24;
 - Keep Browsing: +24.
 
+### Catalog trust in Browse, Search, and Similar Garments — OWNER LOCKED
+- Provisional controlled Product information participates immediately in filters and Similar Garments. It is never discarded merely because only one person supplied it.
+- **Ordinary Browse prioritizes catalog trust:** Admin-locked and trusted verified Products first, then community-confirmed/corroborated Products, then provisional Products. Conflicted/unresolved Products remain available but rank below otherwise comparable unconflicted Products until review.
+- Within each Browse trust tier, the existing applicable Fit tier, relevance, freshness/unseen, recency, and popularity rules continue to order results.
+- **Search is different:** text/query relevance is primary. An exact or stronger Brand/Item/identifier/attribute match must not be buried beneath a less relevant Product merely because the less relevant Product is verified. Catalog trust is a tie-breaker among similarly relevant Search results.
+- Similar Garments may use all non-rejected controlled values. Admin-locked/verified values receive full authority, community-confirmed values receive stronger authority, and provisional values receive reduced but nonzero authority. This confidence weighting never replaces or weakens actual Exact Product/Exact Variant Fit Reports.
+
 ### Search
 - searches Garments, Outfits, People across full available inventory, not only My Fit Matches;
 - one canonical product result per garment/product, not duplicate results per wearer/Fit Report;
@@ -332,16 +477,18 @@ Notify is not a permanent normal garment-card action. It belongs to the insuffic
 ### Filters
 - strict; never silently relax user selections;
 - controlled taxonomy shared with New Fit Report;
-- Category → Type → Style, then Brand → Model; Color remains garment-search/filter data;
+- Category → Type → Style, then Brand → Item Name; Color remains garment-search/filter data;
 - Category and Type never relaxed;
 - Color remains browsable even if card display treats it separately from taxonomy descriptors;
 - later owner review identified jeans/pants need explicit controlled leg-shape/cut such as Skinny, Slim, Straight, Relaxed, Wide, Bootcut, Flare, plus Rise Low/Mid/High where applicable. Exact taxonomy/card-display implementation must be reconciled with the single controlled taxonomy before code resumes.
 - Material is manufacturer/background only; no member material verification/filter.
 - Stretch is not V1 active input/filter.
+- A member-submitted controlled value participates in the applicable Explore facet immediately, including when it is the only submitted value. Provisional/corroborated/verified remains internal provenance and does not gate whether the current Product value can appear as a filter. This follows the same practical rule as a provisional Brand or Item Name on an unidentified Product.
+- A later matching confirmation strengthens the value. A conflicting submission flags admin review but does not silently replace the current Product value; the current value continues to drive the public facet until admin resolves and, when appropriate, locks the correct value.
 
 ### Garment card interaction — CURRENT OWNER CORRECTION
 - image priority: Shared wearer fit photo → valid canonical/product image → garment-type LikeSized fallback; blank image is never acceptable.
-- Brand + Model/Product identity visible.
+- Brand + Item Name identity visible.
 - Match context visible where legitimate.
 - wearer line uses Display Name/photo where available and includes size + Fit Result.
 - **Heart = Like.**
@@ -351,6 +498,7 @@ Notify is not a permanent normal garment-card action. It belongs to the insuffic
 - wearer identity tap → Wearer Mini Profile.
 - Like/Wishlist/Notify are independent targets and must never open detail accidentally.
 - no stars.
+- The owner-directed copy correction removes internal 75% eligibility/threshold language and Match-percentage explanations from empty states. It does **not** remove the legitimate Match percentage/context from an actual Garment card. Threshold mechanics remain internal; the card may still show the member's useful result.
 
 ### Mobile mini-browser
 - true opaque full-screen mobile detail flow;
@@ -545,7 +693,7 @@ Status: **COMPLETE / DEPLOYED / VERIFIED**.
 
 # ACTIVE OWNER PREVIEW — EXPLORE / MY CIRCLE / LIKELOCKER
 
-Status: **BRANCH-ONLY / COMPLETE PREVIEW READY FOR OWNER REVIEW / NOT PRODUCTION**.
+Status: **BRANCH-ONLY / CONTROLLED INTAKE + EXPLORE REBUILD UNDER FINAL VERIFICATION / NOT PRODUCTION**.
 
 - Active line: PR #47, `correct-grouped-menu-layout`.
 - Desktop and mobile use the same one Menu + one fixed notification bell control.
@@ -555,17 +703,24 @@ Status: **BRANCH-ONLY / COMPLETE PREVIEW READY FOR OWNER REVIEW / NOT PRODUCTION
 - Migration `20260821231040_add_likelocker_and_fit_twin_settings.sql` is the canonical replay source for the already-applied live tables/settings.
 - Earlier source head `ccac70f1b5413b0b566db6218baa68552f3a9a26` passed CI run **#378** and produced preview deployment `dpl_Ai2mywe1dLrp8ai4ncWT27pQQVEc`; that preview is now superseded by the owner-requested Explore and moderation rebuild on the same branch.
 - Current branch work renames the canonical page/route to Explore (`/explore`), retains `/browse` only as a compatibility redirect, adds the eight-item leading carousel and 24-item Keep Browsing expansion, and keeps real Product/Outfit/People/Match sources.
-- Explore now implements strict Category → Type → Style and Brand → Model → Color filters, exact wearer/size/Fit Result context, Fit Report counts, and People search from either content view. Filters never silently broaden.
+- Explore now implements strict broad Category → specific Type → only that Type's approved controlled questions, followed by Brand → Item name → Color. Changing Category clears incompatible Type/question values. Filters never silently broaden, and the former global Style list is removed.
+- Explore search stays over the active browsing page. Typing is debounced and shows exact result counts plus up to five suggestions in each non-empty Garments, Outfits, and People group. Full grouped results and selected detail mini-browsers do not replace the Explore route or discard filters/batches/scroll state.
+- The New Fit Report intake now uses Brand, Item name, specific Garment type, zero-to-four optional controlled Type questions with Not sure as the no-evidence default, required controlled Color, exact Size, optional identifiers/link, required Fit Result and New/Used/Altered condition, optional Shared Fit photo, and optional notes. The broad questionnaire, Market/cut segment, Fit Family, product description, visibility, buy-again, and times-worn inputs are removed from normal intake.
+- Existing exact Products ask **Yes, they’re correct / I need to change something / Not sure**. A distinct agreeing person strengthens the one canonical evidence record; disagreement enters the existing catalog-review queue; Not sure records no confirmation.
+- A preview-only fixture layer supplies labeled temporary Garments, Outfits, and Wearers for owner testing. It is gated to development/Vercel Preview, never writes those records or media to live Supabase, disables fixture mutation controls, and must be removed before production merge.
 - Product/image opens an opaque mini-browser with Back + X and preserves Explore underneath; Like, Wish Locker, wearer, and Notify remain separate targets.
 - Notify appears only below the 75% useful-evidence threshold. The owner-scoped watch produces a real in-app alert/bell count when a later Fit Report arrives for that Product.
 - Current branch work adds member reports for Outfit posts/shared Fit Report photos, an admin moderation queue, accountable removal/dismissal history, and admin-only file/content removal.
 - The admin queue displays the reported photo before action. Removing a target closes all duplicate open reports for that same target while keeping the action audit.
 - Current branch work connects existing member Product-evidence confirmation/conflict rules to an admin garment-information queue and final verified/locked decisions, including controlled tags and member-supplied product descriptions.
+- Each flagged Product now shows the actual competing garment-type/attribute/description values, number of distinct people supporting each value, and evidence status before the owner chooses and audits the final locked value.
 - On **2026-08-21**, the owner explicitly authorized the additive moderation/catalog-confirmation database foundation for the review preview. Live Supabase now records `20260822000129_add_content_moderation`, `20260822000737_index_moderation_relationships`, `20260822001113_add_product_evidence_notifications`, and `20260822001218_bootstrap_first_admin_safely`; the owner account is the sole bootstrapped admin and later signups cannot self-promote.
 - Post-DDL verification confirms RLS on report, audit/evidence, and notification tables; admin-only deletion policies for both private photo buckets; the admin-lock RPC; and the product-evidence notification trigger. Supabase advisors found no missing RLS or unindexed foreign key introduced by this work. The intentionally exposed admin RPCs remain guarded by `private.is_admin`.
 - PR #47 head `95e8e34f0e9eb7194f4b3d784c5a3887c5bfc1aa` passed CI run **#381** end-to-end: canonical integrity, TypeScript, all focused safeguards, production build, complete fresh migration replay, and every database privacy/behavior test including `moderation_and_evidence_notifications.test.sql`.
 - Vercel preview deployment `dpl_EKLzUtVFHDerEf7ywJ8kfoGUN7au` for that exact commit reached **READY**. This is an owner-review preview only; no code from PR #47 has been merged or promoted to production.
+- Owner review locked the member-facing garment filter label as **Item name**. The existing internal query key remains an implementation detail only.
+- Owner review locked all no-result states to the compact **No garments/outfits found** treatment. My Fit Matches adds only the useful instruction to try All or remove a filter; no threshold percentage or large missing-evidence headline is shown.
 - Public homepage five-question FAQ owner review remains pending.
 
 ## Exact next action
-Owner reviews PR #47 on desktop and mobile across Explore, My Circle, LikeLocker, shared navigation, member reporting, photo moderation, evidence notifications, and catalog-conflict locking. Apply owner feedback on this same canonical line. Do not merge or promote production without explicit owner authorization. FAQ owner review and deferred desktop Fit Profile verification remain open.
+Complete fresh-database replay/CI for the controlled taxonomy and grouped search, publish the labeled fixture preview, then have the owner review desktop/mobile Explore, New Fit Report, My Circle, LikeLocker, shared navigation, reporting, photo moderation, notifications, and catalog-conflict locking on this same canonical line. Do not merge or promote production without explicit owner authorization. FAQ owner review and deferred desktop Fit Profile verification remain open.

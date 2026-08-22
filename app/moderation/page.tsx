@@ -35,6 +35,8 @@ type ModeratedContent = {
   imageUrl: string | null;
   description: string;
 };
+type EvidenceChoice = { value: string; submitted_by: string | null; source_status: string };
+type CatalogDispute = { kind: "garment_type" | "market_segment" | "attribute" | "description"; key: string; label: string; choices: Array<{ value: string; people: number; status: string }> };
 function one<T>(v: unknown): T | null {
   return Array.isArray(v)
     ? ((v[0] as T | undefined) ?? null)
@@ -87,6 +89,24 @@ export default async function ModerationPage() {
   if (error) throw new Error("Could not load moderation queue.");
   const rows = (reports ?? []) as Report[];
   const productFlags = (catalogFlags ?? []) as ProductFlag[];
+  const flaggedProductIds = productFlags.map((product) => product.id);
+  const [{data:metadataEvidence},{data:attributeEvidence},{data:descriptionEvidence}] = flaggedProductIds.length ? await Promise.all([
+    supabase.from("product_metadata_evidence").select("product_id,field_key,value_text,source_status,submitted_by").in("product_id",flaggedProductIds).neq("source_status","rejected"),
+    supabase.from("product_attribute_evidence").select("product_id,attribute_key,option_key,source_status,submitted_by").in("product_id",flaggedProductIds).neq("source_status","rejected"),
+    supabase.from("product_description_evidence").select("product_id,description,source_status,submitted_by").in("product_id",flaggedProductIds).neq("source_status","rejected"),
+  ]) : [{data:[]},{data:[]},{data:[]}];
+  const disputesByProduct = new Map<string,CatalogDispute[]>();
+  function addEvidence(productId:string,kind:CatalogDispute["kind"],key:string,displayLabel:string,choice:EvidenceChoice){
+    const disputes=disputesByProduct.get(productId)??[];
+    let dispute=disputes.find((item)=>item.kind===kind&&item.key===key);
+    if(!dispute){dispute={kind,key,label:displayLabel,choices:[]};disputes.push(dispute);disputesByProduct.set(productId,disputes);}
+    const existing=dispute.choices.find((item)=>item.value===choice.value);
+    if(existing){if(choice.submitted_by)existing.people+=1;if(choice.source_status==="verified")existing.status="verified";else if(choice.source_status==="corroborated"&&existing.status!=="verified")existing.status="corroborated";}
+    else dispute.choices.push({value:choice.value,people:choice.submitted_by?1:0,status:choice.source_status});
+  }
+  for(const row of metadataEvidence??[])addEvidence(row.product_id,row.field_key==="market_segment"?"market_segment":"garment_type",row.field_key,label(row.field_key),{value:row.value_text,submitted_by:row.submitted_by,source_status:row.source_status});
+  for(const row of attributeEvidence??[])addEvidence(row.product_id,"attribute",row.attribute_key,label(row.attribute_key),{value:row.option_key,submitted_by:row.submitted_by,source_status:row.source_status});
+  for(const row of descriptionEvidence??[])addEvidence(row.product_id,"description","description","Description",{value:row.description,submitted_by:row.submitted_by,source_status:row.source_status});
   const moderatedContent = new Map<string, ModeratedContent>();
   const outfitIds = rows
     .filter((row) => row.target_type === "outfit_post")
@@ -240,32 +260,8 @@ export default async function ModerationPage() {
                     Current type: {product.garment_type_key || "Missing"} ·
                     Current segment: {product.market_segment}
                   </p>
-                  <form className={styles.actions} action={lockCatalogField}>
-                    <input type="hidden" name="product_id" value={product.id} />
-                    <select name="field_kind" defaultValue="garment_type">
-                      <option value="garment_type">Garment type</option>
-                      <option value="market_segment">Market segment</option>
-                  <option value="attribute">Controlled attribute</option>
-                  <option value="description">Description</option>
-                    </select>
-                    <input
-                      name="field_key"
-                      required
-                      placeholder="Field key (for example garment_type)"
-                    />
-                    <input
-                      name="locked_value"
-                      required
-                      placeholder="Correct controlled value"
-                    />
-                    <input
-                      name="reason"
-                      required
-                      maxLength={500}
-                      placeholder="Why this is the final value"
-                    />
-                    <button className={styles.dismiss}>Lock decision</button>
-                  </form>
+                  {(disputesByProduct.get(product.id)??[]).map((dispute)=><div className={styles.dispute} key={`${dispute.kind}:${dispute.key}`}><h3>{dispute.label}</h3><ul>{dispute.choices.map((choice)=><li key={choice.value}><b>{choice.value}</b> · {choice.people} {choice.people===1?"person":"people"} · {label(choice.status)}</li>)}</ul><form className={styles.actions} action={lockCatalogField}><input type="hidden" name="product_id" value={product.id}/><input type="hidden" name="field_kind" value={dispute.kind}/><input type="hidden" name="field_key" value={dispute.key}/><select name="locked_value" required defaultValue=""><option value="" disabled>Choose the correct final value</option>{dispute.choices.map((choice)=><option value={choice.value} key={choice.value}>{choice.value}</option>)}</select><input name="reason" required maxLength={500} placeholder="Why this is the final value"/><button className={styles.dismiss}>Lock decision</button></form></div>)}
+                  {!(disputesByProduct.get(product.id)??[]).length?<p>Evidence details are unavailable; keep this flag open until the source values can be reviewed.</p>:null}
                 </article>
               );
             })}

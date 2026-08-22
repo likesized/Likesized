@@ -60,20 +60,21 @@ Top-level categories:
 - Bottoms
 - Dresses & One-Pieces
 - Outerwear
-- Activewear
 - Swimwear
-- Lingerie
+- Intimates
 - Shoes
 
 Accessories are not V1.
 
-Current Explore design requires Category → Type → Style plus Brand → Model and standardized Color where applicable.
+New Fit Report asks for the specific physical Type only; LikeSized derives the broad Category. Explore asks for the broad Category first, then exposes only Types in that Category. After a Type is selected, Explore and intake share the same zero-to-four optional controlled questions for that Type. **Not sure** is the first/default intake choice and records no claim. Color is required, controlled, and separate from the four-question ceiling.
+
+The core New Fit Report intake is Brand, Item name, specific Garment type, applicable optional controlled questions, Color, exact Size, optional Product link/barcode/Style ID, Overall Fit Result, Garment condition, optional Shared Fit photo, and optional Fit notes. It does not ask for Market/cut segment, Fit Family, product description, visibility, buy-again, times worn, or a broad construction/fit-dimension questionnaire.
 
 For jeans/pants, owner review identified a need for explicit controlled structural descriptors such as:
 - leg shape/cut: Skinny, Slim, Straight, Relaxed, Wide, Bootcut, Flare;
 - rise: Low, Mid, High where applicable.
 
-The exact mapping of those descriptors into the single canonical taxonomy must be finalized before implementation resumes. Do not create a second pants-only taxonomy.
+The complete owner-approved per-Type mapping is recorded in the canonical master and implemented once in `lib/garment-taxonomy.ts`; do not create a second pants-only or Explore-only taxonomy.
 
 ## Material / stretch boundary
 - Material composition may be retained only from reliable manufacturer/product sources as background data.
@@ -177,15 +178,12 @@ Rules:
 - Outerwear: jackets/coats may use modestly wider circumference tolerances for normal layering; suit jackets/blazers remain more precise; no separate layering preference/input.
 
 ## Garment condition / changed state
-Question: **Has this garment changed from its original fit?**
-
 Options:
-- No / Normal wear
-- Shrunk
-- Stretched out
-- Altered / Tailored
+- New
+- Used
+- Altered
 
-Changed-state observations remain in personal Fit History but are excluded from normal-new-product community summaries/recommendation evidence. Filtering happens before unique-wearer selection so an earlier normal observation may still count even if the physical garment later changed.
+New and Used observations use normal sizing evidence. Altered observations remain in personal Fit History but are excluded from normal-product community summaries/recommendation evidence. Filtering happens before unique-wearer selection so an earlier unaltered observation may still count if the physical garment is later altered.
 
 ## Actual garment measurements — deferred
 - V1 must work without manufacturer physical garment measurements/specs.
@@ -273,15 +271,18 @@ Fit Alert remains separate at 85%+ garment-specific Match with legitimate releva
 - not restricted to My Fit Matches;
 - normal garment search returns one canonical product result, not one row per wearer/Fit Report;
 - wearer-name contextual search may anchor the canonical product to that wearer's latest Shared report;
-- mobile live suggestions are compact list rows directly below search field;
-- full Search Results remain compact and preserve Explore/search state through mini-browser navigation.
+- suggestions appear directly below the search field while typing;
+- each non-empty Garments, Outfits, and People group shows its exact result count and up to five top suggestions;
+- choosing a suggestion or submitting a full grouped search opens over Explore instead of replacing the browsing route, preserving filters, batches, carousel position, and scroll state;
+- query relevance is primary; catalog trust breaks ties among similarly relevant garment results.
 
 ## Strict filters
 - user selections never silently relax;
-- Category and Type never relax;
+- Category and Type never relax; changing Category clears incompatible Type/question selections;
+- Type-specific filters expose only the approved controlled questions and options for the selected Type; a Polo cannot inherit Jeans cuts;
 - See Similar proposes one visible relaxation before applying it;
 - Color remains browsable/searchable even when card UI displays color separately from taxonomy tags;
-- Brand/Model remain first-class canonical metadata;
+- Brand/Item name remain first-class canonical metadata;
 - no V1 stretch filter;
 - no member material filter.
 

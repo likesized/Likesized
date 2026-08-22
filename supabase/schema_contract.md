@@ -21,7 +21,9 @@ Owner-approved Fit Match work exists on preserved PR #36 / `fit-match-engine-aud
 - `fit_profiles` is a profile shell; raw body values belong in normalized owner-private measurement structures created by ordered migrations.
 - immutable Fit Profile version tables preserve historical owner-private body state.
 - `fit_reports.fit_profile_version_id` preserves try-on body-state association; later current-body edits do not rewrite old evidence.
-- `fit_report_dimensions` stores controlled garment-specific responses with DB validation.
+- `garment_types`, `garment_attribute_definitions`, and `garment_attribute_options` hold the database vocabulary used by the one controlled application taxonomy; server validation additionally enforces which zero-to-four questions/options belong to each specific Type.
+- `color_families` stores the approved controlled member-facing color list. `product_variants.color_family_key` stores its filterable family; exact trustworthy manufacturer color/wash wording remains separate in `color_label`.
+- `fit_reports.reported_condition` preserves New / Used / Altered. New and Used map to the canonical normal-evidence boundary; Altered remains excluded from normal-product recommendation evidence.
 - current-person matching RPCs return safe derived scores/coverage only; raw body measurements remain private.
 - historical Product/Fit Report matching uses immutable snapshots.
 - Private Closet items remain owner-only; Shared evidence is member-readable only under the current RLS rules.
@@ -56,6 +58,7 @@ Owner-approved Fit Match work exists on preserved PR #36 / `fit-match-engine-aud
 
 ## Search foundation
 - catalog/member search uses canonical Product/Brand/identifier/listing/member sources rather than duplicate catalogs or profile indexes.
+- grouped search also uses canonical Outfit captions/creators/tagged Products, returns an exact group count, and limits suggestions independently for Garments, Outfits, and People.
 - normal Product search deduplicates to one canonical Product result.
 - search must not expose raw Fit Profile measurements/private size references.
 

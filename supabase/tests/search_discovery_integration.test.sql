@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, auth;
 
-select plan(35);
+select plan(40);
 
 insert into auth.users(id,aud,role,email,created_at,updated_at)
 values
@@ -54,6 +54,9 @@ values('fc522000-0000-4000-8000-000000000001'::uuid,'Shop Test','shoptest','shop
 insert into public.retailer_listings(id,product_id,retailer_id,retailer_product_id,retailer_product_id_normalized,sku,sku_normalized,listing_title)
 values('fc523000-0000-4000-8000-000000000001'::uuid,'fc520000-0000-4000-8000-000000000001'::uuid,'fc522000-0000-4000-8000-000000000001'::uuid,'RET-99','RET99','SKU-RETAIL','SKURETAIL','Ribcage High Rise Straight');
 
+insert into public.outfit_posts(id,user_id,caption,photo_url)
+values('fc524000-0000-4000-8000-000000000001'::uuid,'fc500000-0000-4000-8000-000000000003'::uuid,'Ribcage weekend look','fc500000-0000-4000-8000-000000000003/fc524000-0000-4000-8000-000000000001/display.webp');
+
 set local role authenticated;
 set local request.jwt.claim.sub='fc500000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
@@ -73,6 +76,7 @@ select is((select count(*) from public.search_catalog_products('nothing-like-thi
 select is((select count(*) from public.search_catalog_products('SKU',24) where id='fc520000-0000-4000-8000-000000000001'::uuid),1::bigint,'catalog search deduplicates one canonical Product reached through multiple identity records');
 select is((select brand_name from public.search_catalog_products('Ribcage',24) limit 1),'Levi Strauss & Co','catalog search returns safe canonical brand display name');
 select is((select slug from public.search_catalog_products('Ribcage',24) limit 1),'levi-ribcage-straight-jeans','catalog search returns canonical product slug used by UI navigation');
+select is((select total_count from public.search_catalog_products('Ribcage',5) limit 1),1::bigint,'catalog search returns the exact Garments group count independently of suggestion limit');
 
 select is((select id from public.search_members('alex_fit',24) limit 1),'fc500000-0000-4000-8000-000000000002'::uuid,'member search finds exact username');
 select is((select id from public.search_members('alex',24) limit 1),'fc500000-0000-4000-8000-000000000002'::uuid,'member search finds username substring');
@@ -80,6 +84,9 @@ select is((select id from public.search_members('Alex Example',24) limit 1),'fc5
 select is((select count(*) from public.search_members('search_viewer',24)),0::bigint,'member search excludes the current viewer');
 select is((select count(*) from public.search_members('nobody-here',24)),0::bigint,'unmatched member query returns no profiles');
 select is((select id from public.search_members('aLeX eXaMpLe',24) limit 1),'fc500000-0000-4000-8000-000000000002'::uuid,'member search is case-insensitive');
+select is((select total_count from public.search_members('alex',5) limit 1),1::bigint,'member search returns the exact People group count');
+select is((select id from public.search_outfits('weekend',5) limit 1),'fc524000-0000-4000-8000-000000000001'::uuid,'Outfit search finds a matching caption');
+select is((select total_count from public.search_outfits('Ribcage',5) limit 1),1::bigint,'Outfit search returns the exact Outfits group count');
 select is((select count(*) from public.get_fit_matches('overall',100) where user_id='fc500000-0000-4000-8000-000000000002'::uuid),0::bigint,'member search does not bypass minimum Fit Match evidence requirements');
 select is((select count(*) from public.profiles where id='fc500000-0000-4000-8000-000000000002'::uuid),1::bigint,'signed-in member can open discovered member profile');
 select is((select count(*) from public.body_measurements where user_id='fc500000-0000-4000-8000-000000000002'::uuid),0::bigint,'member discovery does not grant raw body measurement access');
@@ -110,6 +117,7 @@ reset role;
 
 select ok(not has_function_privilege('anon','public.search_catalog_products(text,integer)','EXECUTE'),'anonymous visitors cannot execute authenticated catalog search RPC');
 select ok(not has_function_privilege('anon','public.search_members(text,integer)','EXECUTE'),'anonymous visitors cannot execute member search RPC');
+select ok(not has_function_privilege('anon','public.search_outfits(text,integer)','EXECUTE'),'anonymous visitors cannot execute Outfit search RPC');
 
 select * from finish();
 rollback;

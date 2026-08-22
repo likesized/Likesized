@@ -27,5 +27,8 @@ test("member garment confirmations flag conflicts and owner decisions lock verif
  assert.match(migration,/source_status='verified'/);
  assert.match(migration,/product_description_evidence/);
  assert.match(page,/Disputed garment information/);
+ assert.match(page,/product_attribute_evidence/);
+ assert.match(page,/Choose the correct final value/);
+ assert.match(page,/choice\.people/);
  assert.match(page,/Lock decision/);
 });

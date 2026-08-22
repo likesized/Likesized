@@ -39,10 +39,12 @@ export function FitReportForm({ action, children }: { action?: ServerAction; chi
     }}
     onChange={(event) => {
       const form = event.currentTarget;
-      const target = event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-      if (target.validity.valid) {
-        target.removeAttribute("aria-invalid");
-        target.closest("label")?.classList.remove("fieldInvalid");
+      const target = event.target;
+      if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement) {
+        if (target.validity.valid) {
+          target.removeAttribute("aria-invalid");
+          target.closest("label")?.classList.remove("fieldInvalid");
+        }
       }
       if (!form.querySelector(":invalid")) {
         const summary = form.querySelector<HTMLElement>("[data-validation-summary]");

@@ -62,6 +62,12 @@ Owner-approved Fit Match work exists on preserved PR #36 / `fit-match-engine-aud
 - normal Product search deduplicates to one canonical Product result.
 - search must not expose raw Fit Profile measurements/private size references.
 
+## External catalog import controls
+- `private.catalog_import_providers`, usage, request, and alert tables are owner/internal only; provider credentials never enter the database or browser.
+- Every provider defaults disabled and cannot incur an automatic paid overage or upgrade. A configured provider stops at its explicit monthly hard cap.
+- The owner/admin queue receives the durable 80% warning, 95% critical, and hard-limit alerts. Provider limits must not be shown to members.
+- Provider data enters the existing canonical Product/Brand/identifier/listing/evidence tables only. No provider-specific duplicate catalog or parallel attribute system is allowed.
+
 ## Fit Result / legacy `fit_rating` identifier
 - current physical fit values are Too Small / Snug / Just Right / Relaxed / Too Big.
 - a database type/column/function identifier containing `fit_rating` may be legacy naming for those physical outcomes.

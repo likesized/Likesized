@@ -58,6 +58,9 @@ jobs:
       - name: Moderation and garment-confirmation safeguards
         run: node --test tests/moderation-foundation.test.ts
 
+      - name: External catalog import safeguards
+        run: node --test tests/external-catalog-import.test.ts
+
       - name: Build
         run: npm run build
 

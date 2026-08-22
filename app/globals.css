@@ -119,6 +119,12 @@ summary { cursor:pointer; font-weight:900; }
 .addGarmentShell { max-width:1180px; margin:0 auto; }
 .garmentForm { display:grid; gap:20px; padding:32px; border:1px solid var(--line); border-radius:24px; background:var(--white); }
 .garmentForm .fieldPair { margin:0; }
+.catalogSuggestionList { display:grid; gap:8px; margin-top:10px; }
+.catalogSuggestion { width:100%; display:flex; align-items:center; gap:12px; padding:10px; border:1px solid var(--line); border-radius:12px; background:var(--paper); color:var(--ink); text-align:left; cursor:pointer; }
+.catalogSuggestion:hover { border-color:var(--ink); }
+.catalogSuggestion img { width:42px; height:42px; object-fit:cover; border-radius:8px; background:var(--white); }
+.catalogSuggestion span { display:grid; gap:3px; }
+.catalogSuggestion small { color:var(--muted); font-size:12px; }
 .fieldHelp { display:block; margin-top:6px; font-weight:400; }
 .itemHero { display:grid; grid-template-columns:.75fr 1.25fr; gap:55px; align-items:center; }
 .productImage { aspect-ratio:1/1.08; border-radius:28px; display:grid; place-items:center; background:linear-gradient(145deg,#f0c6d4,#f7d6b5); font-size:120px; font-weight:900; color:rgba(18,18,18,.12); }

@@ -52,6 +52,14 @@ Never blend the two contexts.
 - Repeat submissions by the same member do not count as independent corroboration.
 - Conflicts trigger review instead of silently replacing stronger facts.
 
+## External catalog import — OWNER LOCKED
+
+Manual item creation is the final fallback, not the first identification step. New Fit Report checks the canonical LikeSized catalog first, then uses the approved external-source waterfall: barcode/GTIN lookup; exact product-link extraction; brand + Item name/Style ID shopping search; and, when approved, retailer/affiliate catalog feeds. A person selects the exact candidate; LikeSized imports only explicit source facts into the one canonical Product/provenance system, then asks only for their personal Fit Report facts.
+
+There is no single universal clothing database. Search/discovery results are candidates, not automatic catalog truth. Manufacturer and approved retailer/feed facts outrank aggregate barcode/search results; missing or uncertain controlled attributes remain Not sure. External product images/URLs are used only under the applicable source/feed rights and provenance rules.
+
+Every external provider is disabled by default, has an owner-controlled hard monthly request cap, and has **no automatic paid overage, upgrade, or billing action**. Brave Search is capped at its $5 monthly credit / 1,000-search allowance unless the owner deliberately changes that cap. The admin queue warns at 80%, becomes critical at 95%, and records a hard-limit alert when a provider stops. One provider reaching its limit routes to enabled no-cost/local alternatives; it never exposes a provider/billing error to a member or forces manual entry while a valid fallback remains.
+
 ## V1 taxonomy
 Explore and New Fit Report must share one controlled garment taxonomy. No parallel category/type/style systems.
 

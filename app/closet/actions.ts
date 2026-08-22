@@ -228,6 +228,8 @@ export async function addGarment(formData: FormData) {
   const styleNumber = text(formData, "style_number") || null;
   const identifier = text(formData, "identifier");
   const productUrl = text(formData, "product_url");
+  const catalogSourceUrl = text(formData, "catalog_source_url");
+  const catalogSourceProvider = text(formData, "catalog_source_provider");
   const colorFamily = text(formData, "color_family");
   const visibility = "shared" as const;
   const fit = text(formData, "fit");
@@ -236,8 +238,9 @@ export async function addGarment(formData: FormData) {
   const fitNotes = text(formData, "fit_notes") || null;
   const wearsCount = 0;
 
-  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId&&!UUID.test(existingProductId)) || !GARMENT_TYPE_BY_KEY.has(garmentType) || (existingProductId&&!CATALOG_CONFIRMATIONS.has(catalogConfirmation)) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || !originalSizeLabel || originalSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !COLOR_FAMILY_KEYS.has(colorFamily) || !FIT_RESULTS.has(fit) || !REPORTED_CONDITIONS.has(reportedCondition) || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000) || identifier.length>120 || (styleNumber&&styleNumber.length>100)) fail("invalid_fields");
+  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId&&!UUID.test(existingProductId)) || !GARMENT_TYPE_BY_KEY.has(garmentType) || (existingProductId&&!CATALOG_CONFIRMATIONS.has(catalogConfirmation)) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || !originalSizeLabel || originalSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !COLOR_FAMILY_KEYS.has(colorFamily) || !FIT_RESULTS.has(fit) || !REPORTED_CONDITIONS.has(reportedCondition) || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000) || (catalogSourceUrl && catalogSourceUrl.length > 1000) || (catalogSourceProvider && !new Set(["brave_search","upcitemdb"]).has(catalogSourceProvider)) || identifier.length>120 || (styleNumber&&styleNumber.length>100)) fail("invalid_fields");
   if (productUrl) { try { normalizeProductUrl(productUrl); } catch { fail("invalid_fields"); } }
+  if (catalogSourceUrl) { try { normalizeProductUrl(catalogSourceUrl); } catch { fail("invalid_fields"); } }
 
   const photoEntry = formData.get("photo");
   const photo = photoEntry instanceof File && photoEntry.size > 0 ? photoEntry : null;
@@ -260,7 +263,8 @@ export async function addGarment(formData: FormData) {
   let photoPath: string | null = null;
   try {
     const submittedType = await getGarmentType(supabase, garmentType);
-    const known=await resolveKnownCatalogProduct(supabase,existingProductId,brandName,productName,garmentType,marketSegment,styleNumber,identifier,productUrl);
+    const resolvedUrl=productUrl||catalogSourceUrl;
+    const known=await resolveKnownCatalogProduct(supabase,existingProductId,brandName,productName,garmentType,marketSegment,styleNumber,identifier,resolvedUrl);
     let product:ProductRecord;
     if(known){
       product=known.product;
@@ -278,7 +282,7 @@ export async function addGarment(formData: FormData) {
       if(currentAttributeError)throw currentAttributeError;
       attributeRows=(currentAttributes??[]).filter((row)=>isAllowedGarmentAnswer(garmentType,row.attribute_key,row.option_key));
     }
-    const sourceReference=productUrl||identifier||styleNumber||"closet_log";
+    const sourceReference=catalogSourceUrl ? `${catalogSourceProvider}:${catalogSourceUrl}` : productUrl||identifier||styleNumber||"closet_log";
 
     const normalizedSizeId = await getNormalizedSize(supabase, structuredSizeLabel, sizeKind, sizingSystem);
     const identifierKind = identifier && /^\d{8}$|^\d{12,14}$/.test(normalizeIdentifier(identifier)) ? "upc" : "sku";
@@ -291,7 +295,7 @@ export async function addGarment(formData: FormData) {
     if (reportError || !report) throw reportError ?? new Error("Could not save fit report");
     if (styleNumber) await recordIdentifier(supabase, product.id, variantId, styleNumber, "manufacturer_style");
     if (identifier) await recordIdentifier(supabase, product.id, variantId, identifier, identifierKind);
-    if (productUrl) await recordListing(supabase, product.id, variantId, productUrl);
+    if (resolvedUrl) await recordListing(supabase, product.id, variantId, resolvedUrl);
 
     if (photo) {
       const extension = PHOTO_TYPES[photo.type];

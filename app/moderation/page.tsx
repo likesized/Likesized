@@ -37,6 +37,7 @@ type ModeratedContent = {
 };
 type EvidenceChoice = { value: string; submitted_by: string | null; source_status: string };
 type CatalogDispute = { kind: "garment_type" | "market_segment" | "attribute" | "description"; key: string; label: string; choices: Array<{ value: string; people: number; status: string }> };
+type ImportProviderAlert = { provider_key: string; severity: "warning" | "critical" | "limit_reached"; request_count: number; request_limit: number; created_at: string };
 function one<T>(v: unknown): T | null {
   return Array.isArray(v)
     ? ((v[0] as T | undefined) ?? null)
@@ -63,6 +64,7 @@ export default async function ModerationPage() {
     { data: history },
     { count: closedCount },
     { data: catalogFlags },
+    { data: importAlerts },
   ] = await Promise.all([
     supabase
       .from("content_reports")
@@ -85,10 +87,12 @@ export default async function ModerationPage() {
       .select("id,name,garment_type_key,market_segment,brand:brands(name)")
       .eq("catalog_review_needed", true)
       .order("created_at", { ascending: true }),
+    supabase.rpc("get_catalog_import_provider_alerts"),
   ]);
   if (error) throw new Error("Could not load moderation queue.");
   const rows = (reports ?? []) as Report[];
   const productFlags = (catalogFlags ?? []) as ProductFlag[];
+  const providerAlerts = (importAlerts ?? []) as ImportProviderAlert[];
   const flaggedProductIds = productFlags.map((product) => product.id);
   const [{data:metadataEvidence},{data:attributeEvidence},{data:descriptionEvidence}] = flaggedProductIds.length ? await Promise.all([
     supabase.from("product_metadata_evidence").select("product_id,field_key,value_text,source_status,submitted_by").in("product_id",flaggedProductIds).neq("source_status","rejected"),
@@ -178,6 +182,15 @@ export default async function ModerationPage() {
           <span>Resolved reports</span>
         </div>
       </section>
+      {providerAlerts.length ? <section className={styles.history}>
+        <h2>Catalog import limits</h2>
+        <div className={styles.queue}>
+          {providerAlerts.map((alert) => <article className={styles.report} key={`${alert.provider_key}:${alert.severity}`}>
+            <strong>{label(alert.provider_key)} · {label(alert.severity)}</strong>
+            <p>{alert.request_count} of {alert.request_limit} monthly requests used. No automatic paid overage is enabled.</p>
+          </article>)}
+        </div>
+      </section> : null}
       <section>
         <h2>Content reports</h2>
         {rows.length ? (

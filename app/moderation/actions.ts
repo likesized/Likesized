@@ -114,3 +114,71 @@ export async function setCandidateStatus(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/moderation");
 }
+
+export async function dismissCatalogFlag(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const flagId = String(formData.get("flag_id") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
+  if (!UUID.test(flagId) || !reason) throw new Error("A valid catalog flag and dismissal reason are required.");
+  const { error } = await supabase.rpc("admin_dismiss_catalog_review_flag", { p_flag_id: flagId, p_reason: reason });
+  if (error) throw new Error(error.message);
+  revalidatePath("/moderation"); revalidatePath("/explore");
+}
+
+export async function addProductAlias(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const productId = String(formData.get("product_id") ?? "");
+  const alias = String(formData.get("alias") ?? "").trim().slice(0, 180);
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
+  if (!UUID.test(productId) || !alias || !reason) throw new Error("Choose a Product and provide the reviewed alias and reason.");
+  const { error } = await supabase.rpc("admin_add_product_alias", { p_product_id: productId, p_alias: alias, p_reason: reason });
+  if (error) throw new Error(error.message);
+  revalidatePath("/moderation"); revalidatePath("/explore");
+}
+
+export async function addBrandAlias(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const brandId = String(formData.get("brand_id") ?? "");
+  const alias = String(formData.get("alias") ?? "").trim().slice(0, 120);
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
+  if (!UUID.test(brandId) || !alias || !reason) throw new Error("Choose a Brand and provide the reviewed alias and reason.");
+  const { error } = await supabase.rpc("admin_add_brand_alias", { p_brand_id: brandId, p_alias: alias, p_reason: reason });
+  if (error) throw new Error(error.message);
+  revalidatePath("/moderation"); revalidatePath("/explore");
+}
+
+export async function removePendingProductPhoto(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const submissionId = String(formData.get("submission_id") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
+  if (!UUID.test(submissionId) || !reason) throw new Error("A valid pending Product Photo and moderation reason are required.");
+  const { data: submission, error: lookupError } = await supabase
+    .from("garment_submissions")
+    .select("id,product_photo_storage_path")
+    .eq("id", submissionId)
+    .single();
+  if (lookupError || !submission?.product_photo_storage_path) throw new Error("Pending Product Photo not found.");
+  const { error: storageError } = await supabase.storage.from("catalog-submission-photos").remove([submission.product_photo_storage_path]);
+  if (storageError) throw new Error("Could not remove pending Product Photo file.");
+  const { error } = await supabase.rpc("admin_clear_pending_product_photo", { p_submission_id: submissionId, p_reason: reason });
+  if (error) throw new Error(error.message);
+  revalidatePath("/moderation"); revalidatePath("/closet");
+}
+
+export async function removeCanonicalProductPhoto(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const photoId = String(formData.get("photo_id") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
+  if (!UUID.test(photoId) || !reason) throw new Error("A valid canonical Product Photo and moderation reason are required.");
+  const { data: photo, error: lookupError } = await supabase
+    .from("product_photo_evidence")
+    .select("id,storage_path")
+    .eq("id", photoId)
+    .single();
+  if (lookupError || !photo?.storage_path) throw new Error("Canonical Product Photo not found.");
+  const { error: storageError } = await supabase.storage.from("product-photos").remove([photo.storage_path]);
+  if (storageError) throw new Error("Could not remove canonical Product Photo file.");
+  const { error } = await supabase.rpc("admin_remove_product_photo_evidence", { p_photo_id: photoId, p_reason: reason });
+  if (error) throw new Error(error.message);
+  revalidatePath("/moderation"); revalidatePath("/explore");
+}

@@ -1165,41 +1165,92 @@ Representative Beta verification:
 - the completed SerpAPI benchmark cache is retained as research evidence; temporary benchmark write surfaces are retired.
 - production promotion requires explicit owner authorization after full verification.
 
-## Branch salvage ledger — IN PROGRESS / NO DELETIONS YET
-**ACTIVE**
+## Branch salvage ledger — CLASSIFICATION COMPLETE / NO DELETIONS YET
+All 69 live branch refs were inventoried and assigned an explicit disposition on 2026-08-22.
+
+Classification rule used for this pass:
+- **ACTIVE** — current production baseline or sole active development lineage.
+- **SAFE TO REMOVE** — `ahead_by = 0` against `main`, or an explicitly reviewed historical branch whose unique approved decisions have already been salvaged into current canon.
+- **HOLD** — any ref with unique/diverged commit identity or intentionally preserved historical evidence; HOLD requires second-pass reconciliation before deletion.
+
+**ACTIVE — 2**
 - `main` — deployed production baseline only.
 - `correct-grouped-menu-layout` / PR #47 — sole active development lineage.
 
-**HISTORICAL, APPROVED CONTENT SALVAGED**
-- `owner-decision-retail-affiliate-plan` / closed PR #48 — approved retail decisions are already represented on PR #47; do not build from this branch.
-
-**SAFE-TO-REMOVE CANDIDATES VERIFIED SO FAR**
-These refs were compared to `main` and showed `ahead_by = 0`; no unique commit content exists beyond what is already in `main`:
+**SAFE TO REMOVE — 29**
+Salvage proof is complete enough to classify these branch pointers as redundant. Physical deletion is still deferred until the HOLD pass is reconciled and cleanup is deliberately executed.
 - `FINAL-NO`
 - `NO-MORE`
 - `STOP-TEST`
 - `THIS-IS-BAD`
 - `agent/canonicalize-migration-version`
+- `agent/phase-1-2-verification`
+- `agent/phase-1-3-verification`
+- `agent/phase-1-4-verification`
+- `agent/phase-1-5-verification`
+- `agent/phase-2-1-verification`
+- `agent/phase-2-final-verification`
+- `agent/phase-2-recalculation-verification`
+- `agent/phase-3-3-verification`
+- `agent/phase-6-1-2-verification`
 - `auth-supabase`
 - `closet-live`
 - `fit-profile-persistence`
 - `fit-twins`
+- `fix-public-homepage-content`
+- `optimize-outfit-photo-pipeline`
 - `outfits-live`
+- `owner-decision-retail-affiliate-plan` — closed PR #48; every unique approved retail/affiliate decision was already salvaged into PR #47.
 - `people-live-matches`
-- `product-fit-live`
-- `search-discovery`
 - `phase-6-4-diagram-assets`
 - `phase-6-4-diagram-assets-check`
 - `phase-6-4-diagram-assets-check2`
+- `product-fit-live`
+- `repair-menu-and-live-fit-profile`
+- `search-discovery`
 
-**HOLD / UNIQUE OR DIVERGED CONTENT SEEN**
-Do not remove until the unique content is explicitly classified against current canon:
-- `agent/phase-0-replay-verification` — one unique README-only commit was observed;
-- `fix/high-res-measurement-guides` — unique workflow content exists and must be deliberately classified;
-- `phase-6-4-fit-profile-help` — unique `tmp-placeholder.txt` artifact observed; likely disposable, but still HOLD until final branch pass records the decision;
-- all other historical refs not yet explicitly listed above remain HOLD by default until compared.
+**HOLD — 38**
+Do not remove these refs yet. They contain unique/diverged commit identity or are intentionally retained historical evidence. Second-pass review must prove each unique piece is already present, intentionally superseded, or worth adapting into current canon before the pointer can move to SAFE TO REMOVE.
+- `agent/phase-0-replay-verification` — unique README-only commit previously observed.
+- `agent/phase-1-5-verification-2` — unique older master-log content.
+- `agent/phase-1-5-verification-3` — unique older master-log content.
+- `agent/phase-3-1-verification` — unique verification marker plus Fit Report dimension-test changes.
+- `agent/phase-3-4-verification` — unique verification-marker commit.
+- `agent/phase-3-5-verification` — unique verification-marker commit.
+- `agent/phase-4-1-verification` — unique verification-marker commit.
+- `agent/phase-4-2-verification` — unique verification-marker commit.
+- `agent/phase-4-3-verification` — unique verification-marker commit.
+- `agent/phase-4-4-verification` — unique verification-marker commit.
+- `agent/phase-4-5-verification` — unique verification-marker commit.
+- `agent/phase-5-1-verification` — unique CI-verification marker commit.
+- `agent/phase-5-2-foundation-verification` — unique CI-verification marker commit.
+- `agent/phase-5-2-foundation-verification-2` — unique CI-verification marker commit.
+- `agent/phase-5-2-ui-verification` — unique CI-verification marker commit.
+- `agent/phase-5-3-complete-verification` — unique commit identity; no net file delta in first-pass compare, so retain until second-pass confirmation.
+- `agent/phase-5-3-notification-foundation` — unique commit identity; no net file delta in first-pass compare, so retain until second-pass confirmation.
+- `agent/phase-5-4-social-verification` — unique commit identity; no net file delta in first-pass compare, so retain until second-pass confirmation.
+- `agent/phase-5-5-search-verification` — unique commit identity; no net file delta in first-pass compare, so retain until second-pass confirmation.
+- `agent/phase-5-5-search-verification-2` — unique commit identity; no net file delta in first-pass compare, so retain until second-pass confirmation.
+- `agent/phase-6-1-2-verification-2` — unique commit identity; no net file delta in first-pass compare.
+- `agent/phase-6-1-2-verification-3` — unique commit identity; no net file delta in first-pass compare.
+- `agent/phase-6-1-2-verification-final` — unique commit identity; no net file delta in first-pass compare.
+- `agent/phase-6-1-prototype-removal` — unique commit identity; no net file delta in first-pass compare.
+- `canonical-recovery-2026-08-21` — intentionally preserved canonical-recovery evidence.
+- `fit-match-engine-audit` — intentionally preserved Fit Match audit evidence / PR #36 history.
+- `fix/high-res-measurement-guides` — unique workflow content previously observed.
+- `phase-6-4-fit-profile-help` — unique `tmp-placeholder.txt` artifact previously observed; likely disposable but still requires explicit second-pass classification.
+- `phase-6-4-fit-profile-resave-username-settings` — unique Fit Profile/settings/migration implementation content.
+- `phase-6-4-measurement-audit-outfits-roadmap` — unique Fit Profile/help/master/migration implementation content.
+- `phase-6-4-mobile-menu` — unique mobile-menu/UI/master content.
+- `phase-6-4-mobile-menu-outside-click` — unique MobileMenu interaction content.
+- `phase-6-4-mobile-menu-state` — unique MobileMenu/header-responsive content.
+- `phase-6-4-mobile-revisit-review-removals` — unique Fit Profile mobile/revisit UI content.
+- `phase-6-4-review-grid-scroll-top` — unique Fit Profile review/grid/scroll UI content.
+- `phase-6-4-settings-mobile-alert-layout` — unique Settings/profile-identity/mobile layout content.
+- `phase-6-5-1-navigation-ia` — intentionally preserved Phase 6.5 navigation-decision evidence.
+- `phase-6-5-2-browse-preview` — intentionally preserved historical Browse-preview evidence; synthetic preview source remains obsolete unless a specific approved piece is deliberately adapted.
 
-Physical branch-pointer deletion has **not** been performed. Git history is preserved regardless; branch cleanup must never precede salvage classification.
+Physical branch-pointer deletion has **not** been performed. Git history is preserved regardless. Next cleanup pass: reconcile the 38 HOLD refs against current PR #47 canon, then delete only branch pointers proven redundant; never restore an old file wholesale.
 
 # CANONICAL RECOVERY — COMPLETE / PRESERVE
 
@@ -1304,7 +1355,7 @@ Do not overstate the checkpoint. Still required before this consolidation can be
 - full spam garment-submission/Fit Report moderation coverage;
 - complete Product-photo moderation/transfer behavior;
 - browser-level behavioral regression automation beyond the current source/DB safeguards;
-- complete branch salvage ledger across every remaining historical branch and physical removal of only those refs proven safe;
+- second-pass reconciliation of all 38 HOLD branch refs and physical removal of only those branch pointers later proven redundant;
 - specific enrichment/review of ambiguous members of the starter 150;
 - remaining Phase 6.5 page-by-page audits and deferred desktop Fit Profile review.
 
@@ -1313,7 +1364,7 @@ Do not overstate the checkpoint. Still required before this consolidation can be
 1. Documentation-only reconciliation commit `5a76852953829119bd514bd0a157278895ba9f6c` is verified: LikeSized CI #467 / run `32587165951` — **SUCCESS**; matching Vercel Preview `dpl_GgkUpUxjhXk4KRkn8BzyPHSictq7` — **READY**. This checkpoint is complete; do not repeat it unless the branch head changes.
 2. Perform owner desktop/mobile interaction review of PR #47 New Fit Report against the verified submission-first architecture.
 3. Fix only review failures on PR #47; do not create another branch.
-4. Finish the historical branch salvage ledger. Classify every remaining ref as ACTIVE / SAFE TO REMOVE / HOLD before any physical cleanup.
+4. Branch classification is complete across all 69 live refs. Reconcile the 38 HOLD refs against current canon; only after salvage/supersession proof may redundant branch pointers be physically removed.
 5. Finish the minimum admin catalog tooling needed for practical operation: complete queue visibility, merge/split/alias controls, and spam/Product-photo moderation gaps.
 6. Build the admin-only SerpAPI single/batch research workflow using the existing private cache first, with dedupe and usage caps; SerpAPI remains incapable of directly creating Products.
 7. Review/enrich ambiguous starter-150 candidates using the existing cache before spending new calls.

@@ -1,67 +1,98 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { addGarment } from "@/app/closet/actions";
-import { CatalogGarmentFields } from "@/app/closet/add/CatalogGarmentFields";
+import { CatalogColorField, CatalogCommunityEnrichment, CatalogGarmentFields } from "@/app/closet/add/CatalogGarmentFields";
+import { FitReportForm } from "@/app/closet/add/FitReportForm";
 import { GarmentSizeFields } from "@/app/closet/add/GarmentSizeFields";
+import styles from "@/app/closet/add/fitReport.module.css";
+import { EXPLORE_FIXTURE_PRODUCTS, allowExploreFixtures } from "@/lib/explore-fixtures";
 import { createClient } from "@/lib/supabase/server";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+const ADULT_DEPARTMENT_KEYS = new Set(["womens", "mens", "unisex"]);
+const DEFAULT_ADULT_DEPARTMENTS = [
+  { key: "womens", label: "Women’s" },
+  { key: "mens", label: "Men’s" },
+  { key: "unisex", label: "Unisex" },
+] as const;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function first(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
-function one<T>(value:unknown):T|null{return Array.isArray(value)?((value[0] as T|undefined)??null):((value as T|null)??null);}
 
 export default async function AddGarmentPage({ searchParams }: { searchParams: SearchParams }) {
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
   if (!claimsData?.claims?.sub) redirect("/login?next=/closet/add");
-  const [{ data: garmentTypes }, { data: brands }, { data: products }, { data: families }, { data: mappings }, { data: definitions }, { data: responses }, {data:attributeDefinitions},{data:attributeOptions}] = await Promise.all([
-    supabase.from("garment_types").select("key, label, category").eq("active", true).order("sort_order"),
-    supabase.from("brands").select("id, name").order("name").limit(300),
-    supabase.from("products").select("id,name,brand_id,garment_type_key,market_segment,manufacturer_style_number,brand:brands(name)").order("name").limit(300),
-    supabase.from("product_families").select("id,name,brand_id,garment_type_key,market_segment,brand:brands(name)").order("name").limit(300),
-    supabase.from("garment_type_fit_dimensions").select("garment_type_key,dimension_key,sort_order").order("sort_order"),
-    supabase.from("fit_dimension_definitions").select("key,label"),
-    supabase.from("fit_dimension_responses").select("dimension_key,response_key,label,sort_order").order("sort_order"),
-    supabase.from("garment_attribute_definitions").select("key,label,category,sort_order").order("sort_order"),
-    supabase.from("garment_attribute_options").select("attribute_key,option_key,label,sort_order").order("sort_order"),
-  ]);
-  const labelByKey=new Map((definitions??[]).map((item)=>[item.key,item.label]));
-  const dimensions=(mappings??[]).map((item)=>({...item,label:labelByKey.get(item.dimension_key)??item.dimension_key}));
-  const catalogProducts=(products??[]).map((product)=>({
-    id:product.id,
-    name:product.name,
-    brand_id:product.brand_id,
-    brand_name:one<{name:string}>(product.brand)?.name??"",
-    garment_type_key:product.garment_type_key,
-    market_segment:product.market_segment,
-    manufacturer_style_number:product.manufacturer_style_number,
-  }));
-  const catalogFamilies=(families??[]).map((family)=>({
-    id:family.id,
-    name:family.name,
-    brand_id:family.brand_id,
-    brand_name:one<{name:string}>(family.brand)?.name??"",
-    garment_type_key:family.garment_type_key,
-    market_segment:family.market_segment,
-  }));
   const params = await searchParams;
+  const fixtureMode = allowExploreFixtures(first(params.preview) === "fixtures");
+  const addedRaw = first(params.added) ?? "";
+  const addedClosetItemId = UUID.test(addedRaw) ? addedRaw : "";
+  const [{ data: brands }, { data: materials }, { data: departments }] = await Promise.all([
+    supabase.from("brands").select("id,name").order("name").limit(2000),
+    supabase.from("materials").select("key,label").order("label"),
+    supabase.from("product_departments").select("key,label").order("sort_order"),
+  ]);
+
+  const fixtureProducts = fixtureMode ? EXPLORE_FIXTURE_PRODUCTS.map((product) => ({
+    id: product.id,
+    name: product.name,
+    brand_name: product.brand.name,
+    garment_type_key: product.garment_type_key,
+    manufacturer_style_number: null,
+    market_segment: "unknown",
+    department_key: null,
+    image_url: product.image_url,
+    attributes: [],
+    materials: [],
+    identifiers: [],
+    listings: [],
+  })) : [];
+
+  const brandOptions = [...(brands ?? [])];
+  if (fixtureMode) for (const product of EXPLORE_FIXTURE_PRODUCTS) if (!brandOptions.some((brand) => brand.name === product.brand.name)) brandOptions.push({ id: product.brand_id, name: product.brand.name });
+  brandOptions.sort((a, b) => a.name.localeCompare(b.name));
+  const databaseAdultDepartments = (departments ?? []).filter((item) => ADULT_DEPARTMENT_KEYS.has(item.key));
+  const adultDepartments = DEFAULT_ADULT_DEPARTMENTS.map(
+    (fallback) => databaseAdultDepartments.find((item) => item.key === fallback.key) ?? fallback,
+  );
+
   const error = first(params.error);
-  const errorMessage = error === "invalid_fields" ? "Check the controlled garment details, Fit Result, and garment condition, then try again." : error === "invalid_photo" ? "Fit photo must be JPEG, PNG, or WebP and no larger than 8 MB." : error === "save_failed" ? "That garment could not be saved." : null;
+  const errorMessage = error === "invalid_fields"
+    ? "Something still needs your attention. Review the highlighted fields below and try again."
+    : error === "invalid_photo"
+      ? "Photos must be JPEG, PNG, or WebP and no larger than 8 MB."
+      : error === "save_failed"
+        ? "That Fit Report could not be saved. Please try again."
+        : null;
 
   return <main className="pageShell addGarmentShell">
-    <div className="pageTitle rowTitle"><div><span className="eyebrow">MY CLOSET · ADD GARMENT</span><h1>Log what you actually wear.</h1><p>Search existing catalog data first; unknown garment identity stays provisional until stronger evidence confirms it.</p></div><Link className="secondaryButton" href="/closet">Back to Closet</Link></div>
-    <form className="garmentForm" action={addGarment}>
+    {addedClosetItemId ? <div className={styles.successOverlay} role="dialog" aria-modal="true" aria-labelledby="fit-report-success-title">
+      <div className={styles.successCard}>
+        <span className="eyebrow">FIT REPORT ADDED</span>
+        <h2 id="fit-report-success-title">Thanks! Your Fit Report has been added.</h2>
+        <p>You can view it in your Closet or start styling the item right now.</p>
+        <div className={styles.successActions}>
+          <Link className="secondaryButton" href="/closet">View it in My Closet</Link>
+          <Link className="primaryButton" href={`/outfits/new?closet_item_id=${encodeURIComponent(addedClosetItemId)}`}>Style this item</Link>
+        </div>
+      </div>
+    </div> : null}
+
+    <div className={`pageTitle ${styles.hero}`}><span className="eyebrow">MY CLOSET · NEW FIT REPORT</span><h1>Share how an item actually fits.</h1><p>Tell us a little about the garment so we can make your Fit Report useful to others.</p></div>
+    <FitReportForm action={fixtureMode ? undefined : addGarment}>
+      {fixtureMode ? <div className="authMessage"><b>Owner-review test environment.</b> Temporary garment choices are labeled through the preview and this form cannot save or write to Supabase.</div> : null}
       {errorMessage ? <div className="authMessage error">{errorMessage}</div> : null}
-      <CatalogGarmentFields brands={brands??[]} products={catalogProducts} families={catalogFamilies} garmentTypes={garmentTypes??[]} dimensions={dimensions} responses={responses??[]} attributeDefinitions={attributeDefinitions??[]} attributeOptions={attributeOptions??[]}/>
-      <GarmentSizeFields />
-      <label>SKU / UPC / barcode<input name="identifier" maxLength={120} placeholder="Optional identifier" /></label>
-      <div className="fieldPair"><label>Product URL<input name="product_url" type="url" maxLength={1000} placeholder="https://..." /></label><label>Color / variant<input name="color_label" maxLength={80} placeholder="Optional" /></label></div>
-      <div className="fieldPair"><label>Closet visibility<select name="visibility" defaultValue="private"><option value="private">Private</option><option value="shared">Shared with LikeSized members</option></select></label><label>Overall fit<select name="fit" defaultValue="" required><option value="" disabled>Select physical fit</option><option value="too_small">Too small</option><option value="snug">Snug</option><option value="just_right">Just right</option><option value="relaxed">Relaxed</option><option value="too_big">Too big</option></select><span className="fieldHelp">Required. Bad fits are useful evidence too.</span></label></div>
-      <label>Has this garment changed from its original fit?<select name="garment_condition" defaultValue="normal"><option value="normal">No / Normal wear</option><option value="shrunk">Shrunk</option><option value="stretched_out">Stretched out</option><option value="altered">Altered / Tailored</option></select><span className="fieldHelp">Choose a changed state only when this specific garment no longer fits the way it did normally.</span></label>
-      <div className="privacyNote">Changed garments stay in your Fit History, but LikeSized does not use their altered fit as normal-product sizing evidence for other members.</div>
-      <div className="fieldPair"><label>Would you buy it again?<select name="would_buy_again" defaultValue="unsure"><option value="yes">Yes</option><option value="no">No</option><option value="unsure">Not sure</option></select></label><label>Times worn<input name="wears_count" type="number" min="0" max="100000" step="1" defaultValue="0" /></label></div>
-      <label>Add a Fit Photo — Optional<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><span className="fieldHelp"><b>Fit photos are shared with LikeSized members as real-world fit references. Don’t upload a photo you don’t want other members to see.</b></span></label>
-      <label>Fit notes <span className="muted inlineMuted">optional</span><textarea name="fit_notes" maxLength={1000} rows={5} placeholder="Roomy in the thighs, right at the waist..." /></label>
-      <button className="primaryButton fullButton" type="submit">Add to my Closet →</button>
-    </form>
+      <CatalogGarmentFields brands={brandOptions} fixtureProducts={fixtureProducts}>
+        <CatalogColorField />
+        <GarmentSizeFields />
+        <label>Overall Fit Result<select name="fit" defaultValue="" required><option value="" disabled>Select physical fit</option><option value="too_small">Too small</option><option value="snug">Snug</option><option value="just_right">Just right</option><option value="relaxed">Relaxed</option><option value="too_big">Too big</option></select><span className="fieldHelp">Bad fits are useful evidence too.</span></label>
+        <label>Condition<select name="reported_condition" defaultValue="" required><option value="" disabled>Select condition</option><option value="new">New</option><option value="used">Used</option><option value="altered">Altered</option></select><span className="fieldHelp">Altered items stay in Fit History but are not treated as normal sizing evidence for other people.</span></label>
+        <label>Fit photo <span className="muted inlineMuted">optional</span><input name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><span className="fieldHelp"><b>Fit photos are shared with the LikeSized community. Don’t upload a photo you do not want other people to see.</b></span></label>
+        <label>Fit notes <span className="muted inlineMuted">optional</span><textarea name="fit_notes" maxLength={1000} rows={5} placeholder="Roomy in the thighs, right at the waist..." /><span className="fieldHelp">Tell us more about how it fits. You can also share styling tips, wash or dry advice, or anything else that might help someone considering this item.</span></label>
+
+        <CatalogCommunityEnrichment materials={(materials ?? []).map((item) => ({ key: item.key, label: item.label }))} departments={adultDepartments.map((item) => ({ key: item.key, label: item.label }))} />
+
+        <button className="primaryButton fullButton" type="submit" disabled={fixtureMode}>{fixtureMode ? "Preview only — saving disabled" : "Add Fit Report →"}</button>
+      </CatalogGarmentFields>
+    </FitReportForm>
   </main>;
 }

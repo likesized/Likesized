@@ -1,0 +1,177 @@
+.hero {
+  max-width: 1120px;
+}
+
+.hero p {
+  max-width: 860px;
+}
+
+.form {
+  position: relative;
+}
+
+.validationSummary {
+  padding: 14px 16px;
+  border: 1px solid #b42318;
+  border-radius: 12px;
+  background: #fff0ed;
+  color: #8a1c13;
+  font-weight: 800;
+}
+
+.validationSummary[hidden] {
+  display: none;
+}
+
+.form :global(label.fieldInvalid) > input,
+.form :global(label.fieldInvalid) > select,
+.form :global(label.fieldInvalid) > textarea {
+  border-color: #b42318;
+  box-shadow: 0 0 0 2px rgba(180, 35, 24, 0.14);
+}
+
+.form :global(label.fieldInvalid)::after {
+  content: "Please complete this before submitting.";
+  display: block;
+  margin-top: 6px;
+  color: #b42318;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.catalogStart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 52px 24px;
+  text-align: center;
+}
+
+.catalogStartTitle {
+  font-size: 20px;
+}
+
+.catalogStartActions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+}
+
+.catalogStart :global(.catalogManualButton) {
+  margin-left: 0;
+}
+
+.catalogStartCopy {
+  max-width: 660px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.scanSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.scanSection :global(.catalogBackButton) {
+  align-self: flex-start;
+}
+
+.scanSection :global(.barcodeScanner) {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sizeFields {
+  display: grid;
+  gap: 18px;
+}
+
+.sizePair,
+.sizeTriple,
+.sizeEquation {
+  display: grid;
+  gap: 18px;
+  align-items: end;
+}
+
+.sizePair {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sizeTriple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sizeEquation {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+
+.sizeEquationMark {
+  align-self: end;
+  padding-bottom: 14px;
+  font-size: 25px;
+  font-weight: 900;
+}
+
+.successOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(18, 18, 18, 0.56);
+}
+
+.successCard {
+  width: min(100%, 560px);
+  padding: 34px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--white);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+  text-align: center;
+}
+
+.successCard h2 {
+  margin-bottom: 14px;
+}
+
+.successCard p {
+  margin: 0 auto 24px;
+  max-width: 430px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.successActions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .catalogStart {
+    padding: 32px 8px;
+  }
+
+  .sizePair,
+  .sizeTriple {
+    grid-template-columns: 1fr;
+  }
+
+  .successActions {
+    display: grid;
+  }
+
+  .successActions a {
+    width: 100%;
+  }
+}

@@ -27,7 +27,7 @@ const capabilities = [
 const faqs = [
   {
     question: "What is a Fit Twin?",
-    answer: "A Fit Twin is someone LikeSized identifies as a strong current body match. Fit Twin status comes from matching—not from following or manually saving someone.",
+    answer: "A Fit Twin is someone you follow whom LikeSized identifies as a strong current body match. Following adds someone to My Circle; LikeSized decides whether that followed person qualifies as a Fit Twin.",
   },
   {
     question: "Can other members see my measurements?",
@@ -44,6 +44,18 @@ const faqs = [
   {
     question: "Can I follow someone who is not my Fit Twin?",
     answer: "Yes. Following is your choice and helps you keep up with someone’s shared style and fit activity. It is separate from system-generated Fit Twin status.",
+  },
+  {
+    question: "Where does LikeSized get its product information?",
+    answer: "LikeSized is building a community-powered clothing catalog from the people who actually wear the clothes. One person might know the model, another the cut, another the material or other item details. As more members contribute, the picture gets better.",
+  },
+  {
+    question: "What if I don’t know all the details about my item?",
+    answer: "Tell us what you confidently know. For the simple required garment questions, choose Not sure if needed. Optional catalog details can be left blank, and later members can help complete the record.",
+  },
+  {
+    question: "How do you know the product information is accurate?",
+    answer: "LikeSized doesn’t treat one person’s answer as unquestionable fact. Product details strengthen as independent members agree. When people disagree, we preserve the conflict for review instead of silently replacing one answer with another.",
   },
 ];
 
@@ -67,7 +79,7 @@ export default function Home() {
         <div className="proofStrip">
           <span><b>Your measurements stay private</b></span>
           <span><b>Matches change by clothing type</b></span>
-          <span><b>Real people. Real size history.</b></span>
+          <span><b>Powered by people who wear it</b></span>
         </div>
       </section>
 
@@ -115,7 +127,7 @@ export default function Home() {
       <section className="section faqSection" id="faq" aria-labelledby="faq-title">
         <span className="eyebrow">HELP / FAQ</span>
         <h2 className="sectionTitle" id="faq-title">Questions before you get started?</h2>
-        <p className="faqIntro">The basics about matching, privacy, Fit Results, Fit Twins, and Following.</p>
+        <p className="faqIntro">The basics about matching, privacy, Fit Results, Fit Twins, Following, and the community-built clothing catalog.</p>
         <div className="faqGrid">
           {faqs.map((faq) => (
             <details className="faqItem" key={faq.question}>

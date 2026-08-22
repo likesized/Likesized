@@ -2,11 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { SIZE_KINDS, type GarmentSizeKind } from "@/lib/domain";
+import styles from "./fitReport.module.css";
 
-const ALPHA_SIZES = ["XXXS","XXS","XS","S","M","L","XL","XXL","XXXL"];
-const BRA_CUPS = ["AA","A","B","C","D","DD","DDD","F","G","H","I","J","K"];
-const BRA_SYSTEMS = ["US","UK","EU"];
-const SHOE_SYSTEMS = ["US","UK","EU","JP"];
+const NOT_SURE = "not_sure";
+const ALPHA_SIZES = ["XXXS", "XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+const BRA_CUPS = ["AA", "A", "B", "C", "D", "DD", "DDD", "F", "G", "H", "I", "J", "K"];
+const BRA_SYSTEMS = ["US", "UK", "EU"];
+const SHOE_SYSTEMS = ["US", "UK", "EU", "JP"];
 const LENGTHS = [
   { value: "short", label: "Short" },
   { value: "regular", label: "Regular" },
@@ -15,78 +17,232 @@ const LENGTHS = [
   { value: "tall", label: "Tall" },
 ];
 
-function cleanNumber(value: string) {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return "";
-  return String(number);
+function numberRange(start: number, end: number, step = 1) {
+  const values: string[] = [];
+  for (let value = start; value <= end + 0.0001; value += step) {
+    const rounded = Math.round(value * 100) / 100;
+    values.push(Number.isInteger(rounded) ? String(rounded) : String(rounded));
+  }
+  return values;
+}
+
+const NUMERIC_SIZES = ["00", ...numberRange(0, 40)];
+const WAIST_SIZES = numberRange(18, 80);
+const INSEAM_SIZES = numberRange(18, 50);
+const COLLAR_SIZES = numberRange(12, 24, 0.5);
+const SLEEVE_LENGTHS = ["28-29", "30-31", "32-33", "34-35", "36-37", "38-39", "40-41", "42-43", "44-45", "46-47"];
+const JACKET_SIZES = numberRange(30, 70);
+const US_UK_BRA_BANDS = numberRange(24, 60, 2);
+const EU_BRA_BANDS = numberRange(55, 135, 5);
+const GENERIC_BRA_BANDS = [...new Set([...US_UK_BRA_BANDS, ...EU_BRA_BANDS])].sort((a, b) => Number(a) - Number(b));
+const SHOE_SIZES: Record<string, string[]> = {
+  US: numberRange(3, 18, 0.5),
+  UK: numberRange(2, 17, 0.5),
+  EU: numberRange(34, 52, 0.5),
+  JP: numberRange(21, 32, 0.5),
+  [NOT_SURE]: numberRange(1, 52, 0.5),
+};
+
+function token(value: string) {
+  return value === NOT_SURE ? "?" : value;
+}
+
+function FixedOptions({ values }: { values: string[] }) {
+  return <>{values.map((value) => <option value={value} key={value}>{value}</option>)}<option value={NOT_SURE}>Not sure</option></>;
 }
 
 export function GarmentSizeFields() {
-  const [kind, setKind] = useState<GarmentSizeKind>("alpha");
-  const [alpha, setAlpha] = useState("M");
-  const [numeric, setNumeric] = useState("8");
-  const [waist, setWaist] = useState("30");
-  const [inseam, setInseam] = useState("30");
-  const [collar, setCollar] = useState("16.5");
-  const [sleeveMin, setSleeveMin] = useState("34");
-  const [sleeveMax, setSleeveMax] = useState("35");
-  const [jacket, setJacket] = useState("42");
-  const [jacketLength, setJacketLength] = useState("regular");
-  const [braBand, setBraBand] = useState("36");
-  const [braCup, setBraCup] = useState("D");
-  const [braSystem, setBraSystem] = useState("US");
-  const [shoe, setShoe] = useState("9");
-  const [shoeSystem, setShoeSystem] = useState("US");
-  const [length, setLength] = useState("regular");
+  const [kind, setKind] = useState<GarmentSizeKind | "">("");
+  const [alpha, setAlpha] = useState("");
+  const [numeric, setNumeric] = useState("");
+  const [waist, setWaist] = useState("");
+  const [inseam, setInseam] = useState("");
+  const [collar, setCollar] = useState("");
+  const [sleeve, setSleeve] = useState("");
+  const [jacket, setJacket] = useState("");
+  const [jacketLength, setJacketLength] = useState("");
+  const [braBand, setBraBand] = useState("");
+  const [braCup, setBraCup] = useState("");
+  const [braSystem, setBraSystem] = useState("");
+  const [shoe, setShoe] = useState("");
+  const [shoeSystem, setShoeSystem] = useState("");
+  const [length, setLength] = useState("");
   const [freeform, setFreeform] = useState("");
+
+  function resetSizingValues() {
+    setAlpha("");
+    setNumeric("");
+    setWaist("");
+    setInseam("");
+    setCollar("");
+    setSleeve("");
+    setJacket("");
+    setJacketLength("");
+    setBraBand("");
+    setBraCup("");
+    setBraSystem("");
+    setShoe("");
+    setShoeSystem("");
+    setLength("");
+    setFreeform("");
+  }
 
   const normalizedLabel = useMemo(() => {
     switch (kind) {
-      case "alpha": return alpha;
-      case "numeric": return cleanNumber(numeric);
-      case "waist_inseam": return waist && inseam ? `${cleanNumber(waist)}×${cleanNumber(inseam)}` : "";
-      case "dress_shirt": {
-        if (!collar || !sleeveMin) return "";
-        const max = sleeveMax || sleeveMin;
-        return `${cleanNumber(collar)} / ${cleanNumber(sleeveMin)}${max !== sleeveMin ? `-${cleanNumber(max)}` : ""}`;
-      }
+      case "not_sure": return "Not sure";
+      case "alpha": return alpha ? token(alpha) : "";
+      case "numeric": return numeric ? token(numeric) : "";
+      case "waist_inseam": return waist && inseam ? `${token(waist)}×${token(inseam)}` : "";
+      case "dress_shirt": return collar && sleeve ? `${token(collar)} / ${token(sleeve)}` : "";
       case "jacket": {
-        const code = jacketLength === "short" ? "S" : jacketLength === "long" ? "L" : "R";
-        return jacket ? `${cleanNumber(jacket)}${code}` : "";
+        if (!jacket || !jacketLength) return "";
+        const code = jacketLength === NOT_SURE ? "?" : jacketLength === "short" ? "S" : jacketLength === "long" ? "L" : "R";
+        return `${token(jacket)}${code}`;
       }
-      case "bra": return braBand && braCup ? `${cleanNumber(braBand)}${braCup}` : "";
-      case "shoe": return cleanNumber(shoe);
-      case "length_designation": return length;
+      case "bra": return braBand && braCup && braSystem ? `${token(braBand)}${token(braCup)}` : "";
+      case "shoe": return shoe && shoeSystem ? token(shoe) : "";
+      case "length_designation": return length ? token(length) : "";
       case "freeform": return freeform.trim();
+      default: return "";
     }
-  }, [kind, alpha, numeric, waist, inseam, collar, sleeveMin, sleeveMax, jacket, jacketLength, braBand, braCup, shoe, length, freeform]);
+  }, [kind, alpha, numeric, waist, inseam, collar, sleeve, jacket, jacketLength, braBand, braCup, braSystem, shoe, shoeSystem, length, freeform]);
 
-  const sizingSystem = kind === "bra" ? braSystem : kind === "shoe" ? shoeSystem : "";
+  const sizingSystem = kind === "bra"
+    ? (braSystem === NOT_SURE ? "?" : braSystem)
+    : kind === "shoe"
+      ? (shoeSystem === NOT_SURE ? "?" : shoeSystem)
+      : "";
+  const braBands = braSystem === "EU" ? EU_BRA_BANDS : braSystem === "US" || braSystem === "UK" ? US_UK_BRA_BANDS : GENERIC_BRA_BANDS;
+  const shoeSizes = SHOE_SIZES[shoeSystem] ?? SHOE_SIZES[NOT_SURE];
 
   return <fieldset className="garmentSizeFields">
-    <legend>Garment size</legend>
-    <div className="fieldPair">
+    <legend>Size</legend>
+    <div className={styles.sizeFields}>
       <label>Size system
-        <select name="size_kind" value={kind} onChange={(event)=>setKind(event.target.value as GarmentSizeKind)}>
-          {SIZE_KINDS.map((item)=><option value={item.value} key={item.value}>{item.label}</option>)}
+        <select name="size_kind" value={kind} onChange={(event) => { resetSizingValues(); setKind(event.target.value as GarmentSizeKind); }} required>
+          <option value="" disabled>Choose your measurement system</option>
+          {SIZE_KINDS.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}
         </select>
       </label>
-      {kind === "alpha" ? <label>Letter size<select value={alpha} onChange={(e)=>setAlpha(e.target.value)}>{ALPHA_SIZES.map((value)=><option value={value} key={value}>{value}</option>)}</select></label> : null}
-      {kind === "numeric" ? <label>Numeric size<input type="number" inputMode="decimal" min="0" max="100" step="0.5" value={numeric} onChange={(e)=>setNumeric(e.target.value)} required /></label> : null}
-      {kind === "waist_inseam" ? <><label>Waist size<input type="number" inputMode="numeric" min="18" max="80" step="1" value={waist} onChange={(e)=>setWaist(e.target.value)} required /></label><label>Inseam size<input type="number" inputMode="numeric" min="18" max="50" step="1" value={inseam} onChange={(e)=>setInseam(e.target.value)} required /></label></> : null}
-      {kind === "dress_shirt" ? <><label>Collar / neck size<input type="number" inputMode="decimal" min="10" max="30" step="0.25" value={collar} onChange={(e)=>setCollar(e.target.value)} required /></label><label>Sleeve start<input type="number" inputMode="numeric" min="20" max="50" step="1" value={sleeveMin} onChange={(e)=>setSleeveMin(e.target.value)} required /></label><label>Sleeve end <span className="muted inlineMuted">optional range</span><input type="number" inputMode="numeric" min="20" max="50" step="1" value={sleeveMax} onChange={(e)=>setSleeveMax(e.target.value)} /></label></> : null}
-      {kind === "jacket" ? <><label>Jacket / chest size<input type="number" inputMode="numeric" min="20" max="80" step="1" value={jacket} onChange={(e)=>setJacket(e.target.value)} required /></label><label>Length<select value={jacketLength} onChange={(e)=>setJacketLength(e.target.value)}><option value="short">Short (S)</option><option value="regular">Regular (R)</option><option value="long">Long (L)</option></select></label></> : null}
-      {kind === "bra" ? <><label>Band<input type="number" inputMode="numeric" min="20" max="70" step="2" value={braBand} onChange={(e)=>setBraBand(e.target.value)} required /></label><label>Cup<select value={braCup} onChange={(e)=>setBraCup(e.target.value)}>{BRA_CUPS.map((value)=><option value={value} key={value}>{value}</option>)}</select></label><label>Sizing system<select value={braSystem} onChange={(e)=>setBraSystem(e.target.value)}>{BRA_SYSTEMS.map((value)=><option value={value} key={value}>{value}</option>)}</select></label></> : null}
-      {kind === "shoe" ? <><label>Shoe size<input type="number" inputMode="decimal" min="0" max="30" step="0.5" value={shoe} onChange={(e)=>setShoe(e.target.value)} required /></label><label>Sizing system<select value={shoeSystem} onChange={(e)=>setShoeSystem(e.target.value)}>{SHOE_SYSTEMS.map((value)=><option value={value} key={value}>{value}</option>)}</select></label></> : null}
-      {kind === "length_designation" ? <label>Length designation<select value={length} onChange={(e)=>setLength(e.target.value)}>{LENGTHS.map((item)=><option value={item.value} key={item.value}>{item.label}</option>)}</select></label> : null}
-      {kind === "freeform" ? <label>Manufacturer size<input value={freeform} onChange={(e)=>setFreeform(e.target.value)} maxLength={60} placeholder="Unusual manufacturer size" required /></label> : null}
+
+      {kind === "alpha" ? <label>Letter size
+        <select value={alpha} onChange={(event) => setAlpha(event.target.value)} required>
+          <option value="" disabled>Select size</option>
+          <FixedOptions values={ALPHA_SIZES} />
+        </select>
+      </label> : null}
+
+      {kind === "numeric" ? <label>Numeric size
+        <select value={numeric} onChange={(event) => setNumeric(event.target.value)} required>
+          <option value="" disabled>Select size</option>
+          <FixedOptions values={NUMERIC_SIZES} />
+        </select>
+      </label> : null}
+
+      {kind === "waist_inseam" ? <div className={styles.sizeEquation}>
+        <label>Waist
+          <select value={waist} onChange={(event) => setWaist(event.target.value)} required>
+            <option value="" disabled>e.g. 32</option>
+            <FixedOptions values={WAIST_SIZES} />
+          </select>
+        </label>
+        <span className={styles.sizeEquationMark} aria-hidden="true">×</span>
+        <label>Inseam
+          <select value={inseam} onChange={(event) => setInseam(event.target.value)} required>
+            <option value="" disabled>e.g. 30</option>
+            <FixedOptions values={INSEAM_SIZES} />
+          </select>
+        </label>
+      </div> : null}
+
+      {kind === "dress_shirt" ? <div className={styles.sizePair}>
+        <label>Collar / neck size
+          <select value={collar} onChange={(event) => setCollar(event.target.value)} required>
+            <option value="" disabled>Select collar size</option>
+            <FixedOptions values={COLLAR_SIZES} />
+          </select>
+        </label>
+        <label>Sleeve length
+          <select value={sleeve} onChange={(event) => setSleeve(event.target.value)} required>
+            <option value="" disabled>Select sleeve length</option>
+            {SLEEVE_LENGTHS.map((value) => <option value={value} key={value}>{value.replace("-", "/")}</option>)}
+            <option value={NOT_SURE}>Not sure</option>
+          </select>
+        </label>
+      </div> : null}
+
+      {kind === "jacket" ? <div className={styles.sizePair}>
+        <label>Jacket / chest size
+          <select value={jacket} onChange={(event) => setJacket(event.target.value)} required>
+            <option value="" disabled>Select jacket size</option>
+            <FixedOptions values={JACKET_SIZES} />
+          </select>
+        </label>
+        <label>Length
+          <select value={jacketLength} onChange={(event) => setJacketLength(event.target.value)} required>
+            <option value="" disabled>Select length</option>
+            <option value="short">Short (S)</option>
+            <option value="regular">Regular (R)</option>
+            <option value="long">Long (L)</option>
+            <option value={NOT_SURE}>Not sure</option>
+          </select>
+        </label>
+      </div> : null}
+
+      {kind === "bra" ? <div className={styles.sizeTriple}>
+        <label>Sizing system
+          <select value={braSystem} onChange={(event) => { setBraSystem(event.target.value); setBraBand(""); }} required>
+            <option value="" disabled>Select system</option>
+            {BRA_SYSTEMS.map((value) => <option value={value} key={value}>{value}</option>)}
+            <option value={NOT_SURE}>Not sure</option>
+          </select>
+        </label>
+        <label>Band
+          <select value={braBand} onChange={(event) => setBraBand(event.target.value)} required>
+            <option value="" disabled>Select band</option>
+            <FixedOptions values={braBands} />
+          </select>
+        </label>
+        <label>Cup
+          <select value={braCup} onChange={(event) => setBraCup(event.target.value)} required>
+            <option value="" disabled>Select cup</option>
+            <FixedOptions values={BRA_CUPS} />
+          </select>
+        </label>
+      </div> : null}
+
+      {kind === "shoe" ? <div className={styles.sizePair}>
+        <label>Sizing system
+          <select value={shoeSystem} onChange={(event) => { setShoeSystem(event.target.value); setShoe(""); }} required>
+            <option value="" disabled>Select system</option>
+            {SHOE_SYSTEMS.map((value) => <option value={value} key={value}>{value}</option>)}
+            <option value={NOT_SURE}>Not sure</option>
+          </select>
+        </label>
+        <label>Shoe size
+          <select value={shoe} onChange={(event) => setShoe(event.target.value)} required>
+            <option value="" disabled>Select shoe size</option>
+            <FixedOptions values={shoeSizes} />
+          </select>
+        </label>
+      </div> : null}
+
+      {kind === "length_designation" ? <label>Length designation
+        <select value={length} onChange={(event) => setLength(event.target.value)} required>
+          <option value="" disabled>Select length</option>
+          {LENGTHS.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}
+          <option value={NOT_SURE}>Not sure</option>
+        </select>
+      </label> : null}
+
+      {kind === "freeform" ? <label>Other size
+        <input value={freeform} onChange={(event) => setFreeform(event.target.value)} maxLength={60} placeholder="Enter the size exactly as shown" required />
+        <span className="fieldHelp">We keep Other entries so repeated sizing formats can be reviewed for future size-system additions.</span>
+      </label> : null}
+
+      {kind === "not_sure" ? <p className="fieldHelp">That’s okay. We’ll save the size as Not sure so the Fit Report can still be completed.</p> : null}
     </div>
     <input type="hidden" name="size_normalized_label" value={normalizedLabel} />
     <input type="hidden" name="sizing_system" value={sizingSystem} />
-    <label>Original label exactly as printed <span className="muted inlineMuted">optional</span>
-      <input name="original_size_label" maxLength={60} placeholder={normalizedLabel || "Enter only if the tag prints it differently"} />
-      <span className="fieldHelp">Matching uses the structured size above. If the tag prints a different format, LikeSized preserves that exact label here without turning it into a separate logical size.</span>
-    </label>
-    {normalizedLabel ? <div className="privacyNote"><b>Normalized size:</b> {normalizedLabel}</div> : null}
   </fieldset>;
 }

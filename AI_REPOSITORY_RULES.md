@@ -5,7 +5,8 @@ This file is the canonical repository/source-of-truth policy for every AI agent 
 ## 1. One canonical product truth — LOCKED
 
 - The canonical repository is `likesized/Likesized`.
-- After recovery is promoted, `main` is the one canonical branch. A feature/recovery branch may contain proposed or in-progress work, but it must never be described as a second canonical product universe.
+- After recovery is promoted, `main` is the one canonical production branch. A feature/recovery branch may contain proposed or in-progress work, but it must never be described as a second canonical product universe.
+- When one primary implementation/recovery line is active, that line is the only place where new owner-approved in-progress product meaning may accumulate until it is reconciled. `main` remains the production baseline; it is **not** automatically a safe base for a second product-decision branch when the active line contains unreconciled owner-approved changes.
 - Git history preserves old implementations and decisions. Current files describe current truth only.
 - Never require a future contributor to reconstruct current product meaning from chat history, old branches, superseded PRs, or a chain of contradictory notes.
 
@@ -34,16 +35,20 @@ When an owner-locked decision changes product meaning, update the master and eve
 
 - An owner-approved decision is not safely recorded while it exists only in chat or on a long-lived feature branch.
 - During branch work, record the decision in that branch's master immediately and mark branch-only implementation status accurately.
-- Before a different feature branch begins, the prior branch must be reconciled into the single recovery/canonical line or explicitly parked in the master with exact source branch + commit SHA and a salvage status.
+- While a primary active line exists, new owner-approved product decisions belong on that same line by default. Do not branch from stale `main` merely because the change is docs-only or appears independent.
+- Before a different feature/decision branch begins, the prior active line must be reconciled into the single recovery/canonical line or explicitly parked in the master with exact source branch + commit SHA and a salvage status.
 - Never start a second divergent product future while meaningful owner-approved work remains unclassified on another branch.
 
 ## 5. Branch discipline / salvage protection — LOCKED
 
 1. Only one primary active implementation/recovery line should exist at a time unless the owner explicitly authorizes parallel work.
 2. Before new work starts, compare the active branch with canonical `main`. If it is materially behind/diverged, reconcile first.
-3. Do not delete a branch or close a salvage PR until every meaningful changed file/decision has been classified as one of: **RECOVERED / SUPERSEDED / OBSOLETE / DUPLICATE / DEFERRED**.
-4. Any DEFERRED work must remain recorded in `docs/AI_MASTER_LOG.md` with the exact source branch/commit until recovered or explicitly discarded by the owner.
-5. At phase completion, clean obsolete merged/retry/verification branches after the salvage ledger proves nothing unique remains.
+3. Before creating **any additional branch or PR**, compare its intended base with both `main` and the current primary active line. If the intended base is missing owner-approved commits/decisions from the active line, STOP. Either put the work directly on the active line or explicitly reconcile/park that active work first.
+4. A branch created from `main` while an unreconciled active line exists must not be used for product decisions, canonical documentation changes, schema architecture, or overlapping implementation unless the owner explicitly authorizes that parallel line.
+5. A docs-only decision is still product state. It follows the same active-line rule as code and migrations.
+6. Do not delete a branch or close a salvage PR until every meaningful changed file/decision has been classified as one of: **RECOVERED / SUPERSEDED / OBSOLETE / DUPLICATE / DEFERRED**.
+7. Any DEFERRED work must remain recorded in `docs/AI_MASTER_LOG.md` with the exact source branch/commit until recovered or explicitly discarded by the owner.
+8. At phase completion, clean obsolete merged/retry/verification branches after the salvage ledger proves nothing unique remains.
 
 ## 6. Master synchronization rule — LOCKED
 

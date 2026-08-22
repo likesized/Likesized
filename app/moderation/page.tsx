@@ -31,6 +31,10 @@ type ProductFlag = {
   brand: unknown;
 };
 type Brand = { name: string };
+type ModeratedContent = {
+  imageUrl: string | null;
+  description: string;
+};
 function one<T>(v: unknown): T | null {
   return Array.isArray(v)
     ? ((v[0] as T | undefined) ?? null)
@@ -83,6 +87,53 @@ export default async function ModerationPage() {
   if (error) throw new Error("Could not load moderation queue.");
   const rows = (reports ?? []) as Report[];
   const productFlags = (catalogFlags ?? []) as ProductFlag[];
+  const moderatedContent = new Map<string, ModeratedContent>();
+  const outfitIds = rows
+    .filter((row) => row.target_type === "outfit_post")
+    .map((row) => row.target_id);
+  const fitPhotoIds = rows
+    .filter((row) => row.target_type === "fit_reference_photo")
+    .map((row) => row.target_id);
+  const [{ data: outfits }, { data: fitPhotos }] = await Promise.all([
+    outfitIds.length
+      ? supabase
+          .from("outfit_posts")
+          .select("id,photo_url,caption")
+          .in("id", outfitIds)
+      : Promise.resolve({ data: [] }),
+    fitPhotoIds.length
+      ? supabase
+          .from("fit_reference_photos")
+          .select("id,storage_path")
+          .in("id", fitPhotoIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+  await Promise.all([
+    ...(outfits ?? []).map(async (post) => {
+      const feedPath = post.photo_url.replace(/\/display\.webp$/, "/feed.webp");
+      let { data } = await supabase.storage
+        .from("outfit-photos")
+        .createSignedUrl(feedPath, 1800);
+      if (!data?.signedUrl && feedPath !== post.photo_url) {
+        ({ data } = await supabase.storage
+          .from("outfit-photos")
+          .createSignedUrl(post.photo_url, 1800));
+      }
+      moderatedContent.set(`outfit_post:${post.id}`, {
+        imageUrl: data?.signedUrl ?? null,
+        description: post.caption?.trim() || "Outfit post",
+      });
+    }),
+    ...(fitPhotos ?? []).map(async (photo) => {
+      const { data } = await supabase.storage
+        .from("fit-reference-photos")
+        .createSignedUrl(photo.storage_path, 1800);
+      moderatedContent.set(`fit_reference_photo:${photo.id}`, {
+        imageUrl: data?.signedUrl ?? null,
+        description: "Shared Fit Report photo",
+      });
+    }),
+  ]);
   return (
     <main className="pageShell">
       <div className="pageTitle">
@@ -113,6 +164,26 @@ export default async function ModerationPage() {
           <div className={styles.queue}>
             {rows.map((row) => (
               <article className={styles.report} key={row.id}>
+                {moderatedContent.get(`${row.target_type}:${row.target_id}`)
+                  ?.imageUrl ? (
+                  <img
+                    className={styles.preview}
+                    src={
+                      moderatedContent.get(
+                        `${row.target_type}:${row.target_id}`,
+                      )?.imageUrl ?? ""
+                    }
+                    alt={
+                      moderatedContent.get(
+                        `${row.target_type}:${row.target_id}`,
+                      )?.description ?? "Reported member content"
+                    }
+                  />
+                ) : (
+                  <div className={styles.unavailable}>
+                    Reported image is no longer available.
+                  </div>
+                )}
                 <strong>{label(row.reason)}</strong>
                 <div className={styles.meta}>
                   <span>{label(row.target_type)}</span>

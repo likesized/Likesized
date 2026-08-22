@@ -57,7 +57,17 @@ export async function resolveReport(formData: FormData) {
     }
   }
   const status = action === "remove_content" ? "content_removed" : "dismissed";
-  const { error: updateError } = await supabase.from("content_reports").update({ status, resolved_at: new Date().toISOString(), resolved_by: userId }).eq("id", reportId);
+  let reportUpdate = supabase
+    .from("content_reports")
+    .update({ status, resolved_at: new Date().toISOString(), resolved_by: userId });
+  reportUpdate =
+    action === "remove_content"
+      ? reportUpdate
+          .eq("target_type", report.target_type)
+          .eq("target_id", report.target_id)
+          .eq("status", "open")
+      : reportUpdate.eq("id", reportId);
+  const { error: updateError } = await reportUpdate;
   if (updateError) throw new Error("Could not close the report.");
   const { error: auditError } = await supabase.from("moderation_actions").insert({ report_id: reportId, admin_user_id: userId, action, target_type: report.target_type, target_id: report.target_id, reported_user_id: report.reported_user_id, reason });
   if (auditError) throw new Error("Could not record the moderation audit.");

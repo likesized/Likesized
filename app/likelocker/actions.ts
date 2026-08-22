@@ -23,7 +23,7 @@ async function viewer() {
   return { supabase, userId };
 }
 
-async function change(table: "product_likes" | "wish_locker_items", add: boolean, formData: FormData) {
+async function change(table: "product_likes" | "wish_locker_items" | "product_evidence_notifications", add: boolean, formData: FormData) {
   const productId = value(formData, "product_id");
   const destination = returnTo(formData);
   if (!productId) redirect(destination);
@@ -42,3 +42,5 @@ export async function likeProduct(formData: FormData) { await change("product_li
 export async function unlikeProduct(formData: FormData) { await change("product_likes", false, formData); }
 export async function addToWishLocker(formData: FormData) { await change("wish_locker_items", true, formData); }
 export async function removeFromWishLocker(formData: FormData) { await change("wish_locker_items", false, formData); }
+export async function requestEvidenceNotification(formData: FormData) { await change("product_evidence_notifications", true, formData); }
+export async function cancelEvidenceNotification(formData: FormData) { await change("product_evidence_notifications", false, formData); }

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const migration=readFileSync("supabase/migrations/20260821235000_add_content_moderation.sql","utf8");
+const migration=readFileSync("supabase/migrations/20260822000129_add_content_moderation.sql","utf8");
 const page=readFileSync("app/moderation/page.tsx","utf8");
 const actions=readFileSync("app/moderation/actions.ts","utf8");
 const report=readFileSync("components/ReportContentForm.tsx","utf8");
@@ -16,6 +16,9 @@ test("members report only supported photo content and admins retain an audit",()
  assert.match(actions,/storage\.from\("outfit-photos"\)\.remove/);
  assert.match(actions,/storage\.from\("fit-reference-photos"\)\.remove/);
  assert.match(page,/Remove content/);
+ assert.match(page,/Reported image is no longer available/);
+ assert.match(page,/createSignedUrl/);
+ assert.match(actions,/eq\("target_type", report\.target_type\)/);
 });
 
 test("member garment confirmations flag conflicts and owner decisions lock verified values",()=>{

@@ -375,7 +375,8 @@ The rejected synthetic Browse preview remains excluded as historical recovery co
 ## LikeLocker / saved fashion content
 - LikeLocker is the previously approved private saved-fashion destination for canonical products/garments and saved Outfits.
 - It is not a people graph.
-- LikeLocker opens to **Garments** and has exactly three tabs: **Garments / Outfits / Wish Locker**.\n- Garments contains ordinary product likes; Outfits contains Outfit likes; Wish Locker contains products the member specifically wants to buy. These are distinct intents but one destination, not duplicate save graphs.
+- LikeLocker opens to **Garments** and has exactly three tabs: **Garments / Outfits / Wish Locker**.
+- Garments contains ordinary product likes; Outfits contains Outfit likes; Wish Locker contains products the member specifically wants to buy. These are distinct intents but one destination, not duplicate save graphs.
 
 ## LikeSized Gift Lists — ROADMAP LOCKED
 - feature remains on roadmap after LikeLocker/Product/retailer/recommendation foundations;
@@ -554,10 +555,16 @@ Status: **BRANCH-ONLY / REBUILD VERIFICATION IN PROGRESS / NOT PRODUCTION**.
 - Migration `20260821231040_add_likelocker_and_fit_twin_settings.sql` is the canonical replay source for the already-applied live tables/settings.
 - Earlier source head `ccac70f1b5413b0b566db6218baa68552f3a9a26` passed CI run **#378** and produced preview deployment `dpl_Ai2mywe1dLrp8ai4ncWT27pQQVEc`; that preview is now superseded by the owner-requested Explore and moderation rebuild on the same branch.
 - Current branch work renames the canonical page/route to Explore (`/explore`), retains `/browse` only as a compatibility redirect, adds the eight-item leading carousel and 24-item Keep Browsing expansion, and keeps real Product/Outfit/People/Match sources.
+- Explore now implements strict Category → Type → Style and Brand → Model → Color filters, exact wearer/size/Fit Result context, Fit Report counts, and People search from either content view. Filters never silently broaden.
+- Product/image opens an opaque mini-browser with Back + X and preserves Explore underneath; Like, Wish Locker, wearer, and Notify remain separate targets.
+- Notify appears only below the 75% useful-evidence threshold. The owner-scoped watch produces a real in-app alert/bell count when a later Fit Report arrives for that Product.
 - Current branch work adds member reports for Outfit posts/shared Fit Report photos, an admin moderation queue, accountable removal/dismissal history, and admin-only file/content removal.
+- The admin queue displays the reported photo before action. Removing a target closes all duplicate open reports for that same target while keeping the action audit.
 - Current branch work connects existing member Product-evidence confirmation/conflict rules to an admin garment-information queue and final verified/locked decisions, including controlled tags and member-supplied product descriptions.
-- Local canonical integrity, TypeScript, all focused application tests, and production build pass. Fresh migration replay/privacy tests and a new preview are still pending CI and therefore this update is not yet marked verified/preview-ready.
+- On **2026-08-21**, the owner explicitly authorized the additive moderation/catalog-confirmation database foundation for the review preview. Live Supabase now records `20260822000129_add_content_moderation`, `20260822000737_index_moderation_relationships`, `20260822001113_add_product_evidence_notifications`, and `20260822001218_bootstrap_first_admin_safely`; the owner account is the sole bootstrapped admin and later signups cannot self-promote.
+- Post-DDL verification confirms RLS on report, audit/evidence, and notification tables; admin-only deletion policies for both private photo buckets; the admin-lock RPC; and the product-evidence notification trigger. Supabase advisors found no missing RLS or unindexed foreign key introduced by this work. The intentionally exposed admin RPCs remain guarded by `private.is_admin`.
+- Local canonical integrity, TypeScript, focused application tests, production build, and the new database behavior test source pass/compile. Fresh full migration replay and the owner preview remain pending the next PR #47 CI run; this is not production code.
 - Public homepage five-question FAQ owner review remains pending.
 
 ## Exact next action
-Commit the current PR #47 rebuild, run full CI including fresh migration replay/privacy tests, then create and visually verify one owner-accessible preview covering Explore, My Circle, LikeLocker, shared navigation, member reporting, content moderation, and catalog-conflict locking. Do not merge or promote production without explicit owner authorization. FAQ owner review and deferred desktop Fit Profile verification remain open.
+Publish the completed PR #47 rebuild, require full CI including fresh migration replay/privacy tests, then create and visually verify one owner-accessible preview covering Explore, My Circle, LikeLocker, shared navigation, member reporting, photo moderation, evidence notifications, and catalog-conflict locking. Do not merge or promote production without explicit owner authorization. FAQ owner review and deferred desktop Fit Profile verification remain open.

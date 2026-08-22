@@ -91,6 +91,8 @@ The ordered `20260821223236` through `20260821223310` recovery migrations are th
 - Admin deletion policies cover the member-visible database row and its private Storage object; ordinary member ownership policies remain unchanged.
 - Existing Product metadata/attribute evidence remains the one confirmation system. Independent member agreement corroborates provisional facts; conflicting evidence sets `products.catalog_review_needed`.
 - `catalog_moderation_actions` records the final verified controlled value. Verified admin evidence cannot be overwritten by later member submissions; later disagreements remain review evidence.
+- `product_description_evidence` applies the same provisional → corroborated/conflict → admin-verified lifecycle to member-supplied descriptions.
+- `product_evidence_notifications` is an owner-scoped watch table used only when Explore has insufficient useful evidence. A later Fit Report for that Product activates an in-app notification; it is not a second recommendation or matching engine.
 
 ## Material / stretch implementation debt
 - reliable manufacturer/product-source material may exist as background data only; member material input/verification/filter is not current V1.

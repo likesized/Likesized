@@ -10,11 +10,16 @@ export async function Header() {
   let isAdmin = false;
 
   if (signedIn) {
-    const [{ data }, { data: adminData }] = await Promise.all([
+    const [{ data }, { data: adminData }, { count: evidenceAlertCount }] = await Promise.all([
       supabase.rpc("get_fit_twin_notification_unread_count"),
       supabase.rpc("is_current_user_admin"),
+      supabase
+        .from("product_evidence_notifications")
+        .select("product_id", { count: "exact", head: true })
+        .not("last_notified_at", "is", null)
+        .is("read_at", null),
     ]);
-    unreadCount = typeof data === "number" ? data : Number(data ?? 0);
+    unreadCount = (typeof data === "number" ? data : Number(data ?? 0)) + (evidenceAlertCount ?? 0);
     isAdmin = Boolean(adminData);
   }
 

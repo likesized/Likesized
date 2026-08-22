@@ -16,9 +16,20 @@ export async function markAllFollowingNotificationsRead(){
   // Legacy RPC identifier is preserved during recovery; these notifications are Following activity.
   const {error}=await supabase.rpc("mark_fit_twin_notifications_read",{p_notification_id:null});
   if(error)redirect("/notifications?error=read_failed");
+  const {error:evidenceError}=await supabase.from("product_evidence_notifications").update({read_at:new Date().toISOString()}).not("last_notified_at","is",null).is("read_at",null);
+  if(evidenceError)redirect("/notifications?error=read_failed");
   revalidatePath("/notifications");
   revalidatePath("/");
   redirect("/notifications?read=all");
+}
+
+export async function markProductEvidenceNotificationRead(formData:FormData){
+  const productId=String(formData.get("product_id")??"").trim();
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(productId))redirect("/notifications");
+  const supabase=await authenticatedClient();
+  const {error}=await supabase.from("product_evidence_notifications").update({read_at:new Date().toISOString()}).eq("product_id",productId);
+  if(error)redirect("/notifications?error=read_failed");
+  revalidatePath("/notifications"); revalidatePath("/"); redirect("/notifications");
 }
 
 export async function markFollowingNotificationRead(formData:FormData){

@@ -1,7 +1,7 @@
 # LikeSized V1 Master Guide
 
 ## Sole master-guide rule — LOCKED
-This is the one canonical roadmap, status record, owner-decision ledger, recovery/salvage ledger, completed-work ledger, deployment ledger, and AI handoff for LikeSized.
+This is the one canonical roadmap, current status record, owner-decision ledger, implementation-debt ledger, deployment checkpoint, and AI handoff for LikeSized.
 
 Canonical ownership:
 - `AI_REPOSITORY_RULES.md` — repository/source-of-truth policy.
@@ -14,589 +14,274 @@ GitHub `likesized/Likesized` is the source of truth. Current files describe curr
 
 # CURRENT STATUS — 2026-08-22
 
-## Canonical production baseline
-- Production/canonical `main` remains at commit `36205c2731e9d1dc863934c065c9a281a57c37b9` and contains the completed canonical recovery plus owner-authorized PR #44, #45 and #46 work.
-- Last owner-recorded production feature merge: PR #46 → `main` commit `ec987f5a22575b54806341615309a150558467dc`, followed by the recorded production repair/status commit above.
-- Recorded Vercel production deployment for PR #46: `dpl_FZ2MeLLXaecG8QYVoK284e1n4x2E` — READY.
-- PR #47 is **not authorized for production**.
+## Canonical production line
+- `main` is the single canonical implementation line and the source deployed to production.
+- PR #47 (`correct-grouped-menu-layout`) is **merged and closed**, not an active side line. It merged to `main` as `b5d816d3b3293e262a78896e14e5e3657cd03834` on 2026-08-22.
+- The last production deployment inspected immediately before this reconciliation was Vercel deployment `dpl_8NK7FFHHE76cRih1QRfab26pS715`, **READY**, target `production`, from `main` commit `0e23289486890ef5f78c5fb450cdf73b5a9f425c`.
+- The canonical Product Spec was reconciled to current production behavior in commit `0626f20cc232702186489db83559b8802ece92ff`.
+- The canonical database contract was reconciled to live production behavior in commit `2edcfee6f12e6d4c2c9849f167a7002d822cf1c9`.
+- This master reconciliation follows those two current-truth rewrites. Exact current HEAD is always the tip of `main`; do not freeze architecture to a self-referential commit number.
 
-## Sole active implementation line
-- PR #47
-- branch: `correct-grouped-menu-layout`
-- current development lineage; live GitHub PR #47 branch HEAD is authoritative for exact commit status.
-- PR remains open/unmerged.
-- purpose: controlled consolidation of Phase 6.5 work plus the submission-first catalog/New Fit Report architecture.
-- production merge/promotion: **NOT AUTHORIZED**.
+## Production Supabase checkpoint
+Production project `rlksidwniuoxoacumyaf` was inspected during reconciliation.
 
-## Verified consolidation checkpoint — AUTOMATED GATE GREEN
-The latest implementation checkpoint before this status-only master reconciliation is:
-- implementation commit: `5632c05ee452ff00547265ca51dd60186c403034`;
-- LikeSized CI run: #466 / run `32586621388` — **SUCCESS**;
-- canonical integrity/drift guard — PASS;
-- TypeScript — PASS;
-- all focused application safeguards — PASS;
-- production build — PASS;
-- complete fresh replay of every canonical Supabase migration — PASS;
-- canonical database behavior/privacy/security tests — PASS;
-- matching Vercel Preview deployment `dpl_2PiiEQz3oxzs92Tg6qTdenRu6gsg` — **READY**.
+Latest observed applied migration tail:
+- `20260822231014 restore_state_based_body_report_identity`
+- `20260822230502 compare_body_change_to_latest_report` — applied historical experiment, superseded by the later restore migration
+- `20260822225515 roll_fit_report_body_identity_baseline`
+- `20260822224350 fix_body_identity_conflict_target`
+- `20260822223342 garment_relevant_body_report_identity`
+- `20260822210009 count_all_distinct_fit_situations`
+- `20260822205854 consensus_material_defaults_and_identity_flags`
+- `20260822203208 accept_report_scoped_attribute_variants`
+- `20260822203048 harden_report_scoped_evidence_writer`
+- `20260822202955 fit_report_variant_deduplication`
+- `20260822195045 add_product_size_kind_default_rpc`
+- submission-first catalog/admin migrations are also applied in production.
 
-That checkpoint proves the current submission-first intake/catalog foundation, reviewed Product-alias reuse, RLS changes, and authorized pending-to-canonical mapping behavior replay and test cleanly from scratch. It does **not** mean Phase 6.5 is complete, it does **not** mean the new migrations have been applied to the live Supabase project, and it does **not** authorize a production merge.
+Applied migrations are immutable. Superseded behavior is corrected only by later additive migrations.
 
-## Active consolidation directive — OWNER AUTHORIZED
-The owner explicitly authorized the cleanup/consolidation work with the goal of getting LikeSized back on solid canonical ground.
+# CANONICAL RECONCILIATION — COMPLETE
 
-Current rule:
-- PR #47 is the **only active development lineage**.
-- do not create another implementation/decision/retry branch while this consolidation is active.
-- historical branches are inspection/salvage sources only until classified; never copy an old file wholesale back into current source.
-- do not merge/promote PR #47 until the current intake/catalog checkpoint is coherent, CI/migration replay/Preview pass, owner interaction review is complete, and the owner explicitly authorizes production.
+The 2026-08-22 reconciliation replaced stale branch/checkpoint wording with current production truth in all three canonical current-state documents:
+- `docs/AI_MASTER_LOG.md`
+- `docs/V1_PRODUCT_SPEC.md`
+- `supabase/schema_contract.md`
 
-## PR #48 salvage — COMPLETE / HISTORICAL ONLY
-PR #48 (`owner-decision-retail-affiliate-plan`) was created from stale `main` while PR #47 was already the active line. It contained documentation-only retail/affiliate decisions.
+The reconciliation explicitly resolves these prior conflicts:
+- PR #47 is merged/closed; it is no longer the active implementation line.
+- submission-first catalog behavior is live production truth, not branch-only proposed behavior.
+- the Fit Report body-state migrations are applied production truth.
+- counted Fit Reports use state-based reuse, not chronological episode identity.
+- garment-relevant body identity comes from the same Product measurement map as Fit Match.
+- body-state comparison is direction-independent with a 2% threshold.
+- accepted under-2% updates roll the active report baseline.
+- returning to an already represented body state reuses that report.
+- blank→filled relevant measurements enrich compatible reports rather than splitting them.
+- Intended Fit is excluded from objective counted-report identity.
+- `Not sure` is stored but excluded from positive physical identity claims.
+- material defaults use exact recipe frequency, never averaged percentages.
+- Garment Type conflicts preserve member work as unresolved review instead of rewriting Product truth.
+- known Products may preselect a unique learned most-common **size-system kind**; the actual member size still starts blank.
+- Preferred Fit by garment type is retired/inert and no longer current member or recommendation behavior.
+- the entire site has been reset for owner re-audit after the major rework, except the New Fit Report surface as noted below.
 
-The PR #48 diff was reviewed against current PR #47 canonical docs. Every unique approved decision has been preserved on PR #47:
-- zero valid retailer links → no Shop/cart;
-- exactly one valid retailer → direct route;
-- multiple valid retailers → compact retailer picker;
-- clean retailer names rather than raw URLs;
-- valid non-monetizable retailer links remain usable;
-- no commission-based retailer selection/ranking;
-- provider-independent clean canonical retailer destinations;
-- click-source tracking must never expose private body measurements;
-- Fit Report / Wish Locker / Gift List shopping uses the same conditional behavior;
-- exact disclosure: **“LikeSized may earn a commission from purchases made through our shopping links.”**
+# SOURCE / CHANGE DISCIPLINE — LOCKED
 
-No unique approved product decision remains solely on PR #48. PR #48 is therefore **closed without merge**. Its commits remain inert Git history/salvage evidence and its branch must not be used as a development base.
+- Work directly in the correct canonical files on `main` unless the owner explicitly authorizes another branch/workflow.
+- No patch/fixed/v2/temp/backup duplicates.
+- Do not preserve stale competing current-state files or wording.
+- Do not restore old files wholesale from historical branches.
+- Git history preserves superseded work; current source must contain one current answer.
+- Database corrections remain append-only migrations after anything has been applied.
+- Never create paid Supabase branches or other paid infrastructure without explicit owner authorization.
 
-# ACTIVE OWNER DIRECTION — CONTROLLED CATALOG + SUBMISSION-FIRST INTAKE
+# CONFIRMED SURFACE STATUS
 
-The earlier member-facing external/API import strategy is superseded.
+## New Fit Report — CONFIRMED EXCEPT BARCODE SCANNER
+The owner has interaction-tested and confirmed the reworked New Fit Report flow except barcode scanning, which is intentionally left open for future testing.
 
-The community-catalog concept is retained but tightened:
+Do not rework confirmed New Fit Report behavior during the site sweep unless a regression is discovered or the owner changes a decision.
+
+Confirmed behavior includes:
+- internal LikeSized Product search with manual unresolved fallback;
+- exact known Product selection;
+- member can continue when Product is unknown;
+- known Product vs pending-candidate handling;
+- Product identity conflict routing to admin review instead of silent overwrite;
+- controlled Garment Type/questions/Color/Size/Fit Result/Condition intake;
+- optional retail/identifier/material/Product Photo/Department evidence;
+- added vs updated vs under-review success states;
+- state-based counted Fit Report identity;
+- meaningful body-state reuse/splitting under the rules below;
+- Preferred Fit member UI removed.
+
+Open on this page:
+- **barcode scanner owner interaction testing only**.
+
+# OWNER-LOCKED FIT REPORT RULES
+
+## Counted identity
+For a resolved Product, a counted Fit Report represents one distinct body-fit state for:
+- Member
+- exact Product
+- normalized Size
+- objective physical garment-answer fingerprint
+- garment-relevant body state
+
+A new counted report is **not** created merely because Fit Result, Intended Fit, Condition, Color, material, retail link, identifier, Department, notes, Product Photo, or Fit Photo changed.
+
+Size change creates a distinct report identity.
+A genuine objective physical controlled-answer change can create a distinct report identity.
+
+## Objective fingerprint
+- Intended Fit is report/filter metadata only and is excluded from objective physical identity.
+- `Not sure` is excluded from positive physical identity.
+
+## Garment-relevant body state
+Use the same canonical Product measurement relevance source as Fit Match: currently `private.product_match_measurements(product_id)`.
+
+Do not hard-code a second report-specific measurement list.
+
+Rules:
+- irrelevant measurement changes never split a report for that Product;
+- blank → filled relevant measurement strengthens/enriches a compatible report;
+- value → blank does not create a new report by itself or erase established baseline evidence;
+- already-established relevant value changes are compared as `abs(new-old)/abs(old)`;
+- under 2% = compatible with that report state;
+- 2% or more = materially different from that candidate state;
+- direction is symmetric;
+- accepted under-2% values become the report's rolling active baseline;
+- if another existing report already represents the current body state, reuse/update that report instead of creating another chronological episode;
+- original `fit_profile_version_id` remains immutable history while `match_fit_profile_version_id`/private state baseline may advance for matching and state reuse.
+
+## Legitimate multiple reports from one member
+One member can have multiple counted reports for one Product when Size, physical objective variant, or garment-relevant body state is genuinely distinct.
+
+Product evidence summaries may count all legitimate distinct Fit Report situations. Member-facing wearer lists should separately avoid repeating one person in top wearer slots solely because that person has multiple reports.
+
+# MATERIAL / PRODUCT EVIDENCE — CURRENT
+
+## Material default
+- Member-derived Product material default uses exact complete submitted recipes from valid counted Fit Reports.
+- Never average percentages into a recipe nobody submitted.
+- Unique most-common exact recipe wins.
+- Tie clears the non-verified member default.
+- Verified authoritative material evidence outranks member defaults.
+- Updating the same counted Fit Report replaces its prior material recipe evidence rather than adding a second vote.
+
+Current production uses Fit Report vote count for the winning recipe and currently marks 2+ winning report votes `corroborated`. This means same-member multiple valid reports can currently contribute to that status. **Recipe-frequency selection is accepted current behavior; distinct-member trust/corroboration semantics remain an explicit later audit item and must not be silently changed.**
+
+## Garment Type conflict
+Garment Type is Product identity.
+
+When a known Product's canonical Type conflicts with the member submission:
+- preserve the member report unresolved (`product_id = NULL`);
+- mark candidate Needs Review;
+- flag the canonical Product for review;
+- exclude pending conflict from normal exact-Product evidence;
+- admin later corrects Product, maps to another Product, or dismisses/rejects the disputed identity.
+
+# SIZE SYSTEM — CURRENT
+
+- Actual member size always starts blank.
+- For a known Product, LikeSized may preselect the unique most-common prior normalized size-system kind.
+- A tie or no history gives no preselection.
+- The member can change the suggested system.
+- Unknown/manual Product flow starts at Choose your measurement system.
+
+Do not restore the old blanket rule that size system must always start blank for known Products.
+
+# PREFERRED FIT — RETIRED
+
+The old **Preferred fit by garment type** member feature is not current V1 behavior.
+
+- Removed from Fit Profile UI.
+- Not a current Match or recommendation input.
+- Does not affect counted Fit Report identity or Fit Twin status.
+- Existing legacy preference rows may remain preserved/inert so normal measurement edits do not mutate historical data unexpectedly.
+- Production function inspection found the legacy table referenced by profile-save preservation but not by current Match/recommendation functions.
+
+Do not reintroduce Preferred Fit without a new owner decision.
+
+This does not remove **Intended Fit** from a Fit Report; Intended Fit remains report/filter metadata and is simply excluded from counted physical identity.
+
+# CONTROLLED CATALOG — LOCKED
+
+Core rule:
 
 > **Members contribute garments and Fit Reports. Members do not directly create canonical Products.**
 
-SerpAPI is approved only as an **admin-side discovery/research/enrichment tool**, not as a member-facing search/import authority.
+Member flow:
+**Search LikeSized → select exact Product if known → otherwise short manual fallback and keep going.**
 
-The desired system is a controlled canonical catalog that compounds over time from member demand plus admin resolution.
+Unknown submissions:
+- create/associate pending candidate/evidence;
+- remain usable in the member's Closet;
+- do not become pseudo-Products in ordinary Product search;
+- can later be mapped without rewriting immutable member fit/body evidence.
 
-## Member-facing principle
-The member experience is intentionally simple:
+Canonical Product resolution is conservative. Raw member text, barcode, retailer URL, Style/Article Number, external title, Google Shopping `product_id`, color, size, retailer, or fuzzy title does not by itself define Product identity.
 
-**Search LikeSized → select the exact Product if we have it → otherwise add the garment quickly and keep going.**
+Reviewed Brand/Product aliases normalize proven naming variants without creating duplicate public identities.
 
-A member must never be blocked from logging a garment because LikeSized has not resolved that Product yet.
+# PENDING CANDIDATES / FLAGS — LOCKED
 
-## Canonical Product boundary — LOCKED
-A canonical Product is created/selected only by the catalog-resolution layer, not by raw member text and not by SerpAPI.
+Candidate lifecycle:
+- Pending Product
+- Needs Enrichment
+- Needs Review
+- Merged
 
-The following are evidence/candidates, not canonical Product authority:
-- a member's manual Brand/Model text;
-- an unknown barcode;
-- a retailer URL;
-- a manufacturer Style/Article Number whose scope is not yet understood;
-- a SerpAPI/Google Shopping result;
-- a Google Shopping `product_id`;
-- a raw Google/retailer product title;
-- a color/size/retailer-specific listing.
+A resolved canonical Product is the Verified Catalog Item state.
 
-**SERPAPI RESULT ≠ CANONICAL PRODUCT.**
+Admin queue priority should favor real member demand, especially submission count/frequency, with recency, affected reports, flags, and admin judgment as additional signals.
 
-# MEMBER INTAKE — FINAL TARGET ARCHITECTURE
+Required review families:
+- Possible Duplicate
+- Conflicting Product Fact
+- Ambiguous Catalog Identity / Needs Review
+- Reported / Spam Content
+- Retail / Identifier Conflict
 
-## Opening flow
-New Fit Report begins with internal LikeSized discovery only:
+Flags do not rewrite Product truth by themselves. Resolution must be authorized and auditable.
 
-1. **Scan barcode** — searches LikeSized's catalog/known identifiers only.
-2. **Search / enter item manually** — searches LikeSized canonical Brands/Product aliases first.
+# ADMIN — TARGET OPERATING MODEL
 
-No SerpAPI call occurs from ordinary member intake.
+Only authorized admins may access catalog/moderation controls.
 
-## If the exact Product exists
-- member selects the clean canonical Product;
-- reviewed Product facts may be prefilled/locked;
-- the member completes their personal garment/Fit Report;
-- a specific incorrect Product fact may be reported with **Report an issue / This is incorrect**;
-- disagreement becomes evidence/flagging, never a silent overwrite.
+Required primary areas:
+1. Catalog Enrichment
+2. Conflicting Product Facts
+3. Possible Duplicates / Identity Review
+4. Reported / Spam Content
+5. Review / Audit History
 
-## If the Product does not exist
-The member uses the short manual fallback.
+Admin must ultimately be able to inspect candidate evidence/demand, map/create, merge/split, manage aliases, verify/lock/reopen facts, moderate Fit/Product/Outfit photos and spam submissions/Fit Reports, resolve retailer/identifier conflicts, inspect cached SerpAPI research, and perform accountable research/resolution actions.
 
-The submission creates/persists:
-- the member's garment submission;
-- the member's Closet/Fit Report evidence;
-- best-known identity/evidence entered by the member;
-- a pending catalog candidate or association to an existing pending candidate.
+Current `/moderation` is a working foundation but is **not owner-confirmed** and is included in the full re-audit.
 
-It **does not directly create a canonical Product**.
+# SERPAPI — ADMIN RESEARCH ONLY
 
-The member can immediately continue using the garment/Fit Report while the Product remains unresolved.
+SerpAPI is never ordinary member intake or Product authority.
 
-When catalog resolution later identifies the Product:
-- map the member's garment submission/Fit Report to the correct canonical Product;
-- do not rewrite the member's immutable historical body state or personal Fit Result;
-- preserve the original submission/evidence/audit trail.
+Admin research uses the private cache first, dedupes equivalent queries, distinguishes cached/new results, respects usage limits, preserves research, and requires explicit resolution after research.
 
-## Required Fit Report information order
-The controlled Fit Report information remains:
-1. **Brand / Make** — required; canonical search first, best-known manual fallback when unresolved.
-2. **Item / Model** — required; canonical Product search first, best-known manual fallback when unresolved.
-3. **Garment Type** — required.
-4. **Garment-specific controlled questions** — zero-to-four as defined by the one canonical taxonomy; each displayed question starts blank and requires a physical selection; **Not sure** is always last and records no positive claim.
-5. **Color family** — required controlled value.
-6. **Size** — required structured size; selector starts at **Choose your measurement system** with no default size/system.
-7. **Overall Fit Result** — required: Too Small / Snug / Just Right / Relaxed / Too Big.
-8. **Condition** — required: New / Used / Altered.
-9. **Fit Photo** — optional, deliberately kept with important Fit Report evidence.
-10. **Fit notes** — optional, deliberately kept with important Fit Report evidence.
+Completed benchmark evidence remains reusable:
+- 150/150 starter searches completed;
+- 5,901 raw Shopping listings preserved in private cache;
+- temporary benchmark writer retired.
 
-Then a clear optional evidence break:
+Do not let raw SerpAPI results write directly to `products`.
 
-**Want to help us identify/build this item?**
-Everything below is optional and can help LikeSized/admin resolve or enrich the catalog record.
+# STARTER CATALOG — CURRENT
 
-Optional order:
-1. **Retail link**
-2. **UPC / Barcode** — hidden/omitted when already captured by scanner; scanned value is retained behind scenes.
-3. **Manufacturer Style / Article Number**
-4. **Material / Fabric Composition** — controlled multi-material selection; percentages optional when explicitly known.
-5. **Product Photo** — clear photo of the item by itself; separate from Fit Photo.
-6. **Department** — controlled.
+The owner-supplied starter catalog remains launch-preparation/research data.
 
-For unresolved garments, all optional shared facts remain **submission/candidate evidence** until the Product is safely resolved.
+- Do not invent metadata.
+- Specific reviewed entries may become canonical selectable Products.
+- Broad/ambiguous entries remain pending/enrichment/review candidates.
+- Reuse cached research before spending new searches.
 
-## Barcode rules
-- scan searches LikeSized only;
-- known barcode → resolve to the known canonical Product;
-- unknown barcode → keep it on the pending garment submission/candidate and continue manual fallback;
-- do not force rescan/retyping;
-- unknown barcode does not create a Product by itself;
-- barcode conflicts become identity/review evidence.
+Starter-catalog item-by-item enrichment/review remains open work.
 
-# PENDING CATALOG CANDIDATES — LOCKED
+# MATCH / RECOMMENDATION — PRESERVE
 
-Member submissions may aggregate into backend catalog candidates without destroying the underlying individual submissions.
+Core promise: **See what fits people built like you.**
 
-Required lifecycle meanings:
+- Match % = garment-relevant body similarity, not probability of fit.
+- Current-person Match is symmetric.
+- Historical garment Match uses try-on/body-state evidence.
+- Confidence where exposed is qualitative: High / Good / Limited.
+- Missing optional measurements reduce refinement/confidence rather than inventing values.
+- Chest and Full Bust remain distinct.
+- derived proportion refinement stays small/private: total influence max 8%, final Match movement max ±4 points.
+- shoes: Foot Length dominant / Foot Width secondary.
+- outerwear may use modest layering tolerance; suit jackets/blazers remain more precise.
+- Altered evidence stays history but is excluded from normal recommendation evidence.
+- `Would Buy Again` does not affect size recommendation/confidence.
 
-### Verified Catalog Item
-A sufficiently resolved canonical Product available as the clean catalog identity.
-
-### Pending Product
-One or more member garment submissions exist, but Product identity has not been sufficiently resolved.
-
-### Needs Enrichment
-Base Product identity is largely understood, but useful shared facts such as image, retailer links, identifiers, Department/material/attributes, or cleaner naming remain incomplete.
-
-### Needs Review
-Ambiguous identity, possible duplicate, conflicting facts/identifiers, suspicious external result, or another issue requires admin judgment.
-
-### Merged
-A pending candidate/submission group was mapped into an already-existing canonical Product. `Merged` is candidate-resolution history, not another Product.
-
-If a candidate is genuinely new, the catalog-resolution layer creates **one** canonical Product and maps applicable submissions to it.
-
-## Demand-prioritized enrichment
-Admin queue priority should default heavily toward real member demand.
-
-Examples:
-- unresolved candidate with 37 member submissions should generally rank above a one-off obscure item;
-- submission count/frequency, recency, flags, and number of affected Fit Reports may contribute to priority;
-- admins can still manually select/override queue order.
-
-This allows catalog effort to compound where it benefits the most members.
-
-# DUPLICATE PREVENTION / ALIASES — REQUIRED CATALOG FOUNDATION
-
-## Hidden aliases
-Reviewed hidden aliases normalize common spelling/punctuation/typo variants without creating duplicate public Brands/Products.
-
-Examples:
-- `Levis`
-- `Levi's`
-- `Levi’s®`
-- capitalization/punctuation variants
-
-Once proven equivalent, those should resolve to one canonical Brand.
-
-Product aliases may similarly retain reviewed model-name variants.
-
-## Product identity signals
-Potential evidence includes:
-- explicit existing Product selection;
-- canonical Brand/aliases;
-- cleaned Item/Model name;
-- UPC/barcode where identifier scope is understood;
-- manufacturer Style/Article Number where identifier scope is understood;
-- Garment Type;
-- Department/fit context;
-- controlled garment characteristics;
-- retailer URLs/listings;
-- reviewed product images/descriptions;
-- SerpAPI research evidence.
-
-## Conservative identity rule
-Different manufacturer Style/Article IDs do **not** automatically mean different base Products; they may identify colors/variants/SKUs.
-
-Likewise, a shared broad model word does **not** automatically mean the same Product.
-
-Examples discovered during benchmark research include families containing meaningful distinctions such as:
-- standard vs Shrink-to-Fit;
-- standard vs Selvedge;
-- standard vs Wide;
-- standard vs EasyOn;
-- men's vs women's vs kids;
-- different dress constructions sharing a family name;
-- different jacket/shoe constructions sharing broad model wording.
-
-Never strip fit-changing modifiers blindly.
-
-## Duplicate outcomes
-Catalog resolution should broadly produce:
-1. **Safe existing match** → attach/map to existing Product.
-2. **Possible duplicate / ambiguous** → flag for admin; no automatic merge.
-3. **Genuinely new** → catalog-resolution path may create one canonical Product.
-
-## Merge
-Admin merge must preserve:
-- member garment submissions;
-- Fit Reports and immutable Fit Profile-version links;
-- aliases;
-- identifiers;
-- retailer listings;
-- Product evidence;
-- photos where valid;
-- review/audit history.
-
-## Split
-Admin must be able to split an incorrectly combined Product/candidate and move the appropriate submissions, Fit Reports, identifiers, listings and evidence without silent loss.
-
-# FIELD CONFLICT / CONSENSUS RULES
-
-A Fit Report never wholesale-replaces another Fit Report.
-
-Personal garment evidence remains personal/historical:
-- Size
-- Color of that garment
-- Fit Result
-- Condition
-- Fit Photo
-- Fit notes
-
-Shared Product facts resolve field by field.
-
-Rules:
-- one member's claim is evidence, not unquestionable truth;
-- repeat submissions by the same member do not count as independent agreement;
-- independent agreement may strengthen/corroborate a value;
-- competing material values flag review;
-- when disagreement may indicate two distinct Products/variants, duplicate/split review takes precedence over a simple vote;
-- admin can verify/override/lock known Product fields/descriptions;
-- locked facts cannot be overwritten by later member evidence;
-- later disagreement remains visible/auditable evidence;
-- reopening a locked fact requires authorized audited admin action.
-
-# FLAGS — OWNER-LOCKED REQUIRED SYSTEM
-
-Flags/queues must distinguish the reason for review rather than putting every issue in one pile.
-
-Required flag families:
-
-## 1. Possible Duplicate
-Created when two Brands/Products/candidates appear potentially equivalent but evidence is not strong enough for safe automatic mapping/merge.
-
-Examples/signals:
-- typo/punctuation Brand variants;
-- similar normalized Item/Model names;
-- shared barcode/identifier evidence;
-- same retailer URL;
-- multiple member submissions that appear to describe one Product;
-- SerpAPI cluster suggesting the same base Product.
-
-## 2. Conflicting Product Fact
-Field-level competing Product claims such as:
-- Brand identity;
-- Item/Model;
-- Garment Type;
-- controlled attributes;
-- Department;
-- material;
-- manufacturer Style/Article Number;
-- description or other shared Product fact.
-
-## 3. Ambiguous Catalog Identity / Needs Review
-Used when the candidate cannot yet be confidently mapped or created, including broad/generic model names or external research showing multiple materially different Products.
-
-## 4. Reported / Spam Content
-Member/admin moderation flags for:
-- inappropriate Fit Photos;
-- inappropriate Product Photos;
-- inappropriate Outfit content;
-- spam garment submissions;
-- spam Fit Reports;
-- abusive/inappropriate content where the supported moderation surface allows it.
-
-## 5. Retail/Identifier Conflict
-May be a subtype of Product conflict/duplicate review when:
-- same normalized retailer URL appears on apparently different Products;
-- UPC/identifier conflicts with current mapping;
-- listing evidence indicates candidate may belong elsewhere.
-
-Flags never directly rewrite Product truth or delete content.
-
-Every admin resolution must be auditable.
-
-# ADMIN — CATALOG + MODERATION ACCESS
-
-Only explicitly authorized admins may use administrative surfaces.
-
-Required primary admin tabs/queues:
-
-1. **Catalog Enrichment**
-   - Pending Product
-   - Needs Enrichment
-   - demand/submission count
-   - last submitted/researched
-   - cached SerpAPI availability
-   - research status
-
-2. **Conflicting Product Facts**
-   - field-level conflicts
-   - competing values
-   - independent support counts/evidence provenance
-
-3. **Possible Duplicates / Identity Review**
-   - suspected duplicate Brands/Products/candidates
-   - ambiguous Product identity
-   - side-by-side evidence
-
-4. **Reported / Spam Content**
-   - reported photos/content
-   - spam submissions/Fit Reports
-
-5. **Review / Audit History**
-   - append-only record of admin actions, mapping/merges/splits/locks/removals/dismissals/research decisions.
-
-## Admin catalog powers
-Admin must be able to:
-- inspect all pending submissions contributing to a candidate;
-- inspect member-supplied identifiers, Product photos, retailer URLs and controlled facts;
-- see demand/submission count;
-- inspect cached external research;
-- trigger SerpAPI research manually or in controlled batches;
-- compare candidate ↔ existing Product;
-- map a candidate/submissions into an existing Product;
-- create one new canonical Product after sufficient review;
-- merge duplicates;
-- split wrongly combined records;
-- add reviewed Brand/Product aliases;
-- override/verify/lock a canonical Product field or description;
-- reopen a lock through an audited action;
-- append/dedupe legitimate retailer listings;
-- mark invalid/dead listings appropriately without erasing provenance;
-- dismiss false duplicate/conflict flags;
-- remove inappropriate Product/Fit/Outfit photos/content where authorized;
-- remove spam garment submissions/Fit Reports while preserving accountable moderation history.
-
-# SERPAPI — ADMIN RESEARCH ENGINE ONLY
-
-## Role
-SerpAPI is discovery/enrichment assistance for admins.
-
-It is not:
-- member-facing intake;
-- Product identity authority;
-- a second catalog;
-- permission to insert raw Google Shopping titles as Products;
-- permission to create one Product per color, size, retailer or Google `product_id`.
-
-## Admin batch research
-Admin must be able to select unresolved/enrichment candidates and run SerpAPI research in batches.
-
-The batch system must:
-1. normalize intended queries;
-2. dedupe equivalent queries within the batch;
-3. check LikeSized's private SerpAPI cache first;
-4. reuse cached responses whenever suitable;
-5. clearly indicate cached vs newly fetched research;
-6. call SerpAPI only for missing/authorized-refresh queries;
-7. respect configurable usage caps/warnings;
-8. preserve every successful response for future reuse;
-9. never treat a successful batch search as automatic Product approval/creation;
-10. allow admin to inspect clusters/results and choose the correct resolution action.
-
-## Cache rules
-Private SerpAPI cache is reusable research evidence.
-
-Before a paid call:
-- normalize query;
-- look for equivalent cached query/research;
-- use cache when suitable;
-- refresh only when an authorized admin chooses and the reason justifies spending another call.
-
-Failed/no-useful-result searches should also be cacheable with a shorter freshness policy so repeated members/admins do not immediately burn the same search again.
-
-## Cap protection
-SerpAPI is convenience, never dependency.
-
-Admin research must remain safe when the monthly cap is approached/reached.
-
-Implement configurable thresholds such as:
-- warning threshold;
-- critical threshold;
-- hard external-search stop.
-
-If the cap is reached, normal member intake and pending-candidate creation must continue unaffected.
-
-# COMPLETED SERPAPI BENCHMARK — EXPERIMENTAL EVIDENCE
-
-An owner-approved live benchmark was run against the exact 150 starter entries across all 10 starter groups.
-
-Recorded benchmark outcome:
-- 150/150 first-pass Google Shopping searches completed;
-- 5,901 raw Shopping listings were captured in the reusable private discovery cache;
-- no member-facing SerpAPI intake was enabled;
-- the temporary benchmark writer was later shut down/removed from the active write surface;
-- the cached responses remain reusable research evidence.
-
-The benchmark confirmed:
-- Google Shopping routinely returns the same underlying garment multiple times across retailers/colors/sizes;
-- Google `product_id` cannot be treated as LikeSized Product identity;
-- many clean model searches can provide useful admin research;
-- broad/generic fashion names frequently return several genuinely different Products and require review;
-- conservative cluster-first resolution is safer than raw-title insertion or aggressive fuzzy merge.
-
-The benchmark did **not** authorize SerpAPI to create Products or become member-facing intake.
-
-# STARTER 150 — CURRENT DIRECTIVE
-
-The owner-supplied 150 starter entries remain part of launch preparation and must not be forgotten.
-
-Current reconciliation:
-- keep/load the 150 starter Brand/Model/garment-group entries in the database/research pipeline;
-- do not invent Color, Department, material, identifiers, descriptions, retailer links or other facts merely to make them look complete;
-- specific, sufficiently reviewed entries may become clean canonical selectable Products;
-- broad/generic/ambiguous entries exposed by the benchmark must be treated as Pending / Needs Enrichment / Needs Review until resolved rather than falsely presented as verified exact Products;
-- reuse the already-cached SerpAPI benchmark results for these entries before spending another search.
-
-The earlier branch migration seeds the 150 as provisional Products for replay/history. The later submission-first reconciliation migration reclassifies them into catalog candidates and removes only empty/unreferenced provisional seed Products. Any starter Product that already gained real evidence must be preserved and reviewed rather than destructively erased.
-
-Do not rewrite/delete an already-applied migration. Use a later canonical migration/data-state transition where required.
-
-# RETAILER LISTINGS + SHOPPING — OWNER LOCKED
-
-## One-to-many retailer listings
-A canonical Product may have zero, one or multiple valid retailer destinations.
-
-Rules:
-- append/dedupe; do not overwrite one retailer with another;
-- validate/normalize member-provided retailer URLs and preserve the clean provider-independent destination;
-- members never need to provide an affiliate-formatted URL;
-- preserve original retailer URL/provenance;
-- pending submission retailer URLs remain candidate evidence until Product mapping;
-- when mapping is resolved, reviewed legitimate URLs may be attached to the correct canonical Product;
-- same URL apparently attached to different Products creates identity/duplicate review evidence;
-- dead/invalid links may be marked inactive later without erasing history;
-- a valid retailer does not need to be affiliate-monetizable to remain a valid shopping destination.
-
-## Conditional shopping UI
-- **Zero valid retail links:** no cart/Shop action renders. No disabled placeholder or dead-end control.
-- **Exactly one valid retail link:** the cart/Shop action routes directly to that retailer.
-- **Multiple valid retail links:** the cart/Shop action opens a compact retailer picker for that exact canonical Product.
-- show a clean retailer name such as Nordstrom, Macy's, or Levi's; do not use the raw URL as the shopping label.
-- do not silently choose or rank a retailer because it pays LikeSized a larger commission. Future ordering may use shopper-value signals such as exact variant match, reliable availability, or price when trustworthy.
-
-Where a valid destination exists, the approved garment action set is:
-**Like + Wishlist + Shopping Cart/Shop**.
-
-Apply the same zero/one/multiple-retailer behavior consistently to:
-- garment imagery/cards/details where approved;
-- Product/Garment detail;
-- Fit Report/Product **Shop Here** equivalent;
-- Wish Locker;
-- Gift Lists;
-- other approved shopping surfaces.
-
-Like/Wishlist/Shopping/Notify remain distinct tap targets where present.
-
-## Skimlinks / affiliate monetization — ROADMAP LOCKED
-After canonical retailer-listing behavior is stable:
-- integrate/audit Skimlinks or an owner-approved equivalent aggregator; direct affiliate-program overrides may be added later without changing canonical retailer identity;
-- preserve the original clean retailer URL beneath affiliate routing;
-- affiliate/click-source tracking may identify the LikeSized source surface but must never expose private body measurements to retailers/affiliate providers;
-- audit then-current disclosure/privacy/cookie/merchant eligibility requirements before production;
-- commission never changes Match, recommendation, Product identity, retailer choice, search relevance or ranking;
-- locked disclosure copy: **“LikeSized may earn a commission from purchases made through our shopping links.”** Display it unobtrusively but visibly wherever required for the affiliate shopping experience.
-
-# CONTROLLED GARMENT TAXONOMY — PRESERVE
-
-Explore and New Fit Report share one canonical taxonomy. No parallel category/type/style systems.
-
-Top-level categories:
-- Tops
-- Bottoms
-- Dresses & One-Pieces
-- Outerwear
-- Swimwear
-- Intimates
-- Shoes
-
-Accessories are not V1.
-
-The owner-approved specific garment Types and zero-to-four controlled question mappings remain locked in `lib/garment-taxonomy.ts` / `docs/V1_PRODUCT_SPEC.md` and must be validated against the database vocabulary.
-
-Global question behavior:
-- displayed question starts blank;
-- user must physically select an answer;
-- **Not sure** is always last;
-- Not sure is no positive catalog claim;
-- Color is separate and required;
-- no active V1 stretch field/filter;
-- Material is optional controlled evidence only and does not automatically become a Match input or Explore filter.
-
-# FIT / MATCH PRODUCT TRUTH — PRESERVE
-
-## Core promise
-**See what fits people built like you.**
-
-## Privacy/body state
-- exact current/historical body measurements remain private;
-- current-person Match and historical-garment Match are separate contexts;
-- Fit Reports attach immutable `fit_profile_version_id` body state;
-- later body edits never rewrite historical garment evidence.
-
-## Following vs Fit Twin
-- Following is member-controlled;
-- Fit Twin is system-generated within the followed set from strong current-person Match quality;
-- one canonical `follows` graph;
-- initial threshold remains configurable, currently 85% Overall Match;
-- actions: Follow / Following / Unfollow;
-- public count: Followers;
-- no Save-as-Fit-Twin graph/actions.
-
-## Fit Result
-- Too Small
-- Snug
-- Just Right
-- Relaxed
-- Too Big
-
-There is **no current V1 1–5-star Fit Rating UI**.
-
-## Match semantics
-- Match % = garment-relevant body similarity, not probability a garment fits;
-- current-person body Match is symmetric;
-- confidence is qualitative where exposed: High / Good / Limited;
-- missing optional measurements reduce refinement/confidence rather than inventing values;
-- Preferred Fit translates recommendation only; it does not alter Match %, Fit Twin status or historical body state;
-- derived proportions are private refinement only, total influence max 8%, final movement max ±4 points;
-- Chest/Full Bust stay distinct;
-- shoes retain Foot Length dominant / Foot Width secondary calibration;
-- outerwear may use modest layering tolerance; suit jackets/blazers remain more precise;
-- Altered evidence remains history but excluded from normal recommendation evidence;
-- Stretch is not an active V1 member input/filter.
-
-## Recommendation hierarchy
+Recommendation hierarchy:
 **Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit**
 
 Recovered weights:
@@ -607,826 +292,138 @@ Recovered weights:
 - Brand + Garment Type 0.58
 - Category Fit 0.42
 
-`Would Buy Again` does not affect size recommendation/confidence.
+Help Me Size It is fallback only and reuses the canonical recommendation engine.
 
-**Pending/unmapped garment submissions must not count as exact canonical Product evidence until safely mapped.**
+# FOLLOWING / FIT TWIN — LOCKED
 
-## Help Me Size It
-Fallback only:
-1. strong normal same-product evidence → normal evidence; no Help Me Size It;
-2. useful but limited evidence → useful reports first, smaller fallback;
-3. no meaningful close matches → fallback CTA may become primary.
+- Following is member-controlled.
+- Fit Twin is system-derived among followed members from strong current-person Match.
+- One `follows` graph only.
+- Follow / Following / Unfollow are member actions.
+- Public count is Followers.
+- Initial Fit Twin threshold is configurable and currently 85% Overall Match.
+- Style Feed subscription is Following-driven.
 
-Reuse the canonical recommendation engine. Never create a second sizing engine or invent a size.
+# EXPLORE / SEARCH — PRESERVE FOR RE-AUDIT
 
-# EXPLORE / BROWSE — OWNER-LOCKED DESIGN
-
-- canonical route `/explore`; `/browse` compatibility redirect only;
+Owner-locked design currently includes:
+- `/explore` canonical; `/browse` redirect only;
 - Garments | Outfits;
 - My Fit Matches | All;
-- fresh Explore defaults My Fit Matches;
-- Garments My Fit Matches: 75%+ garment-specific historical Match;
-- Outfits My Fit Matches: 75%+ creator current Overall Match;
-- tiers: 90–99 → 85–89 → 80–84 → 75–79;
-- within tier: Match % → unseen/freshness → recency → likes/popularity;
-- carousel 8;
-- initial results 24;
-- Keep Browsing +24;
-- strict Category → Type → Type questions → Brand → Item → Color filtering;
-- no silent filter relaxation;
-- Search spans Garments/Outfits/People;
-- ordinary Product search returns one canonical Product result, not each wearer/Fit Report;
-- unresolved pending submissions do **not** appear as duplicate pseudo-Products in ordinary catalog search;
-- query relevance primary, catalog trust tie-breaker;
-- compact mobile suggestions;
-- separate Product/wearer/Like/Wishlist/Shop/Notify tap targets;
-- no blank image state;
-- no stars.
+- fresh visit defaults My Fit Matches;
+- Garments My Fit Matches 75%+ historical garment Match;
+- Outfits My Fit Matches 75%+ creator current Overall Match;
+- tiers 90–99 → 85–89 → 80–84 → 75–79;
+- ranking inside tier: Match → freshness/unseen → recency → popularity;
+- carousel 8, initial 24, +24 browsing;
+- strict taxonomy filters with no silent relaxation;
+- ordinary Product results dedupe to canonical Product;
+- pending unresolved submissions are not pseudo-Products;
+- no blank image state and no star Fit Rating.
 
-# LIKELOCKER / WISH LOCKER / GIFT LISTS
+This surface is not owner-confirmed after the major rework until its scheduled audit.
 
-LikeLocker is private saved fashion, not people.
+# RETAIL / SHOPPING — OWNER LOCKED
 
-Tabs:
+One Product may have zero, one, or multiple valid retailer destinations.
+
+- zero → no Shop/cart action;
+- one → direct retailer route;
+- multiple → compact retailer picker;
+- valid listings append/dedupe and do not overwrite one another;
+- clean retailer destination/provenance is preserved beneath affiliate routing;
+- commission never affects Match, recommendation, Product identity, search rank, or retailer selection.
+
+Where a valid destination exists, relevant garment actions are:
+**Like + Wishlist + Shopping Cart/Shop**.
+
+If no valid retailer link exists, shopping disappears entirely.
+
+Same conditional rule applies to Product/Garment details, Shop Here equivalents, Wish Locker, Gift Lists, and other approved shopping surfaces.
+
+Locked disclosure when required:
+**“LikeSized may earn a commission from purchases made through our shopping links.”**
+
+# LIKELOCKER / OUTFITS / STYLE FEED — PRESERVE
+
+LikeLocker is private saved fashion, not people:
 - Garments
 - Outfits
 - Wish Locker
 
-Ordinary Product Like, Outfit Like and purchase intent remain distinct.
+Product Like, Outfit Like, and purchase intent remain distinct.
 
-LikeSized Gift Lists remain roadmap-locked after Product/retailer/save/recommendation foundations:
-- owner-approved wanted Products;
-- confidence-gated recommended size;
-- no raw measurements;
-- owner-controlled sharing;
-- insufficient confidence → say so, do not invent size;
-- eligible retail/affiliate links allowed without influencing sizing/ranking.
+Outfits remain V1:
+- use owned Closet garments;
+- owned Outfits in My Closet;
+- discovery in Explore;
+- followed-person activity in Style Feed;
+- Outfit likes contribute Style Likes; Product likes do not;
+- no second Product/taxonomy system.
 
-# OUTFITS / STYLE FEED — V1 RETAINED
+# PUBLIC HOMEPAGE / FAQ — REQUIRED MEANING
 
-- Outfits remain in V1;
-- use existing owned Closet garments; no duplicate Product/taxonomy system;
-- owned Outfits → My Closet;
-- other-member Outfit discovery → Explore;
-- followed-person Outfit activity → Style Feed;
-- Outfit likes contribute Style Likes; garment/Product likes do not;
-- Following drives Style Feed; Fit Twin designation is not a second subscription;
-- no V1 DMs/Stories/Reels/creator payouts/sponsorship marketplace unless separately approved.
+The homepage remains useful logged out and keeps FAQ inline.
 
-# PUBLIC HOMEPAGE / HELP / FAQ — REQUIRED MEANING
-
-Public homepage remains useful logged out and keeps FAQ inline.
-
-Catalog FAQ must explain:
-- LikeSized maintains a controlled community-built catalog;
-- members search the LikeSized catalog first;
-- if an item is not yet known, they can still log it through the manual fallback;
-- unresolved submissions can be researched/resolved later without blocking the member;
-- independent member evidence can improve/conflict with shared facts;
-- admins resolve ambiguous Product identity rather than letting raw external search results become Products;
-- SerpAPI is an admin research tool, not the member-facing catalog authority.
-
-Also cover before Beta:
+The coming owner audit must ensure the public story accurately explains:
 - measurement privacy;
 - Match %;
 - current-person vs historical garment Match;
 - People My Size;
 - Following vs Fit Twin;
 - Private vs Shared Closet;
-- Fit Photo/Product Photo behavior;
+- Fit Photo vs Product Photo;
 - Fit Result/no stars;
 - Help Me Size It;
 - LikeLocker/Wish Locker;
 - Outfits/Style Feed;
-- retailer/affiliate behavior;
+- controlled community catalog;
+- search LikeSized first;
+- unknown item can still be logged immediately;
+- unresolved item can be researched/resolved later;
+- member evidence can improve/conflict with Product facts;
+- admins resolve ambiguous identities;
+- SerpAPI is admin research, not Product authority;
+- shopping/affiliate behavior and disclosure where applicable;
 - immutable historical try-on body state;
 - Gift Lists if implemented.
 
-# PHASE 6.5 — FULL V1 PRODUCT SURFACE + NAVIGATION AUDIT
-
-**This remains the master Phase 6.5 roadmap. The catalog/intake work is an insertion into it, not a replacement roadmap.**
-
-## CURRENT OWNER-PRIORITY INSERT — complete before returning to remaining page audits
-
-### 6.5 INSERT A — Submission-first intake — AUTOMATED FOUNDATION VERIFIED
-The branch implementation through `5632c05...` passed the complete automated gate. Owner desktop/mobile interaction review is still required before this insert is accepted as complete.
-
-Target/checklist:
-- internal LikeSized Product/barcode search only — implemented/tested at source boundary;
-- exact Product selection path — implemented;
-- manual fallback creates garment submission/pending candidate, **not a canonical Product** — implemented and DB-tested;
-- member Fit Report/Closet remains usable while pending — implemented and DB-tested;
-- preserve scanned unknown barcode on submission — implemented/safeguarded;
-- canonical Brand/Product suggestions/aliases — Brand aliases and reviewed Product aliases integrated/safeguarded;
-- required controlled-question behavior: blank default + Not sure last — safeguarded;
-- size-system blank default — safeguarded;
-- exact information ordering — safeguarded;
-- optional Retail/UPC/Style/Material/Product Photo/Department evidence — implemented in intake foundation;
-- existing Product field-level issue reporting — retained;
-- pending-candidate mapping without rewriting historical Fit Report/body state — DB-tested with narrow authorized NULL→canonical resolution exception;
-- remove/retire active member-facing external-import remnants — safeguarded;
-- full desktop/mobile owner Preview interaction review — **STILL REQUIRED**.
-
-### 6.5 INSERT B — Reconcile starter 150 — REPLAY FOUNDATION VERIFIED / ITEM REVIEW REMAINS
-- all 150 owner-supplied starter entries remain preserved in the research/enrichment pipeline;
-- existing 150-search SerpAPI cache remains reusable;
-- no invented metadata;
-- reconciliation migration `20260822162100_reclassify_starter_seed_as_candidates.sql` reclassifies empty/unreferenced research seeds into candidates and preserves referenced/evidenced Products;
-- complete fresh migration replay passed;
-- specific-entry classification/enrichment of ambiguous starter candidates is **still ongoing roadmap work**, not falsely marked complete.
-
-### 6.5 INSERT C — Pending candidate + flag architecture — FOUNDATION VERIFIED
-Verified foundation includes:
-- garment-submission/pending-candidate data model;
-- aggregation of equivalent unresolved submissions without destroying originals;
-- statuses: Pending / Needs Enrichment / Needs Review / Merged plus canonical verified Product state;
-- demand/submission-count prioritization foundation;
-- hidden Brand/Product aliases and reviewed Product-alias reuse in intake search;
-- typed catalog review flags including possible duplicate, Product-fact conflict, ambiguous identity, spam/report and retail/identifier conflict;
-- admin-only candidate → existing Product mapping;
-- reviewed new canonical Product creation through resolution layer;
-- immutable Fit Profile snapshot/Fit Result preservation during first-time pending Product resolution;
-- accountable resolution audit.
-
-Still required under this insert:
-- full Product-to-Product merge behavior/tooling;
-- audited split behavior/tooling;
-- richer automated duplicate detection beyond current flag/RPC foundation.
-
-### 6.5 INSERT D — Admin catalog dashboard — PARTIAL FOUNDATION
-Implemented/available on branch:
-- demand-prioritized catalog candidates;
-- catalog flags/evidence visibility;
-- map candidate to existing Product;
-- reviewed new-Product creation;
-- existing content/Product moderation foundation and audit history.
-
-Still required:
-- complete queue/tab UX across Catalog Enrichment / Conflicting Product Facts / Possible Duplicates / Reported-Spam / Audit History;
-- merge/split controls;
-- complete Brand/Product alias management UX;
-- complete spam garment-submission/Fit Report controls;
-- complete Product-photo transfer/removal workflows;
-- full field lock/reopen UX where not already covered by existing moderation foundation.
-
-### 6.5 INSERT E — Admin SerpAPI research + cache/batching — CACHE/BENCHMARK DONE, ADMIN WORKFLOW NOT BUILT
-Done:
-- private SerpAPI discovery cache exists;
-- exact 150-item benchmark is stored and reusable;
-- benchmark writer is retired;
-- no member-facing SerpAPI path exists.
-
-Still required:
-- admin-only single and selected-batch research controls;
-- normalized query dedupe/cached-vs-new indicators;
-- usage warning/critical/hard-stop thresholds;
-- admin cluster/review workflow;
-- accountable research action records;
-- no direct SerpAPI → `products` write path.
-
-### 6.5 INSERT F — Retail aggregation + monetization — ROADMAP REMAINS
-- zero/one/multiple retailer behavior exactly as locked above;
-- append/dedupe, never overwrite valid alternatives;
-- unresolved URLs stay candidate evidence until mapping;
-- conditional Shop action;
-- retailer picker for multiple valid destinations;
-- Skimlinks/approved equivalent after retail behavior stable;
-- disclosure/privacy/compliance audit;
-- commission never affects fit/search/ranking/retailer choice.
-
-After the current insert is owner-accepted, continue every audit below.
-
-## 6.5.1 Navigation / information architecture audit
-- LikeSized logo = Home;
-- one fixed notification bell + one Menu;
-- Discover: Explore / People My Size / My Circle / LikeLocker;
-- My Closet: My Closet / New Fit Report / New Outfit;
-- Account: Fit Profile / Settings / Help / FAQ / Sign Out;
-- no obsolete Fit-Twin-owned social navigation.
-
-## 6.5.2 Explore / Discover hub
-Audit/finalize:
-- Garments/Outfits;
-- My Fit Matches/All;
-- ranking/tiers/batches;
-- strict dynamic taxonomy filters;
-- search behavior;
-- pending items excluded as pseudo-Products;
-- conditional Shop;
-- mobile mini-browser;
-- image fallbacks;
-- Help Me Size It/Notify fallback states;
-- real canonical data only.
-
-## Deferred Phase 6.4 desktop Fit Profile verification
-Still required after current owner-priority work / Explore review:
-- desktop layout;
-- edit/review/confirm/save;
-- Added/Changed/Removed;
-- revisit treatment.
-
-Phase 6.4 is not complete until owner desktop verification.
-
-## 6.5.3 My Circle / Following + Fit Twins
-- Following user-controlled;
-- Fit Twin system-generated inside followed set;
-- one `follows` graph;
-- Follow/Following/Unfollow;
-- safe Match context;
-- Followers count;
-- Fit Twin badge/filter where useful;
-- Style Feed driven by Following;
-- privacy.
-
-## 6.5.4 Preserve V1 Outfits
-- preserve canonical Outfit tables/storage/likes/Closet links;
-- no parallel system;
-- classification inherited from attached garments;
-- maintain privacy.
-
-## 6.5.5 My Closet audit/redesign
-- owned garments + outfits;
-- All/Garments/Outfits;
-- useful cards/grid;
-- sharing controls/status;
-- Update Fit / Tried It Again;
-- Fit History only with multiple observations;
-- pending catalog state must not stop member use;
-- member sees sensible status if garment is still unresolved;
-- preview Shared appearance;
-- responsive desktop/mobile.
-
-## 6.5.6 New Fit Report usability gate
-Do not mark complete until submission-first flow, database behavior, owner review and canonical docs agree.
-
-## 6.5.7 Fit Result / satisfaction audit
-- physical Fit Result only;
-- no 1–5-star UI;
-- legacy names compatibility only.
-
-## 6.5.8 Member Profile + Shared Closet
-- avatar/name/bio;
-- Follow/Following;
-- Overall/Tops/Bottoms current-person Match context;
-- Shared Closet as garment-evidence surface;
-- Outfit presentation;
-- search/filter;
-- privacy.
-
-## 6.5.9 Shared Closet garment cards
-- image;
-- Brand + Item/Model when resolved;
-- sensible pending identity presentation when unresolved without fabricating canonical Product;
-- size;
-- historical Match;
-- Fit Result;
-- note/context;
-- conditional Shop only when canonical listing is valid;
-- clear current-person vs historical Match semantics.
-
-## 6.5.10 Image fallback hierarchy
-1. member's Fit Photo where supplied/allowed;
-2. valid member-contributed Product photo where appropriate;
-3. canonical Product/variant image;
-4. garment-type LikeSized fallback.
-
-Never use another member's Fit Photo as generic Product image. No blank image areas.
-
-## 6.5.11 Garment Detail interaction
-- image/gallery/source context;
-- canonical Product identity or honest unresolved state;
-- size + Fit Result;
-- historical Match;
-- Product facts;
-- Help Me Size It when appropriate;
-- Other Fit Reports;
-- People Like You Who Wore This;
-- retailer listings/conditional Shop;
-- Like/Wishlist;
-- no stars.
-
-## 6.5.12 People Like You Who Wore This
-For one canonical Product:
-- top 3–5 unique Shared wearers;
-- historical Match to immutable try-on snapshots;
-- one member not repeated in top slots solely via repeat observations;
-- show Match/size/Fit Result/context;
-- no raw measurements.
-
-## 6.5.13 Canonical Product page
-- one canonical identity;
-- Brand + Item/Model;
-- reviewed shared facts/trust/conflict state;
-- Product images;
-- trustworthy colors/variants;
-- same-product Fit Reports/wearers;
-- Help Me Size It;
-- Other Fit Reports;
-- Like/Wishlist/Shop;
-- multiple retailer listings;
-- See All Fits;
-- admin conflict/duplicate integration behind authorized surfaces.
-
-## 6.5.14 Retail links / commerce
-- zero valid listings → no Shop;
-- one valid listing → direct retailer route;
-- multiple valid listings → retailer picker;
-- no overwrite of alternate valid links;
-- clean retailer names, not raw URLs;
-- avoid fake stale price claims;
-- Skimlinks/affiliate layer;
-- locked disclosure/privacy/compliance;
-- commission has zero fit/search/ranking/retailer-choice influence.
-
-## 6.5.15 LikeLocker architecture
-- saved fashion, not people;
-- Product Like vs Wish Locker distinct;
-- Outfit saves/likes distinct;
-- no competing Favorites destination;
-- Shop conditional.
-
-## 6.5.16 LikeLocker provenance
-- optional source observation provenance;
-- if source Shared evidence becomes private/deleted, inaccessible evidence disappears;
-- Product save may remain;
-- no duplicate save graph.
-
-## 6.5.17 LikeLocker view
-Garments / Outfits / Wish Locker with useful image, identity, fit context, accessible provenance, remove/save controls, conditional Shop.
-
-## 6.5.17A LikeSized Gift Lists
-After Product/retailer/LikeLocker/recommendation foundations:
-- owner-approved wanted Products;
-- confidence-gated recommended size;
-- owner-controlled sharing;
-- no raw measurements;
-- insufficient data → no invented recommendation;
-- eligible affiliate listings allowed without influencing sizing/ranking;
-- shopping uses the same zero/one/multiple-retailer behavior;
-- sharing/revoke/privacy audit.
-
-## 6.5.18 V1 Outfits social-layer audit
-- one Outfit photo;
-- 1–6 unique owned Closet garments with fit evidence unless changed later;
-- caption;
-- likes;
-- LikeLocker save;
-- Outfit Type + Season;
-- garment tags with safe Product/size/Fit Result/historical Match context;
-- tag → canonical detail where resolved;
-- pending garment handling must not fabricate a Product link;
-- privacy;
-- Followers + Style Likes social proof without overriding fit relevance.
-
-## 6.5.19 Style Feed audit
-- followed-person Shared garment activity;
-- fit updates/retries;
-- Outfit posts;
-- real evidence destinations;
-- Fit Twin context only;
-- Outfit-only mute does not unfollow/hide garment evidence.
-
-## 6.5.20 Explore/Browse Search audit
-- canonical Brand/Product/model/identifier search;
-- Garments/Outfits/People;
-- one canonical Product result, not wearer duplicates;
-- unresolved submissions do not become Product results;
-- compact mobile suggestions;
-- member discovery distinct from People My Size;
-- Product Like/Wishlist/Shop;
-- Help Me Size It fallback;
-- member Follow/Following + derived Fit Twin badge.
-
-## 6.5.21 Help / FAQ audit
-Explain at minimum:
-- measurement privacy;
-- Match %;
-- current-person vs historical Match;
-- People My Size;
-- Following vs Fit Twin;
-- Private vs Shared Closet;
-- Fit/Product Photo behavior;
-- Fit Result/no stars;
-- Help Me Size It;
-- LikeLocker/Wish Locker;
-- Outfits/Style Feed;
-- submission-first catalog behavior;
-- unresolved garment still usable;
-- Product conflict/duplicate review;
-- admin-side SerpAPI research/canonical safeguards in user-appropriate language;
-- retailer/affiliate shopping disclosures where required;
-- immutable historical try-on state;
-- Gift Lists if implemented.
-
-## 6.5.22 Remaining product surfaces + admin/moderation audit
-Audit all remaining V1 surfaces:
-- Fit Profile;
-- Settings;
-- Notifications;
-- homepage;
-- login/signup/auth confirmation;
-- forgot/reset password;
-- logged-out states;
-- empty/error states;
-- profile/account editing;
-- avatar behavior;
-- desktop/mobile;
-- admin auth/navigation;
-- Catalog Enrichment queue;
-- Conflicting Product Facts queue;
-- Possible Duplicates/Identity Review;
-- SerpAPI batch research controls/cache/cap state;
-- merge/split;
-- field/description lock + reopen;
-- inappropriate Fit/Product/Outfit photo removal;
-- spam garment submission/Fit Report removal;
-- audit history.
-
-## 6.5.23 Terminology cleanup
-Primary current vocabulary:
-- Explore
-- People My Size
-- My Circle
-- Following / Followers
-- Fit Twin / Fit Twins only as system-generated designation
-- Style Feed
-- My Closet
-- LikeLocker
-- Wish Locker
-- Fit Profile
-- Fit Result
-- Help Me Size It
-- Other Fit Reports
-- Outfit
-- New Fit Report
-- Product / canonical Product
-- garment submission / pending Product only where status must be shown
-- LikeSized Gift Lists
-
-Remove stale Save-as-Fit-Twin, Favorites, star-rating, member-facing external import, Channel3/retail-import jargon and any wording that implies raw member/API data directly creates canonical Product identity.
-
-## 6.5.24 Full Preview verification before Phase 7
-Phase 6.5 is not complete until source + migrations + docs + verification + owner review agree.
-
-Verify at minimum:
-- desktop/mobile;
-- multiple users;
-- privacy;
-- navigation/bell;
-- Explore Garments/Outfits + scopes/filters/search/ranking/batches;
-- mobile mini-browser safety;
-- Product/wearer/Like/Wishlist/Shop/Notify targets;
-- image fallback;
-- 75% My Fit Matches / separate Fit Alert semantics;
-- Help Me Size It fallback;
-- recommendation hierarchy;
-- taxonomy;
-- Brand/Item autocomplete;
-- internal barcode lookup;
-- exact Product select path;
-- unknown manual submission path does not directly create Product;
-- pending member garment remains usable;
-- starter 150 classification/seed reconciliation;
-- controlled questions blank + Not sure last;
-- size no default;
-- exact Fit information ordering;
-- optional evidence section;
-- candidate aggregation/demand priority;
-- Product field conflict/corroboration;
-- duplicate aliases/candidates/merge/split;
-- admin locks;
-- Product/Department/material/photo evidence;
-- SerpAPI admin-only research;
-- cache reuse;
-- batch dedupe/cap handling;
-- no direct SerpAPI → Product creation;
-- immutable Fit history/body links;
-- no stars;
-- LikeLocker/Wish Locker/Outfit Likes;
-- Following/Fit Twin separation;
-- Outfits/Style Feed;
-- same-product matched wearers;
-- multiple retailer listings;
-- zero/one/multiple retailer Shop behavior;
-- Skimlinks/affiliate behavior if implemented;
-- locked affiliate disclosure if implemented;
-- Gift Lists if implemented;
-- content/spam moderation;
-- no stale member-facing external catalog-import implementation;
-- no parallel active implementation;
-- branch/source hygiene;
-- canonical integrity;
-- TypeScript;
-- focused tests;
-- production build;
-- complete fresh migration replay;
-- DB privacy/behavior/security tests.
-
-# PHASE 7 — V1 BETA END-TO-END VERIFICATION
-Begin only after Phase 6.5 is complete.
-
-Representative Beta verification:
-- signup/login/auth/recovery;
-- Fit Profile;
-- Explore;
-- People My Size;
-- Following/My Circle/Fit Twin;
-- Shared Closet;
-- canonical Product/Garment Detail;
-- Help Me Size It;
-- LikeLocker/Wish Locker;
-- retailer/affiliate behavior;
-- New Fit Report exact-select + pending-manual paths;
-- pending candidate resolution/remapping;
-- Fit History/Update Fit;
-- Outfits;
-- Style Feed;
-- privacy;
-- recommendations;
-- no stars;
-- Gift Lists if implemented;
-- duplicate/conflict/admin moderation;
-- admin SerpAPI research/cache/caps;
-- mobile UX;
-- CI/migration/privacy/security verification.
-
-# BRANCH / SOURCE HYGIENE — REQUIRED BEFORE PRODUCTION
-
-## Active-line rule
-- PR #47 is the sole primary active implementation line unless the owner explicitly changes it.
-- `main` is the deployed baseline while PR #47 is in progress; it is not a competing future and must not be used as the base for new side work.
-- no retry/fixed/v2/owner-decision side branch as a substitute for canonical correction.
-
-## Historical branch salvage rule
-- inventory historical/retry/verification branches as **ACTIVE / SAFE TO REMOVE / HOLD**.
-- old branches may be inspected as historical evidence but their files must never be copied wholesale into current source.
-- any unique useful work must be extracted deliberately and adapted to current canonical files before the old branch is classified safe.
-- preserve applied migration history; supersede runtime behavior with later canonical migrations rather than rewriting history.
-- the completed SerpAPI benchmark cache is retained as research evidence; temporary benchmark write surfaces are retired.
-- production promotion requires explicit owner authorization after full verification.
-
-## Branch salvage ledger — CLASSIFICATION COMPLETE / NO DELETIONS YET
-All 69 live branch refs were inventoried and assigned an explicit disposition on 2026-08-22.
-
-Classification rule used for this pass:
-- **ACTIVE** — current production baseline or sole active development lineage.
-- **SAFE TO REMOVE** — `ahead_by = 0` against `main`, or an explicitly reviewed historical branch whose unique approved decisions have already been salvaged into current canon.
-- **HOLD** — any ref with unique/diverged commit identity or intentionally preserved historical evidence; HOLD requires second-pass reconciliation before deletion.
-
-**ACTIVE — 2**
-- `main` — deployed production baseline only.
-- `correct-grouped-menu-layout` / PR #47 — sole active development lineage.
-
-**SAFE TO REMOVE — 29**
-Salvage proof is complete enough to classify these branch pointers as redundant. Physical deletion is still deferred until the HOLD pass is reconciled and cleanup is deliberately executed.
-- `FINAL-NO`
-- `NO-MORE`
-- `STOP-TEST`
-- `THIS-IS-BAD`
-- `agent/canonicalize-migration-version`
-- `agent/phase-1-2-verification`
-- `agent/phase-1-3-verification`
-- `agent/phase-1-4-verification`
-- `agent/phase-1-5-verification`
-- `agent/phase-2-1-verification`
-- `agent/phase-2-final-verification`
-- `agent/phase-2-recalculation-verification`
-- `agent/phase-3-3-verification`
-- `agent/phase-6-1-2-verification`
-- `auth-supabase`
-- `closet-live`
-- `fit-profile-persistence`
-- `fit-twins`
-- `fix-public-homepage-content`
-- `optimize-outfit-photo-pipeline`
-- `outfits-live`
-- `owner-decision-retail-affiliate-plan` — closed PR #48; every unique approved retail/affiliate decision was already salvaged into PR #47.
-- `people-live-matches`
-- `phase-6-4-diagram-assets`
-- `phase-6-4-diagram-assets-check`
-- `phase-6-4-diagram-assets-check2`
-- `product-fit-live`
-- `repair-menu-and-live-fit-profile`
-- `search-discovery`
-
-**HOLD — 38**
-Do not remove these refs yet. They contain unique/diverged commit identity or are intentionally retained historical evidence. Second-pass review must prove each unique piece is already present, intentionally superseded, or worth adapting into current canon before the pointer can move to SAFE TO REMOVE.
-- `agent/phase-0-replay-verification` — unique README-only commit previously observed.
-- `agent/phase-1-5-verification-2` — unique older master-log content.
-- `agent/phase-1-5-verification-3` — unique older master-log content.
-- `agent/phase-3-1-verification` — unique verification marker plus Fit Report dimension-test changes.
-- `agent/phase-3-4-verification` — unique verification-marker commit.
-- `agent/phase-3-5-verification` — unique verification-marker commit.
-- `agent/phase-4-1-verification` — unique verification-marker commit.
-- `agent/phase-4-2-verification` — unique verification-marker commit.
-- `agent/phase-4-3-verification` — unique verification-marker commit.
-- `agent/phase-4-4-verification` — unique verification-marker commit.
-- `agent/phase-4-5-verification` — unique verification-marker commit.
-- `agent/phase-5-1-verification` — unique CI-verification marker commit.
-- `agent/phase-5-2-foundation-verification` — unique CI-verification marker commit.
-- `agent/phase-5-2-foundation-verification-2` — unique CI-verification marker commit.
-- `agent/phase-5-2-ui-verification` — unique CI-verification marker commit.
-- `agent/phase-5-3-complete-verification` — unique commit identity; no net file delta in first-pass compare, so retain until second-pass confirmation.
-- `agent/phase-5-3-notification-foundation` — unique commit identity; no net file delta in first-pass compare, so retain until second-pass confirmation.
-- `agent/phase-5-4-social-verification` — unique commit identity; no net file delta in first-pass compare, so retain until second-pass confirmation.
-- `agent/phase-5-5-search-verification` — unique commit identity; no net file delta in first-pass compare, so retain until second-pass confirmation.
-- `agent/phase-5-5-search-verification-2` — unique commit identity; no net file delta in first-pass compare, so retain until second-pass confirmation.
-- `agent/phase-6-1-2-verification-2` — unique commit identity; no net file delta in first-pass compare.
-- `agent/phase-6-1-2-verification-3` — unique commit identity; no net file delta in first-pass compare.
-- `agent/phase-6-1-2-verification-final` — unique commit identity; no net file delta in first-pass compare.
-- `agent/phase-6-1-prototype-removal` — unique commit identity; no net file delta in first-pass compare.
-- `canonical-recovery-2026-08-21` — intentionally preserved canonical-recovery evidence.
-- `fit-match-engine-audit` — intentionally preserved Fit Match audit evidence / PR #36 history.
-- `fix/high-res-measurement-guides` — unique workflow content previously observed.
-- `phase-6-4-fit-profile-help` — unique `tmp-placeholder.txt` artifact previously observed; likely disposable but still requires explicit second-pass classification.
-- `phase-6-4-fit-profile-resave-username-settings` — unique Fit Profile/settings/migration implementation content.
-- `phase-6-4-measurement-audit-outfits-roadmap` — unique Fit Profile/help/master/migration implementation content.
-- `phase-6-4-mobile-menu` — unique mobile-menu/UI/master content.
-- `phase-6-4-mobile-menu-outside-click` — unique MobileMenu interaction content.
-- `phase-6-4-mobile-menu-state` — unique MobileMenu/header-responsive content.
-- `phase-6-4-mobile-revisit-review-removals` — unique Fit Profile mobile/revisit UI content.
-- `phase-6-4-review-grid-scroll-top` — unique Fit Profile review/grid/scroll UI content.
-- `phase-6-4-settings-mobile-alert-layout` — unique Settings/profile-identity/mobile layout content.
-- `phase-6-5-1-navigation-ia` — intentionally preserved Phase 6.5 navigation-decision evidence.
-- `phase-6-5-2-browse-preview` — intentionally preserved historical Browse-preview evidence; synthetic preview source remains obsolete unless a specific approved piece is deliberately adapted.
-
-Physical branch-pointer deletion has **not** been performed. Git history is preserved regardless. Next cleanup pass: reconcile the 38 HOLD refs against current PR #47 canon, then delete only branch pointers proven redundant; never restore an old file wholesale.
-
-# CANONICAL RECOVERY — COMPLETE / PRESERVE
-
-Owner approved canonical recovery on 2026-08-21 after severe source-of-truth drift was audited.
-
-Preserved historical references:
-- recovery baseline: `main` `e997a217e8fa6f33df4f84a7f18f581e1ac7de3c`;
-- recovery branch: `canonical-recovery-2026-08-21`;
-- PR #43 merged recovery as `426881a57d859be8bd9bf1382d358cc238a3d58e`;
-- preserved Fit Match audit branch `fit-match-engine-audit`, PR #36, head `fcf87fa1782f2ed704a4856c99487900b1445db5`;
-- preserved Phase 6.5 navigation decisions branch `phase-6-5-1-navigation-ia`, head `b56f663199a9f7252c27cddfebfdae710230cb5e`;
-- preserved old Browse preview branch `phase-6-5-2-browse-preview`, head `2d150bc3d7238a50d80cac98d6ddde92c310ae3b`.
-
-Recovery classification remains:
-- valid Fit Match/recommendation, migrations, tests, provenance/condition work: RECOVERED/ADAPTED;
-- stale normally-worn-size UI, old History notice, Save-as-Fit-Twin, stars and active stretch direction: SUPERSEDED/EXCLUDED;
-- stale Phase 6.5 placeholder Browse/Help/LikeLocker implementations: OBSOLETE, decisions recovered where valid;
-- synthetic Browse preview source: OBSOLETE/NOT RECOVERED;
-- deferred Closet/responsive work remains later audit work.
-
-Historical recovery verification remains preservation evidence only; current PR #47 must pass its own final gate.
-
-# COMPLETED PRODUCTION WORK TO PRESERVE
-
-## Phase 6.4 mobile Fit Profile / navigation
-Preserve:
-- mobile Fit Profile save/load/edit/revisit/review/confirm;
-- Added/Changed/Removed review state;
-- compact revisit hero;
-- two-column mobile Review Changes + scroll-to-top;
-- username initial setup in Fit Profile; later changes in Settings;
-- previous username reservation for 30 days;
-- no anatomical plausibility hard stops beyond valid-positive technical validation;
-- normally-worn-size UI removed while historical records may remain;
-- approved measurement wording/help;
-- owner-verified combined `public/measurement-guides/crotch-guide.png` unchanged;
-- Mobile Menu closes on navigation/outside interaction.
-
-Desktop Fit Profile verification remains intentionally unfinished.
-
-## Outfit photo pipeline
-- PR #44 merged as `04319c76469819c6178eeb31a3e3f3c987e7694c` after owner authorization;
-- new Outfit photo processing creates optimized WebP display/feed assets;
-- original is not stored;
-- recorded Vercel deployment READY.
-
-## Public homepage content
-- PR #45 merged as `0961ca6635f790debdbcf7df0b194247caa3eaf4` after owner authorization;
-- The Loop → What LikeSized Does → FAQ preserved;
-- Get Inspired CTA preserved;
-- catalog FAQ meaning must be updated to current submission-first controlled-catalog direction during current/6.5.21 work.
-
-## Live schema + grouped navigation repair
-- recovered migrations were applied in locked order during prior repair;
-- PR #46 merged as `ec987f5a22575b54806341615309a150558467dc`;
-- recorded Vercel deployment READY;
-- grouped one-Menu + fixed-bell navigation and My Circle destination preserved.
-
-# PR #47 HISTORICAL CHECKPOINTS — PRESERVATION EVIDENCE ONLY
-
-Earlier PR #47 heads had green CI/Preview checkpoints, including previously recorded:
-- `95e8e34f0e9eb7194f4b3d784c5a3887c5bfc1aa` → CI #381 / Preview READY;
-- `4c17951e8848e9106bf01c15a84aea376f09228e` → CI #385 / Preview READY;
-- `bf36b673c071f9b93304401b0df7da68bfb2b87d` → CI #396 / Preview READY.
-
-Those remain preservation evidence only. The current submission-first direction is instead proven by the verified checkpoint recorded above.
-
-# CURRENT CONSOLIDATION IMPLEMENTATION — BRANCH ONLY / VERIFIED CHECKPOINT
-
-PR #47 contains the verified submission-first checkpoint foundation, including:
-- `20260822162000_submission_first_catalog_foundation.sql` — nullable unresolved Product links, pending catalog candidates, garment submissions, typed catalog flags, resolution audit, Product aliases, pending-product photo storage, member submission RPC, duplicate-flag RPC, and admin map/create/status resolution RPCs;
-- `20260822162100_reclassify_starter_seed_as_candidates.sql` — keeps all 150 starter entries in the enrichment pipeline and removes only empty/unreferenced provisional research-seed Products after reclassification;
-- `20260822162200_allow_pending_fit_report_rls.sql` — preserves owner/Closet consistency while permitting unresolved `NULL Product ↔ NULL Product` Fit Reports;
-- `20260822162300_allow_authorized_pending_product_resolution.sql` — preserves historical Fit Report immutability while allowing the private authorized catalog resolver to assign a canonical Product/variant exactly once to a previously unresolved report;
-- New Fit Report server action has a known-Product path and an unresolved submission path that does not directly insert a Product;
-- unresolved Closet/Fit Report rows remain usable and display supplied Brand/Model plus catalog-review state;
-- moderation/admin surface includes demand-prioritized catalog candidates, typed flags, evidence, map-to-existing and reviewed new-Product creation actions;
-- barcode identity disagreement evidence includes the `barcode` field;
-- reviewed Brand aliases and Product aliases resolve back to canonical Products in internal member intake search;
-- member intake contains no SerpAPI/Google Shopping discovery path;
-- private SerpAPI research cache and completed 150-item benchmark remain preserved;
-- `AI_REPOSITORY_RULES.md` now explicitly blocks stale-base parallel product branches during an active unreconciled lineage.
-
-## What the verified automated checkpoint proves
-At implementation commit `5632c05ee452ff00547265ca51dd60186c403034`:
-- canonical integrity/drift guard passed;
-- TypeScript passed;
-- recommendation/Fit Match/Outfit/homepage/navigation/Explore/My Circle/LikeLocker/controlled-intake/moderation safeguards passed;
-- production Next.js build passed;
-- every canonical migration replayed successfully on a fresh local Supabase database;
-- all canonical DB tests passed;
-- `submission_first_catalog.test.sql` proves unresolved member intake does not create a Product, equivalent submissions aggregate without erasing originals, ordinary members cannot see the admin candidate queue or one another's pending submissions, authorized admin mapping resolves to one canonical Product, original submissions remain audit evidence, and the immutable Fit Profile snapshot/Fit Result survive mapping;
-- the matching Vercel Preview is READY.
-
-## What is **not** complete yet
-Do not overstate the checkpoint. Still required before this consolidation can be promoted to production:
-- owner desktop/mobile interaction review of the real New Fit Report flow, specifically scanner opening, exact Product selection, clear-and-search-again behavior, unknown/pending fallback, known-field locking/issue reporting, and responsive layout;
-- live Supabase migration application/promotion plan; the new submission-first migrations have not been declared/applied as the production schema checkpoint here;
-- full Product-to-Product merge and audited split behavior/UI;
-- complete admin queue/tab UX and complete Brand/Product alias management UX;
-- admin SerpAPI single/batch UI/server workflow, cache indicators and usage-cap controls;
-- full spam garment-submission/Fit Report moderation coverage;
-- complete Product-photo moderation/transfer behavior;
-- browser-level behavioral regression automation beyond the current source/DB safeguards;
-- second-pass reconciliation of all 38 HOLD branch refs and physical removal of only those branch pointers later proven redundant;
-- specific enrichment/review of ambiguous members of the starter 150;
-- remaining Phase 6.5 page-by-page audits and deferred desktop Fit Profile review.
-
-# EXACT NEXT ACTION — AFTER VERIFIED SUBMISSION-FIRST CHECKPOINT
-
-1. Documentation-only reconciliation commit `5a76852953829119bd514bd0a157278895ba9f6c` is verified: LikeSized CI #467 / run `32587165951` — **SUCCESS**; matching Vercel Preview `dpl_GgkUpUxjhXk4KRkn8BzyPHSictq7` — **READY**. This checkpoint is complete; do not repeat it unless the branch head changes.
-2. Perform owner desktop/mobile interaction review of PR #47 New Fit Report against the verified submission-first architecture.
-3. Fix only review failures on PR #47; do not create another branch.
-4. Branch classification is complete across all 69 live refs. Reconcile the 38 HOLD refs against current canon; only after salvage/supersession proof may redundant branch pointers be physically removed.
-5. Finish the minimum admin catalog tooling needed for practical operation: complete queue visibility, merge/split/alias controls, and spam/Product-photo moderation gaps.
-6. Build the admin-only SerpAPI single/batch research workflow using the existing private cache first, with dedupe and usage caps; SerpAPI remains incapable of directly creating Products.
-7. Review/enrich ambiguous starter-150 candidates using the existing cache before spending new calls.
-8. Add browser-level regression coverage for owner-locked intake interactions where practical.
-9. Re-run canonical integrity → typecheck → focused tests → production build → complete fresh Supabase replay → DB tests on the final consolidation head.
-10. Produce one exact-SHA READY Preview for final owner desktop/mobile review and determine the live Supabase migration/promotion sequence.
-11. **STOP before production.** Do not merge PR #47 to `main`, apply/promote the production schema, or promote Vercel production until the owner explicitly authorizes the final consolidation promotion.
-
-# OWNER RE-AUDIT RESET — 2026-08-22 — CURRENT AUTHORITY
-
-This section is the current owner-authorized audit status and **supersedes every earlier page-complete claim, audit ordering, branch-only next-action instruction, and stale production-promotion statement elsewhere in this file**. Older sections remain preservation/history evidence only where they conflict with this section.
-
-## Current working rule
-- Canonical work is being made directly against the current LikeSized `main` production line under the owner's standing production authorization for this review session. Do not create a new Git branch unless the owner explicitly authorizes one.
-- The major catalog/intake/Fit Report rework invalidates prior owner page approvals for audit purposes.
-- **New Fit Report is the only currently owner-confirmed page/surface.** The barcode scanner remains explicitly **OPEN / NOT CONFIRMED** for future testing.
-- Every other member-facing, public, account, navigation, social, commerce and admin surface is reset to **NEEDS OWNER RE-AUDIT**, regardless of any older completion language above.
-- Audit first: inspect the live/current implementation, identify stale or broken behavior, lock owner decisions, then make canonical changes. Do not treat an old approval as current approval after this reset.
-- After the owner confirms a surface is done again, record that confirmation here before moving its audit status to complete.
-
-## New Fit Report — current confirmed scope
-Owner review has confirmed the current New Fit Report flow except barcode scanning. Preserve the current behaviors already live, including:
-- internal LikeSized Product search with manual unresolved fallback;
-- known Product vs pending-candidate handling;
-- Product identity conflict routing to admin review rather than silent canonical overwrite;
-- state-based counted Fit Report identity rather than chronological duplicate episodes;
-- size and objective garment-answer changes may create distinct counted Fit Reports;
-- Intended Fit alone does not create a counted report;
-- blank garment-relevant body measurements added later strengthen/update an existing report rather than creating a new one;
-- irrelevant measurements do not create a new report for a garment that does not use them;
-- garment-relevant body changes use a 2% threshold in either direction;
-- accepted under-2% relevant changes update the existing report and roll its comparison baseline to the newest accepted value;
-- a relevant change outside the accepted body-state window creates a new report, while returning to an already represented equivalent/nearby body state reuses that state instead of creating a duplicate;
-- material updates use exact submitted recipes rather than averaging percentages into a composition nobody submitted;
-- Fit Report added/updated/review modal distinctions and simplified duplicate-update wording;
-- retired Preferred Fit member UI is removed from the Fit Profile surface used by this flow;
-- barcode scanner remains available but deliberately unconfirmed for later owner testing.
-
-## Full owner re-audit sequence — LOCKED ORDER
-1. **Homepage + complete FAQ** — re-audit the entire public story after the catalog/Fit Report rework; remove stale language and make the FAQ match current product truth.
-2. **Global header + member Menu + admin menu entry/navigation** — labels, grouping, destinations, bell, mobile/desktop behavior, admin discoverability and obsolete links.
-3. **Signup / Login / Check Email / auth-confirmation / auth-error / Forgot Password / Reset Password** — complete authentication flow and all empty/error states.
-4. **Fit Profile** — desktop/mobile, measurements, help diagrams, review/save behavior, privacy copy, retired Preferred Fit removal, and measurement-update semantics.
-5. **Settings** — every account/profile/privacy/notification/social preference control, stale settings, layout and mobile behavior.
-6. **Notifications** — types, copy, read/unread behavior, destinations, privacy, empty states and mobile/desktop presentation.
-7. **People My Size** — matching, confidence, filters/sorting if present, member cards, privacy and destinations.
-8. **Member Profile + Shared Closet** — identity/profile UI, Follow state, Match context, shared garments/outfits, privacy and pending Product presentation.
-9. **My Circle / Following / Fit Twins** — one follows graph, derived Fit Twin designation, Style Feed relationship, redirects and any legacy `/following` or `/twins` behavior.
-10. **My Closet** — garments/outfits, multiple valid body/fit states, Fit History, Update Fit/Tried It Again, pending catalog state, sharing and mobile/desktop card behavior.
-11. **Update/Edit Fit Report** — ensure edit/update behavior matches the newly confirmed counted-report and body-state rules rather than older assumptions.
-12. **New Fit Report** — **CONFIRMED EXCEPT BARCODE SCANNER**. Do not rework confirmed behavior during the page sweep unless a regression is discovered. Barcode scan testing remains deferred/open.
+Remove stale Preferred Fit and old member-facing external/API import wording anywhere it still appears.
+
+# FULL OWNER RE-AUDIT RESET — LOCKED
+
+Because the site underwent a major rework, prior page approvals are not automatically carried forward.
+
+**Only New Fit Report is currently owner-confirmed, except barcode scanner testing remains open. Every other page/surface is NEEDS OWNER RE-AUDIT.**
+
+Audit in this order:
+
+1. **Homepage + complete FAQ** — full public story, layout/order, copy, CTAs, logged-in/logged-out behavior, catalog/Fit Report explanations, privacy, Match, shopping, stale concepts, mobile/desktop.
+2. **Global header + member Menu + admin menu entry/navigation** — labels, grouping, destinations, bell, mobile/desktop behavior, admin discoverability, obsolete links.
+3. **Signup / Login / Check Email / auth confirmation / auth error / Forgot Password / Reset Password** — full auth path and empty/error states.
+4. **Fit Profile** — desktop/mobile, measurements, help diagrams, review/save/revisit, privacy copy, Preferred Fit retirement, measurement semantics.
+5. **Settings** — every account/profile/privacy/notification/social setting, stale controls, layout and mobile behavior.
+6. **Notifications** — types, copy, read/unread, destinations, privacy, empty states, desktop/mobile.
+7. **People My Size** — matching, confidence, cards, filters/sorting if present, privacy and destinations.
+8. **Member Profile + Shared Closet** — identity/profile UI, Follow state, Match context, shared garments/outfits, privacy, pending Product display.
+9. **My Circle / Following / Fit Twins** — one follows graph, derived Fit Twin, Style Feed relationship, legacy redirects/wording.
+10. **My Closet** — garments/outfits, multiple legitimate fit/body states, Fit History, Update Fit/Tried It Again, pending status, sharing, desktop/mobile.
+11. **Update/Edit Fit Report** — ensure edit behavior matches current counted identity/body-state rules.
+12. **New Fit Report** — already confirmed; regression check only. Barcode scanner remains open for later testing.
 13. **New Outfit** — owned-garment selection, photo flow, classification, privacy and validation.
-14. **Outfits / Style Feed** — outfit browsing, followed-person activity, likes, tags, Fit context and privacy.
-15. **Garment/Product Detail** — canonical vs pending identity, Product facts, Fit Reports, historical Match, People Like You Who Wore This, Help Me Size It, images and commerce actions.
-16. **Explore** — Garments/Outfits, My Fit Matches/All, filters, ranking, search integration, image fallbacks, mobile browser and canonical Product dedupe.
-17. **Search + `/browse` compatibility behavior** — Garments/Outfits/People, canonical result grouping, unresolved-item exclusion from Product results, redirects and compact mobile behavior.
-18. **LikeLocker / Wish Locker** — saves/likes/wishlist distinction, provenance, remove controls, fit context and conditional shopping.
-19. **Full Admin Catalog + Moderation surface** — audit the admin entry and the entire authorized operating surface, not just content moderation. Required review includes Catalog Enrichment, candidate demand ordering, Conflicting Product Facts, Possible Duplicates/Identity Review, Reported/Spam Content, audit history, candidate mapping/new-Product creation, merge/split gaps, Brand/Product aliases, Product/Fit/Outfit photo moderation, spam Fit Report/submission handling, field lock/reopen behavior, pending garment-type conflict flags, SerpAPI cache/research/batch/cap workflow, starter-catalog review, retailer/identifier conflicts and responsive admin usability.
-20. **Final site-wide regression pass** — mobile + desktop, navigation, privacy, terminology, empty/error/loading states, conditional commerce, stale/retired concepts, cross-page destinations and canonical-data consistency.
+14. **Outfits / Style Feed** — browsing/feed, followed activity, likes, tags, Fit context and privacy.
+15. **Garment/Product Detail** — canonical vs pending identity, Product facts, historical Match, Fit Reports, People Like You Who Wore This, Help Me Size It, images, commerce.
+16. **Explore** — Garments/Outfits, My Fit Matches/All, filters, ranking, search integration, image fallbacks, mobile browser, Product dedupe.
+17. **Search + `/browse` compatibility** — Garments/Outfits/People, canonical grouping, pending exclusion, redirects, mobile behavior.
+18. **LikeLocker / Wish Locker** — save/like/wishlist separation, provenance, removal, Fit context, shopping.
+19. **Full Admin Catalog + Moderation** — admin entry plus every operating queue/control: Catalog Enrichment, demand ordering, Product conflicts, Possible Duplicates/Identity Review, Reported/Spam, audit history, mapping/create, merge/split gaps, aliases, photo moderation, spam Fit Report/submission handling, field lock/reopen, pending Type conflicts, SerpAPI cache/research/batch/caps, starter-catalog review, retailer/identifier conflicts, responsive admin UX.
+20. **Final site-wide regression pass** — mobile/desktop, navigation, privacy, terminology, loading/empty/error states, conditional commerce, stale concepts, cross-page destinations, canonical-data consistency.
 
-## Audit completion rule
-A page/surface is not considered complete merely because code exists or tests pass. Completion requires:
+# AUDIT COMPLETION RULE
+
+A page/surface is not complete merely because code exists or tests pass.
+
+Completion requires:
 1. current source/live behavior inspected;
 2. owner interaction review performed;
 3. owner-requested corrections made canonically;
@@ -1434,9 +431,44 @@ A page/surface is not considered complete merely because code exists or tests pa
 5. owner explicitly confirms the surface is done;
 6. this master status is updated.
 
-## Exact next action — CURRENT
-**Start with Audit #1: Homepage + complete FAQ.**
+# CURRENT IMPLEMENTATION DEBT / OPEN WORK
 
-The next work is to inspect the current homepage and every FAQ entry against the post-rework product truth, identify all stale/missing/misleading language and UX issues, and present the findings for owner decisions before changing the page. After the homepage/FAQ is owner-confirmed, proceed to Audit #2: global header/member Menu/admin navigation.
+These are real open items and must not be silently represented as finished:
+- barcode scanner owner test;
+- Product-to-Product merge tooling;
+- audited Product/candidate split tooling;
+- complete admin queue/tab UX;
+- complete alias management UX;
+- complete spam garment-submission/Fit Report moderation;
+- complete pending→canonical Product-photo workflow;
+- complete field lock/reopen UX;
+- admin SerpAPI single/batch research UI, cache indicators and cap handling;
+- starter-catalog item-by-item enrichment/review;
+- Department consensus/default behavior beyond current evidence foundations;
+- material trust/corroboration semantics for same-member multiple report votes;
+- universal pending-submission duplicate handling where unresolved submissions repeat before Product resolution;
+- browser-level behavioral regression coverage across the major rework;
+- the entire owner page-by-page re-audit above;
+- historical branch-pointer cleanup remains secondary maintenance and must never replace current product audit work.
 
-The barcode scanner stays open for future testing and is not the next task.
+# CONDENSED RECOVERY / DEPLOYMENT LEDGER
+
+Preserve as history, not competing current source:
+- 2026-08-21 canonical recovery corrected severe source-of-truth drift and established the no-parallel-canon discipline.
+- PR #44 preserved optimized Outfit photo processing.
+- PR #45 established the public homepage structure that now requires post-rework content re-audit.
+- PR #46 repaired grouped navigation/live schema foundations.
+- PR #47 consolidated Explore/My Circle/LikeLocker/moderation and submission-first catalog work and was later merged to `main`.
+- Subsequent production work on `main` finalized New Fit Report behavior, exact recipe material defaults, Garment Type review routing, distinct Fit Report situation counting, garment-relevant body-state identity, rolling/state reuse behavior, updated/under-review modal copy, and Preferred Fit UI retirement.
+
+Git history contains the detailed old branch/PR chronology. Do not keep obsolete branch-era restrictions as current operating truth.
+
+# EXACT NEXT ACTION — CURRENT
+
+**Start Audit #1: Homepage + complete FAQ.**
+
+Canon reconciliation is complete. The next work is to inspect the current live homepage and every FAQ entry against the reconciled Product Spec/database truth, identify stale/missing/misleading language and UX issues, and present findings for owner decisions before changing the page.
+
+After owner-confirming Homepage + FAQ, proceed to Audit #2: global header/member Menu/admin navigation.
+
+Barcode scanner stays open for future testing and is not the next task.

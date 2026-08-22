@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions,auth,private;
-select plan(23);
+select plan(26);
 
 select has_table('public','catalog_candidates','Pending catalog candidates have one canonical table');
 select has_table('public','garment_submissions','Unresolved member garments have one canonical submission table');

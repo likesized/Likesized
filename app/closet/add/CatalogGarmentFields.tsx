@@ -78,8 +78,8 @@ export function CatalogCommunityEnrichment({ materials, departments }: { materia
 
   return <section className="fitDimensionFields catalogOptionalSection">
     <div className="privacyNote">
-      <b>Want to help build the LikeSized catalog?</b>
-      <div>Everything below is optional. Add anything you know to help make this item’s record better for the next person.</div>
+      <b>Want to help us identify/build this item?</b>
+      <div>Everything below is optional. Add anything you know to help LikeSized resolve or enrich the catalog record.</div>
     </div>
 
     <label>Retail link <span className="muted inlineMuted">optional</span>
@@ -132,7 +132,7 @@ export function CatalogCommunityEnrichment({ materials, departments }: { materia
 
     <label>Product photo <span className="muted inlineMuted">optional</span>
       <input name="product_photo" type="file" accept="image/jpeg,image/png,image/webp" />
-      <span className="fieldHelp">A clear photo of the item by itself helps other members recognize the exact product.</span>
+      <span className="fieldHelp">A clear photo of the item by itself helps LikeSized identify the exact product.</span>
     </label>
 
     {product && knownDepartment && !departmentIssue
@@ -218,7 +218,7 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
       stopScanner();
       resetDetails();
       setScannedBarcode(barcode);
-      setNotice("We don’t have information for this barcode yet. Fill in whatever you know and use Not sure where needed. Your contribution helps build the LikeSized catalog for the next person.");
+      setNotice("We don’t have this barcode in LikeSized yet. Fill in the basics and keep going. We’ll keep the barcode with your submission for catalog review.");
       setStep("details");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Barcode lookup failed. Enter the item manually instead.");
@@ -284,7 +284,7 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
   }
 
   if (step === "start") return <section className="fitDimensionFields">
-    <div className="privacyNote"><b>A clothing catalog built by the people who actually wear it.</b><div>Scan first if you have the item handy, or enter it manually.</div></div>
+    <div className="privacyNote"><b>Search the LikeSized catalog first.</b><div>Scan the barcode if you have the item handy, or enter it manually. If we don’t know the exact Product yet, you can still log your garment.</div></div>
     <button className="catalogSearchButton" type="button" onClick={() => { setError(""); setStep("scan"); }}>Scan barcode</button>
     <div className="fieldHelp">or</div>
     <button className="catalogManualButton" type="button" onClick={beginManual}>Enter item manually</button>
@@ -306,14 +306,14 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
     ? isComplete
       ? "This item’s community record is filled in. Review the locked details, report anything that looks wrong, then tell us how it fits."
       : "Built by the community. Fill in anything you know that’s still missing, and report anything that looks wrong."
-    : notice || "Don’t see it yet? Add it. You might be the first person helping build this product’s LikeSized record.";
+    : notice || "Don’t see it yet? Add the basics and keep going. Your garment saves immediately while LikeSized reviews the catalog identity.";
 
   return <>
     <input type="hidden" name="existing_product_id" value={product?.id ?? ""}/>
     <CatalogContext.Provider value={{ product, scannedBarcode }}>
       <section className="fitDimensionFields">
         <button className="catalogBackButton" type="button" onClick={reset}>← Start over</button>
-        <div className="privacyNote"><b>{product ? "Community-built product info" : "Powered by people who wear it"}</b><div>{guidance}</div><div>Every Fit Report makes LikeSized smarter.</div></div>
+        <div className="privacyNote"><b>{product ? "Community-built product info" : "Product not resolved yet"}</b><div>{guidance}</div><div>Every Fit Report makes LikeSized smarter.</div></div>
         {product?.image_url ? <div className="catalogSelectedItem"><img src={product.image_url} alt=""/><span><small>Selected item</small><b>{product.brand_name} · {product.name}</b></span></div> : null}
 
         <div className="fieldPair">

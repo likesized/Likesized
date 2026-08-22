@@ -2,6 +2,7 @@
 
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { COLOR_FAMILIES, GARMENT_CATEGORIES, GARMENT_TYPES, questionsForGarmentType } from "@/lib/garment-taxonomy";
+import type { GarmentSizeKind } from "@/lib/domain";
 import styles from "./fitReport.module.css";
 
 type Brand = { id: string; name: string };
@@ -17,6 +18,7 @@ export type CatalogProduct = {
   manufacturer_style_number: string | null;
   market_segment?: string | null;
   department_key?: string | null;
+  default_size_kind?: GarmentSizeKind | null;
   image_url?: string | null;
   attributes?: ProductAttribute[];
   materials?: ProductMaterial[];
@@ -32,12 +34,12 @@ type CatalogContextValue = {
 const CatalogContext = createContext<CatalogContextValue>({ product: null, scannedBarcode: "" });
 const PERCENTAGES = Array.from({ length: 100 }, (_, index) => String(index + 1));
 
+export function useCatalogGarment() {
+  return useContext(CatalogContext);
+}
+
 function normalizeCatalogText(value: string) {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
-}
-function productAttributes(product: CatalogProduct | null) {
-  void product;
-  return {} as Record<string, string>;
 }
 function applicableQuestions(typeKey: string, answers: Record<string, string>) {
   return questionsForGarmentType(typeKey).filter(
@@ -51,36 +53,23 @@ export function CatalogColorField() {
 }
 
 export function CatalogCommunityEnrichment({ materials, departments }: { materials: CatalogOption[]; departments: CatalogOption[] }) {
-  const { product, scannedBarcode } = useContext(CatalogContext);
+  const { product, scannedBarcode } = useCatalogGarment();
   const sortedMaterials = useMemo(() => [...materials]
     .filter((item) => item.key !== "other" && item.key !== "not_sure" && item.label.toLowerCase() !== "other")
     .sort((a, b) => a.label.localeCompare(b.label)), [materials]);
   const sortedDepartments = useMemo(() => [...departments].sort((a, b) => a.label.localeCompare(b.label)), [departments]);
   const knownMaterials = useMemo(() => (product?.materials ?? []).filter((row) => row.source_status !== "rejected"), [product]);
   const knownDepartment = product?.department_key ?? "";
-  const knownStyle = product?.manufacturer_style_number ?? "";
-  const knownCodes = [...new Set((product?.identifiers ?? [])
-    .filter((row) => row.identifier_type === "upc" || row.identifier_type === "barcode")
-    .map((row) => row.original_value)
-    .filter(Boolean))];
-  const knownLinks = [...new Set((product?.listings ?? []).map((row) => row.product_url).filter((value): value is string => Boolean(value)))];
-  const [styleIssue, setStyleIssue] = useState(false);
-  const [barcodeIssue, setBarcodeIssue] = useState(false);
-  const [departmentIssue, setDepartmentIssue] = useState(false);
-  const [materialIssue, setMaterialIssue] = useState(false);
+  const [department, setDepartment] = useState("");
   const [materialRows, setMaterialRows] = useState<Array<{ material_key: string; percentage: string }>>([{ material_key: "", percentage: "" }]);
 
   useEffect(() => {
-    setStyleIssue(false);
-    setBarcodeIssue(false);
-    setDepartmentIssue(false);
-    setMaterialIssue(false);
+    setDepartment(knownDepartment);
     setMaterialRows(knownMaterials.length
       ? knownMaterials.map((row) => ({ material_key: row.material_key === "other" ? "not_sure" : row.material_key, percentage: row.percentage == null ? "" : String(row.percentage) }))
       : [{ material_key: "", percentage: "" }]);
-  }, [product?.id, knownMaterials]);
+  }, [product?.id, knownDepartment, knownMaterials]);
 
-  const materialsEditable = !knownMaterials.length || materialIssue;
   const materialClaims = materialRows
     .filter((row) => row.material_key && row.material_key !== "not_sure")
     .map((row) => ({ material_key: row.material_key, percentage: row.percentage || null }));
@@ -93,57 +82,46 @@ export function CatalogCommunityEnrichment({ materials, departments }: { materia
 
     <label>Retail link <span className="muted inlineMuted">optional</span>
       <input name="product_url" type="url" maxLength={1000} placeholder="https://..." />
-      {knownLinks.length ? <span className="fieldHelp">Already saved: {knownLinks.slice(0, 3).join(" · ")}</span> : null}
     </label>
 
     {scannedBarcode
       ? <input type="hidden" name="scanned_barcode" value={scannedBarcode}/>
-      : product && knownCodes.length && !barcodeIssue
-        ? <label>UPC / barcode <span className="muted inlineMuted">saved</span>
-            <input value={knownCodes.join(" · ")} readOnly />
-            <button className="catalogBackButton" type="button" onClick={() => setBarcodeIssue(true)}>Report an issue</button>
-          </label>
-        : product && knownCodes.length && barcodeIssue
-          ? <label>UPC / barcode <span className="muted inlineMuted">report an issue</span>
-              <input name="identity_issue_barcode" inputMode="numeric" maxLength={32} placeholder="Enter the code you believe is correct" />
-            </label>
-          : <label>UPC / barcode <span className="muted inlineMuted">optional</span>
-              <input name="upc" inputMode="numeric" maxLength={32} placeholder="Enter the code if you have it" />
-            </label>}
+      : <label>UPC / barcode <span className="muted inlineMuted">optional</span>
+          <input name="upc" inputMode="numeric" maxLength={32} placeholder="Enter the code if you have it" />
+        </label>}
 
-    {product && knownStyle && !styleIssue
-      ? <label>Manufacturer Style / Article Number <span className="muted inlineMuted">saved</span><input value={knownStyle} readOnly /><button className="catalogBackButton" type="button" onClick={() => setStyleIssue(true)}>Report an issue</button></label>
-      : <label>Manufacturer Style / Article Number <span className="muted inlineMuted">optional</span><input name={product && knownStyle ? "identity_issue_style" : "style_number"} maxLength={100} defaultValue={product && knownStyle ? "" : knownStyle} placeholder={product && knownStyle ? "Enter what you believe is correct" : "Style, article, or model number"} /></label>}
+    <label>Manufacturer Style / Article Number <span className="muted inlineMuted">optional</span>
+      <input name="style_number" maxLength={100} placeholder="Style, article, or model number" />
+    </label>
 
-    {product && knownDepartment && !departmentIssue
-      ? <label>Department <span className="muted inlineMuted">saved</span><input value={sortedDepartments.find((item) => item.key === knownDepartment)?.label ?? knownDepartment} readOnly /><button className="catalogBackButton" type="button" onClick={() => setDepartmentIssue(true)}>Report an issue</button></label>
-      : <label>Department <span className="muted inlineMuted">optional</span><select name="department" defaultValue=""><option value="">Choose a department</option>{sortedDepartments.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}<option value="not_sure">Not sure</option></select></label>}
+    <label>Department <span className="muted inlineMuted">optional</span>
+      <select name="department" value={department} onChange={(event) => setDepartment(event.target.value)}>
+        <option value="">Choose a department</option>
+        {sortedDepartments.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
+        <option value="not_sure">Not sure</option>
+      </select>
+      {knownDepartment ? <span className="fieldHelp">Preselected from what LikeSized currently knows. Change it if your item says otherwise.</span> : null}
+    </label>
 
     <fieldset className="fitDimensionFields">
       <legend>Material / Fabric Composition <span className="muted inlineMuted">optional</span></legend>
-      {knownMaterials.length && !materialIssue ? <>
-        <p className="fieldHelp">Saved: {knownMaterials.map((row) => `${row.material_key === "other" ? "Other / Not sure" : (sortedMaterials.find((item) => item.key === row.material_key)?.label ?? row.material_key)}${row.percentage == null ? "" : ` ${row.percentage}%`}`).join(" · ")}</p>
-        <button className="catalogBackButton" type="button" onClick={() => setMaterialIssue(true)}>Report an issue</button>
-      </> : null}
-      {materialsEditable ? <>
-        <div className="fitDimensionFields">
-          {materialRows.map((row, index) => <div className="fieldPair" key={index}>
-            <label>Material<select value={row.material_key} onChange={(event) => setMaterialRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, material_key: event.target.value, percentage: event.target.value === "not_sure" ? "" : item.percentage } : item))}>
-              <option value="">Choose a material</option>
-              {sortedMaterials.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
-              <option value="not_sure">Other / Not sure</option>
-            </select></label>
-            <label>Percentage <span className="muted inlineMuted">optional</span><select value={row.percentage} disabled={!row.material_key || row.material_key === "not_sure"} onChange={(event) => setMaterialRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, percentage: event.target.value } : item))}>
-              <option value="">Leave blank if unknown</option>
-              {PERCENTAGES.map((value) => <option value={value} key={value}>{value}%</option>)}
-            </select></label>
-            {materialRows.length > 1 ? <button className="catalogBackButton" type="button" onClick={() => setMaterialRows((current) => current.filter((_, rowIndex) => rowIndex !== index))}>Remove material</button> : null}
-          </div>)}
-        </div>
-        <button className="catalogManualButton" type="button" onClick={() => setMaterialRows((current) => [...current, { material_key: "", percentage: "" }])}>Add another material</button>
-        <input type="hidden" name="materials_json" value={JSON.stringify(materialClaims)} />
-        {materialIssue ? <input type="hidden" name="material_issue" value="1" /> : null}
-      </> : null}
+      {knownMaterials.length ? <p className="fieldHelp">Preselected from what LikeSized currently knows. Change any material or percentage if your item says otherwise.</p> : null}
+      <div className="fitDimensionFields">
+        {materialRows.map((row, index) => <div className="fieldPair" key={index}>
+          <label>Material<select value={row.material_key} onChange={(event) => setMaterialRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, material_key: event.target.value, percentage: event.target.value === "not_sure" ? "" : item.percentage } : item))}>
+            <option value="">Choose a material</option>
+            {sortedMaterials.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
+            <option value="not_sure">Other / Not sure</option>
+          </select></label>
+          <label>Percentage <span className="muted inlineMuted">optional</span><select value={row.percentage} disabled={!row.material_key || row.material_key === "not_sure"} onChange={(event) => setMaterialRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, percentage: event.target.value } : item))}>
+            <option value="">Leave blank if unknown</option>
+            {PERCENTAGES.map((value) => <option value={value} key={value}>{value}%</option>)}
+          </select></label>
+          {materialRows.length > 1 ? <button className="catalogBackButton" type="button" onClick={() => setMaterialRows((current) => current.filter((_, rowIndex) => rowIndex !== index))}>Remove material</button> : null}
+        </div>)}
+      </div>
+      <button className="catalogManualButton" type="button" onClick={() => setMaterialRows((current) => [...current, { material_key: "", percentage: "" }])}>Add another material</button>
+      <input type="hidden" name="materials_json" value={JSON.stringify(materialClaims)} />
     </fieldset>
 
     <label>Product photo <span className="muted inlineMuted">optional</span>
@@ -160,7 +138,6 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
   const [itemName, setItemName] = useState("");
   const [type, setType] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [attributeIssues, setAttributeIssues] = useState<Record<string, boolean>>({});
   const [brandIssue, setBrandIssue] = useState(false);
   const [itemIssue, setItemIssue] = useState(false);
   const [typeIssue, setTypeIssue] = useState(false);
@@ -191,7 +168,6 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
     setItemName("");
     setType("");
     setAnswers({});
-    setAttributeIssues({});
     setBrandIssue(false);
     setItemIssue(false);
     setTypeIssue(false);
@@ -204,8 +180,7 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
     setBrand(item.brand_name);
     setItemName(item.name);
     setType(item.garment_type_key ?? "");
-    setAnswers(productAttributes(item));
-    setAttributeIssues({});
+    setAnswers({});
     setBrandIssue(false);
     setItemIssue(false);
     setTypeIssue(false);
@@ -323,13 +298,8 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
     <button className="catalogManualButton" type="button" onClick={beginManual}>Enter item manually instead</button>
   </section>;
 
-  const canonicalAnswers = productAttributes(product);
-  const canonicalQuestions = product?.garment_type_key ? applicableQuestions(product.garment_type_key, canonicalAnswers) : [];
-  const isComplete = Boolean(product?.garment_type_key) && canonicalQuestions.every((question) => Boolean(canonicalAnswers[question.key]));
   const guidance = product
-    ? isComplete
-      ? "This item’s community record is filled in. Review the locked details, report anything that looks wrong, then tell us how it fits."
-      : "Built by the community. Fill in anything you know that’s still missing, and report anything that looks wrong."
+    ? "We found this item. Answer the item details for your copy; learned size, Department, and material defaults can still be changed."
     : notice || "We don’t have this item yet, but no problem — you can help us add it with just a few quick questions.";
 
   return <>
@@ -355,36 +325,31 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
         {!product && brand.trim() && itemSuggestions.length ? <div className="catalogSuggestionList">{itemSuggestions.map((item) => <button className="catalogSuggestion" type="button" onClick={() => chooseProduct(item)} key={item.id}><span><b>{item.brand_name} · {item.name}</b><small>Already in LikeSized</small></span></button>)}</div> : null}
 
         <label>Garment type
-          <select name="garment_type" value={type} disabled={Boolean(product?.garment_type_key) && !typeIssue} onChange={(event) => { setType(event.target.value); setAnswers({}); setAttributeIssues({}); }} required>
+          <select name="garment_type" value={type} disabled={Boolean(product?.garment_type_key) && !typeIssue} onChange={(event) => { setType(event.target.value); setAnswers({}); }} required>
             <option value="" disabled>Select the specific garment</option>
             {GARMENT_CATEGORIES.map((category) => <optgroup key={category.value} label={category.label}>{GARMENT_TYPES.filter((item) => item.category === category.value).map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}</optgroup>)}
           </select>
-          {product?.garment_type_key && !typeIssue ? <><input type="hidden" name="garment_type" value={type}/><button className="catalogBackButton" type="button" onClick={() => { setTypeIssue(true); setType(""); setAnswers({}); setAttributeIssues({}); }}>Report an issue</button></> : null}
+          {product?.garment_type_key && !typeIssue ? <><input type="hidden" name="garment_type" value={type}/><button className="catalogBackButton" type="button" onClick={() => { setTypeIssue(true); setType(""); setAnswers({}); }}>Report an issue</button></> : null}
           {selectedType ? <span className="fieldHelp">LikeSized files this under {GARMENT_CATEGORIES.find((item) => item.value === selectedType.category)?.label} automatically.</span> : null}
         </label>
 
         {type ? <fieldset className="fitDimensionFields">
           <legend>Item details</legend>
           <p className="fieldHelp">Choose an answer for each simple item detail. If you truly can’t tell, Not sure is always the last choice.</p>
-          <div className="fieldPair">{questions.map((item) => {
-            const knownValue = product?.garment_type_key === type ? canonicalAnswers[item.key] : "";
-            const locked = Boolean(knownValue) && !attributeIssues[item.key];
-            return <label key={item.key}>{item.label}
-              <select name={locked ? undefined : `product_attribute__${item.key}`} value={answers[item.key] ?? ""} disabled={locked} required={!locked} onChange={(event) => {
-                const value = event.target.value;
-                setAnswers((current) => {
-                  const next = { ...current, [item.key]: value };
-                  if ((item.key === "top_sleeve" || item.key === "swim_top") && value === "strapless") delete next.neckline_height;
-                  return next;
-                });
-              }}>
-                <option value="" disabled>Select an answer</option>
-                {item.options.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
-                <option value="not_sure">Not sure</option>
-              </select>
-              {locked ? <><input type="hidden" name={`product_attribute__${item.key}`} value={knownValue}/><button className="catalogBackButton" type="button" onClick={() => { setAttributeIssues((current) => ({ ...current, [item.key]: true })); setAnswers((current) => ({ ...current, [item.key]: "" })); }}>Report an issue</button></> : null}
-            </label>;
-          })}</div>
+          <div className="fieldPair">{questions.map((item) => <label key={item.key}>{item.label}
+            <select name={`product_attribute__${item.key}`} value={answers[item.key] ?? ""} required onChange={(event) => {
+              const value = event.target.value;
+              setAnswers((current) => {
+                const next = { ...current, [item.key]: value };
+                if ((item.key === "top_sleeve" || item.key === "swim_top") && value === "strapless") delete next.neckline_height;
+                return next;
+              });
+            }}>
+              <option value="" disabled>Select an answer</option>
+              {item.options.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
+              <option value="not_sure">Not sure</option>
+            </select>
+          </label>)}</div>
         </fieldset> : null}
       </section>
       {children}

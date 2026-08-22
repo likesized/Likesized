@@ -33,65 +33,69 @@ alter table public.fit_reports add column reported_condition text;
 alter table public.fit_reports add constraint fit_reports_reported_condition_check check (reported_condition is null or reported_condition in ('new','used','altered'));
 comment on column public.fit_reports.reported_condition is 'Member-facing New, Used, or Altered condition. New/Used continue to use normal sizing evidence; Altered is excluded by the canonical recommendation boundary.';
 
-update public.garment_types set active=false;
-insert into public.garment_types(key,label,category,match_profile_key,active,sort_order) values
-('t_shirt','T-shirt','tops','tops_default',true,10),
-('polo','Polo','tops','tops_default',true,20),
-('dress_shirt','Dress shirt','tops','tops_default',true,30),
-('work_shirt','Work shirt','tops','tops_default',true,40),
-('casual_button_down','Casual button-down','tops','tops_default',true,50),
-('flannel_shirt','Flannel shirt','tops','tops_default',true,60),
-('blouse','Blouse','tops','tops_default',true,70),
-('tank','Tank top','tops','tops_default',true,80),
-('camisole','Camisole','tops','tops_default',true,90),
-('strapless_top','Strapless top','tops','tops_default',true,100),
-('halter_top','Halter top','tops','tops_default',true,110),
-('sweater','Sweater','tops','tops_default',true,120),
-('cardigan','Cardigan','tops','tops_default',true,130),
-('sweatshirt','Sweatshirt','tops','tops_default',true,140),
-('hoodie','Hoodie','tops','tops_default',true,150),
-('jeans','Jeans','bottoms','bottoms_default',true,160),
-('chinos','Chinos','bottoms','bottoms_default',true,170),
-('dress_pants','Dress pants','bottoms','bottoms_default',true,180),
-('trousers','Trousers','bottoms','bottoms_default',true,190),
-('cargo_pants','Cargo pants','bottoms','bottoms_default',true,200),
-('shorts','Shorts','bottoms','bottoms_default',true,210),
-('joggers','Joggers','bottoms','bottoms_default',true,220),
-('sweatpants','Sweatpants','bottoms','bottoms_default',true,230),
-('leggings','Leggings','bottoms','bottoms_default',true,240),
-('skirt','Skirt','bottoms','bottoms_default',true,250),
-('dress','Dress','dresses','one_piece',true,260),
-('jumpsuit','Jumpsuit','dresses','one_piece',true,270),
-('romper','Romper','dresses','one_piece',true,280),
-('bodysuit','Bodysuit','dresses','one_piece',true,290),
-('overalls','Overalls','dresses','one_piece',true,300),
-('coveralls','Coveralls','dresses','one_piece',true,310),
-('suit_jacket','Suit jacket','outerwear','tops_default',true,320),
-('blazer','Blazer','outerwear','tops_default',true,330),
-('jacket_coat','Jacket / coat','outerwear','tops_default',true,340),
-('vest','Vest','outerwear','tops_default',true,350),
-('wrap_shawl','Wrap / shawl','outerwear','tops_default',true,360),
-('one_piece_swimsuit','One-piece swimsuit','swimwear','one_piece',true,370),
-('bikini_top','Bikini top','swimwear','one_piece',true,380),
-('bikini_bottom','Bikini bottom','swimwear','one_piece',true,390),
-('tankini_top','Tankini top','swimwear','one_piece',true,400),
-('swim_trunks','Swim trunks','swimwear','one_piece',true,410),
-('board_shorts','Board shorts','swimwear','one_piece',true,420),
-('bra','Bra','intimates','bra',true,430),
-('bralette','Bralette','intimates','bra',true,440),
-('sports_bra','Sports bra','intimates','bra',true,450),
-('underwear','Underwear','intimates','bra',true,460),
-('shapewear','Shapewear','intimates','bra',true,470),
-('sneakers','Sneakers','shoes','shoes',true,480),
-('boots','Boots','shoes','shoes',true,490),
-('dress_shoes','Dress shoes','shoes','shoes',true,500),
-('loafers','Loafers','shoes','shoes',true,510),
-('flats','Flats','shoes','shoes',true,520),
-('heels','Heels','shoes','shoes',true,530),
-('sandals','Sandals','shoes','shoes',true,540),
-('slides','Slides','shoes','shoes',true,550),
-('clogs','Clogs','shoes','shoes',true,560)
-on conflict (key) do update set label=excluded.label,category=excluded.category,match_profile_key=excluded.match_profile_key,active=true,sort_order=excluded.sort_order;
+-- `active` is an established matching-engine compatibility flag. Older umbrella
+-- and plural keys still back historical Products and calibrated match rules, so
+-- intake visibility must not deactivate or rewrite them.
+alter table public.garment_types add column intake_active boolean not null default false;
+update public.garment_types set intake_active=false;
+insert into public.garment_types(key,label,category,match_profile_key,active,intake_active,sort_order) values
+('t_shirt','T-shirt','tops','tops_default',true,true,10),
+('polo','Polo','tops','tops_default',true,true,20),
+('dress_shirt','Dress shirt','tops','tops_default',true,true,30),
+('work_shirt','Work shirt','tops','tops_default',true,true,40),
+('casual_button_down','Casual button-down','tops','tops_default',true,true,50),
+('flannel_shirt','Flannel shirt','tops','tops_default',true,true,60),
+('blouse','Blouse','tops','tops_default',true,true,70),
+('tank','Tank top','tops','tops_default',true,true,80),
+('camisole','Camisole','tops','tops_default',true,true,90),
+('strapless_top','Strapless top','tops','tops_default',true,true,100),
+('halter_top','Halter top','tops','tops_default',true,true,110),
+('sweater','Sweater','tops','tops_default',true,true,120),
+('cardigan','Cardigan','tops','tops_default',true,true,130),
+('sweatshirt','Sweatshirt','tops','tops_default',true,true,140),
+('hoodie','Hoodie','tops','tops_default',true,true,150),
+('jeans','Jeans','bottoms','bottoms_default',true,true,160),
+('chinos','Chinos','bottoms','bottoms_default',true,true,170),
+('dress_pants','Dress pants','bottoms','bottoms_default',true,true,180),
+('trousers','Trousers','bottoms','bottoms_default',true,true,190),
+('cargo_pants','Cargo pants','bottoms','bottoms_default',true,true,200),
+('shorts','Shorts','bottoms','bottoms_default',true,true,210),
+('joggers','Joggers','bottoms','bottoms_default',true,true,220),
+('sweatpants','Sweatpants','bottoms','bottoms_default',true,true,230),
+('leggings','Leggings','bottoms','bottoms_default',true,true,240),
+('skirt','Skirt','bottoms','bottoms_default',true,true,250),
+('dress','Dress','dresses','one_piece',true,true,260),
+('jumpsuit','Jumpsuit','dresses','one_piece',true,true,270),
+('romper','Romper','dresses','one_piece',true,true,280),
+('bodysuit','Bodysuit','dresses','one_piece',true,true,290),
+('overalls','Overalls','dresses','one_piece',true,true,300),
+('coveralls','Coveralls','dresses','one_piece',true,true,310),
+('suit_jacket','Suit jacket','outerwear','tops_default',true,true,320),
+('blazer','Blazer','outerwear','tops_default',true,true,330),
+('jacket_coat','Jacket / coat','outerwear','tops_default',true,true,340),
+('vest','Vest','outerwear','tops_default',true,true,350),
+('wrap_shawl','Wrap / shawl','outerwear','tops_default',true,true,360),
+('one_piece_swimsuit','One-piece swimsuit','swimwear','one_piece',true,true,370),
+('bikini_top','Bikini top','swimwear','one_piece',true,true,380),
+('bikini_bottom','Bikini bottom','swimwear','one_piece',true,true,390),
+('tankini_top','Tankini top','swimwear','one_piece',true,true,400),
+('swim_trunks','Swim trunks','swimwear','one_piece',true,true,410),
+('board_shorts','Board shorts','swimwear','one_piece',true,true,420),
+('bra','Bra','intimates','bra',true,true,430),
+('bralette','Bralette','intimates','bra',true,true,440),
+('sports_bra','Sports bra','intimates','bra',true,true,450),
+('underwear','Underwear','intimates','bra',true,true,460),
+('shapewear','Shapewear','intimates','bra',true,true,470),
+('sneakers','Sneakers','shoes','shoes',true,true,480),
+('boots','Boots','shoes','shoes',true,true,490),
+('dress_shoes','Dress shoes','shoes','shoes',true,true,500),
+('loafers','Loafers','shoes','shoes',true,true,510),
+('flats','Flats','shoes','shoes',true,true,520),
+('heels','Heels','shoes','shoes',true,true,530),
+('sandals','Sandals','shoes','shoes',true,true,540),
+('slides','Slides','shoes','shoes',true,true,550),
+('clogs','Clogs','shoes','shoes',true,true,560)
+on conflict (key) do update set label=excluded.label,category=excluded.category,intake_active=true,sort_order=excluded.sort_order;
 
 insert into public.garment_attribute_definitions(key,label,category,sort_order) values
 ('intended_fit','Intended fit',null,10),
@@ -145,7 +149,9 @@ insert into public.garment_attribute_definitions(key,label,category,sort_order) 
 ('sandal_style','Style',null,490),
 ('sole','Sole',null,500),
 ('clog_back','Back',null,510)
-on conflict (key) do update set label=excluded.label,category=excluded.category,sort_order=excluded.sort_order;
+-- Preserve the established broad category scope on shared legacy attributes.
+-- The new per-Type allowlist is narrower and must not weaken those guards.
+on conflict (key) do update set label=excluded.label,sort_order=excluded.sort_order;
 
 insert into public.garment_attribute_options(attribute_key,option_key,label,sort_order) values
 ('intended_fit','fitted','Fitted',10),
@@ -376,5 +382,4 @@ insert into public.garment_attribute_options(attribute_key,option_key,label,sort
 on conflict (attribute_key,option_key) do update set label=excluded.label,sort_order=excluded.sort_order;
 
 comment on table public.color_families is 'Approved broad color families used for controlled Fit Report intake and strict Explore filtering. Manufacturer color/wash wording remains separate in product_variants.color_label.';
-comment on table public.garment_types is 'Specific physical garment types. The application derives the broad Explore category and exposes at most four optional type-specific questions from the canonical taxonomy.';
-
+comment on table public.garment_types is 'Garment matching and historical compatibility vocabulary. intake_active marks the approved specific physical Types exposed by intake and Explore; the application derives their broad category and exposes at most four optional type-specific questions.';

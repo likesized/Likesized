@@ -21,7 +21,7 @@ Owner-approved Fit Match work exists on preserved PR #36 / `fit-match-engine-aud
 - `fit_profiles` is a profile shell; raw body values belong in normalized owner-private measurement structures created by ordered migrations.
 - immutable Fit Profile version tables preserve historical owner-private body state.
 - `fit_reports.fit_profile_version_id` preserves try-on body-state association; later current-body edits do not rewrite old evidence.
-- `garment_types`, `garment_attribute_definitions`, and `garment_attribute_options` hold the database vocabulary used by the one controlled application taxonomy; server validation additionally enforces which zero-to-four questions/options belong to each specific Type.
+- `garment_types`, `garment_attribute_definitions`, and `garment_attribute_options` hold the database vocabulary used by the one controlled application taxonomy; server validation additionally enforces which zero-to-four questions/options belong to each specific Type. `garment_types.intake_active` is the member-facing Type allowlist. The established `active` flag remains the matching/historical compatibility boundary so adding intake Types cannot disable calibrated legacy keys or historical Products.
 - `color_families` stores the approved controlled member-facing color list. `product_variants.color_family_key` stores its filterable family; exact trustworthy manufacturer color/wash wording remains separate in `color_label`.
 - `fit_reports.reported_condition` preserves New / Used / Altered. New and Used map to the canonical normal-evidence boundary; Altered remains excluded from normal-product recommendation evidence.
 - current-person matching RPCs return safe derived scores/coverage only; raw body measurements remain private.

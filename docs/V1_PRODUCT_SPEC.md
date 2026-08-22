@@ -68,6 +68,8 @@ Accessories are not V1.
 
 New Fit Report asks for the specific physical Type only; LikeSized derives the broad Category. Explore asks for the broad Category first, then exposes only Types in that Category. After a Type is selected, Explore and intake share the same zero-to-four optional controlled questions for that Type. **Not sure** is the first/default intake choice and records no claim. Color is required, controlled, and separate from the four-question ceiling.
 
+The database keeps the approved member-facing Type set separate from legacy matching compatibility. `garment_types.intake_active` controls the Types selectable in New Fit Report and Explore. The older `active` flag and historical umbrella/plural keys may remain available internally so existing Products and calibrated matching rules keep working; those keys must not reappear as member-facing choices.
+
 The core New Fit Report intake is Brand, Item name, specific Garment type, applicable optional controlled questions, Color, exact Size, optional Product link/barcode/Style ID, Overall Fit Result, Garment condition, optional Shared Fit photo, and optional Fit notes. It does not ask for Market/cut segment, Fit Family, product description, visibility, buy-again, times worn, or a broad construction/fit-dimension questionnaire.
 
 For jeans/pants, owner review identified a need for explicit controlled structural descriptors such as:

@@ -15,6 +15,7 @@ function normalizeIdentifier(value: string) {
 
 type LocalSearchRow = { id: string };
 type AliasRow = { product_id: string; normalized_alias: string };
+type SizeDefaultRow = { product_id: string; default_size_kind: string | null };
 
 type DetailedProduct = {
   id: string;
@@ -33,20 +34,25 @@ type DetailedProduct = {
 
 async function detailedProducts(supabase: Awaited<ReturnType<typeof createClient>>, ids: string[]) {
   if (!ids.length) return [];
-  const { data, error } = await supabase
-    .from("products")
-    .select("id,name,garment_type_key,manufacturer_style_number,market_segment,department_key,image_url,brand:brands(name),attributes:product_attribute_values(attribute_key,option_key,source_status),materials:product_materials(material_key,percentage,source_status),identifiers:product_identifiers(identifier_type,original_value),listings:retailer_listings(product_url)")
-    .in("id", ids)
-    .neq("catalog_status", "rejected");
+  const [{ data, error }, { data: sizeDefaults, error: sizeDefaultError }] = await Promise.all([
+    supabase
+      .from("products")
+      .select("id,name,garment_type_key,manufacturer_style_number,market_segment,department_key,image_url,brand:brands(name),attributes:product_attribute_values(attribute_key,option_key,source_status),materials:product_materials(material_key,percentage,source_status),identifiers:product_identifiers(identifier_type,original_value),listings:retailer_listings(product_url)")
+      .in("id", ids)
+      .neq("catalog_status", "rejected"),
+    supabase.rpc("get_product_default_size_kinds", { p_product_ids: ids }),
+  ]);
   if (error) throw error;
+  if (sizeDefaultError) throw sizeDefaultError;
   const byId = new Map((data ?? []).map((item) => [item.id, item as DetailedProduct]));
+  const sizeKindById = new Map(((sizeDefaults ?? []) as SizeDefaultRow[]).map((row) => [row.product_id, row.default_size_kind]));
   return ids.flatMap((id) => {
     const product = byId.get(id);
     if (!product) return [];
     const joinedBrand = product.brand;
     const brand = Array.isArray(joinedBrand) ? joinedBrand[0] : joinedBrand;
     const brandName = brand && typeof brand === "object" && "name" in brand && typeof brand.name === "string" ? brand.name : "";
-    return brandName ? [{ ...product, brand_name: brandName, brand: undefined }] : [];
+    return brandName ? [{ ...product, default_size_kind: sizeKindById.get(id) ?? null, brand_name: brandName, brand: undefined }] : [];
   });
 }
 

@@ -50,15 +50,20 @@ export function CatalogCommunityEnrichment({ materials, departments }: { materia
   const knownMaterials = useMemo(() => (product?.materials ?? []).filter((row) => row.source_status !== "rejected"), [product]);
   const knownDepartment = product?.department_key ?? "";
   const knownStyle = product?.manufacturer_style_number ?? "";
-  const knownUpcs = (product?.identifiers ?? []).filter((row) => row.identifier_type === "upc" || row.identifier_type === "barcode");
+  const knownCodes = [...new Set((product?.identifiers ?? [])
+    .filter((row) => row.identifier_type === "upc" || row.identifier_type === "barcode")
+    .map((row) => row.original_value)
+    .filter(Boolean))];
   const knownLinks = [...new Set((product?.listings ?? []).map((row) => row.product_url).filter((value): value is string => Boolean(value)))];
   const [styleIssue, setStyleIssue] = useState(false);
+  const [barcodeIssue, setBarcodeIssue] = useState(false);
   const [departmentIssue, setDepartmentIssue] = useState(false);
   const [materialIssue, setMaterialIssue] = useState(false);
   const [materialRows, setMaterialRows] = useState<Array<{ material_key: string; percentage: string }>>([{ material_key: "", percentage: "" }]);
 
   useEffect(() => {
     setStyleIssue(false);
+    setBarcodeIssue(false);
     setDepartmentIssue(false);
     setMaterialIssue(false);
     setMaterialRows(knownMaterials.length
@@ -83,8 +88,19 @@ export function CatalogCommunityEnrichment({ materials, departments }: { materia
     </label>
 
     {scannedBarcode
-      ? <><input type="hidden" name="scanned_barcode" value={scannedBarcode}/><label>UPC / barcode <span className="muted inlineMuted">captured from scan</span><input value={scannedBarcode} readOnly /></label></>
-      : <label>UPC / barcode <span className="muted inlineMuted">optional</span><input name="upc" inputMode="numeric" maxLength={32} placeholder="Enter the code if you have it" />{knownUpcs.length ? <span className="fieldHelp">Known code: {knownUpcs[0].original_value}</span> : null}</label>}
+      ? <input type="hidden" name="scanned_barcode" value={scannedBarcode}/>
+      : product && knownCodes.length && !barcodeIssue
+        ? <label>UPC / barcode <span className="muted inlineMuted">saved</span>
+            <input value={knownCodes.join(" · ")} readOnly />
+            <button className="catalogBackButton" type="button" onClick={() => setBarcodeIssue(true)}>Report an issue</button>
+          </label>
+        : product && knownCodes.length && barcodeIssue
+          ? <label>UPC / barcode <span className="muted inlineMuted">report an issue</span>
+              <input name="identity_issue_barcode" inputMode="numeric" maxLength={32} placeholder="Enter the code you believe is correct" />
+            </label>
+          : <label>UPC / barcode <span className="muted inlineMuted">optional</span>
+              <input name="upc" inputMode="numeric" maxLength={32} placeholder="Enter the code if you have it" />
+            </label>}
 
     {product && knownStyle && !styleIssue
       ? <label>Manufacturer Style / Article Number <span className="muted inlineMuted">saved</span><input value={knownStyle} readOnly /><button className="catalogBackButton" type="button" onClick={() => setStyleIssue(true)}>Report an issue</button></label>
@@ -110,6 +126,7 @@ export function CatalogCommunityEnrichment({ materials, departments }: { materia
         </div>
         <button className="catalogManualButton" type="button" onClick={() => setMaterialRows((current) => [...current, { material_key: "", percentage: "" }])}>Add another material</button>
         <input type="hidden" name="materials_json" value={JSON.stringify(materialClaims)} />
+        {materialIssue ? <input type="hidden" name="material_issue" value="1" /> : null}
       </> : null}
     </fieldset>
 
@@ -287,16 +304,16 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
   const isComplete = Boolean(product?.garment_type_key) && canonicalQuestions.every((question) => Boolean(canonicalAnswers[question.key]));
   const guidance = product
     ? isComplete
-      ? "This item’s community record is already filled in. Review the locked details, report anything that looks wrong, then tell us how your item fits."
-      : "This item already has some community-built details. We filled in what LikeSized knows—complete the missing required answers and report anything that looks wrong."
-    : notice || "You’re starting this item’s LikeSized record. Answer the required details below; every accurate answer helps the next person.";
+      ? "This item’s community record is filled in. Review the locked details, report anything that looks wrong, then tell us how it fits."
+      : "Built by the community. Fill in anything you know that’s still missing, and report anything that looks wrong."
+    : notice || "Don’t see it yet? Add it. You might be the first person helping build this product’s LikeSized record.";
 
   return <>
     <input type="hidden" name="existing_product_id" value={product?.id ?? ""}/>
     <CatalogContext.Provider value={{ product, scannedBarcode }}>
       <section className="fitDimensionFields">
         <button className="catalogBackButton" type="button" onClick={reset}>← Start over</button>
-        <div className="privacyNote"><b>{product ? "Community-built product info" : "Powered by people who wear it"}</b><div>{guidance}</div></div>
+        <div className="privacyNote"><b>{product ? "Community-built product info" : "Powered by people who wear it"}</b><div>{guidance}</div><div>Every Fit Report makes LikeSized smarter.</div></div>
         {product?.image_url ? <div className="catalogSelectedItem"><img src={product.image_url} alt=""/><span><small>Selected item</small><b>{product.brand_name} · {product.name}</b></span></div> : null}
 
         <div className="fieldPair">

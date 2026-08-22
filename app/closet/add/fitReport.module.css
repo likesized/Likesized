@@ -39,6 +39,10 @@
   font-weight: 800;
 }
 
+.form :global(label.fieldOptionalInvalid)::after {
+  content: "Fix this entry or clear it to continue.";
+}
+
 .catalogStart {
   display: flex;
   flex-direction: column;

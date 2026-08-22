@@ -14,6 +14,7 @@ function normalizeIdentifier(value: string) {
 }
 
 type LocalSearchRow = { id: string };
+type AliasRow = { product_id: string; normalized_alias: string };
 
 type DetailedProduct = {
   id: string;
@@ -47,6 +48,26 @@ async function detailedProducts(supabase: Awaited<ReturnType<typeof createClient
     const brandName = brand && typeof brand === "object" && "name" in brand && typeof brand.name === "string" ? brand.name : "";
     return brandName ? [{ ...product, brand_name: brandName, brand: undefined }] : [];
   });
+}
+
+async function matchingProductAliasIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  normalizedQuery: string,
+  productIds?: string[],
+) {
+  if (!normalizedQuery || (productIds && !productIds.length)) return [];
+  let aliasQuery = supabase
+    .from("product_aliases")
+    .select("product_id,normalized_alias")
+    .like("normalized_alias", `%${normalizedQuery}%`)
+    .limit(50);
+  if (productIds) aliasQuery = aliasQuery.in("product_id", productIds);
+  const { data, error } = await aliasQuery;
+  if (error) throw error;
+  return ((data ?? []) as AliasRow[])
+    .sort((a, b) => Number(b.normalized_alias === normalizedQuery) - Number(a.normalized_alias === normalizedQuery))
+    .map((row) => row.product_id)
+    .filter((id, index, all) => all.indexOf(id) === index);
 }
 
 export async function GET(request: Request) {
@@ -93,17 +114,27 @@ export async function GET(request: Request) {
         .limit(100);
       if (candidateError) throw candidateError;
       const normalizedQuery = normalizeSearchText(query);
+      const productIds = (candidates ?? []).map((item) => item.id);
+      const aliasIds = await matchingProductAliasIds(supabase, normalizedQuery, productIds);
+      const aliasSet = new Set(aliasIds);
       const ids = (candidates ?? [])
-        .filter((item) => !normalizedQuery || normalizeSearchText(item.name).includes(normalizedQuery))
+        .filter((item) => !normalizedQuery || normalizeSearchText(item.name).includes(normalizedQuery) || aliasSet.has(item.id))
+        .sort((a, b) => Number(aliasSet.has(b.id)) - Number(aliasSet.has(a.id)) || a.name.localeCompare(b.name))
         .slice(0, 12)
         .map((item) => item.id);
       return NextResponse.json({ local: await detailedProducts(supabase, ids) });
     }
 
     if (query.length < 2) return NextResponse.json({ local: [] });
-    const { data: ranked, error } = await supabase.rpc("search_catalog_products", { p_query: query, p_result_limit: 8 });
+    const normalizedQuery = normalizeSearchText(query);
+    const [{ data: ranked, error }, aliasIds] = await Promise.all([
+      supabase.rpc("search_catalog_products", { p_query: query, p_result_limit: 8 }),
+      matchingProductAliasIds(supabase, normalizedQuery),
+    ]);
     if (error) throw error;
-    const ids = ((ranked ?? []) as LocalSearchRow[]).map((item) => item.id);
+    const ids = [...aliasIds, ...((ranked ?? []) as LocalSearchRow[]).map((item) => item.id)]
+      .filter((id, index, all) => all.indexOf(id) === index)
+      .slice(0, 8);
     return NextResponse.json({ local: await detailedProducts(supabase, ids) });
   } catch {
     return NextResponse.json({ error: "LikeSized catalog search is temporarily unavailable." }, { status: 500 });

@@ -52,14 +52,11 @@ jobs:
       - name: Explore, My Circle, and LikeLocker safeguards
         run: node --test tests/explore-circle-likelocker.test.ts
 
-      - name: Controlled Fit Report taxonomy and intake safeguards
+      - name: Controlled Fit Report and community catalog safeguards
         run: node --test tests/fit-report-taxonomy.test.ts
 
       - name: Moderation and garment-confirmation safeguards
         run: node --test tests/moderation-foundation.test.ts
-
-      - name: External catalog import safeguards
-        run: node --test tests/external-catalog-import.test.ts
 
       - name: Build
         run: npm run build

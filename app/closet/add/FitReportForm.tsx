@@ -7,15 +7,25 @@ type ServerAction = (formData: FormData) => void | Promise<void>;
 
 function clearInvalidState(form: HTMLFormElement) {
   form.querySelectorAll(".fieldInvalid").forEach((node) => node.classList.remove("fieldInvalid"));
+  form.querySelectorAll(".fieldOptionalInvalid").forEach((node) => node.classList.remove("fieldOptionalInvalid"));
   form.querySelectorAll<HTMLElement>("[aria-invalid='true']").forEach((node) => node.removeAttribute("aria-invalid"));
+}
+
+function clearFieldInvalidState(field: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement) {
+  field.removeAttribute("aria-invalid");
+  const label = field.closest("label");
+  label?.classList.remove("fieldInvalid");
+  label?.classList.remove("fieldOptionalInvalid");
 }
 
 function showInvalidState(form: HTMLFormElement, scroll: boolean) {
   clearInvalidState(form);
-  const invalid = Array.from(form.querySelectorAll<HTMLElement>("input:invalid, select:invalid, textarea:invalid"));
+  const invalid = Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input:invalid, select:invalid, textarea:invalid"));
   for (const field of invalid) {
     field.setAttribute("aria-invalid", "true");
-    field.closest("label")?.classList.add("fieldInvalid");
+    const label = field.closest("label");
+    label?.classList.add("fieldInvalid");
+    if (!field.required) label?.classList.add("fieldOptionalInvalid");
   }
   const summary = form.querySelector<HTMLElement>("[data-validation-summary]");
   if (summary) summary.hidden = invalid.length === 0;
@@ -40,7 +50,7 @@ function validateBarcodeField(field: HTMLInputElement) {
     return;
   }
   const digits = value.replace(/\D/g, "");
-  field.setCustomValidity(/^\d{6,32}$/.test(digits) ? "" : "Enter 6–32 digits, or leave this field blank.");
+  field.setCustomValidity(/^\d{6,32}$/.test(digits) ? "" : "Fix this barcode or clear it to continue.");
 }
 
 function validateBarcodeFields(form: HTMLFormElement) {
@@ -69,10 +79,7 @@ export function FitReportForm({ action, children }: { action?: ServerAction; chi
       const target = event.target;
       if (target instanceof HTMLInputElement && target.name === "product_url") {
         normalizeRetailLink(form);
-        if (target.validity.valid) {
-          target.removeAttribute("aria-invalid");
-          target.closest("label")?.classList.remove("fieldInvalid");
-        }
+        if (target.validity.valid) clearFieldInvalidState(target);
       }
     }}
     onChange={(event) => {
@@ -82,10 +89,7 @@ export function FitReportForm({ action, children }: { action?: ServerAction; chi
         validateBarcodeField(target);
       }
       if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement) {
-        if (target.validity.valid) {
-          target.removeAttribute("aria-invalid");
-          target.closest("label")?.classList.remove("fieldInvalid");
-        }
+        if (target.validity.valid) clearFieldInvalidState(target);
       }
       if (!form.querySelector(":invalid")) {
         const summary = form.querySelector<HTMLElement>("[data-validation-summary]");
@@ -94,7 +98,7 @@ export function FitReportForm({ action, children }: { action?: ServerAction; chi
     }}
   >
     <div className={styles.validationSummary} data-validation-summary hidden role="alert">
-      Please complete the highlighted fields before submitting your Fit Report.
+      Fix or clear the highlighted entries below. Everything else you entered has been kept.
     </div>
     {children}
   </form>;

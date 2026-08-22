@@ -30,6 +30,24 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
   const updatedClosetItemId = UUID.test(updatedRaw) ? updatedRaw : "";
   const successClosetItemId = updatedClosetItemId || addedClosetItemId;
   const wasUpdated = Boolean(updatedClosetItemId);
+
+  let underReview = false;
+  if (addedClosetItemId) {
+    const { data: submission } = await supabase
+      .from("garment_submissions")
+      .select("candidate_id")
+      .eq("closet_item_id", addedClosetItemId)
+      .maybeSingle();
+    if (submission?.candidate_id) {
+      const { data: candidate } = await supabase
+        .from("catalog_candidates")
+        .select("status")
+        .eq("id", submission.candidate_id)
+        .maybeSingle();
+      underReview = candidate?.status === "needs_review";
+    }
+  }
+
   const [{ data: brands }, { data: materials }, { data: departments }] = await Promise.all([
     supabase.from("brands").select("id,name").order("name").limit(2000),
     supabase.from("materials").select("key,label").order("label"),
@@ -69,7 +87,7 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
         : null;
 
   return <main className="pageShell addGarmentShell">
-    {successClosetItemId ? <FitReportSuccessModal closetItemId={successClosetItemId} wasUpdated={wasUpdated} /> : null}
+    {successClosetItemId ? <FitReportSuccessModal closetItemId={successClosetItemId} wasUpdated={wasUpdated} underReview={underReview} /> : null}
 
     <div className={`pageTitle ${styles.hero}`}><span className="eyebrow">MY CLOSET · NEW FIT REPORT</span><h1>Share how an item actually fits.</h1><p>Tell us a little about the garment so we can make your Fit Report useful to others.</p></div>
     <FitReportForm action={fixtureMode ? undefined : addGarment}>

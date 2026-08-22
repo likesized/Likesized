@@ -1,11 +1,12 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef, useState } from "react";
-import { GARMENT_CATEGORIES, GARMENT_TYPES, questionsForGarmentType } from "@/lib/garment-taxonomy";
+import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
+import { COLOR_FAMILIES, GARMENT_CATEGORIES, GARMENT_TYPES, questionsForGarmentType } from "@/lib/garment-taxonomy";
 
 type Brand={id:string;name:string}; type Product={id:string;name:string;brand_name:string;garment_type_key:string|null;manufacturer_style_number:string|null};
 type External={id:string;provider:string;externalProductId:string;brand:string;itemName:string;sourceUrl:string|null;imageUrl:string|null;styleId:string|null;sourceName:string|null;sourceRecord:Record<string,unknown>};
 type IntakeMode={retailImport:boolean;hasImportedColors:boolean};
+const IntakeModeContext=createContext<IntakeMode>({retailImport:false,hasImportedColors:false});
 type BarcodeDetectorLike={detect:(source:HTMLVideoElement)=>Promise<Array<{rawValue?:string}> >};
 type BarcodeDetectorConstructor=new(options:{formats:string[]})=>BarcodeDetectorLike;
 function itemNameWithoutBrand(brand:string,itemName:string){
@@ -37,7 +38,9 @@ function inferredAnswers(type:string,item:External){
   return answers;
 }
 
-export function CatalogGarmentFields({brands,children}:{brands:Brand[];products:Product[];children:(mode:IntakeMode)=>ReactNode}){
+export function CatalogColorField(){const {retailImport,hasImportedColors}=useContext(IntakeModeContext);return !retailImport||!hasImportedColors?<label>Color<select name="color_family" defaultValue="" required><option value="" disabled>Select a color</option>{COLOR_FAMILIES.map((item)=><option value={item.value} key={item.value}>{item.label}</option>)}</select></label>:<input type="hidden" name="color_family" value=""/>;}
+
+export function CatalogGarmentFields({brands,children}:{brands:Brand[];products:Product[];children:ReactNode}){
   const [step,setStep]=useState<"find"|"details">("find"),[query,setQuery]=useState(""),[brand,setBrand]=useState(""),[itemName,setItemName]=useState(""),[type,setType]=useState(""),[style,setStyle]=useState(""),[existing,setExisting]=useState(""),[confirmation,setConfirmation]=useState<""|"confirm"|"change"|"unsure">("");
   const [local,setLocal]=useState<Product[]>([]),[online,setOnline]=useState<External[]>([]),[error,setError]=useState(""),[retailSearch,setRetailSearch]=useState(false),[findMode,setFindMode]=useState<"choose"|"barcode"|"likesized"|"retail">("choose"),[sourceUrl,setSourceUrl]=useState(""),[provider,setProvider]=useState(""),[record,setRecord]=useState(""),[selectedImage,setSelectedImage]=useState(""),[hasImportedColors,setHasImportedColors]=useState(false),[sourceTags,setSourceTags]=useState<string[]>([]),[answers,setAnswers]=useState<Record<string,string>>({});
   const scannerVideo=useRef<HTMLVideoElement>(null),scannerStream=useRef<MediaStream|null>(null),scannerFrame=useRef<number|null>(null);
@@ -80,5 +83,5 @@ export function CatalogGarmentFields({brands,children}:{brands:Brand[];products:
     {provider&&type?<><input type="hidden" name="garment_type" value={type}/>{Object.entries(answers).map(([key,value])=><input type="hidden" name={`product_attribute__${key}`} value={value} key={key}/>)}</>:<label>Garment type<select name="garment_type" value={type} onChange={(e)=>{clearSource();setType(e.target.value);setAnswers({});}} required><option value="" disabled>Select the specific garment</option>{GARMENT_CATEGORIES.map((category)=><optgroup key={category.value} label={category.label}>{GARMENT_TYPES.filter((item)=>item.category===category.value).map((item)=><option value={item.key} key={item.key}>{item.label}</option>)}</optgroup>)}</select>{selectedType?<span className="fieldHelp">LikeSized files this under {GARMENT_CATEGORIES.find((item)=>item.value===selectedType.category)?.label} automatically.</span>:null}</label>}
     {provider&&!type?<p className="fieldHelp">This retailer did not identify a specific garment type, so this item cannot be imported yet.</p>:null}
     {type&&!provider&&(!existing||confirmation==="change")?<fieldset className="fitDimensionFields"><legend>Optional item details</legend><p className="fieldHelp">Choose only what you know. “Not sure” records no claim.</p><div className="fieldPair">{questions.map((item)=><label key={item.key}>{item.label}<select name={`product_attribute__${item.key}`} value={answers[item.key]??""} onChange={(e)=>{const value=e.target.value;setAnswers((current)=>{const next={...current,[item.key]:value};if((item.key==="top_sleeve"||item.key==="swim_top")&&value==="strapless")delete next.neckline_height;return next;});}}><option value="">Not sure</option>{item.options.map((option)=><option value={option.value} key={option.value}>{option.label}</option>)}</select></label>)}</div></fieldset>:null}
-    {provider?<input type="hidden" name="style_number" value={style}/>:<label>Manufacturer Style ID <span className="muted inlineMuted">optional</span><input name="style_number" maxLength={100} value={style} onChange={(e)=>{clearSource();setStyle(e.target.value);}}/></label>}</section>{children({retailImport:Boolean(provider),hasImportedColors})}</>;
+    {provider?<input type="hidden" name="style_number" value={style}/>:<label>Manufacturer Style ID <span className="muted inlineMuted">optional</span><input name="style_number" maxLength={100} value={style} onChange={(e)=>{clearSource();setStyle(e.target.value);}}/></label>}</section><IntakeModeContext.Provider value={{retailImport:Boolean(provider),hasImportedColors}}>{children}</IntakeModeContext.Provider></>;
 }

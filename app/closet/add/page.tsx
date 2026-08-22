@@ -25,7 +25,11 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
   const params = await searchParams;
   const fixtureMode = allowExploreFixtures(first(params.preview) === "fixtures");
   const addedRaw = first(params.added) ?? "";
+  const updatedRaw = first(params.updated) ?? "";
   const addedClosetItemId = UUID.test(addedRaw) ? addedRaw : "";
+  const updatedClosetItemId = UUID.test(updatedRaw) ? updatedRaw : "";
+  const successClosetItemId = updatedClosetItemId || addedClosetItemId;
+  const wasUpdated = Boolean(updatedClosetItemId);
   const [{ data: brands }, { data: materials }, { data: departments }] = await Promise.all([
     supabase.from("brands").select("id,name").order("name").limit(2000),
     supabase.from("materials").select("key,label").order("label"),
@@ -65,14 +69,14 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
         : null;
 
   return <main className="pageShell addGarmentShell">
-    {addedClosetItemId ? <div className={styles.successOverlay} role="dialog" aria-modal="true" aria-labelledby="fit-report-success-title">
+    {successClosetItemId ? <div className={styles.successOverlay} role="dialog" aria-modal="true" aria-labelledby="fit-report-success-title">
       <div className={styles.successCard}>
-        <span className="eyebrow">FIT REPORT ADDED</span>
-        <h2 id="fit-report-success-title">Thanks! Your Fit Report has been added.</h2>
-        <p>You can view it in your Closet or start styling the item right now.</p>
+        <span className="eyebrow">{wasUpdated ? "FIT REPORT UPDATED" : "FIT REPORT ADDED"}</span>
+        <h2 id="fit-report-success-title">{wasUpdated ? "Thanks! Your existing Fit Report has been updated." : "Thanks! Your Fit Report has been added."}</h2>
+        <p>{wasUpdated ? "This matched the same item, size, objective garment variant, and body profile, so LikeSized updated your existing report instead of counting a duplicate." : "You can view it in your Closet or start styling the item right now."}</p>
         <div className={styles.successActions}>
           <Link className="secondaryButton" href="/closet">View it in My Closet</Link>
-          <Link className="primaryButton" href={`/outfits/new?closet_item_id=${encodeURIComponent(addedClosetItemId)}`}>Style this item</Link>
+          <Link className="primaryButton" href={`/outfits/new?closet_item_id=${encodeURIComponent(successClosetItemId)}`}>Style this item</Link>
         </div>
       </div>
     </div> : null}

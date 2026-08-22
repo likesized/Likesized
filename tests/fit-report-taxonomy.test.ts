@@ -17,6 +17,7 @@ const pendingMigration=readFileSync("supabase/migrations/20260822162000_submissi
 const seedTransition=readFileSync("supabase/migrations/20260822162100_reclassify_starter_seed_as_candidates.sql","utf8");
 const sizeKindMigration=readFileSync("supabase/migrations/20260822183000_add_not_sure_garment_size_kind.sql","utf8");
 const sizeParserMigration=readFileSync("supabase/migrations/20260822183100_support_controlled_partial_sizes.sql","utf8");
+const sizeDefaultMigration=readFileSync("supabase/migrations/20260822194700_add_product_size_kind_default_rpc.sql","utf8");
 
 test("every garment keeps the approved maximum-four controlled question set",()=>{
  for(const garment of GARMENT_TYPES){
@@ -51,6 +52,25 @@ test("final intake order keeps fit essentials above additional catalog evidence"
  assert.ok(catalog.indexOf("Department") < catalog.indexOf("Material / Fabric Composition"));
  assert.doesNotMatch(catalog,/Search retail catalog|Imported from retail catalog|catalog_source_provider|catalog_source_record/);
  assert.doesNotMatch(actions,/record_catalog_source_selection|catalog_source_provider|importedColorLabels/);
+});
+
+test("known garments only carry forward editable size-system, department, and material defaults",()=>{
+ assert.match(catalogSearch,/get_product_default_size_kinds/);
+ assert.match(catalogSearch,/default_size_kind/);
+ assert.match(size,/product\?\.default_size_kind/);
+ assert.match(size,/Preselected from prior Fit Reports\. Change it if your item uses a different size system\./);
+ assert.match(catalog,/setDepartment\(knownDepartment\)/);
+ assert.match(catalog,/value=\{department\}/);
+ assert.match(catalog,/knownMaterials\.map/);
+ assert.match(catalog,/Preselected from what LikeSized currently knows\. Change any material or percentage if your item says otherwise\./);
+ assert.match(catalog,/name="upc"/);
+ assert.match(catalog,/name="style_number"/);
+ assert.doesNotMatch(catalog,/UPC \/ barcode <span className="muted inlineMuted">saved<\/span>/);
+ assert.doesNotMatch(catalog,/Manufacturer Style \/ Article Number <span className="muted inlineMuted">saved<\/span>/);
+ assert.doesNotMatch(catalog,/Already saved:/);
+ assert.match(sizeDefaultMigration,/dense_rank\(\) over/);
+ assert.match(sizeDefaultMigration,/vote_rank = 1/);
+ assert.match(sizeDefaultMigration,/ns\.kind <> 'not_sure'/);
 });
 
 test("barcode is LikeSized-only and an unknown scan stays with the pending submission",()=>{

@@ -52,6 +52,22 @@ Never blend the two contexts.
 - Repeat submissions by the same member do not count as independent corroboration.
 - Conflicts trigger review instead of silently replacing stronger facts.
 
+## Retail links / affiliate shopping — OWNER LOCKED
+- A canonical Product may have **zero, one, or multiple** valid retailer listings/links. Retailer URLs remain listing/destination data, not Product identity.
+- User/member-provided retailer URLs are accepted only after validation/normalization and retailer/domain recognition. LikeSized stores the clean destination; members never need to paste an affiliate-formatted URL.
+- Member-facing shopping UI shows a clean retailer name such as **Nordstrom**, **Macy's**, or **Levi's**, never a raw URL as the label.
+- **Zero valid retail links:** no shopping-cart or Shop action renders for that Product anywhere. No disabled or dead-end control.
+- **One valid retail link:** the shopping action routes directly to that retailer.
+- **Multiple valid retail links:** the shopping action opens one compact retailer picker showing the valid retailer choices for that exact canonical Product.
+- Do not select or rank a retailer because it pays LikeSized a higher commission. Future ordering may use shopper-value data such as exact variant match, reliable availability, or price.
+- Wherever a garment image has its normal actions, a valid retail destination adds **Shopping Cart** alongside **Like** and **Wishlist**. If no valid retail destination exists, the cart disappears.
+- Fit Report surfaces show **Shop Here** only when a valid retail destination exists. Multiple destinations use the same retailer picker.
+- Wishlist and Gift List shopping actions use the same conditional behavior and the same retailer picker.
+- Eligible outbound retail links may be monetized automatically through the planned affiliate layer, initially using a Skimlinks-style aggregator, with direct affiliate-program overrides allowed later. The clean canonical destination remains provider-independent.
+- A valid retailer that is not currently affiliate-monetizable may still be offered as a normal outbound retail destination.
+- Internal affiliate/click-source tracking may identify the LikeSized surface that produced the click, but private body measurements must never be exposed to a retailer or affiliate provider.
+- Locked disclosure copy: **“LikeSized may earn a commission from purchases made through our shopping links.”** It should be small/unobtrusive but visible where needed for the affiliate shopping experience.
+
 ## V1 taxonomy
 Browse and New Fit Report must share one controlled garment taxonomy. No parallel category/type/style systems.
 
@@ -293,8 +309,9 @@ Fit Alert remains separate at 85%+ garment-specific Match with legitimate releva
 - **heart = Like**;
 - **wishlist control = wishlist/save action**;
 - exact storage/naming relationship among Wishlist, LikeLocker, and future Gift Lists must be resolved before implementation; do not create duplicate save graphs by assumption;
+- **shopping cart = retail action only when at least one valid retail link exists**; one retailer routes directly, multiple retailers open the shared retailer picker, and zero links means no cart control;
 - Notify is not shown as a permanent normal action when useful Fit Matches exist; it appears in insufficient/no-useful-fit-evidence fallback states;
-- Like/Wishlist/Notify must be distinct tap targets and never open detail accidentally;
+- Like/Wishlist/Shopping/Notify must be distinct tap targets and never open detail accidentally;
 - no stars.
 
 ## Mobile mini-browser
@@ -320,7 +337,8 @@ The owner later explicitly corrected the garment card to use a **Wishlist** cont
 - owner-controlled sharing only;
 - random member search must never reveal another person's recommended size;
 - raw measurements never exposed;
-- below sufficient confidence, say there is not enough fit data rather than fabricate a recommendation.
+- below sufficient confidence, say there is not enough fit data rather than fabricate a recommendation;
+- when an item has a valid retail destination, expose the same conditional Shop action: one retailer routes directly and multiple retailers open the shared retailer picker.
 
 # 12. Outfits / social content
 
@@ -364,11 +382,12 @@ Search/autocomplete must prefer canonical brands/products before creation. Ident
 2. Receive garment-relevant current-person Match context and eventual Fit Twin designation.
 3. Browse strong real-world historical garment evidence first.
 4. When strong same-product evidence is insufficient, use Help Me Size It as a clearly labeled fallback estimate and inspect Other Fit Reports.
-5. Log garments using canonical product identity, normalized size, Fit Result, optional controlled fit details/condition, and optional Shared photo; preserve immutable body state from that try-on.
+5. Log garments using canonical product identity, normalized size, Fit Result, optional controlled fit details/condition, optional validated retailer URL, and optional Shared photo; preserve immutable body state from that try-on.
 6. Follow useful people independently of Fit Twin status.
 7. Consume followed-person style/activity while keeping current-person matching separate from historical garment matching.
 8. Save/wishlist fashion content through the one final canonical save architecture once Wishlist/LikeLocker terminology is resolved.
-9. Create/share Outfits using existing Closet garments.
-10. Gift Lists may later share owner-approved wanted products with confidence-gated recommended sizes without revealing raw measurements.
+9. Shop valid retailer destinations through conditional shopping actions; affiliate monetization is transparent and does not change Product identity or retailer choice.
+10. Create/share Outfits using existing Closet garments.
+11. Gift Lists may later share owner-approved wanted products with confidence-gated recommended sizes and conditional retail purchasing without revealing raw measurements.
 
 For recovery status, roadmap order, implementation completeness, deployment state, and exact next work, read `docs/AI_MASTER_LOG.md`.

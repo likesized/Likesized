@@ -265,7 +265,7 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
   }, [step]);
 
   useEffect(() => {
-    if (step !== "details" || product || !brand.trim() || !itemName.trim()) { setItemSuggestions([]); return; }
+    if (step !== "details" || product || !brand.trim()) { setItemSuggestions([]); return; }
     setItemSuggestions([]);
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
@@ -278,7 +278,7 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
         const merged = [...fixtures, ...(body.local ?? [])]
           .filter((item) => normalizeCatalogText(item.brand_name) === normalizedBrand)
           .filter((item, index, all) => all.findIndex((other) => other.id === item.id) === index);
-        const exactMatch = merged.find((item) => normalizeCatalogText(item.name) === normalizedItem);
+        const exactMatch = normalizedItem ? merged.find((item) => normalizeCatalogText(item.name) === normalizedItem) : undefined;
         if (exactMatch) { chooseProduct(exactMatch); return; }
         setItemSuggestions(merged.slice(0, 12));
       } catch (cause) {
@@ -352,7 +352,7 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
           </label>
         </div>
 
-        {!product && brand.trim() && itemName.trim() && itemSuggestions.length ? <div className="catalogSuggestionList">{itemSuggestions.map((item) => <button className="catalogSuggestion" type="button" onClick={() => chooseProduct(item)} key={item.id}><span><b>{item.brand_name} · {item.name}</b><small>Already in LikeSized</small></span></button>)}</div> : null}
+        {!product && brand.trim() && itemSuggestions.length ? <div className="catalogSuggestionList">{itemSuggestions.map((item) => <button className="catalogSuggestion" type="button" onClick={() => chooseProduct(item)} key={item.id}><span><b>{item.brand_name} · {item.name}</b><small>Already in LikeSized</small></span></button>)}</div> : null}
 
         <label>Garment type
           <select name="garment_type" value={type} disabled={Boolean(product?.garment_type_key) && !typeIssue} onChange={(event) => { setType(event.target.value); setAnswers({}); setAttributeIssues({}); }} required>

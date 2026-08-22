@@ -80,6 +80,8 @@ The database keeps the approved member-facing Type set separate from legacy matc
 
 The core New Fit Report intake is Brand, Item name, specific Garment type, applicable optional controlled questions, Color, exact Size, optional Product link/barcode/Style ID, Overall Fit Result, Garment condition, optional Shared Fit photo, and optional Fit notes. It does not ask for Market/cut segment, Fit Family, product description, visibility, buy-again, times worn, or a broad construction/fit-dimension questionnaire.
 
+New Fit Report starts with one **Find your item** search, not separate Brand/Item fields. It searches the canonical LikeSized catalog first. A member may then explicitly search the retail catalog if none of those cards is exact; this deliberate action avoids spending an external-catalog request on every broad keystroke. **Enter item manually** remains visible throughout as the final fallback. A selected retail card retains its full available Channel3 source payload, product ID, source URL, image URL, offers, variants, and structured attributes as private provenance attached to the one canonical Product. It does not create a provider-specific second catalog or automatically turn source text into member-controlled facts.
+
 For jeans/pants, owner review identified a need for explicit controlled structural descriptors such as:
 - leg shape/cut: Skinny, Slim, Straight, Relaxed, Wide, Bootcut, Flare;
 - rise: Low, Mid, High where applicable.

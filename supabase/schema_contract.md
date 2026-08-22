@@ -67,6 +67,7 @@ Owner-approved Fit Match work exists on preserved PR #36 / `fit-match-engine-aud
 - Every provider defaults disabled and cannot incur an automatic paid overage or upgrade. A configured provider stops at its explicit monthly hard cap.
 - The owner/admin queue receives the durable 80% warning, 95% critical, and hard-limit alerts. Provider limits must not be shown to members.
 - Provider data enters the existing canonical Product/Brand/identifier/listing/evidence tables only. No provider-specific duplicate catalog or parallel attribute system is allowed.
+- Channel3 is the Preview intake retail-catalog provider. It is capped at 1,000 deliberate searches/month, with 80%/95% owner alerts and no paid overage. `private.catalog_source_records` retains the complete selected source payload as private provenance attached to the existing Product, not as a second catalog.
 
 ## Fit Result / legacy `fit_rating` identifier
 - current physical fit values are Too Small / Snug / Just Right / Relaxed / Too Big.

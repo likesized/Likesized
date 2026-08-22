@@ -5,6 +5,13 @@ This is the one canonical roadmap, status record, owner-decision ledger, recover
 
 # CANONICAL RECOVERY — COMPLETE / FEATURE FREEZE CLEARED
 
+## Active preview work — Channel3 intake correction
+- The earlier Brave generic-web-search intake path was rejected: it did not return dependable retail product cards/images and must not be revived.
+- Owner supplied `CHANNEL3_API_KEY` to Vercel **Preview only** on 2026-08-22. Production remains intentionally unconfigured.
+- The active branch replaces it with the Channel3 retail catalog. The intake starts with a single local **Find your item** query, exposes an explicit deeper retail-catalog action when local cards are not exact, and keeps manual entry visible as the final fallback.
+- Channel3 requests are deliberately action-gated, hard-capped at 1,000/month, alert the owner at 80% and 95%, and never authorize paid overage. Selecting a retail card preserves its full available source payload as private provenance on the one canonical Product.
+- This is branch-only and unverified until the full application/database gates and owner Preview review pass. Do not merge or deploy production.
+
 Owner approved canonical recovery on **2026-08-21** after a full repository audit found severe source-of-truth drift. The recovered source passed CI runs **#354** and **#355**. The owner then explicitly cleared the recovery freeze and authorized PR #43 for `main`/production. PR #43 merged to canonical `main` as **`426881a57d859be8bd9bf1382d358cc238a3d58e`**, and Vercel production deployment **`dpl_Cmuonko9HpHrfGTaCZMYwwbHPLmF`** reached **READY**. Feature work may resume in the locked roadmap order.
 
 ## Recovery baseline

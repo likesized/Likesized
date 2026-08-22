@@ -15,6 +15,7 @@ const PHOTO_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": 
 const TRACKING_PARAMS = new Set(["fbclid", "gclid", "dclid", "mc_cid", "mc_eid", "msclkid"]);
 const PRODUCT_ATTRIBUTE_PREFIX="product_attribute__";
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const EXTERNAL_CATALOG_PROVIDERS = new Set(["channel3_catalog", "upcitemdb"]);
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type BrandRecord = { id: string; name: string; slug: string; normalized_name: string };
@@ -37,6 +38,15 @@ function normalizeProductUrl(raw: string) {
   url.searchParams.sort();
   if (url.pathname.length > 1) url.pathname = url.pathname.replace(/\/+$/, "");
   return url.toString();
+}
+function externalCatalogRecord(raw: string) {
+  if (!raw || raw.length > 520_000) return null;
+  try {
+    const value = JSON.parse(raw) as { externalProductId?: unknown; sourceRecord?: unknown; imageUrl?: unknown };
+    if (typeof value.externalProductId !== "string" || !value.externalProductId.trim() || value.externalProductId.length > 200 || !value.sourceRecord || typeof value.sourceRecord !== "object" || Array.isArray(value.sourceRecord)) return null;
+    if (JSON.stringify(value.sourceRecord).length > 512_000) return null;
+    return { externalProductId: value.externalProductId.trim(), sourceRecord: value.sourceRecord, imageUrl: typeof value.imageUrl === "string" && value.imageUrl.length <= 1000 ? value.imageUrl : null };
+  } catch { return null; }
 }
 
 async function findBrand(supabase: SupabaseClient, name: string) {
@@ -230,6 +240,7 @@ export async function addGarment(formData: FormData) {
   const productUrl = text(formData, "product_url");
   const catalogSourceUrl = text(formData, "catalog_source_url");
   const catalogSourceProvider = text(formData, "catalog_source_provider");
+  const catalogSourceRecord = externalCatalogRecord(text(formData, "catalog_source_record"));
   const colorFamily = text(formData, "color_family");
   const visibility = "shared" as const;
   const fit = text(formData, "fit");
@@ -238,7 +249,7 @@ export async function addGarment(formData: FormData) {
   const fitNotes = text(formData, "fit_notes") || null;
   const wearsCount = 0;
 
-  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId&&!UUID.test(existingProductId)) || !GARMENT_TYPE_BY_KEY.has(garmentType) || (existingProductId&&!CATALOG_CONFIRMATIONS.has(catalogConfirmation)) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || !originalSizeLabel || originalSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !COLOR_FAMILY_KEYS.has(colorFamily) || !FIT_RESULTS.has(fit) || !REPORTED_CONDITIONS.has(reportedCondition) || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000) || (catalogSourceUrl && catalogSourceUrl.length > 1000) || (catalogSourceProvider && !new Set(["brave_search","upcitemdb"]).has(catalogSourceProvider)) || identifier.length>120 || (styleNumber&&styleNumber.length>100)) fail("invalid_fields");
+  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId&&!UUID.test(existingProductId)) || !GARMENT_TYPE_BY_KEY.has(garmentType) || (existingProductId&&!CATALOG_CONFIRMATIONS.has(catalogConfirmation)) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || !originalSizeLabel || originalSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !COLOR_FAMILY_KEYS.has(colorFamily) || !FIT_RESULTS.has(fit) || !REPORTED_CONDITIONS.has(reportedCondition) || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000) || (catalogSourceUrl && catalogSourceUrl.length > 1000) || (catalogSourceProvider && !EXTERNAL_CATALOG_PROVIDERS.has(catalogSourceProvider)) || (catalogSourceRecord && !catalogSourceProvider) || identifier.length>120 || (styleNumber&&styleNumber.length>100)) fail("invalid_fields");
   if (productUrl) { try { normalizeProductUrl(productUrl); } catch { fail("invalid_fields"); } }
   if (catalogSourceUrl) { try { normalizeProductUrl(catalogSourceUrl); } catch { fail("invalid_fields"); } }
 
@@ -309,6 +320,14 @@ export async function addGarment(formData: FormData) {
     if(!existingProductId||catalogConfirmation!=="unsure"){
       const {error:evidenceError}=await supabase.rpc("record_member_product_evidence",{p_product_id:product.id,p_garment_type:garmentType,p_market_segment:product.market_segment,p_attributes:attributeRows,p_materials:[],p_source_reference:sourceReference});
       if(evidenceError)throw evidenceError;
+    }
+    if (catalogSourceRecord && catalogSourceProvider) {
+      const { error: sourceError } = await supabase.rpc("record_catalog_source_selection", {
+        p_product_id: product.id, p_provider_key: catalogSourceProvider,
+        p_external_product_id: catalogSourceRecord.externalProductId, p_source_url: catalogSourceUrl || null,
+        p_image_url: catalogSourceRecord.imageUrl, p_source_payload: catalogSourceRecord.sourceRecord,
+      });
+      if (sourceError) throw sourceError;
     }
   } catch {
     if (photoPath) await supabase.storage.from("fit-reference-photos").remove([photoPath]);

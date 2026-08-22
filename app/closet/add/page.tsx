@@ -36,7 +36,7 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
     <form className="garmentForm" action={fixtureMode ? undefined : addGarment}>
       {fixtureMode ? <div className="authMessage"><b>Owner-review test environment.</b> Temporary garment choices are labeled through the preview and this form cannot save or write to Supabase.</div> : null}
       {errorMessage ? <div className="authMessage error">{errorMessage}</div> : null}
-      <CatalogGarmentFields brands={brandOptions} products={catalogProducts} />
+      <CatalogGarmentFields brands={brandOptions} products={catalogProducts}>
       <label>Color<select name="color_family" defaultValue="" required><option value="" disabled>Select a color</option>{COLOR_FAMILIES.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
       <GarmentSizeFields />
       <div className="fieldPair"><label>Product link <span className="muted inlineMuted">optional</span><input name="product_url" type="url" maxLength={1000} placeholder="https://..." /></label><label>Barcode / SKU <span className="muted inlineMuted">optional</span><input name="identifier" maxLength={120} placeholder="Scan or enter if available" /></label></div>
@@ -45,6 +45,7 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
       <label>Fit photo <span className="muted inlineMuted">optional</span><input name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><span className="fieldHelp"><b>Fit photos are shared with the LikeSized community. Don’t upload a photo you do not want other people to see.</b></span></label>
       <label>Fit notes <span className="muted inlineMuted">optional</span><textarea name="fit_notes" maxLength={1000} rows={5} placeholder="Roomy in the thighs, right at the waist..." /></label>
       <button className="primaryButton fullButton" type="submit" disabled={fixtureMode}>{fixtureMode ? "Preview only — saving disabled" : "Add Fit Report →"}</button>
+      </CatalogGarmentFields>
     </form>
   </main>;
 }

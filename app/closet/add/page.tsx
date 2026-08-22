@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { addGarment } from "@/app/closet/actions";
-import { CatalogColorField, CatalogGarmentFields } from "@/app/closet/add/CatalogGarmentFields";
+import { CatalogColorField, CatalogGarmentFields, CatalogManualIdentifiers } from "@/app/closet/add/CatalogGarmentFields";
 import { GarmentSizeFields } from "@/app/closet/add/GarmentSizeFields";
 import { EXPLORE_FIXTURE_PRODUCTS, allowExploreFixtures } from "@/lib/explore-fixtures";
 import { createClient } from "@/lib/supabase/server";
@@ -38,7 +38,7 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
       <CatalogGarmentFields brands={brandOptions} products={catalogProducts}>
       <CatalogColorField />
       <GarmentSizeFields />
-      <div className="fieldPair"><label>Product link <span className="muted inlineMuted">optional</span><input name="product_url" type="url" maxLength={1000} placeholder="https://..." /></label><label>Barcode / SKU <span className="muted inlineMuted">optional</span><input name="identifier" maxLength={120} placeholder="Scan or enter if available" /></label></div>
+      <CatalogManualIdentifiers />
       <label>Overall Fit Result<select name="fit" defaultValue="" required><option value="" disabled>Select physical fit</option><option value="too_small">Too small</option><option value="snug">Snug</option><option value="just_right">Just right</option><option value="relaxed">Relaxed</option><option value="too_big">Too big</option></select><span className="fieldHelp">Bad fits are useful evidence too.</span></label>
       <label>Garment condition<select name="reported_condition" defaultValue="" required><option value="" disabled>Select condition</option><option value="new">New</option><option value="used">Used</option><option value="altered">Altered</option></select><span className="fieldHelp">Altered items stay in Fit History but are not treated as normal sizing evidence for other people.</span></label>
       <label>Fit photo <span className="muted inlineMuted">optional</span><input name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><span className="fieldHelp"><b>Fit photos are shared with the LikeSized community. Don’t upload a photo you do not want other people to see.</b></span></label>

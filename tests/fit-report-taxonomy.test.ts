@@ -31,7 +31,7 @@ test("normal intake contains only the owner-approved core fields",()=>{
 
 test("color and condition are controlled and persisted separately",()=>{
  assert.equal(COLOR_FAMILIES.length,16);
- assert.match(intake,/name="color_family"/);
+ assert.match(catalog,/name="color_family"/);
  assert.match(intake,/name="reported_condition"/);
  assert.match(taxonomyMigration,/color_family_key/);
  assert.match(taxonomyMigration,/reported_condition/);

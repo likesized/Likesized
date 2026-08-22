@@ -62,7 +62,7 @@ test("unresolved manual intake records a pending garment submission and does not
 test("starter 150 remains research input instead of blindly authoritative Products",()=>{
  assert.match(seedTransition,/insert into public\.catalog_candidates/);
  assert.match(seedTransition,/'needs_enrichment'/);
- assert.match(seedTransition,/source.*'starter_seed'/s);
+ assert.match(seedTransition,/source[\s\S]*'starter_seed'/);
  assert.match(seedTransition,/not exists\(select 1 from public\.closet_items ci where ci\.product_id=p\.id\)/);
  assert.match(seedTransition,/not exists\(select 1 from public\.fit_reports fr where fr\.product_id=p\.id\)/);
 });

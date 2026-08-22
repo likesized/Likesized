@@ -6,19 +6,15 @@ import { MeasurementHelpDialog } from "@/app/onboarding/MeasurementHelp";
 import helpStyles from "@/app/onboarding/MeasurementHelp.module.css";
 
 type UnitSystem = "imperial" | "metric";
-type PreferredFit = "fitted" | "standard" | "relaxed";
 export type MeasurementType = { key:string; label:string; core:boolean; measurement_group:string; dimension:"length"|"weight"; manual_step_imperial:number|string; manual_step_metric:number|string; reconfirm_after_days:number|string; sort_order:number };
 export type BodyMeasurement = { measurement_type_key:string; entered_value:number|string; entered_unit:string; confirmed_at:string|null };
-export type GarmentTypePreferenceOption = { key:string; label:string; category:string; sort_order:number };
-export type GarmentFitPreference = { garment_type_key:string; preference:PreferredFit };
-type Props={username:string;isInitialSetup:boolean;unitSystem:UnitSystem;types:MeasurementType[];measurements:BodyMeasurement[];garmentTypes:GarmentTypePreferenceOption[];fitPreferences:GarmentFitPreference[];errorMessage:string|null};
+type Props={username:string;isInitialSetup:boolean;unitSystem:UnitSystem;types:MeasurementType[];measurements:BodyMeasurement[];errorMessage:string|null};
 type ReviewRow={key:string;label:string;value:string;status:string|null};
 
 const INCH_FRACTIONS=[{value:"0",label:"0"},{value:"0.25",label:"¼"},{value:"0.5",label:"½"},{value:"0.75",label:"¾"}];
 const HEIGHT_INCHES=Array.from({length:12},(_,index)=>index);
 const DAY_MS=86_400_000;
 const DISPLAY_LABELS:Record<string,string>={chest_circumference:"Chest",full_bust:"Full Bust",high_bust:"High Bust",natural_waist:"Natural Waist",lower_pants_waist:"Pants Waist",high_hip:"High Hip",full_hip_seat:"Hips / Seat",waist_to_hip_length:"Waist-to-Hip Length",shoulder_width:"Shoulder Width",individual_shoulder_length:"Individual Shoulder Length",torso_body_length:"Torso Length",torso_girth:"Torso Girth",bust_point_to_bust_point:"Bust Point to Bust Point",shoulder_to_bust_point:"Shoulder to Bust Point",front_waist_length:"Front Waist Length",back_waist_length:"Back Waist Length",shoulder_to_waist:"Shoulder to Waist",across_back_width:"Across-Back Width",across_front_chest_width:"Across-Front Chest Width",arm_sleeve_length:"Arm / Sleeve Length",bicep_upper_arm:"Upper Arm Circumference",elbow_circumference:"Elbow Circumference",wrist_circumference:"Wrist Circumference",neck_collar_circumference:"Neck / Collar Circumference",thigh_circumference:"Thigh Circumference",knee_circumference:"Knee Circumference",calf_circumference:"Calf Circumference",outseam:"Outseam",front_rise:"Front Rise",back_rise:"Back Rise",crotch_depth:"Crotch Depth",total_crotch_length:"Total Crotch Length",foot_length:"Foot Length",foot_width:"Foot Width"};
-const PREFERENCE_LABELS:Record<PreferredFit,string>={fitted:"Fitted",standard:"Standard",relaxed:"Relaxed"};
 
 function displayLabel(type:MeasurementType){return DISPLAY_LABELS[type.key]??type.label;}
 function targetUnit(type:MeasurementType,system:UnitSystem){return type.dimension==="weight"?(system==="imperial"?"lb":"kg"):(system==="imperial"?"in":"cm");}
@@ -31,19 +27,15 @@ function canonical(type:MeasurementType,value:number,unit:string){if(type.dimens
 function reviewValue(type:MeasurementType,raw:string,system:UnitSystem){const value=Number(raw);if(system==="imperial"&&type.dimension==="length"&&type.key==="height"){const total=Math.round(value);return `${Math.floor(total/12)} ft ${total%12} in`;}return `${value} ${targetUnit(type,system)}`;}
 function needsReconfirm(type:MeasurementType,row:BodyMeasurement|undefined){if(!row?.confirmed_at)return false;const confirmedAt=Date.parse(row.confirmed_at);const days=Number(type.reconfirm_after_days);if(!Number.isFinite(confirmedAt)||!Number.isFinite(days)||days<=0)return false;return Date.now()-confirmedAt>=days*DAY_MS;}
 function confirmedLabel(raw:string|null){if(!raw)return "an earlier date";const value=new Date(raw);return Number.isNaN(value.getTime())?"an earlier date":value.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});}
-function categoryLabel(raw:string){return raw.replaceAll("_"," ").replace(/\b\w/g,(letter)=>letter.toUpperCase());}
 
-export function FitProfileForm({username,isInitialSetup,unitSystem:initialSystem,types,measurements,garmentTypes,fitPreferences,errorMessage}:Props){
+export function FitProfileForm({username,isInitialSetup,unitSystem:initialSystem,types,measurements,errorMessage}:Props){
   const visibleTypes=types.filter((type)=>type.key!=="overbust");
   const byKey=new Map(measurements.map((row)=>[row.measurement_type_key,row]));
-  const originalPreferences=new Map(fitPreferences.map((row)=>[row.garment_type_key,row.preference]));
-  const garmentGroups=garmentTypes.reduce<Record<string,GarmentTypePreferenceOption[]>>((groups,item)=>{(groups[item.category]??=[]).push(item);return groups;},{});
   const [system,setSystem]=useState<UnitSystem>(initialSystem);
   const [helpKey,setHelpKey]=useState<string|null>(null);
   const [reviewing,setReviewing]=useState(false);
   const [usernameDraft,setUsernameDraft]=useState(username);
   const [confirmedUnchanged,setConfirmedUnchanged]=useState<Set<string>>(()=>new Set());
-  const [preferences,setPreferences]=useState<Record<string,PreferredFit>>(()=>Object.fromEntries(garmentTypes.map((item)=>[item.key,originalPreferences.get(item.key)??"standard"])));
   const [values,setValues]=useState<Record<string,string>>(()=>Object.fromEntries(visibleTypes.map((type)=>{const row=byKey.get(type.key);if(!row)return[type.key,""];const to=targetUnit(type,initialSystem);return[type.key,String(roundStep(convert(Number(row.entered_value),row.entered_unit,to),stepFor(type,initialSystem)))];})));
 
   useEffect(()=>{
@@ -66,20 +58,6 @@ export function FitProfileForm({username,isInitialSetup,unitSystem:initialSystem
     return[{key:type.key,label:displayLabel(type),value:reviewValue(type,raw,system),status}];
   }),[values,system,visibleTypes,byKey,isInitialSetup,confirmedUnchanged]);
 
-  const preferenceReviewRows=useMemo<ReviewRow[]>(()=>{
-    const rows:ReviewRow[]=[];
-    for(const item of garmentTypes){
-      const current=preferences[item.key]??"standard";
-      const original=originalPreferences.get(item.key)??"standard";
-      if(isInitialSetup){
-        if(current!=="standard")rows.push({key:item.key,label:item.label,value:PREFERENCE_LABELS[current],status:null});
-        continue;
-      }
-      if(current!==original)rows.push({key:item.key,label:item.label,value:PREFERENCE_LABELS[current],status:"Changed"});
-    }
-    return rows;
-  },[garmentTypes,preferences,originalPreferences,isInitialSetup]);
-
   function setMeasurementValue(key:string,value:string){setValues((current)=>({...current,[key]:value}));if(confirmedUnchanged.has(key))setConfirmedUnchanged((current)=>{const next=new Set(current);next.delete(key);return next;});}
   function setImperialLength(key:string,wholeRaw:string,fractionRaw:string){if(wholeRaw===""){setMeasurementValue(key,"");return;}const whole=Number(wholeRaw),fraction=Number(fractionRaw);if(!Number.isFinite(whole)||!Number.isFinite(fraction)){setMeasurementValue(key,"");return;}setMeasurementValue(key,String(whole+fraction));}
   function setHeight(feetRaw:string,inchesRaw:string){if(feetRaw===""){setMeasurementValue("height","");return;}const feet=Number(feetRaw),inches=Number(inchesRaw);if(!Number.isInteger(feet)||feet<0||!Number.isInteger(inches)||inches<0||inches>11){setMeasurementValue("height","");return;}setMeasurementValue("height",String(feet*12+inches));}
@@ -100,15 +78,13 @@ export function FitProfileForm({username,isInitialSetup,unitSystem:initialSystem
       <p className={helpStyles.coreIntro}>Review what you entered. Nothing is saved until you confirm.</p>
       {isInitialSetup?<div className="evidence"><div><strong>Username</strong><span>{usernameDraft}</span></div></div>:null}
       <div className={`evidenceList ${helpStyles.reviewGrid}`}>{reviewRows.map((row)=><div className={`evidence ${helpStyles.reviewItem}`} key={row.key}><div><strong>{row.label}</strong><span>{row.value}{row.status?` · ${row.status}`:""}</span></div></div>)}</div>
-      {preferenceReviewRows.length?<><h3>Preferred Fit changes</h3><div className={`evidenceList ${helpStyles.reviewGrid}`}>{preferenceReviewRows.map((row)=><div className={`evidence ${helpStyles.reviewItem}`} key={row.key}><div><strong>{row.label}</strong><span>{row.value}{row.status?` · ${row.status}`:""}</span></div></div>)}</div></>:null}
-      <input type="hidden" name="username" value={isInitialSetup?usernameDraft:""}/><input type="hidden" name="unit_system" value={system}/>{visibleTypes.map((type)=><span key={type.key}><input type="hidden" name={`measurement_${type.key}`} value={values[type.key]??""}/>{confirmedUnchanged.has(type.key)?<input type="hidden" name={`confirm_measurement__${type.key}`} value="1"/>:null}</span>)}{garmentTypes.map((item)=><input key={item.key} type="hidden" name={`fit_preference__${item.key}`} value={preferences[item.key]??"standard"}/>)}
+      <input type="hidden" name="username" value={isInitialSetup?usernameDraft:""}/><input type="hidden" name="unit_system" value={system}/>{visibleTypes.map((type)=><span key={type.key}><input type="hidden" name={`measurement_${type.key}`} value={values[type.key]??""}/>{confirmedUnchanged.has(type.key)?<input type="hidden" name={`confirm_measurement__${type.key}`} value="1"/>:null}</span>)}
       <div className="buttonRow"><button type="button" className="secondaryButton" onClick={()=>setReviewing(false)}>← Back to Edit</button><button type="submit" className="primaryButton">Confirm & Save</button></div>
     </>:<>
       <p className={helpStyles.coreIntro}>Add only what you know right now. More details lead to better fit matches and recommendations. You can always update your profile measurements anytime.</p>
       <div className="fieldPair">{isInitialSetup?<label>Username<div><input name="username" type="text" value={usernameDraft} onChange={(event)=>setUsernameDraft(event.target.value)} minLength={3} maxLength={32} pattern="[A-Za-z0-9_]{3,32}" autoCapitalize="none" autoCorrect="off" spellCheck={false} required /></div></label>:null}<label>Units<select name="unit_system" value={system} onChange={(event)=>changeSystem(event.target.value as UnitSystem)}><option value="imperial">Inches / pounds</option><option value="metric">Centimeters / kilograms</option></select></label></div>
       <div className="fieldPair">{core.map(field)}</div>
       <details open={advanced.some((type)=>Boolean(values[type.key]))}><summary>Optional advanced measurements</summary><p className="muted">Add more detailed measurements for even smarter fit matches. Fill in only what you know and come back anytime to add more or make changes.</p><div className="fieldPair optionalFields">{advanced.map(field)}</div></details>
-      <details open={fitPreferences.length>0}><summary>Preferred fit by garment type — private</summary><p className="muted">Tell LikeSized how you prefer each garment type to feel. This never changes your body Match %. It only helps translate real Fit Results into the size you are most likely to prefer. Standard is used when you leave a garment type unchanged.</p><div className="privacyNote"><b>Preference is not a Fit Result.</b> Fitted, Standard, and Relaxed describe what you like. Too Small and Too Big remain physical Fit Results and always count as negative sizing evidence.</div>{Object.entries(garmentGroups).map(([category,items])=><div key={category}><h3>{categoryLabel(category)}</h3><div className="fieldPair optionalFields">{items.map((item)=><label key={item.key}>{item.label}<select value={preferences[item.key]??"standard"} onChange={(event)=>setPreferences((current)=>({...current,[item.key]:event.target.value as PreferredFit}))}><option value="fitted">Fitted</option><option value="standard">Standard</option><option value="relaxed">Relaxed</option></select></label>)}</div></div>)}</details>
       <button type="submit" className="primaryButton fullButton">{isInitialSetup?"Review Fit Profile →":"Review Changes →"}</button>
     </>}
     {helpKey?<MeasurementHelpDialog measurementKey={helpKey} onClose={()=>setHelpKey(null)}/>:null}

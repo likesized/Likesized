@@ -36,9 +36,8 @@ function normalizeCatalogText(value: string) {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
 }
 function productAttributes(product: CatalogProduct | null) {
-  const values: Record<string, string> = {};
-  for (const row of product?.attributes ?? []) if (row.source_status !== "rejected") values[row.attribute_key] = row.option_key;
-  return values;
+  void product;
+  return {} as Record<string, string>;
 }
 function applicableQuestions(typeKey: string, answers: Record<string, string>) {
   return questionsForGarmentType(typeKey).filter(
@@ -53,7 +52,9 @@ export function CatalogColorField() {
 
 export function CatalogCommunityEnrichment({ materials, departments }: { materials: CatalogOption[]; departments: CatalogOption[] }) {
   const { product, scannedBarcode } = useContext(CatalogContext);
-  const sortedMaterials = useMemo(() => [...materials].sort((a, b) => a.label.localeCompare(b.label)), [materials]);
+  const sortedMaterials = useMemo(() => [...materials]
+    .filter((item) => item.key !== "other" && item.key !== "not_sure" && item.label.toLowerCase() !== "other")
+    .sort((a, b) => a.label.localeCompare(b.label)), [materials]);
   const sortedDepartments = useMemo(() => [...departments].sort((a, b) => a.label.localeCompare(b.label)), [departments]);
   const knownMaterials = useMemo(() => (product?.materials ?? []).filter((row) => row.source_status !== "rejected"), [product]);
   const knownDepartment = product?.department_key ?? "";
@@ -75,7 +76,7 @@ export function CatalogCommunityEnrichment({ materials, departments }: { materia
     setDepartmentIssue(false);
     setMaterialIssue(false);
     setMaterialRows(knownMaterials.length
-      ? knownMaterials.map((row) => ({ material_key: row.material_key, percentage: row.percentage == null ? "" : String(row.percentage) }))
+      ? knownMaterials.map((row) => ({ material_key: row.material_key === "other" ? "not_sure" : row.material_key, percentage: row.percentage == null ? "" : String(row.percentage) }))
       : [{ material_key: "", percentage: "" }]);
   }, [product?.id, knownMaterials]);
 
@@ -121,16 +122,16 @@ export function CatalogCommunityEnrichment({ materials, departments }: { materia
     <fieldset className="fitDimensionFields">
       <legend>Material / Fabric Composition <span className="muted inlineMuted">optional</span></legend>
       {knownMaterials.length && !materialIssue ? <>
-        <p className="fieldHelp">Saved: {knownMaterials.map((row) => `${sortedMaterials.find((item) => item.key === row.material_key)?.label ?? row.material_key}${row.percentage == null ? "" : ` ${row.percentage}%`}`).join(" · ")}</p>
+        <p className="fieldHelp">Saved: {knownMaterials.map((row) => `${row.material_key === "other" ? "Other / Not sure" : (sortedMaterials.find((item) => item.key === row.material_key)?.label ?? row.material_key)}${row.percentage == null ? "" : ` ${row.percentage}%`}`).join(" · ")}</p>
         <button className="catalogBackButton" type="button" onClick={() => setMaterialIssue(true)}>Report an issue</button>
       </> : null}
       {materialsEditable ? <>
         <div className="fitDimensionFields">
           {materialRows.map((row, index) => <div className="fieldPair" key={index}>
-            <label>Material<select value={row.material_key} onChange={(event) => setMaterialRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, material_key: event.target.value } : item))}>
+            <label>Material<select value={row.material_key} onChange={(event) => setMaterialRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, material_key: event.target.value, percentage: event.target.value === "not_sure" ? "" : item.percentage } : item))}>
               <option value="">Choose a material</option>
               {sortedMaterials.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
-              <option value="not_sure">Not sure</option>
+              <option value="not_sure">Other / Not sure</option>
             </select></label>
             <label>Percentage <span className="muted inlineMuted">optional</span><select value={row.percentage} disabled={!row.material_key || row.material_key === "not_sure"} onChange={(event) => setMaterialRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, percentage: event.target.value } : item))}>
               <option value="">Leave blank if unknown</option>

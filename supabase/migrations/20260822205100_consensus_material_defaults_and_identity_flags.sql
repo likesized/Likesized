@@ -93,7 +93,7 @@ begin
       and (fr.garment_type_key is null or p.garment_type_key is null or fr.garment_type_key=p.garment_type_key)
     group by pme.fit_report_id
   )
-  select min(rc.fit_report_id)
+  select min(rc.fit_report_id::text)::uuid
   into v_representative_report
   from report_compositions rc
   where rc.signature=v_top_signature;

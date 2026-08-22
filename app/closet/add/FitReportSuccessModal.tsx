@@ -30,12 +30,12 @@ export function FitReportSuccessModal({ closetItemId, wasUpdated, underReview = 
   const title = underReview
     ? "Thanks! Your Fit Report has been saved."
     : wasUpdated
-      ? "Thanks! Your existing Fit Report has been updated."
+      ? "Your Fit Report has been updated."
       : "Thanks! Your Fit Report has been added.";
   const message = underReview
     ? "You can keep using this item in your Closet while LikeSized reviews the item details. It will not be treated as normal Product fit evidence until that review is resolved."
     : wasUpdated
-      ? "This matched the same item, size, objective garment variant, and body profile, so LikeSized updated your existing report instead of counting a duplicate."
+      ? "We found an existing report for this same fit, so we added your latest details there instead of creating another one."
       : "You can view it in your Closet or start styling the item right now.";
 
   return <div className={styles.successOverlay} role="dialog" aria-modal="true" aria-labelledby="fit-report-success-title">

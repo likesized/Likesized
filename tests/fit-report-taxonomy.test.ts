@@ -20,6 +20,8 @@ const sizeKindMigration=readFileSync("supabase/migrations/20260822183000_add_not
 const sizeParserMigration=readFileSync("supabase/migrations/20260822183100_support_controlled_partial_sizes.sql","utf8");
 const sizeDefaultMigration=readFileSync("supabase/migrations/20260822194700_add_product_size_kind_default_rpc.sql","utf8");
 const fitDedupMigration=readFileSync("supabase/migrations/20260822202500_fit_report_variant_deduplication.sql","utf8");
+const materialConsensusMigration=readFileSync("supabase/migrations/20260822205100_consensus_material_defaults_and_identity_flags.sql","utf8");
+const distinctFitSituationsMigration=readFileSync("supabase/migrations/20260822205200_count_all_distinct_fit_situations.sql","utf8");
 
 test("every garment keeps the approved maximum-four controlled question set",()=>{
  for(const garment of GARMENT_TYPES){
@@ -155,9 +157,9 @@ test("color, adult department, material, and percentage choices stay controlled"
 });
 
 test("known Fit Reports update true duplicates but count size, objective-variant, or body-version changes",()=>{
- assert.match(actions,/OBJECTIVE_VARIANT_EXCLUDED_KEYS/);
+ assert.match(actions,/FILTER_ONLY_ATTRIBUTE_KEYS/);
  assert.match(actions,/"intended_fit"/);
- assert.match(actions,/option_key !== "not_sure"/);
+ assert.match(actions,/row\.option_key !== "not_sure"/);
  assert.match(actions,/save_known_fit_report/);
  assert.match(actions,/p_objective_variant_key: variantFingerprint/);
  assert.match(fitDedupMigration,/fit_reports_known_counted_identity_uq/);
@@ -165,7 +167,30 @@ test("known Fit Reports update true duplicates but count size, objective-variant
  assert.match(fitDedupMigration,/garment_answers jsonb/);
  assert.match(fitDedupMigration,/revision_count integer/);
  assert.match(fitDedupMigration,/fit_report_id uuid references public\.fit_reports\(id\) on delete cascade/);
- assert.doesNotMatch(fitDedupMigration,/product_attribute_evidence_member_uq/);
+ assert.match(fitDedupMigration,/drop index if exists public\.product_attribute_evidence_member_uq/);
+ assert.doesNotMatch(distinctFitSituationsMigration,/person_rank|partition by s\.user_id|partition by fr\.user_id/);
+ assert.match(distinctFitSituationsMigration,/from scored s/);
+});
+
+test("material defaults use the most common exact complete composition and never average recipes",()=>{
+ assert.match(materialConsensusMigration,/refresh_product_material_default/);
+ assert.match(materialConsensusMigration,/string_agg/);
+ assert.match(materialConsensusMigration,/dense_rank\(\) over\(order by cc\.vote_count desc\)/);
+ assert.match(materialConsensusMigration,/coalesce\(v_top_ties,0\)<>1/);
+ assert.match(materialConsensusMigration,/fit_report_consensus:/);
+ assert.doesNotMatch(materialConsensusMigration,/avg\(percentage\)/i);
+});
+
+test("known Product garment-type disagreement saves unresolved and flags admin instead of becoming a variant",()=>{
+ assert.match(catalog,/setTypeIssue\(true\)/);
+ assert.match(catalog,/existing_product_id/);
+ assert.match(actions,/const typeAgrees = !product\.garment_type_key \|\| product\.garment_type_key === garmentType/);
+ assert.match(actions,/if \(!typeAgrees\)/);
+ assert.match(actions,/product_id: null, variant_id: null/);
+ assert.match(actions,/flag_known_product_garment_type_conflict/);
+ assert.match(materialConsensusMigration,/flag_known_product_garment_type_conflict/);
+ assert.match(materialConsensusMigration,/'ambiguous_identity'/);
+ assert.match(materialConsensusMigration,/Conflicted Fit Report must remain unresolved/);
 });
 
 test("invalid submit is explicit and successful submit offers working Closet, styling, and dismiss actions",()=>{

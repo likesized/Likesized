@@ -24,7 +24,7 @@ Roadmap/status: `docs/AI_MASTER_LOG.md`.
 - historical Product/Fit Report matching uses immutable snapshots.
 - Private Closet evidence remains owner-only; Shared evidence follows current RLS rules.
 - fit/reference photos follow the current Shared evidence boundary.
-- `follows` is the one social relationship graph; Fit Twin is a derived designation, not another relationship table.
+- **`follows` is the one canonical **Following** relationship**; Fit Twin is a derived designation within the followed set, not another relationship table.
 - LikeLocker Product Likes, Outfit Likes and Wish Locker remain separate intents.
 - canonical Outfit structures/storage/likes remain in V1.
 
@@ -39,9 +39,9 @@ Roadmap/status: `docs/AI_MASTER_LOG.md`.
 - Material/Fabric Composition may be controlled evidence but does not become Match/recommendation input or an Explore filter without a later owner-approved change.
 - Stretch remains outside current V1 member input/filter behavior.
 
-# Submission-first catalog direction — OWNER LOCKED / IMPLEMENTATION DEBT
+# Submission-first catalog direction — OWNER LOCKED / BRANCH IMPLEMENTATION IN PROGRESS
 
-The current target architecture now separates:
+The canonical architecture separates:
 
 1. **member garment submission / Fit Report**
 2. **pending catalog candidate**
@@ -49,50 +49,61 @@ The current target architecture now separates:
 
 Members must not directly create canonical Products from manual fallback.
 
-## Required target database behavior
+## Required database behavior
 
 When an exact canonical Product is known:
-- Closet item/Fit Report may reference that Product normally;
+- Closet item/Fit Report references that Product normally;
 - reviewed Product facts remain canonical;
 - member disagreement is stored as evidence/flagging rather than silent Product overwrite.
 
 When Product identity is unresolved:
 - persist the member's garment submission and Fit Report without blocking the member;
 - preserve best-known Brand/Model/Type and optional identity/enrichment evidence;
-- associate the submission with a pending catalog candidate where appropriate;
+- associate the submission with a pending catalog candidate;
 - **do not create a canonical Product solely because the member submitted manual text**;
 - do not include the unresolved item in exact canonical Product search/aggregation as if its identity were verified.
 
 Later catalog resolution must be able to:
 - map one or many submissions to an existing Product;
-- create one genuinely new canonical Product through an authorized catalog-resolution function/path;
-- preserve the immutable Fit Report/body snapshot while remapping Product association;
-- preserve the original submission/evidence/audit history;
+- create one genuinely new canonical Product through an authorized catalog-resolution path;
+- preserve immutable Fit Report/body snapshot while assigning the canonical Product;
+- preserve original submission/evidence/audit history;
 - split incorrectly grouped submissions/Products without silent loss.
 
-## Required pending-candidate lifecycle
-The database needs canonical representation of at least these meanings:
-- Pending Product
-- Needs Enrichment
-- Needs Review
-- Merged
-- Verified Catalog Item / resolved canonical Product state
+## Branch implementation now present
+Migration `20260822162000_submission_first_catalog_foundation.sql` is the current branch implementation foundation. It is **not production truth until full replay/tests/owner-authorized promotion pass**.
 
-Status naming may be implemented with enums/checks/reference tables as appropriate, but there must be one authoritative state model rather than competing queue/status systems.
+It currently proposes:
+- nullable `closet_items.product_id` and `fit_reports.product_id` for unresolved submissions;
+- `catalog_candidates` as the one pending-candidate queue/state graph;
+- `garment_submissions` as member-supplied unresolved identity/enrichment evidence linked to the real Closet item/Fit Report;
+- `catalog_review_flags` as typed review flags;
+- `catalog_resolution_actions` as catalog-resolution audit history;
+- `product_aliases` as reviewed hidden Product-name aliases;
+- private `catalog-submission-photos` storage for unresolved Product Photo evidence;
+- `record_pending_garment_submission(...)` for authenticated pending submission recording/aggregation;
+- `flag_catalog_possible_duplicate(...)` for the authorized duplicate-flag write boundary;
+- admin map/create/status RPCs for resolving candidates.
 
-Candidates must support demand prioritization, including submission count/frequency and relevant recency/flag metadata.
+Application source on PR #47 now has a separate known-Product path and unresolved-submission path. The unresolved path writes nullable Product references and candidate evidence instead of inserting into `products` directly.
 
-## Current implementation mismatch
-The current branch still contains code/migrations from the previous community-catalog attempt where unresolved manual intake can resolve/create provisional `products` directly.
+**This implementation remains unverified until canonical CI, typecheck, build, complete fresh migration replay and database behavior/privacy tests pass.**
 
-That behavior is now **implementation debt** and must be replaced before this work can be called complete.
+## Pending-candidate lifecycle
+The one candidate state model currently uses:
+- `pending`
+- `needs_enrichment`
+- `needs_review`
+- `merged`
 
-Do not pretend the submission-first architecture is implemented until ordered migrations, RLS, application actions, tests and fresh replay prove it.
+A resolved canonical Product is the **Verified Catalog Item** state rather than another duplicate candidate status.
+
+Candidates support submission count and recency for demand prioritization.
 
 # Canonical Product / identity foundation
 
 - `brands` and `products` remain the one canonical Product identity graph.
-- Product aliases/Brand aliases should normalize reviewed spelling/punctuation/common typo variants without creating duplicate public identities.
+- Product aliases/Brand aliases normalize reviewed spelling/punctuation/common typo variants without creating duplicate public identities.
 - Product families are explicit compatible groups, not fuzzy-title buckets.
 - `product_identifiers` provide UPC/barcode/other identifier evidence where applicable.
 - manufacturer Style/Article values are evidence and are not globally unique Product IDs by default.
@@ -105,22 +116,25 @@ Identity resolution must be conservative:
 - no fuzzy-title-only automatic merge;
 - ambiguous identity creates review state/flag.
 
-# Duplicate / alias / merge / split — REQUIRED TARGET
+`product_identity_evidence` includes Brand, Item/Model, manufacturer Style/Article and barcode disagreement evidence. Barcode disagreement uses identifier normalization rather than Product-name normalization.
 
-The database must extend the existing evidence/moderation foundation with one canonical duplicate system supporting:
+# Duplicate / alias / merge / split
+
+The branch now has a canonical typed flag model and candidate→Product mapping foundation. The complete owner-required duplicate system still must support:
 
 - reviewed Brand aliases;
-- reviewed Product aliases where useful;
-- possible-duplicate candidate relationships/flags;
-- identity signals/reasons used for review;
+- reviewed Product aliases;
+- possible-duplicate candidate/Product flags and identity reasons;
 - audited duplicate dismissal;
-- audited canonical merge;
-- audited canonical split;
+- audited candidate→existing Product mapping;
+- audited new Product creation from a reviewed candidate;
+- transactional canonical Product-to-Product merge;
+- transactional canonical Product/candidate split;
 - preservation/reassignment of submissions, Fit Reports, identifiers, retailer listings, aliases, evidence and photos as appropriate.
 
 A merge/split must never silently destroy Fit Report history or immutable body-version links.
 
-Current branch foundations such as `product_identity_evidence` and `products.catalog_review_needed` may be reused where they fit. Do not build a parallel second conflict system.
+`catalog_review_flags`, `product_identity_evidence`, and `products.catalog_review_needed` must be used as one coherent review architecture rather than parallel independent systems.
 
 # Product evidence / field conflict
 
@@ -138,9 +152,9 @@ Rules:
 
 `product_identity_evidence`, metadata/attribute/material/description evidence, and moderation history should be extended/reused rather than replaced by a second graph.
 
-# Required flag/review model
+# Flag/review model — OWNER LOCKED
 
-The database/admin system must distinguish review reasons including at least:
+`catalog_review_flags.flag_type` must distinguish at least:
 
 ## Possible Duplicate
 Potential equivalent Brands/Products/candidates without enough evidence for safe auto-merge.
@@ -164,9 +178,11 @@ Flags themselves do not rewrite data or remove content. Resolution actions are a
 - `private.admin_users` remains the explicit admin allowlist/authorization boundary unless deliberately replaced by a later canonical admin-role model.
 - ordinary members must never gain admin catalog powers through client-controlled state.
 - moderation/catalog actions require authorized server/database boundaries.
-- append-only audit/history must record actor, time, target, action and reason/context appropriate to the action.
+- append-only audit/history records actor, time, target, action and reason/context appropriate to the action.
 
-Required admin capabilities include:
+Current branch admin foundation includes candidate queue reads and RPCs to map a candidate to an existing Product, create one reviewed Product from a candidate, and update candidate queue status. These actions remain branch-only/unverified.
+
+Required complete admin capabilities include:
 - inspect candidate submissions/evidence and demand count;
 - map pending candidate/submissions to existing Product;
 - create one new canonical Product through authorized resolution;
@@ -220,20 +236,18 @@ The current private cache and completed benchmark do **not** by themselves satis
 
 The owner-supplied 150 starter entries remain launch-preparation data.
 
-Current branch migration `20260822073000_community_catalog_intake_and_seed.sql` seeds those entries into the prior Product model.
+Migration `20260822073000_community_catalog_intake_and_seed.sql` is retained in ordered branch history and seeds those entries into the prior provisional Product model during replay.
 
-The SerpAPI benchmark demonstrated that some starter names are specific models and others are broad/generic/ambiguous.
+Migration `20260822162100_reclassify_starter_seed_as_candidates.sql` is the later canonical branch transition for the new direction. It:
+- inserts/reuses all 150 as `catalog_candidates` / enrichment research input;
+- preserves the already-cached SerpAPI benchmark evidence independently;
+- removes only empty/unreferenced provisional seed Products created by the earlier seed migration;
+- preserves any starter Product that already gained real Closet/Fit/variant/identifier/listing/evidence/photo references for review rather than destructive deletion;
+- removes only orphaned seed Product families after Product cleanup.
 
-Therefore, before production:
-- retain the 150 entries/research set;
-- do not fabricate missing facts;
-- specific reviewed items may become/stay canonical selectable Products;
-- ambiguous items must be represented/reclassified as Pending / Needs Enrichment / Needs Review rather than falsely authoritative verified Products;
-- reuse cached benchmark research before spending another identical external search.
+The full replay must prove this transition behaves exactly as intended before production.
 
-Because migrations are immutable history once applied, correct state with later canonical migrations/data transitions rather than rewriting/deleting an applied migration.
-
-# Barcode behavior — REQUIRED TARGET
+# Barcode behavior — OWNER LOCKED
 
 Member barcode scanning queries LikeSized only.
 
@@ -248,21 +262,25 @@ Unknown barcode:
 
 Conflicting barcode evidence routes to identity/duplicate review.
 
-# Retailer listing foundation
+# Retailer listing foundation — OWNER LOCKED
 
 - `retailer_listings` remains the canonical one-to-many listing relationship for resolved Products/variants.
+- a Product may have zero, one or multiple valid retailer listings.
 - a new valid retailer URL appends/dedupes; it must not overwrite another valid retailer listing.
 - normalized URLs support dedupe/identity review.
 - a retailer URL submitted with an unresolved garment remains candidate evidence until Product mapping.
 - same normalized URL apparently tied to different Products is a strong identity/duplicate flag.
-- future affiliate routing must preserve the original canonical retailer URL/listing.
+- future affiliate routing must preserve the original clean canonical retailer URL/listing.
+- valid retailer destinations remain valid even when not currently affiliate-monetizable.
+- retailer selection/order must not be driven by commission.
+- affiliate/click-source metadata must never disclose private body measurements.
 
 # Product photos
 
 - Product Photo is separate from personal Fit Photo.
 - Product photos are candidate/Product evidence subject to moderation.
-- unresolved Product Photo must not be silently attached to an arbitrary canonical Product before mapping.
-- existing `product_photo_evidence`/`product-photos` foundations may be reused where consistent with the final submission-first model.
+- unresolved Product Photo is stored under the private pending-submission boundary and must not be silently attached to an arbitrary canonical Product before mapping.
+- resolved Product photos may use the existing canonical Product-photo evidence pipeline where applicable.
 - authorized admins need deletion/moderation boundaries and audit history.
 
 # Following vs Fit Twin database semantics
@@ -298,10 +316,11 @@ Conflicting barcode evidence routes to identity/duplicate review.
 
 # Search foundation
 
-- public/member catalog search uses canonical Products/Brands/identifiers/listings and does not treat unresolved pending submissions as independent Product results.
+- member catalog search uses canonical Products/Brands/identifiers/listings and does not treat unresolved pending submissions as independent Product results.
 - grouped Explore search may include Garments, Outfits and People while preserving privacy.
 - ordinary Product search deduplicates to one canonical Product result.
 - New Fit Report suggestions prefer canonical Brands/Products/reviewed aliases.
+- `product_aliases` must be integrated into canonical search/resolution before the alias feature is called complete.
 - search must not expose raw Fit Profile measurements/private size references.
 
 # Fit Result / legacy identifier
@@ -313,7 +332,7 @@ Current physical values:
 - Relaxed
 - Too Big
 
-Legacy identifiers containing `fit_rating` may remain for these physical outcomes. There is no current V1 1–5-star Fit Rating requirement.
+Legacy identifiers containing `fit_rating` may remain for these physical outcomes. There is **no current V1 1–5-star Fit Rating UI**.
 
 # Recommendation foundation
 
@@ -341,18 +360,19 @@ Existing moderation tables/actions remain useful foundations where compatible:
 - `catalog_moderation_actions`
 - Product evidence review structures
 - `product_identity_evidence`
+- `catalog_review_flags`
+- `catalog_resolution_actions`
 
 Final admin work must extend these rather than create a parallel moderation/catalog system.
 
 Current owner-required behavior still not safe to claim complete includes:
-- pending garment submission/candidate model;
-- demand-prioritized Catalog Enrichment queue;
-- complete Possible Duplicate model;
-- canonical merge/split;
+- full Product-to-Product merge/split;
 - admin batch SerpAPI UI/server workflow;
+- Product alias search integration;
 - field lock/reopen coverage across final shared facts;
 - spam garment-submission/Fit Report coverage;
-- complete Product-photo moderation integration.
+- complete pending→canonical Product-photo transfer/moderation integration;
+- full browser-level behavioral regression verification.
 
 # Verification contract
 

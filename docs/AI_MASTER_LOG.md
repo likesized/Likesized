@@ -93,7 +93,7 @@ The PR #36 salvage classification is complete. **Do not close/delete PR #36 or i
 - `AI_REPOSITORY_RULES.md` — **RECOVERED / ADAPTED** into the stronger current canonical repository policy and CI drift guard.
 - `README.md` — **SUPERSEDED AS A WHOLE FILE**; surviving product/architecture decisions are reconciled into current canonical docs.
 - `app/browse/page.tsx` — **OBSOLETE PLACEHOLDER IMPLEMENTATION**. It did not implement canonical Browse and was later replaced by a rejected preview demo; the Browse route/product decision survives, not this placeholder.
-- `app/help/page.tsx` — **OBSOLETE PLACEHOLDER IMPLEMENTATION**. Help / FAQ remains roadmap-locked, but the empty placeholder is not canonical recovery source.
+- `app/help/page.tsx` — **OBSOLETE PLACEHOLDER IMPLEMENTATION**. Help / FAQ remains roadmap-locked, but the empty placeholder is not a canonical recovery source.
 - `app/likelocker/page.tsx` — **OBSOLETE PLACEHOLDER IMPLEMENTATION**. LikeLocker remains roadmap-locked; the empty placeholder is not recovered as product code.
 - `app/page.tsx` — **DEFERRED IMPLEMENTATION** from preserved head `b56f663199a9f7252c27cddfebfdae710230cb5e`: the homepage Help / FAQ entry/copy remains a valid later Help/FAQ task, but recovery does not introduce that surface ahead of its roadmap gate.
 - `components/Header.tsx` — **DEFERRED / PARTLY SUPERSEDED** from preserved head `b56f663199a9f7252c27cddfebfdae710230cb5e`. The grouped IA concept and persistent notification-bell decision survive, but the old `Fit Twins → My Fit Twins / Style Feed` group is **SUPERSEDED** by the Following-vs-system-Fit-Twin decision and cannot be copied without inventing the unresolved 6.5.3 social-hub wording.
@@ -254,6 +254,22 @@ Changed-state observations stay in personal Fit History but are excluded from no
 - Similar Garments requires trustworthy controlled overlap rather than a one-member coincidence.
 - Member garment evidence is recorded atomically only after the garment/fit log succeeds.
 
+### Retail links / affiliate shopping — OWNER LOCKED
+- A canonical Product may have **zero, one, or multiple** valid retailer listings/links. Retailer URLs are attached listing/destination data and never become Product identity.
+- Member/user-provided retailer URLs are allowed only after URL validation/normalization and retailer/domain recognition. LikeSized stores the clean destination canonically; members never need to provide an affiliate-formatted URL.
+- The member-facing UI shows a clean retailer name such as **Nordstrom**, **Macy's**, or **Levi's**. Do **not** expose a raw retail URL as the shopping label.
+- **Zero valid retail links:** do not render a cart/shop action anywhere for that Product. No disabled button, placeholder, or dead-end shop control.
+- **Exactly one valid retail link:** the cart/shop action routes directly to that retailer.
+- **Multiple valid retail links:** the cart/shop action opens a compact retailer picker listing the valid retailers for that exact canonical Product; the member chooses where to buy.
+- Do not silently choose or rank a retailer because it pays LikeSized a larger commission. If retailer ordering is later enhanced, use shopper-value signals such as exact variant match, availability, or price only when those data are reliable.
+- Wherever a garment image has normal actions, a valid retail link adds the shopping-cart action alongside **Like** and **Wishlist**. With no retail link, the cart action disappears.
+- Under Fit Reports, show **Shop Here** only when at least one valid retail link exists. With multiple links it uses the same retailer picker.
+- Wishlist/Gift List shopping actions follow the same rule: show only when a valid retail destination exists; multiple destinations use the same retailer picker.
+- Outbound eligible retail links may be monetized automatically through the planned affiliate layer (initially Skimlinks-style aggregation) and may later use direct affiliate-program overrides. The canonical clean destination must remain provider-independent so changing monetization providers does not require rewriting Product identity/data.
+- A legitimate retailer link that is not currently monetizable may still function as a normal outbound shopping link; monetization eligibility must not determine whether an otherwise valid retailer is presented.
+- Affiliate/outbound click tracking may use internal source identifiers for surfaces such as Fit Report, Browse, Wishlist/Gift List, Closet, or Fit Twin context, but must not expose private body measurements to retailers/affiliate providers.
+- Small disclosure copy is locked as: **“LikeSized may earn a commission from purchases made through our shopping links.”** Display it unobtrusively but visibly wherever needed for the shopping/affiliate experience; do not hide the material relationship.
+
 ### Actual garment measurements — OWNER DEFERRED
 - V1 must work without manufacturer physical garment measurements/specs.
 - Generic brand body-size charts are not actual garment measurements/ease.
@@ -346,10 +362,11 @@ Notify is not a permanent normal garment-card action. It belongs to the insuffic
 - wearer line uses Display Name/photo where available and includes size + Fit Result.
 - **Heart = Like.**
 - **Wishlist control = wishlist/save action.** The exact relationship/naming between this control, LikeLocker, and future Gift Lists must be resolved before implementation; do not silently invent a second save graph.
+- **Shopping cart = retail action only when at least one valid retail link exists.** One link routes directly; multiple links open the retailer picker; no link means the cart is absent.
 - **Notify is NOT always shown when Fit Matches exist.** It appears in the insufficient/no-useful-fit-match fallback state.
 - product/image tap → Garment Quick-Detail.
 - wearer identity tap → Wearer Mini Profile.
-- Like/Wishlist/Notify are independent targets and must never open detail accidentally.
+- Like/Wishlist/Shopping/Notify are independent targets and must never open detail accidentally.
 - no stars.
 
 ### Mobile mini-browser
@@ -374,7 +391,8 @@ The prior mobile preview is **NOT ACCEPTED**. Owner found blocking issues includ
 - owner-controlled sharing only;
 - random member search must never reveal another member's recommended size;
 - raw measurements never shared;
-- below sufficient confidence, say there is not enough fit data rather than invent a size.
+- below sufficient confidence, say there is not enough fit data rather than invent a size;
+- when a Gift List item has a valid retail destination, expose the same Shop action used elsewhere; one retailer routes directly and multiple retailers open the shared retailer picker.
 
 ## Outfits — V1 RETAINED
 - prior remove-Outfits decision is superseded;

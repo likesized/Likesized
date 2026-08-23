@@ -53,8 +53,8 @@ export default async function NotificationsPage({searchParams}:{searchParams:Sea
   return <main className="pageShell">
     <div className="pageTitle">
       <span className="eyebrow">NOTIFICATIONS</span>
-      <h1>New fit activity from people you follow.</h1>
-      <p>In-app alerts for new Shared garments, fit updates, and outfits from people you follow. Following is separate from Fit Twin status. Likes never generate alerts, and V1 does not send these by email or phone push.</p>
+      <h1>What’s new for you.</h1>
+      <p>Updates from people you follow and products you’re watching.</p>
       <div className={styles.toolbar}>
         <Link className="secondaryButton" href="/following">Following Feed</Link>
         <Link className="secondaryButton" href="/settings">Notification settings</Link>

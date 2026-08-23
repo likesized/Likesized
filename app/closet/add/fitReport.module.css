@@ -8,6 +8,18 @@
 
 .form {
   position: relative;
+  gap: 24px;
+}
+
+.form label > input,
+.form label > select,
+.form label > textarea {
+  margin-top: 8px;
+}
+
+.form :global(.fieldHelp) {
+  margin-top: 8px;
+  line-height: 1.45;
 }
 
 .validationSummary {
@@ -92,28 +104,14 @@
 }
 
 .catalogDetails {
-  gap: 18px;
+  gap: 22px;
 }
 
 .catalogDetails :global(.fieldPair) {
   margin-bottom: 0;
 }
 
-.changeThis {
-  width: fit-content;
-  margin-top: 7px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--accent-dark, var(--ink));
-  font: inherit;
-  font-size: 12px;
-  font-weight: 900;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
+.editableField,
 .itemField {
   position: relative;
   display: grid;
@@ -121,16 +119,54 @@
   min-width: 0;
 }
 
-.itemSuggestionDropdown {
+.editableField > label,
+.itemField > .itemSearchArea {
+  min-width: 0;
+}
+
+.changeThis {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  width: auto;
+  max-width: 88px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-dark, var(--ink));
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.itemSearchArea {
   position: relative;
-  z-index: 10;
+  min-width: 0;
+}
+
+.itemSearchArea > label {
+  display: block;
+}
+
+.itemSuggestionDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 30;
   display: grid;
   overflow: hidden;
-  margin-top: -3px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--white);
-  box-shadow: 0 14px 36px rgba(18, 18, 18, 0.12);
+  box-shadow: 0 14px 36px rgba(18, 18, 18, 0.16);
 }
 
 .itemSuggestionDropdown :global(.catalogSuggestion) {
@@ -156,7 +192,7 @@
   line-height: 1.35;
 }
 
-.uncertaintyCheck input {
+.form .uncertaintyCheck input {
   width: auto;
   margin-top: 2px;
   flex: 0 0 auto;
@@ -333,12 +369,16 @@
 }
 
 .optionalDetailsBody {
-  gap: 18px;
-  padding: 20px;
+  gap: 22px;
+  padding: 24px;
 }
 
 .optionalDetailsBody :global(.privacyNote) {
   margin-top: 0;
+}
+
+.optionalDetailsBody :global(.fitDimensionFields) {
+  gap: 18px;
 }
 
 .sizeFields {
@@ -397,6 +437,10 @@
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
 }
 
+.reviewCard {
+  width: min(100%, 760px);
+}
+
 .successCard {
   text-align: center;
 }
@@ -440,22 +484,26 @@
 
 .reviewRows {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0 0 22px;
   border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
 }
 
 .reviewRow {
   display: grid;
-  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.4fr);
-  gap: 16px;
-  padding: 13px 0;
+  grid-template-columns: 1fr;
+  gap: 5px;
+  min-width: 0;
+  padding: 13px 14px;
+  border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   align-items: start;
 }
 
 .reviewRow span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -490,16 +538,30 @@
 }
 
 @media (max-width: 640px) {
+  .form {
+    gap: 28px;
+  }
+
   .catalogStart {
     padding: 32px 8px;
   }
 
+  .catalogDetails {
+    gap: 26px;
+  }
+
   .optionalSummary {
-    padding: 16px;
+    padding: 18px;
   }
 
   .optionalDetailsBody {
-    padding: 16px;
+    gap: 26px;
+    padding: 20px;
+  }
+
+  .optionalDetailsBody :global(.fitDimensionFields),
+  .optionalDetailsBody :global(.fieldPair) {
+    gap: 22px;
   }
 
   .sizePair,
@@ -510,12 +572,24 @@
     grid-template-columns: 1fr;
   }
 
+  .sizeFields,
+  .sizePair,
+  .sizeTriple,
+  .sizeEquation {
+    gap: 22px;
+  }
+
   .questionGrid {
     gap: 14px;
   }
 
   .itemDetailsFieldset {
     padding: 15px;
+  }
+
+  .photoEvidenceCard,
+  .identityEvidenceActions > div {
+    padding: 18px;
   }
 
   .successCard,
@@ -530,7 +604,7 @@
   .reviewRow {
     grid-template-columns: 1fr;
     gap: 4px;
-    padding: 11px 0;
+    padding: 11px 12px;
   }
 
   .successActions,
@@ -546,5 +620,11 @@
   .imageLightboxClose {
     top: 4px;
     right: 4px;
+  }
+}
+
+@media (max-width: 340px) {
+  .reviewRows {
+    grid-template-columns: 1fr;
   }
 }

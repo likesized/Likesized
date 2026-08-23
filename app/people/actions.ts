@@ -75,23 +75,25 @@ export async function unfollowPerson(formData: FormData) {
   redirect(returnTo);
 }
 
-export async function setFollowingNotificationMute(formData: FormData) {
+export async function setFollowingNotificationSubscription(formData: FormData) {
   const targetUserId = String(formData.get("target_user_id") ?? "");
-  const muted = String(formData.get("muted") ?? "") === "true";
+  const enabled = String(formData.get("enabled") ?? "") === "true";
   const returnTo = safeReturnPath(formData.get("return_to"));
   const { supabase, userId } = await authenticatedUserId();
   if (!targetUserId || targetUserId === userId) redirect(returnTo);
 
-  // Legacy RPC name is preserved until database-identifier cleanup; behavior is per followed person.
-  const { error } = await supabase.rpc("set_fit_twin_notification_mute", {
+  const { error } = await supabase.rpc("set_following_notification_subscription", {
     p_followed_id: targetUserId,
-    p_muted: muted,
+    p_enabled: enabled,
   });
   if (error) {
     redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}notifications=error`);
   }
 
+  revalidatePath("/people");
+  revalidatePath(returnTo);
   revalidatePath("/following");
+  revalidatePath("/outfits");
   revalidatePath("/notifications");
   redirect(returnTo);
 }

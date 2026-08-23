@@ -80,8 +80,7 @@ test("every Product has one multi-purpose report action and trust-aware review p
 test("barcode confirmation prioritizes Product imagery, then a shared Fit Photo, then a placeholder",()=>{
  assert.match(exceptionReviewMigration,/get_scan_match_image_source/);
  assert.match(exceptionReviewMigration,/product_photo_url text,product_photo_storage_path text,fit_photo_storage_path text/);
- assert.match(catalogSearch,/if \(target\.preferredProductUrl\) return target\.preferredProductUrl/);
- assert.ok(catalogSearch.indexOf("row.product_photo_storage_path") < catalogSearch.indexOf('"fit-reference-photos"'));
+ assert.match(catalogSearch,/async function scanMatchImage[\s\S]*if \(target\.preferredProductUrl\) return target\.preferredProductUrl[\s\S]*if \(row\.product_photo_url\) return row\.product_photo_url[\s\S]*if \(row\.product_photo_storage_path\)[\s\S]*return signedStorageUrl\(supabase, "fit-reference-photos", row\.fit_photo_storage_path\)/);
  assert.match(catalogFields,/image_url: body\.barcode_match\.image_url/);
  assert.match(catalogFields,/barcodeMatch\.candidate\.image_url/);
  assert.match(catalogFields,/matchImage \? <img[^>]+> : <div className="garmentThumb"/);

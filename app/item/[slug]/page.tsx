@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { reportProductItem } from "./actions";
 import { createClient } from "@/lib/supabase/server";
 import { EVIDENCE_LABELS, type EvidenceLevel } from "@/lib/domain";
 import { recommendSize, recommendationConfidenceLabel, type PreferredFit, type RecommendationEvidence } from "@/lib/recommendation";
@@ -25,6 +26,7 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
   const {slug}=await params;
   const query=await searchParams;
   const requestedVariant=first(query.variant)?.trim()||null;
+  const reported=first(query.reported)==="1";
   const supabase=await createClient();
   const {data:claimsData,error:claimsError}=await supabase.auth.getClaims();
   const viewerId=claimsData?.claims?.sub;
@@ -98,10 +100,21 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
   const fitCount=summary?.total_fit_count??0;
 
   return <main className="pageShell">
+    {reported?<div className="authMessage">Thanks. This item was flagged for review.</div>:null}
     <section className="itemHero"><div className="productImage">{placeholder}</div><div className="itemDetails"><span className="eyebrow">{brand?.name?.toUpperCase()||"BRAND"}{product.garment_type_key?` · ${product.garment_type_key.replaceAll("_"," ").toUpperCase()}`:""}</span><h1>{product.name}</h1><p>LikeSized keeps body Match % separate from physical Fit Result. Match % describes garment-relevant body similarity; it is not the probability that this garment will fit.</p>
       {fitCount?<div className="tiny">Latest Shared normal-condition physical fit per unique wearer: {percent(summary?.too_small_count??0,fitCount)}% Too small · {percent(summary?.snug_count??0,fitCount)}% Snug · {percent(summary?.just_right_count??0,fitCount)}% Just right · {percent(summary?.relaxed_count??0,fitCount)}% Relaxed · {percent(summary?.too_big_count??0,fitCount)}% Too big.</div>:<div className="tiny">No Shared normal-condition physical fit observations for this exact product yet.</div>}
       {recommendation?<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>{recommendation.sizeLabel}</strong><b>{recommendationConfidenceLabel(recommendation.confidence)}</b></div><div className="tiny">Personalized for your <b>{PREFERENCE_LABELS[fitPreference]}</b> fit preference. Based on {recommendation.similarWearerCount} similar wearer{recommendation.similarWearerCount===1?"":"s"}. Strongest supporting tier: {EVIDENCE_LABELS[recommendation.strongestEvidenceLevel]}.</div></>:<><div className="recommendation"><span>RECOMMENDED SIZE</span><strong>—</strong><b>Not enough relevant evidence yet</b></div><div className="tiny">Your {PREFERENCE_LABELS[fitPreference]} preference is ready to apply once enough eligible Shared historical fit evidence exists.</div></>}
       <div className="statsRow"><span><b>{ranked.length}</b> unique wearer{ranked.length===1?"":"s"}</span><span><b>{bestLevel?EVIDENCE_LABELS[bestLevel]:"—"}</b> strongest tier</span><span><b>{bestCount}</b> at strongest tier</span></div>
+      <details className="privacyNote">
+        <summary className="textLink">Report this item</summary>
+        <form className="garmentForm" action={reportProductItem}>
+          <input type="hidden" name="product_id" value={product.id}/>
+          <input type="hidden" name="return_to" value={requestedPath}/>
+          <label>What’s wrong?<select name="reason" defaultValue="" required><option value="" disabled>Select a reason</option><option value="inappropriate_content">Inappropriate content</option><option value="image_mismatch">Image doesn’t match this product</option><option value="incorrect_information">Incorrect product information</option><option value="other">Something else</option></select></label>
+          <label>Details <span className="muted inlineMuted">optional</span><textarea name="details" maxLength={500} rows={3} placeholder="Tell us what looks wrong."/></label>
+          <button className="secondaryButton" type="submit">Send report</button>
+        </form>
+      </details>
     </div></section>
 
     <section className="section flush"><div className="sectionHeading"><div><span className="eyebrow">EVIDENCE TARGET</span><h2>{selectedVariant?"Exact variant":"Exact product"}</h2><p>{selectedVariant?variantLabel(selectedVariant):"All known variants of this product. Choose a specific variant when size/color construction matters and you want Exact Variant evidence prioritized first."}</p></div></div>

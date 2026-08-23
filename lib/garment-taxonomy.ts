@@ -1,4 +1,4 @@
-export type GarmentCategoryKey = "tops" | "bottoms" | "dresses" | "outerwear" | "swimwear" | "intimates" | "shoes";
+export type GarmentCategoryKey = "tops" | "bottoms" | "dresses" | "outerwear" | "swimwear" | "intimates" | "sleepwear_lingerie" | "shoes";
 
 export type ControlledOption = { value: string; label: string };
 export type GarmentQuestion = { key: string; label: string; options: readonly ControlledOption[] };
@@ -20,6 +20,7 @@ export const GARMENT_CATEGORIES: ReadonlyArray<{ value: GarmentCategoryKey; labe
   { value: "outerwear", label: "Outerwear" },
   { value: "swimwear", label: "Swimwear" },
   { value: "intimates", label: "Intimates" },
+  { value: "sleepwear_lingerie", label: "Sleepwear & Lingerie" },
   { value: "shoes", label: "Shoes" },
 ];
 
@@ -34,6 +35,7 @@ export const COLOR_FAMILIES = options(
 const FIT_FITTED = options(["fitted", "Fitted"], ["regular", "Regular"], ["oversized", "Oversized"]);
 const FIT_SLIM = options(["slim", "Slim"], ["regular", "Regular"], ["relaxed", "Relaxed"]);
 const FIT_LOOSE = options(["fitted", "Fitted"], ["regular", "Regular"], ["loose", "Loose"]);
+const FIT_SLEEP = options(["fitted", "Fitted"], ["regular", "Regular"], ["relaxed", "Relaxed"]);
 const YES_NO = options(["yes", "Yes"], ["no", "No"]);
 const SLEEVE_STANDARD = options(["short", "Short"], ["three_quarter", "3/4"], ["long", "Long"]);
 const SLEEVE_WITH_NONE = options(["sleeveless", "Sleeveless"], ["short", "Short"], ["three_quarter", "3/4"], ["long", "Long"]);
@@ -114,6 +116,65 @@ export const GARMENT_TYPES: readonly GarmentTypeDefinition[] = [
   { key: "sports_bra", label: "Sports bra", category: "intimates", questions: [question("support", "Support", options(["light", "Light"], ["medium", "Medium"], ["high", "High"])), question("padding", "Padding", YES_NO), question("closure", "Closure", options(["pull_on", "Pull-on"], ["hook", "Hook"], ["zip", "Zip"])), question("coverage", "Coverage", COVERAGE)]},
   { key: "underwear", label: "Underwear", category: "intimates", questions: [question("underwear_cut", "Cut", options(["brief", "Brief"], ["bikini", "Bikini"], ["hipster", "Hipster"], ["boyshort", "Boyshort"], ["thong", "Thong"], ["boxer", "Boxer"], ["boxer_brief", "Boxer brief"], ["trunk", "Trunk"])), question("rise", "Rise", RISE), question("coverage", "Coverage", COVERAGE)]},
   { key: "shapewear", label: "Shapewear", category: "intimates", questions: [question("shapewear_form", "Form", options(["brief", "Brief"], ["shorts", "Shorts"], ["cami", "Cami"], ["bodysuit", "Bodysuit"])), question("target_area", "Target area", options(["waist", "Waist"], ["hips", "Hips"], ["thighs", "Thighs"], ["full_body", "Full body"])), question("compression", "Compression", options(["light", "Light"], ["medium", "Medium"], ["firm", "Firm"]))]},
+
+  { key: "pajama_pants", label: "Pajama pants", category: "sleepwear_lingerie", questions: [
+    question("intended_fit", "Intended fit", FIT_SLEEP), question("rise", "Rise", RISE),
+    question("length_profile", "Length", options(["cropped", "Cropped"], ["ankle", "Ankle"], ["full", "Full"], ["long", "Long"])),
+    question("waistband", "Waistband", options(["elastic", "Elastic"], ["drawstring", "Drawstring"], ["button_fly", "Button / fly"])),
+  ]},
+  { key: "pajama_shorts", label: "Pajama shorts", category: "sleepwear_lingerie", questions: [
+    question("intended_fit", "Intended fit", FIT_SLEEP), question("rise", "Rise", RISE),
+    question("length_profile", "Length", options(["short", "Short"], ["mid", "Mid"], ["long", "Long"])),
+    question("waistband", "Waistband", options(["elastic", "Elastic"], ["drawstring", "Drawstring"], ["button_fly", "Button / fly"])),
+  ]},
+  { key: "pajama_set", label: "Pajama set", category: "sleepwear_lingerie", questions: [
+    question("bottom_style", "Bottom style", options(["pants", "Pants"], ["shorts", "Shorts"])),
+    question("top_sleeve", "Top sleeve", options(["sleeveless", "Sleeveless"], ["short", "Short"], ["long", "Long"])),
+    question("intended_fit", "Intended fit", FIT_SLEEP),
+    question("top_closure", "Top closure", options(["pullover", "Pullover"], ["button", "Button"], ["zip", "Zip"])),
+  ]},
+  { key: "nightgown", label: "Nightgown", category: "sleepwear_lingerie", questions: [
+    question("shape", "Shape", options(["fitted", "Fitted"], ["regular", "Regular"], ["flowy", "Flowy"])),
+    question("length_profile", "Length", options(["mini", "Mini"], ["knee", "Knee"], ["midi", "Midi"], ["maxi", "Maxi"])),
+    question("top_sleeve", "Top / sleeve", options(["spaghetti_strap", "Spaghetti strap"], ["sleeveless", "Sleeveless"], ["short", "Short"], ["long", "Long"])),
+    question("bust_support", "Bust support", options(["none", "None"], ["light", "Light"], ["structured", "Structured"])),
+  ]},
+  { key: "robe", label: "Robe", category: "sleepwear_lingerie", questions: [
+    question("intended_fit", "Intended fit", options(["regular", "Regular"], ["relaxed", "Relaxed"], ["oversized", "Oversized"])),
+    question("length_profile", "Length", options(["short", "Short"], ["knee", "Knee"], ["midi", "Midi"], ["long", "Long"])),
+    question("sleeve_length", "Sleeve", SLEEVE_STANDARD),
+    question("closure", "Closure", options(["tie", "Tie"], ["button", "Button"], ["zip", "Zip"], ["open_front", "Open Front"])),
+  ]},
+  { key: "chemise", label: "Chemise", category: "sleepwear_lingerie", questions: [
+    question("shape", "Shape", options(["fitted", "Fitted"], ["regular", "Regular"], ["flowy", "Flowy"])),
+    question("length_profile", "Length", options(["mini", "Mini"], ["knee", "Knee"])),
+    question("top_strap", "Top / strap", options(["spaghetti_strap", "Spaghetti strap"], ["halter", "Halter"], ["sleeveless", "Sleeveless"], ["short", "Short sleeve"])),
+    question("bust_support", "Bust support", options(["none", "None"], ["light", "Light"], ["structured", "Structured"])),
+  ]},
+  { key: "babydoll", label: "Babydoll", category: "sleepwear_lingerie", questions: [
+    question("bust_support", "Bust support", options(["none", "None"], ["light", "Light"], ["structured", "Structured"])),
+    question("underbust_fit", "Underbust fit", options(["loose", "Loose"], ["elastic", "Elastic"], ["fitted", "Fitted"])),
+    question("length_profile", "Length", options(["mini", "Mini"], ["knee", "Knee"])),
+    question("top_strap", "Top / strap", options(["spaghetti_strap", "Spaghetti strap"], ["halter", "Halter"], ["sleeveless", "Sleeveless"], ["short", "Short sleeve"])),
+  ]},
+  { key: "teddy", label: "Teddy", category: "sleepwear_lingerie", questions: [
+    question("top_sleeve", "Top / sleeve", options(["strapless", "Strapless"], ["halter", "Halter"], ["sleeveless", "Sleeveless"], ["short", "Short"], ["long", "Long"])),
+    question("neckline_height", "Neckline", HIGH_LOW),
+    question("bottom_coverage", "Bottom coverage", options(["thong", "Thong"], ["brief", "Brief"], ["full", "Full"])),
+    question("closure", "Closure", options(["pull_on", "Pull-on"], ["snap", "Snap"], ["hook", "Hook"])),
+  ]},
+  { key: "corset_bustier", label: "Corset & bustier", category: "sleepwear_lingerie", questions: [
+    question("corset_style", "Style", options(["corset", "Corset"], ["bustier", "Bustier"], ["longline_bustier", "Longline bustier"])),
+    question("corset_structure", "Structure", options(["soft", "Soft"], ["boned", "Boned"])),
+    question("closure", "Closure", options(["lace_up", "Lace-up"], ["hook_eye", "Hook & eye"], ["front_busk", "Front busk"], ["zip", "Zip"])),
+    question("length_profile", "Length", options(["waist", "Waist"], ["hip", "Hip"], ["longline", "Longline"])),
+  ]},
+  { key: "costume_lingerie", label: "Costume lingerie", category: "sleepwear_lingerie", questions: [
+    question("garment_form", "Garment form", options(["one_piece", "One-piece"], ["two_piece_set", "Two-piece set"], ["multi_piece_set", "Multi-piece set"])),
+    question("lingerie_top_style", "Top style", options(["bra", "Bra"], ["bralette", "Bralette"], ["corset_bustier", "Corset or bustier"], ["cami_top", "Cami or top"], ["halter", "Halter"], ["dress_style", "Dress-style"], ["no_separate_top", "No separate top"])),
+    question("lingerie_bottom_style", "Bottom style", options(["thong", "Thong"], ["brief", "Brief"], ["shorts", "Shorts"], ["skirt", "Skirt"], ["garter_style", "Garter-style"], ["no_separate_bottom", "No separate bottom"])),
+    question("structure_support", "Structure / Support", options(["soft_stretchy", "Soft / Stretchy"], ["light_support", "Light Support"], ["structured", "Structured"], ["boned", "Boned"])),
+  ]},
 
   { key: "sneakers", label: "Sneakers", category: "shoes", questions: [question("shoe_height", "Height", options(["low", "Low"], ["mid", "Mid"], ["high", "High"])), question("shoe_use", "Use", options(["casual", "Casual"], ["running", "Running"], ["training", "Training"], ["court", "Court"])), question("shoe_closure", "Closure", options(["lace", "Lace"], ["slip_on", "Slip-on"], ["hook_loop", "Hook-and-loop"]))]},
   { key: "boots", label: "Boots", category: "shoes", questions: [question("boot_style", "Style", options(["casual", "Casual"], ["work", "Work"], ["hiking", "Hiking"], ["combat", "Combat"], ["cowboy", "Cowboy"], ["dress", "Dress"], ["rain", "Rain"], ["snow", "Snow"])), question("boot_height", "Height", options(["ankle", "Ankle"], ["mid_calf", "Mid-calf"], ["knee", "Knee"], ["over_knee", "Over-the-knee"])), question("heel_height", "Heel", options(["flat", "Flat"], ["low", "Low"], ["mid", "Mid"], ["high", "High"])), question("shoe_closure", "Closure", options(["pull_on", "Pull-on"], ["zip", "Zip"], ["lace", "Lace"]))]},

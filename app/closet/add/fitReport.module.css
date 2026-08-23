@@ -91,6 +91,14 @@
   margin-right: auto;
 }
 
+.catalogDetails {
+  gap: 18px;
+}
+
+.catalogDetails :global(.fieldPair) {
+  margin-bottom: 0;
+}
+
 .optionalDetails {
   overflow: hidden;
   border: 1px solid var(--line);
@@ -134,6 +142,10 @@
   padding: 20px;
 }
 
+.optionalDetailsBody :global(.privacyNote) {
+  margin-top: 0;
+}
+
 .sizeFields {
   display: grid;
   gap: 18px;
@@ -166,7 +178,8 @@
   font-weight: 900;
 }
 
-.successOverlay {
+.successOverlay,
+.reviewOverlay {
   position: fixed;
   inset: 0;
   z-index: 100;
@@ -176,14 +189,20 @@
   background: rgba(18, 18, 18, 0.56);
 }
 
-.successCard {
+.successCard,
+.reviewCard {
   position: relative;
   width: min(100%, 560px);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
   padding: 44px 34px 34px;
   border: 1px solid var(--line);
   border-radius: 24px;
   background: var(--white);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+}
+
+.successCard {
   text-align: center;
 }
 
@@ -206,7 +225,8 @@
   cursor: pointer;
 }
 
-.successCard h2 {
+.successCard h2,
+.reviewCard h2 {
   margin-bottom: 14px;
 }
 
@@ -217,11 +237,60 @@
   line-height: 1.5;
 }
 
-.successActions {
+.reviewCard p {
+  margin: 0 0 22px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.reviewRows {
+  display: grid;
+  margin: 0 0 22px;
+  border-top: 1px solid var(--line);
+}
+
+.reviewRow {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.4fr);
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+  align-items: start;
+}
+
+.reviewRow span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.reviewRow b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.previewNote {
+  margin: -4px 0 20px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.successActions,
+.reviewActions {
   display: flex;
   justify-content: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.reviewActions {
+  justify-content: flex-end;
 }
 
 @media (max-width: 640px) {
@@ -242,11 +311,27 @@
     grid-template-columns: 1fr;
   }
 
-  .successActions {
+  .successCard,
+  .reviewCard {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+    padding: 30px 20px 20px;
+    border-radius: 20px;
+  }
+
+  .reviewRow {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 11px 0;
+  }
+
+  .successActions,
+  .reviewActions {
     display: grid;
   }
 
-  .successActions button {
+  .successActions button,
+  .reviewActions button {
     width: 100%;
   }
 }

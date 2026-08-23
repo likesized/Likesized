@@ -2,7 +2,23 @@
   display: none;
 }
 
+:global(.fitForm label:has(input[name="username"]))::after {
+  content: "3–32 characters. Letters, numbers, and underscores only — no spaces.";
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
 @media (max-width: 900px) {
+  .revisitShell {
+    min-height: 0;
+    grid-template-rows: auto auto;
+    align-content: start;
+  }
+
   :global(.onboardingIntro).revisit {
     padding: 30px 7vw;
     min-height: 0;
@@ -27,7 +43,7 @@
 
 @media (max-width: 560px) {
   :global(.onboardingIntro).revisit {
-    padding-top: 26px;
-    padding-bottom: 26px;
+    padding-top: 22px;
+    padding-bottom: 22px;
   }
 }

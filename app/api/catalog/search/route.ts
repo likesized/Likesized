@@ -29,6 +29,11 @@ type BarcodeLookupRow = {
   image_url: string | null;
   identity_confidence: string;
 };
+type ScanImageSourceRow = {
+  product_photo_url: string | null;
+  product_photo_storage_path: string | null;
+  fit_photo_storage_path: string | null;
+};
 
 type DetailedProduct = {
   id: string;
@@ -67,6 +72,40 @@ async function detailedProducts(supabase: Awaited<ReturnType<typeof createClient
     const brandName = brand && typeof brand === "object" && "name" in brand && typeof brand.name === "string" ? brand.name : "";
     return brandName ? [{ ...product, default_size_kind: sizeKindById.get(id) ?? null, brand_name: brandName, brand: undefined }] : [];
   });
+}
+
+async function signedStorageUrl(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  bucket: "product-photos" | "catalog-submission-photos" | "fit-reference-photos",
+  path: string | null,
+) {
+  if (!path) return null;
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 30);
+  return error ? null : data?.signedUrl ?? null;
+}
+
+async function scanMatchImage(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  target: { productId?: string | null; candidateId?: string | null; preferredProductUrl?: string | null },
+) {
+  if (target.preferredProductUrl) return target.preferredProductUrl;
+  const { data, error } = await supabase.rpc("get_scan_match_image_source", {
+    p_product_id: target.productId ?? null,
+    p_candidate_id: target.candidateId ?? null,
+  });
+  if (error) throw error;
+  const row = ((Array.isArray(data) ? data[0] : data) ?? null) as ScanImageSourceRow | null;
+  if (!row) return null;
+  if (row.product_photo_url) return row.product_photo_url;
+  if (row.product_photo_storage_path) {
+    const productPhoto = await signedStorageUrl(
+      supabase,
+      target.candidateId ? "catalog-submission-photos" : "product-photos",
+      row.product_photo_storage_path,
+    );
+    if (productPhoto) return productPhoto;
+  }
+  return signedStorageUrl(supabase, "fit-reference-photos", row.fit_photo_storage_path);
 }
 
 async function matchingProductAliasIds(
@@ -108,11 +147,20 @@ export async function GET(request: Request) {
       const match = (Array.isArray(matchData) ? matchData[0] : matchData) as BarcodeLookupRow | null;
       if (!match) return NextResponse.json({ local: [] });
       if (match.match_kind === "product" && match.product_id) {
-        const local = await detailedProducts(supabase, [match.product_id]);
+        let local = await detailedProducts(supabase, [match.product_id]);
+        if (local[0]) {
+          const imageUrl = await scanMatchImage(supabase, {
+            productId: match.product_id,
+            preferredProductUrl: local[0].image_url,
+          });
+          local = [{ ...local[0], image_url: imageUrl }];
+          match.image_url = imageUrl;
+        }
         return NextResponse.json({ local, barcode_match: match });
       }
       if (match.match_kind === "candidate" && match.candidate_id) {
-        return NextResponse.json({ local: [], barcode_match: match });
+        const imageUrl = await scanMatchImage(supabase, { candidateId: match.candidate_id });
+        return NextResponse.json({ local: [], barcode_match: { ...match, image_url: imageUrl } });
       }
       return NextResponse.json({ local: [] });
     }

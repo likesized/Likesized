@@ -5,7 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { ReportContentForm } from "@/components/ReportContentForm";
 import styles from "./circle.module.css";
 
+type SearchParams = Promise<Record<string,string|string[]|undefined>>;
 type Category = "overall" | "tops" | "bottoms";
+type FitCommunity = "men" | "women" | "both";
 type FeedRow = {
   activity_id: string;
   activity_type: "closet_shared" | "fit_report_added" | "outfit_posted";
@@ -35,6 +37,11 @@ const FIT: Record<string, string> = {
   relaxed: "Relaxed",
   too_big: "Too big",
 };
+const COMMUNITY_LABELS:Record<FitCommunity,string>={men:"Men",women:"Women",both:"Both"};
+function first(value:string|string[]|undefined){return Array.isArray(value)?value[0]:value;}
+function requestedCommunity(value:string|undefined):FitCommunity|null{return value==="men"||value==="women"||value==="both"?value:null;}
+function savedCommunity(value:unknown):FitCommunity{return value==="men"||value==="women"?value:"both";}
+function circleHref(community:FitCommunity){return `/circle?community=${community}`;}
 function activity(type: FeedRow["activity_type"]) {
   if (type === "fit_report_added") return "Posted a new fit update";
   if (type === "outfit_posted") return "Posted a new outfit";
@@ -52,7 +59,9 @@ function note(value: string | null) {
   return value.length > 220 ? `${value.slice(0, 217).trimEnd()}…` : value;
 }
 
-export default async function MyCirclePage() {
+export default async function MyCirclePage({searchParams}:{searchParams:SearchParams}) {
+  const params=await searchParams;
+  const override=requestedCommunity(first(params.community));
   const supabase = await createClient();
   const { data: claims, error: claimsError } = await supabase.auth.getClaims();
   const viewerId = claims?.claims?.sub;
@@ -71,13 +80,14 @@ export default async function MyCirclePage() {
       .maybeSingle(),
     supabase
       .from("fit_profiles")
-      .select("completed_at")
+      .select("completed_at,fit_community")
       .eq("user_id", viewerId)
       .maybeSingle(),
-    supabase.rpc("get_following_feed", { p_result_limit: 50, p_before: null }),
+    supabase.rpc("get_following_feed", { p_result_limit: 50, p_before: null, p_fit_community:override }),
     supabase.rpc("get_fit_matches", {
       p_match_category: "overall",
       p_result_limit: 100,
+      p_fit_community:override,
     }),
     supabase
       .from("fit_twin_settings")
@@ -94,6 +104,7 @@ export default async function MyCirclePage() {
   )
     throw new Error("Could not load My Circle.");
   if (!profile?.username || !fitProfile?.completed_at) redirect("/onboarding");
+  const community=override??savedCommunity(fitProfile.fit_community);
   const threshold = settings?.threshold_percent ?? 85;
   const overall = new Map(
     ((matchData ?? []) as Match[]).map((row) => [row.user_id, row.match_score]),
@@ -164,10 +175,14 @@ export default async function MyCirclePage() {
           follow—without duplicates.
         </p>
         <div className="authActions">
-          <Link className="secondaryButton" href="/people">
+          <Link className="secondaryButton" href={`/people?community=${community}`}>
             Find people my size
           </Link>
         </div>
+      </div>
+      <span className="muted">Fit Community · defaults to your Fit Profile. This filters by the member wearing/posting the clothing, not by the garment’s Men’s or Women’s Department.</span>
+      <div className="filterBar">
+        {(Object.keys(COMMUNITY_LABELS) as FitCommunity[]).map((key)=><Link key={key} className={`filter${community===key?" active":""}`} href={circleHref(key)}>{COMMUNITY_LABELS[key]}</Link>)}
       </div>
       <section className="emptyState">
         <span className="eyebrow">FIT TWINS</span>
@@ -177,14 +192,13 @@ export default async function MyCirclePage() {
             : "No followed person qualifies yet—and that is okay."}
         </h2>
         <p>
-          For this preview, a Fit Twin is someone you follow with an Overall
-          Match of at least {threshold}%. The threshold is configurable and can
-          be calibrated as LikeSized gathers more evidence.
+          A Fit Twin is someone in this Fit Community whom you follow with an Overall
+          Match of at least {threshold}%. Switching Men, Women, or Both changes only this view.
         </p>
       </section>
       <div className="pageTitle">
         <span className="eyebrow">STYLE FEED</span>
-        <h2>Fit Twins first. The rest of your following fills the feed.</h2>
+        <h2>Fit Twins first. The rest of your relevant following fills the feed.</h2>
       </div>
       {feed.length ? (
         <div className={styles.feed}>
@@ -280,7 +294,7 @@ export default async function MyCirclePage() {
                         <ReportContentForm
                           targetType="fit_reference_photo"
                           targetId={fitPaths.get(row.closet_item_id)!.id}
-                          returnTo="/circle"
+                          returnTo={circleHref(community)}
                         />
                       ) : null}
                       <div className={styles.context}>
@@ -321,7 +335,7 @@ export default async function MyCirclePage() {
                         <ReportContentForm
                           targetType="outfit_post"
                           targetId={row.outfit_post_id}
-                          returnTo="/circle"
+                          returnTo={circleHref(community)}
                         />
                       ) : null}
                     </>
@@ -337,9 +351,9 @@ export default async function MyCirclePage() {
           <h2>Follow people to bring their posts into My Circle.</h2>
           <p>
             Fit Twins will automatically move to the front when a followed
-            person meets the current threshold.
+            person in this Fit Community meets the current threshold.
           </p>
-          <Link className="primaryButton" href="/people">
+          <Link className="primaryButton" href={`/people?community=${community}`}>
             Find people my size →
           </Link>
         </div>

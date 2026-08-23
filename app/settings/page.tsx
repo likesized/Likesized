@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { saveFollowingNotificationSettings } from "@/app/settings/actions";
+import { saveFitCommunitySettings, saveFollowingNotificationSettings } from "@/app/settings/actions";
 import { ProfileIdentityForm } from "@/app/settings/ProfileIdentityForm";
 import { ProfilePhotoForm } from "@/app/settings/ProfilePhotoForm";
 import { UsernameSettingsForm } from "@/app/settings/UsernameSettingsForm";
@@ -7,7 +7,9 @@ import styles from "@/app/settings/settings.module.css";
 import { createClient } from "@/lib/supabase/server";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+type FitCommunity = "men"|"women"|"both";
 function first(value:string|string[]|undefined){return Array.isArray(value)?value[0]:value;}
+function communityValue(value:unknown):FitCommunity{return value==="men"||value==="women"?value:"both";}
 
 export default async function SettingsPage({searchParams}:{searchParams:SearchParams}){
   const supabase=await createClient();
@@ -17,7 +19,7 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
 
   const [{data:profile,error:profileError},{data:fitProfile,error:fitError},{data:notificationSettings,error:notificationSettingsError}]=await Promise.all([
     supabase.from("profiles").select("username,display_name,bio,avatar_url").eq("id",userId).maybeSingle(),
-    supabase.from("fit_profiles").select("completed_at").eq("user_id",userId).maybeSingle(),
+    supabase.from("fit_profiles").select("completed_at,fit_community").eq("user_id",userId).maybeSingle(),
     supabase.rpc("get_fit_twin_notification_settings"),
   ]);
   if(profileError||fitError||notificationSettingsError)throw new Error("Could not load profile settings.");
@@ -32,11 +34,13 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
   const params=await searchParams;
   const saved=first(params.saved)==="1";
   const usernameSaved=first(params.username)==="saved";
+  const communitySaved=first(params.community)==="saved";
   const photoState=first(params.photo);
   const notificationState=first(params.notifications);
   const error=first(params.error);
-  const errorMessage=error==="invalid_profile"?"Display name or bio is too long.":error==="save_failed"?"Your profile settings could not be saved.":error==="username_locked"?"Click Change username before editing your username.":error==="invalid_username"?"Choose a username with 3–32 letters, numbers, or underscores.":error==="username_taken"?"That username is already taken or temporarily reserved. Try another one.":error==="username_save_failed"?"Your username could not be changed.":error==="invalid_profile_photo"?"Choose a valid profile photo and try again.":error==="profile_photo_save_failed"?"Your profile photo could not be saved. Try again in a moment.":error==="notification_save_failed"?"Your notification preference could not be saved.":null;
+  const errorMessage=error==="invalid_profile"?"Display name or bio is too long.":error==="save_failed"?"Your profile settings could not be saved.":error==="username_locked"?"Click Change username before editing your username.":error==="invalid_username"?"Choose a username with 3–32 letters, numbers, or underscores.":error==="username_taken"?"That username is already taken or temporarily reserved. Try another one.":error==="username_save_failed"?"Your username could not be changed.":error==="invalid_fit_community"?"Choose Men, Women, or Both for your Fit Community.":error==="fit_community_save_failed"?"Your Fit Community could not be saved.":error==="invalid_profile_photo"?"Choose a valid profile photo and try again.":error==="profile_photo_save_failed"?"Your profile photo could not be saved. Try again in a moment.":error==="notification_save_failed"?"Your notification preference could not be saved.":null;
   const notificationsEnabled=notificationSettings?.[0]?.fit_twin_activity_enabled===true;
+  const fitCommunity=communityValue(fitProfile.fit_community);
   const fallbackInitial=(profile.display_name?.trim()||profile.username).slice(0,1).toUpperCase();
 
   return <main className="pageShell">
@@ -44,6 +48,7 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
 
     {saved?<div className="authMessage">Profile settings saved.</div>:null}
     {usernameSaved?<div className="authMessage">Username updated.</div>:null}
+    {communitySaved?<div className="authMessage">Fit Community updated.</div>:null}
     {photoState==="saved"?<div className="authMessage">Profile photo updated.</div>:null}
     {photoState==="removed"?<div className="authMessage">Profile photo removed.</div>:null}
     {notificationState==="on"?<div className="authMessage">Following notifications turned on.</div>:null}
@@ -59,6 +64,19 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
     <section className="section">
       <div className="sectionHeading"><div><span className="eyebrow">ACCOUNT</span><h2>Username</h2></div></div>
       <UsernameSettingsForm username={profile.username} />
+    </section>
+
+    <section className="section">
+      <div className="sectionHeading"><div><span className="eyebrow">FIT COMMUNITY</span><h2>Your personalized default</h2></div></div>
+      <div className="evidenceList">
+        <div className={`evidence ${styles.settingsEvidence}`}>
+          <div><strong>Choose Men, Women, or Both</strong><span>This controls which member-fit community LikeSized prioritizes in People My Size, Fit Twin suggestions, and your personalized social feed. It never changes your body Match %. A member can still post clothing from any garment Department.</span></div>
+          <form action={saveFitCommunitySettings}>
+            <label>Fit Community<select name="fit_community" defaultValue={fitCommunity} required><option value="men">Men</option><option value="women">Women</option><option value="both">Both</option></select></label>
+            <button className="primaryButton" type="submit">Save Fit Community</button>
+          </form>
+        </div>
+      </div>
     </section>
 
     <section id="notifications" className={`section ${styles.notificationSection}`}>

@@ -12,351 +12,237 @@ Ordered SQL files in `supabase/migrations/` are the executable database history 
 This file owns current database behavior/privacy plus explicit implementation debt. Product meaning lives in `docs/V1_PRODUCT_SPEC.md`; roadmap/status/audit order live in `docs/AI_MASTER_LOG.md`.
 
 # Production checkpoint — 2026-08-23
-
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-Latest observed applied migration tail:
-- `20260823054933` — `generalize_catalog_identity_confidence` — canonical local source `20260823040000_generalize_catalog_identity_confidence.sql`
-- `20260823031701` — `require_two_confirmed_barcode_submitters`
-- `20260823031508` — `barcode_confirmation_corroboration`
-- `20260823023807` — `one_shot_matched_product_notifications`
-- `20260823015741` — `default_following_notifications_off`
-- `20260823015601` — `explicit_following_notification_opt_in`
-- `20260823010127` — `add_member_profile_photo_storage`
-- `20260822231014` — `restore_state_based_body_report_identity`
-- `20260822230502` — `compare_body_change_to_latest_report` — historical applied experiment, superseded by the later restore migration
-- `20260822225515` — `roll_fit_report_body_identity_baseline`
-- `20260822224350` — `fix_body_identity_conflict_target`
-- `20260822223342` — `garment_relevant_body_report_identity`
-- `20260822210009` — `count_all_distinct_fit_situations`
-- `20260822205854` — `consensus_material_defaults_and_identity_flags`
-- `20260822203208` — `accept_report_scoped_attribute_variants`
-- `20260822203048` — `harden_report_scoped_evidence_writer`
-- `20260822202955` — `fit_report_variant_deduplication`
-- `20260822195045` — `add_product_size_kind_default_rpc`
-- submission-first catalog/admin migrations are also applied in production.
+Latest confirmed production catalog-confidence migration before PR #51 is `20260823054933 generalize_catalog_identity_confidence`, sourced from canonical local `supabase/migrations/20260823040000_generalize_catalog_identity_confidence.sql`. Earlier barcode, notification, body-state and catalog migrations remain immutable applied history.
 
-Local migration filenames remain the canonical replay history. Supabase-assigned production timestamps may differ from local filenames; do not rename applied local files to match generated production timestamps.
+The following PR #51 migrations are **branch-only until explicitly applied to production**:
+- `20260823130000_add_sleepwear_lingerie_category.sql`
+- `20260823130100_purchase_context_and_sleepwear_taxonomy.sql`
+- `20260823140000_add_fit_community_preference.sql`
+- `20260823150000_auto_post_provisional_products_and_item_reporting.sql`
 
-## Generalized catalog identity confidence — LIVE PRODUCTION
-
-Production migration `20260823054933 generalize_catalog_identity_confidence` is the applied Supabase record for canonical local migration `supabase/migrations/20260823040000_generalize_catalog_identity_confidence.sql`.
-
-This later additive migration replaces the older barcode-gated Product-level meaning with the generalized community-confidence model described below while preserving the already-applied barcode migrations as immutable history. The implementation passed canonical integrity, TypeScript/application safeguards, production build, fresh migration replay, and the full pgTAP/database suite before deployment.
+Do not describe these structures/behaviors as live merely because they exist on the branch. Supabase-assigned production timestamps may differ from local canonical filenames; never rename local applied migration history to chase generated timestamps.
 
 # 1. Privacy / body-state foundations
-
 - `profiles` stores member identity under authenticated-member authorization boundaries.
 - `fit_profiles` is a shell; raw body values live in normalized owner-private measurement structures.
-- immutable Fit Profile version tables preserve historical owner-private body state.
+- Immutable Fit Profile version tables preserve historical private body state.
 - `fit_reports.fit_profile_version_id` is the immutable original try-on snapshot.
-- `fit_reports.match_fit_profile_version_id` is the current match/body-state evidence pointer for safe enrichment/rolling behavior and does not rewrite the original historical snapshot.
+- `fit_reports.match_fit_profile_version_id` is the active matching/body-state evidence pointer and does not rewrite original history.
 - `private.fit_report_body_identity_measurements` stores established Product-relevant comparison baselines.
-- raw current/historical body measurements and private size references are never exposed to other members.
-- current-person Match and historical-garment Match return derived scores/context only.
+- Raw current/historical body measurements and private size references are never exposed to other members.
+- Current-person Match and historical-garment Match expose only derived safe values.
 
-## Public Closet target — OWNER LOCKED, LEGACY DB VISIBILITY STILL PRESENT
+## Fit Community — PR #51 branch behavior
+`public.fit_community` controls Men / Women / Both. `fit_profiles.fit_community` stores the member's private default. Current-person/social RPCs accept an explicit view override without making this value part of body Match math.
 
-Current owner-approved product meaning is one public member Closet:
-- every member garment and Fit Report is public member-facing content;
-- there is no intended Private / Shared garment visibility mode;
-- owner view differs only by owner-only management controls;
-- visitor view uses the same public garment/Fit Report data without those controls;
-- raw Fit Profile/body-state data remains private and must not be exposed by this change.
+Fit Community describes the person/wearer. It is not Product Department. A member reviewing clothing from a different Department remains in their saved community.
 
-The current executable schema still contains legacy `closet_items.visibility` and existing RLS/tests/query paths that distinguish private/shared Closet content. Until a later canonical migration/RLS cleanup removes or neutralizes that legacy state, this contract must distinguish **current database implementation** from **owner-locked product target**. Do not interpret the legacy visibility column as current product meaning, and do not build a second Shared Closet system around it.
+# 2. Public Closet target — OWNER LOCKED, LEGACY VISIBILITY STILL PRESENT
+Owner-approved product meaning is one public member Closet:
+- member garments and Fit Reports are intended public member-facing content;
+- no intended per-garment Private / Shared product mode;
+- owner view adds owner-only controls;
+- visitor view uses the same garment/Fit Report data without mutation controls;
+- raw Fit Profile/body-state/private evidence remains protected.
 
-The Closet foundation audit must reconcile this canonically: preserve legitimate garment/Fit Report history, make member-facing garment/Fit Report reads consistently public, keep owner mutation boundaries intact, and continue protecting raw body/profile/private evidence tables.
+Current executable production schema still contains legacy `closet_items.visibility` and RLS/query paths that distinguish private/shared content. This is implementation debt, not current product meaning. Closet audit must reconcile it canonically without exposing raw body/private system data.
 
-# 2. Controlled taxonomy foundations
-
-- `garment_types`, `garment_attribute_definitions`, and `garment_attribute_options` hold database vocabulary aligned with `lib/garment-taxonomy.ts`.
-- `garment_types.intake_active` controls member-facing Type availability while preserving historical compatibility keys.
+# 3. Controlled taxonomy foundations
+- `garment_types`, `garment_attribute_definitions`, `garment_attribute_options` are the database vocabulary aligned to `lib/garment-taxonomy.ts`.
+- `garment_types.intake_active` controls current member-facing Type availability while preserving historical compatibility keys.
+- Overall Category is a controlled grouping; `garment_type_key` remains Product identity.
+- PR #51 adds Sleepwear & Lingerie with ten active Types: Pajama pants, Pajama shorts, Pajama set, Nightgown, Robe, Chemise, Babydoll, Teddy, Corset & bustier, Costume lingerie.
+- Sleep Shirt is absent; Sweatpants remains Bottoms; Bra/Bralette/Sports Bra/Underwear/Shapewear remain Intimates.
 - `color_families` stores controlled colors.
-- `product_variants.color_family_key` stores resolved Product/variant color where applicable.
-- `fit_reports.reported_condition` preserves New / Used / Altered.
-- Altered evidence remains history but is excluded from normal Product recommendation evidence.
-- Material is Product/report evidence, not a Match input.
+- Material remains evidence, not a Match input.
 
-# 3. Submission-first catalog
-
-The database separates:
+# 4. Submission-first catalog architecture
+Database layers remain:
 1. member garment submission / Fit Report;
-2. pending catalog candidate;
+2. catalog candidate staging/audit object;
 3. canonical Product.
 
-Members do not directly create canonical Products from manual fallback. In production, controlled system rules may automatically canonicalize a candidate after the owner-locked five-distinct-member threshold is satisfied.
+`garment_submissions` preserves member-provided identity/enrichment evidence. `catalog_candidates` holds staging/review state. `catalog_review_flags` holds exception evidence. `catalog_resolution_actions` records accountable system/admin resolution history.
 
-## Known Product
-- Closet item/Fit Report references the canonical Product.
-- Reviewed Product facts remain canonical.
-- Member disagreement becomes evidence/review rather than a silent Product overwrite.
+## PR #51 four-tier Product identity trust — branch behavior
+`20260823150000_auto_post_provisional_products_and_item_reporting.sql` changes the older five-member **publishing** gate while preserving the five-member milestone as stronger evidence.
 
-## Unresolved Product
-- `closet_items.product_id` and `fit_reports.product_id` may be NULL for unresolved submissions where permitted by canonical invariants/RLS.
-- `garment_submissions` preserves member-supplied identity/enrichment evidence.
-- `catalog_candidates` holds pending workflow state.
-- `catalog_review_flags` holds typed review reasons.
-- `catalog_resolution_actions` holds accountable admin/system resolution history.
-- unresolved member work remains usable without pretending Product identity is canonical.
-- ordinary exact-Product search/aggregation excludes unresolved pseudo-Products.
+A **clean unique first real member submission** may be materialized/mapped immediately to a canonical Product by the controlled system boundary. Publishing and Product identity trust are separate:
+- **Provisional — 1 distinct wearer**;
+- **Corroborated — 2–4 distinct wearers**;
+- **Established — 5+ distinct wearers**;
+- **Verified — authoritative/admin-reviewed only**.
 
-Candidate workflow states include `pending`, `needs_enrichment`, `needs_review`, and `merged`.
+Members still do not directly insert Product truth. Automatic posting runs through the same audited candidate→Product mapping architecture and records a system action.
 
-## Product identity confidence — LIVE PRODUCTION
+`products.identity_confirmation_count` stores the distinct member count currently attached through Product Fit Reports. `products.identity_trust_tier` stores the four-tier identity state. `private.refresh_product_identity_confidence(product_id)` recalculates those two fields from attached wearer evidence and authoritative Verified state.
 
-Product identity confidence does not depend on having a barcode.
+This identity tier is deliberately separate from `products.catalog_status`, which continues to carry broader field/catalog authority semantics. Wearer count must not silently promote description, material, Department, attributes or other Product facts.
 
-`catalog_candidates` tracks:
-- `identity_confidence` — provisional / corroborated / verified / rejected vocabulary;
-- `identity_confirmation_count` — distinct member submissions supporting the normalized candidate identity;
-- `identity_conflict_count` — independent open identity-review evidence currently gating automatic promotion;
-- `auto_promoted_at` — records threshold-driven system canonicalization.
+## Blocking pre-post ambiguity
+A candidate does not auto-post when blocking identity evidence already exists. Examples include:
+- multiple exact canonical Products for the normalized identity;
+- possible duplicate identity evidence;
+- competing barcode/identifier evidence;
+- reused canonical retailer-listing URL conflict;
+- other genuine identity ambiguity.
 
-Locked thresholds implemented in production:
-- 1 distinct member → provisional;
-- 2 distinct members → corroborated;
-- 5 distinct members → eligible for automatic map/create as a corroborated canonical Product;
-- verified is never granted automatically from member count.
+Such a candidate remains unresolved/Needs Review. This exception path is why `catalog_candidates` remains necessary even though routine clean items no longer await admin approval.
 
-Manual, barcode-assisted, and mixed submissions all count toward the Product identity threshold because the candidate identity is normalized Brand + Item + Garment Type.
+## Existing Product + later conflict
+A later report/conflict does not automatically delete, unpublish or rewrite an existing Product. It sets review evidence/state while the Product remains usable until an audited resolution changes it.
 
-Conflict gate:
-- fewer than five confirmations → no automatic Product creation;
-- five confirmations with one identity conflict may still promote, but the resulting Product remains marked for review and receives retained Product-level review visibility;
-- two or more independent identity conflicts block automatic promotion and move/keep the candidate at `needs_review`;
-- conflicts equal to or greater than confirmations also block automatic promotion;
-- existing confirmations are not erased by a conflict.
+# 5. Catalog review flags and priority — PR #51 branch behavior
+`catalog_review_flags` retains existing exception types and adds `member_report` plus:
+- `priority`: low / medium / high;
+- `priority_score`: 1 / 2 / 3.
 
-`private.auto_promote_catalog_candidate(candidate_id)` first reuses one exact existing canonical Product when possible. If no exact canonical Product exists and the candidate is eligible, it creates one corroborated Product and calls the same safe pending→canonical mapping boundary used by admin resolution. If multiple exact Products exist, it refuses to choose and flags ambiguity.
+Trust-aware priority rules:
+- Provisional Product (1 wearer) with a credible issue → High;
+- Corroborated Product (2–4 wearers) with a credible issue → High because the disagreement may still reveal an undiscovered Product problem;
+- Established Product (5+ wearers) → one isolated ordinary disagreement starts Low, a second independent signal escalates Medium, and three or more independent signals escalate High;
+- Verified Product → isolated ordinary reports start Low, with repeated independent signals escalating Medium/High;
+- unresolved non-verified candidate flags are High because something already blocked safe automatic materialization.
 
-`catalog_resolution_actions.actor_kind` distinguishes `admin` from `system`; automatic mapping/creation is audited as `auto_map_existing` / `auto_create_product`. System promotion never impersonates an admin.
+Competing identifiers, multiple identity conflicts and strong duplicate signals may escalate regardless of trust.
 
-Production uses a deferred post-submission constraint trigger so Product promotion evaluates only after `record_pending_garment_submission(...)` has finished preserving the member submission and running its existing conflict checks.
+`private.recalculate_product_review_priority` and `private.recalculate_candidate_review_priority` maintain current urgency. Triggers re-score flags when relevant evidence/status changes.
 
-## Narrow Corroborated-candidate defaults
+# 6. Member Product reporting — PR #51 branch behavior
+`public.report_product_item(product_id, reason, details)` is the one member-facing Product report boundary.
 
-`public.lookup_corroborated_candidate_defaults(brand, model, garment_type)` is an authenticated narrow New Fit Report boundary. It returns only one exact unresolved corroborated/verified candidate and its unique learned broad size-system kind. It does not make that candidate an ordinary Product search result.
+Controlled reasons:
+- `inappropriate_content`
+- `image_mismatch`
+- `incorrect_information`
+- `other`
 
-The candidate broad size-system helper counts distinct members per normalized size kind, excludes `not_sure`, and returns NULL on a top tie.
+The function creates/refreshes an open `member_report` flag for that reporter/Product, sets `products.catalog_review_needed=true`, and recalculates priority. It does not permit the reporter to rewrite Product fields.
 
-# 4. Canonical Product identity / aliases / identifiers
+The member-facing Product page exposes the corresponding **Report this item** UI.
 
-- `brands` and `products` are the one canonical Product graph.
-- reviewed `brand_aliases` and `product_aliases` normalize proven naming variants without creating duplicate public identities.
-- Product families are explicit compatible groups, not fuzzy-title buckets.
-- `product_identifiers` stores canonical UPC/barcode/other identifier relationships and carries source/status provenance.
-- Style/Article Number is evidence and is not globally unique Product identity by default.
-- `retailer_listings` is the one-to-many canonical retailer destination relationship for resolved Products/variants.
+# 7. Internal duplicate/identity signals
+Existing exact Product/barcode/retailer-link conflict checks remain review signals. PR #51 additionally includes a conservative same-brand/same-garment-type related-name detector after a new Product is posted.
 
-## Barcode relationship confidence — LIVE PRODUCTION
+The detector may add `possible_duplicate` review evidence but does **not** block a clean first Product post retroactively or automatically fuzzy-merge Products. Similarity is triage evidence only.
 
-Barcode confidence is separate from Product confidence.
+Future internal checks may expand to reviewed aliases, stronger link/identifier relationships or other safe signals, but must preserve conservative merge rules.
 
-- `private.product_barcode_evidence` stores private per-member Product-to-barcode evidence tied to that member's Product Fit Report.
-- first distinct member on a new Product/barcode relationship remains provisional and is not inserted as a canonical `product_identifiers` relationship;
-- a unique provisional relationship may still be recognized by `public.lookup_barcode_catalog_match(...)` so the next member can confirm/use the known Product;
-- after two distinct member Fit Reports support the same Product/barcode relationship, the barcode becomes a corroborated `product_identifiers` row;
-- one Product may have multiple independently corroborated barcodes;
-- a second legitimate barcode does not by itself flag the Product;
-- the same barcode corroborating toward competing Products marks both for review and does not silently reassign the barcode.
+# 8. Barcode relationship confidence and scanner imagery
+Barcode confidence remains separate from Product confidence.
 
-The New Fit Report known-Product save path calls `public.record_product_barcode_evidence(product_id, fit_report_id, barcode)` instead of immediately writing a member-entered barcode into `product_identifiers`.
+- `private.product_barcode_evidence` stores private per-member Product→barcode evidence tied to that member's Product Fit Report.
+- first distinct member on a new Product/barcode relationship remains provisional and is not yet canonical `product_identifiers` truth;
+- unique provisional barcode evidence may still recognize the Product for the next member;
+- second distinct member with corresponding Product Fit Report evidence corroborates the Product→barcode relationship;
+- one Product may have multiple corroborated barcodes;
+- competing Product claims for one barcode mark review evidence and never silently reassign it.
 
-`private.barcode_identity_confirmations` remains preserved from the already-applied scan-confirmation history and still records explicit **Is this the item?** interactions, but it no longer defines Product-level corroboration by itself in production.
+`private.barcode_identity_confirmations` remains immutable historical scan-confirmation evidence but does not define Product-level confidence by itself.
 
-Identity resolution remains conservative:
-- fuzzy title alone cannot force merge;
-- a barcode collision/ambiguity cannot silently choose a Product;
-- different Style/Article IDs may be variants/SKUs of one base Product;
-- one broad model word may hide multiple fit-distinct Products;
-- color/size/retailer differences normally do not define separate base Products.
+PR #51 adds `public.get_scan_match_image_source(product_id,candidate_id)` as a narrow authenticated scanner-identification boundary. Scanner image priority is:
+1. Product/catalog photo;
+2. public/shared member Fit Photo;
+3. application placeholder/default when neither exists.
 
-# 5. Fit Report counted identity — LIVE PRODUCTION
+The Fit Photo fallback never becomes canonical Product imagery or Product truth. Authenticated read policies permit scanner display of approved Product/catalog photo storage while shared Fit Photo access continues through its existing shared-photo boundary.
 
-`public.save_known_fit_report(...)` is the authoritative resolved-Product save boundary for counted Fit Report reuse/creation.
+# 9. Direct Product search
+`search_catalog_products` is the canonical broad textual Product search. Current direct Product search does not accept Fit Community or Department as a hidden gate.
 
-A compatible report lookup is scoped by:
+Therefore men's, women's and unisex Products may all appear when they match the direct search query. Fit Community is used by social/wearer discovery, not as a Product-search suppression rule.
+
+Ordinary Product search excludes rejected Product state and does not surface unresolved candidates as independent Products.
+
+# 10. Fit Report counted identity
+`public.save_known_fit_report(...)` is the authoritative resolved-Product save boundary.
+
+Compatible report identity uses:
 - authenticated member;
 - exact Product;
 - normalized Size;
-- `objective_variant_key`;
+- objective physical-answer fingerprint;
 - compatible garment-relevant body state.
 
-Color/variant ID is not part of counted report identity.
+Color, retailer, barcode, Product Photo, purchase context, Fit Result, Condition and notes are not independent counted identity dimensions.
 
 ## Objective fingerprint
-The application excludes filter-only `intended_fit` and `not_sure` positive claims from the objective fingerprint. A genuine physical controlled-answer change can create a distinct report while Intended Fit alone cannot.
+`Not sure` and Intended Fit do not become positive physical-identity claims. Genuine objective controlled-answer changes may create distinct report states.
 
-## Body relevance source
-`private.product_match_measurements(product_id)` is the canonical Product-specific measurement map used by Fit Match and Fit Report body-state identity. There is no second hard-coded report relevance list.
+## Body-state relevance
+`private.product_match_measurements(product_id)` is the shared Product-specific measurement source for Fit Match and report-state identity.
 
-## 2% comparison
-For an established baseline measurement, a candidate report is disqualified when current relevant measurement data exists and:
-
+For established baseline values, a current relevant measurement is materially different at:
 `abs(current - baseline) / abs(baseline) >= 0.02`
 
-Any one established relevant measurement crossing that threshold disqualifies that candidate state. Missing current relevant measurements do not themselves force a split.
+Blank→filled can enrich. Missing current values do not erase established baseline evidence. Accepted under-2% values may roll the private comparison baseline while immutable original `fit_profile_version_id` remains unchanged.
 
-## Candidate state selection
-Among compatible reports for the same member + Product + normalized Size + objective fingerprint, production prefers:
-1. greatest count of established baseline measurements also present currently;
-2. most recent `updated_at`;
-3. report ID for deterministic ordering.
+# 11. Purchase/acquisition context — PR #51 branch behavior
+`fit_report_purchase_context` is owner-scoped observation data keyed by `fit_report_id`.
 
-This is state-based reuse, not chronological-episode identity.
+- one counted Fit Report contributes at most one acquisition observation;
+- blank context creates no row;
+- Purchased From stores free-form text/normalization and may reference an existing retailer by exact normalized match;
+- it does not create a retailer or Product retailer listing;
+- Price Paid is bounded fixed numeric;
+- Purchase Method is Online / In Store / Gift;
+- Month + Year are a valid pair; no exact day is invented;
+- another member's context is never inherited;
+- purchase context does not participate in Product identity, report identity, Match, recommendation or retailer ranking.
 
-## Blank/enrichment and rolling baseline
-- newly supplied relevant measurements may enrich a compatible existing report without creating another report;
-- missing current values do not erase established baseline evidence;
-- `match_fit_profile_version_id` may advance safely;
-- `private.roll_fit_report_body_identity_baseline()` rolls accepted under-2% Product-relevant values into the active comparison baseline;
-- immutable `fit_profile_version_id` remains unchanged.
+Analytics must preserve response denominators.
 
-# 6. Distinct Fit Report evidence counting — LIVE
+# 12. Product evidence / field conflicts
+Shared facts resolve field by field. Product identity trust does not wholesale promote Size, Color, Material, Fit Result, physical answers, Condition, Notes, purchase context or another member's photos.
 
-Product fit summary/evidence functions count legitimate distinct Fit Report situations rather than collapsing all reports by member. One member may therefore contribute multiple legitimate body-fit states/physical variants. Presentation surfaces that require unique people must dedupe wearers separately from evidence counting.
+Verified evidence outranks ordinary member-derived evidence. Disagreement remains auditable. Garment Type conflicts remain identity review, not silent Product mutation.
 
-Product identity confirmation counts are separate and distinct-member based; multiple legitimate Fit Reports from one member do not manufacture extra Product-identity confirmations.
+Material defaults use exact complete recipe signatures; they are never averaged into a recipe nobody submitted.
 
-# 7. Garment Type conflicts — LIVE
+# 13. Size-system defaults
+`public.get_product_default_size_kinds(product_ids)` may derive a unique broad Product size-system kind from normalized Fit Report history. Actual member size always begins blank.
 
-`public.flag_known_product_garment_type_conflict(...)` enforces current known-Product Type-conflict behavior.
+`lookup_corroborated_candidate_defaults(...)` remains a narrow compatibility/help boundary for exceptional unresolved Corroborated candidates that cannot yet safely materialize. It does not turn the candidate into ordinary Product search truth.
 
-When submitted Garment Type differs from canonical Product Type:
-- member Fit Report remains unresolved (`product_id IS NULL`);
-- candidate moves to `needs_review`;
-- canonical Product receives `catalog_review_needed = true`;
-- an `ambiguous_identity` review flag records the conflict;
-- the conflict cannot silently rewrite Product truth.
+# 14. Admin authorization / moderation
+`private.admin_users` remains the explicit admin authorization boundary. Catalog/moderation changes require authorized server/database boundaries and accountable history.
 
-Admin later corrects the Product, maps the submission to another Product, or dismisses/rejects the disputed identity.
+Admin review is exception-driven, not a manual approval queue for every clean first garment. Required operating visibility includes Product/candidate identity trust, confirmation counts, open flags, priority, barcode confidence, retailer links, evidence history and system-vs-admin resolution provenance.
 
-An already-canonical Product is not automatically deleted/demoted because one later conflict appears. Review state and evidence change; Product usability remains until an audited resolution changes identity.
+Existing `content_reports` moderation covers supported member-visible photo/post targets. Product-level `member_report` uses `catalog_review_flags`, keeping Product identity/content concerns inside the catalog review architecture rather than creating a parallel Product moderation system.
 
-# 8. Product material default — LIVE
+# 15. SerpAPI discovery cache
+`private.serpapi_discovery_cache` is private admin research evidence, never ordinary member Product authority. Raw external results do not create/update/merge Products automatically.
 
-`private.refresh_product_material_default(product_id)` chooses the current member-derived Product material default from **exact complete Fit Report recipe signatures**.
-
-Rules today:
-- group non-rejected member material evidence by counted Fit Report;
-- compose exact material+percentage/unknown signatures;
-- choose unique most-common signature;
-- tie removes the non-verified member-derived default;
-- verified Product materials outrank member-derived defaults;
-- winning recipe is copied exactly; never average percentages;
-- one winning report is `provisional` with current confidence .55;
-- 2+ winning report votes currently produce `corroborated` with current confidence .80.
-
-Implementation debt: recipe-frequency selection and independent-member Product-identity trust are different. The Product-identity threshold does **not** silently change material-recipe voting semantics.
-
-# 9. Size-system default
-
-`public.get_product_default_size_kinds(product_ids)` derives a Product size-system default from existing normalized Fit Report sizes.
-
-- exclude `not_sure`;
-- count Fit Reports by normalized size kind;
-- unique highest-vote kind → return it;
-- tied top kinds → NULL.
-
-New Fit Report may preselect that kind for a known Product while the actual member size remains blank/editable.
-
-A uniquely matched unresolved Corroborated candidate may also preselect its unique highest-vote **broad size kind** using distinct-member candidate evidence. Actual size remains blank. Nested US/UK/EU sizing systems are not automatically inferred by this rule.
-
-# 10. Preferred Fit — LEGACY / INERT
-
-Legacy structures such as `user_garment_fit_preferences` and `p_fit_preferences` on `save_fit_profile(...)` remain in applied history. Current member UI does not expose Preferred Fit and current Match/recommendation database functions do not use it. Do not repurpose/drop legacy structures casually.
-
-# 11. Product evidence / field conflicts
-
-Shared Product facts resolve field by field.
-
-Evidence lifecycle statuses provisional / corroborated / verified / rejected remain valid where applicable.
-
-- one member claim is evidence, not unquestionable truth;
-- Product identity confidence does not automatically promote report-scoped size/color/material/physical-question/Fit Result facts;
-- admin-verified/locked facts cannot be silently overwritten;
-- disagreement remains auditable evidence;
-- identity ambiguity takes precedence over simple voting;
-- Verified and Corroborated Products use the same ordinary member flow; Verified differs in backend authority/precedence.
-
-`product_identity_evidence`, metadata/attribute/material/description evidence, `catalog_review_flags`, barcode evidence, and moderation history are one coherent evidence/review architecture.
-
-# 12. Admin authorization / moderation
-
-- `private.admin_users` is the explicit admin authorization boundary unless deliberately replaced later.
-- ordinary members cannot obtain admin powers through client state.
-- catalog/moderation changes require authorized server/database boundaries.
-- accountable history records actor/time/target/action/reason/context as appropriate.
-- threshold-driven system promotion is auditable as a system actor and does not grant itself Verified authority.
-
-Admin review priority is owner-locked to prevent weak bad identity data from becoming entrenched:
-- Provisional/barely Corroborated identity conflict = high priority;
-- Corroborated/auto-promoted Product with multiple/growing conflicts = medium priority;
-- Verified Product with one isolated member conflict = low priority while retaining evidence;
-- multiple independent conflicts, conflict counts approaching confirmations, competing Product barcode links, or incorrect-merge signals escalate regardless of current status.
-
-Current foundation supports candidate visibility, mapping to existing Product, reviewed new-Product creation, status controls, evidence/flags, aliases, Product-photo actions, and content moderation. The owner-approved all-Products admin view must ultimately expose identity status, distinct confirmation/conflict counts, barcode relationship status, retailer links, flags, evidence history, and admin-vs-system promotion provenance. Full admin operating UX remains under owner re-audit.
-
-# 13. SerpAPI discovery cache
-
-`private.serpapi_discovery_cache` is private reusable external research evidence.
-
-- not a member-visible shadow catalog;
-- cache rows do not create/update/merge `products`;
-- raw Shopping title/product IDs are not LikeSized Product identity;
-- completed benchmark research remains reusable;
-- ordinary member intake and barcode confirmation do not call SerpAPI.
-
-Admin research must check cache first, dedupe queries, show cached/new state, respect usage limits, preserve results, and require explicit resolution.
-
-# 14. Starter catalog
-
-Owner-supplied starter catalog remains research/enrichment data. Empty/unreferenced provisional seed records were moved into candidate workflow while Products with real evidence/references were preserved. Do not invent missing metadata.
-
-# 15. Retailer listings / shopping data
-
+# 16. Retailer listings / shopping data
 - `retailer_listings` is one-to-many for resolved Products/variants.
-- valid destinations append/dedupe; they do not overwrite one another.
-- unresolved URLs remain candidate evidence.
-- normalized URL conflicts can trigger identity/duplicate review.
-- affiliate routing must preserve clean destination/provenance.
-- commission never affects Match, recommendation, Product identity, search ranking, or retailer choice.
+- valid destinations append/dedupe rather than overwrite one another;
+- normalized URL collisions may trigger review;
+- purchase-context retailer observations are separate from Product Shop destinations;
+- commission never affects Match, recommendation, Product identity, search ranking or retailer choice.
 
-# 16. Following, person notifications, and Product notifications
+# 17. Following, person notifications and Product notifications
+`follows` is the one canonical **Following** relationship; Fit Twin remains system-generated from current-person Match among followed members.
 
-- `follows` is the one canonical **Following** relationship; Fit Twin remains system-generated from current-person Match among followed members.
-- Fit Twin is derived current-person Match among followed members; there is no second Fit Twin subscription graph.
-- `private.following_notification_subscriptions` stores explicit per-person bell subscriptions.
-- Follow alone does not enable notifications.
-- Person bell ON may auto-follow; bell OFF stops future notifications but leaves Follow intact.
-- global Following-notification preference defaults OFF and acts as a master switch over chosen person bells; no missed-notification backfill.
-- Product notification watch is separate from follows/person bells and from Like/Wish state.
-- Product watch is a one-shot alert for a future Fit Report on that exact Product that reaches the locked 75%+ historical garment Match threshold with required matching coverage; after the qualifying notification, the watch turns off until re-enabled.
+- Follow alone does not enable person notifications.
+- Person bell can subscribe to future followed-person activity; bell OFF leaves Follow intact.
+- global Following-notification preference is a master switch.
+- Product notification watch is separate from people, Like and Wish state and is a one-shot future qualifying exact-Product alert.
 
-# 17. LikeLocker / Wish Locker / Outfit foundations
+# 18. LikeLocker / Wish Locker / Outfit foundations
+Product likes, Outfit likes and Wish Locker purchase intent are separate states. Outfits remain V1 and reuse canonical Closet/Product/taxonomy foundations.
 
-- `product_likes` = ordinary private Product likes / popularity intent.
-- `outfit_likes` = Outfit likes.
-- `wish_locker_items` = private purchase intent.
-- these are separate intents surfaced through LikeLocker.
-- Product Like never turns on Product notifications.
-- Wish Locker never turns on Like or notifications.
-- canonical Outfit posts/links/likes remain V1 and must remain transactional/visibility-safe.
+# 19. Search foundations
+- direct Product search is global as defined above;
+- exact Brand/Product aliases and canonical identifiers/listings can aid resolution;
+- unresolved candidates are not ordinary Product results;
+- barcode lookup is a narrow recognition exception and ambiguity is never auto-selected;
+- raw Fit Profile measurements/private size references are never exposed through search.
 
-# 18. Search foundations
-
-- ordinary member catalog search uses canonical Products/Brands/identifiers/listings/reviewed aliases.
-- unresolved pending submissions are not independent Product search results.
-- New Fit Report barcode lookup is a narrow exception: a unique canonical Product, unique provisional Product-to-barcode relationship, or unique unresolved candidate may be surfaced only as a sanitized confirmation/recognition path; ambiguity is never auto-selected.
-- New Fit Report exact Brand + Item + Garment Type may use the narrow corroborated-candidate default RPC without exposing the candidate as an ordinary Product result.
-- ordinary Product search deduplicates to one canonical Product result.
-- New Fit Report text suggestions can resolve reviewed Brand/Product aliases.
-- raw Fit Profile measurements/private size references must never be exposed through search.
-
-# 19. Recommendation foundations
-
-Evidence hierarchy:
+# 20. Recommendation foundations
+Evidence hierarchy remains:
 - exact_variant
 - exact_product
 - product_family
@@ -364,72 +250,65 @@ Evidence hierarchy:
 - brand_garment_type
 - category_fit
 
-Help Me Size It reuses the canonical recommendation architecture. `Would Buy Again` does not affect size recommendation/confidence. Pending/unmapped submissions do not count as exact canonical Product evidence until mapped.
+Help Me Size It reuses this architecture. `Would Buy Again` does not affect size recommendation/confidence. Pending/unmapped candidate reports do not count as exact canonical Product evidence until mapped.
 
-# 20. Current implementation debt / open verification
+# 21. Current implementation debt / open verification
+Before PR #51 may be called complete:
+- full exact-head canonical/type/build/migration/database tests must pass;
+- clean first-item auto-post and all four identity-trust tiers must be proven on a fresh migration replay;
+- member report priority must be proven at Provisional, Corroborated, Established and Verified trust levels;
+- scanner Product-photo → shared Fit Photo → placeholder behavior must remain safeguarded;
+- direct Product search global behavior must remain safeguarded;
+- Sleepwear, purchase context, Fit Community and New Fit Report review behavior require owner/live verification after the authorized deployment;
+- current production Maidenform/Heirloom historical evidence must be preserved through backfill/materialization;
+- unified public Closet migration and mutation model remain future audit work;
+- complete all-Products admin priority/filter UX remains to build;
+- merge/split, alias UX, spam moderation, Product-photo review, external barcode-provider feasibility, SerpAPI admin UX and browser-level regression remain open where previously scoped.
 
-The generalized community-confidence migration and its New Fit Report application changes are live in production and passed the full pre-deploy verification suite. Remaining work includes:
-- owner production interaction for the newly deployed manual/barcode New Fit Report behavior and distinct-member corroboration flow;
-- current legacy `closet_items.visibility` / private-vs-shared Closet RLS and presentation semantics must be removed or neutralized canonically to implement the owner-locked single public Closet model without exposing raw body/private system evidence;
-- external barcode enrichment/provider experiment is not implemented;
-- full Product-to-Product merge tooling;
-- audited Product/candidate split tooling;
-- complete all-Products admin queue/tab information architecture and confidence-aware sorting/filtering;
-- complete alias management UX;
-- complete spam garment-submission/Fit Report moderation;
-- complete pending→canonical Product-photo transfer/review workflow;
-- complete field lock/reopen UX;
-- admin SerpAPI single/batch research UI, cache indicators, and cap handling;
-- starter-catalog item-by-item enrichment/review;
-- Department consensus/default behavior beyond current evidence foundations;
-- material `corroborated` trust semantics vs same-member multiple Fit Report votes;
-- browser-level behavioral regression coverage;
-- remaining full owner page-by-page re-audit.
+The proposed sex/body-specific public measurement FAQ wording is not approved for this deployment. It remains a copy decision for owner review rather than executable schema behavior.
 
-# 21. Verification contract
-
-Before a surface/major DB behavior is called complete, prove as applicable:
+# 22. Verification contract
+Before this line is complete, prove as applicable:
 1. canonical integrity/drift guard;
-2. TypeScript/typecheck;
-3. focused application tests;
+2. TypeScript;
+3. focused application safeguards;
 4. production build;
-5. fresh replay of complete migration directory;
-6. database privacy/behavior/security tests;
-7. one manual fallback submission does not directly create Product;
-8. two distinct manual/barcode/mixed submissions can corroborate one normalized Product candidate;
-9. five distinct confirmations auto-promote only when conflict gates permit it and never auto-verify;
-10. pending reports remain usable and preserve immutable history through automatic/admin mapping;
-11. first Product/barcode evidence remains provisional while two distinct member Fit Reports corroborate that relationship;
-12. multiple legitimate barcodes can coexist under one Product without identity conflict;
-13. competing Product claims for one barcode do not silently reassign it;
-14. counted report state reuse follows actual Product match-measurement map;
-15. size/objective/body-state splitting obeys locked identity rules;
-16. admin/SerpAPI boundaries do not bypass Product review;
-17. retailer listings append/dedupe;
-18. owner interaction review for the actual surface;
-19. when the unified public Closet migration is implemented, another authenticated member can read the intended garment/Fit Report public content while owner-only mutation controls and raw body/private evidence remain protected.
+5. fresh replay of all ordered migrations;
+6. full database behavior/privacy tests;
+7. clean first unique member submission auto-materializes/maps a Provisional Product without routine admin approval;
+8. blocking pre-post ambiguity remains unresolved/reviewable;
+9. second through fourth distinct Product wearers produce Corroborated identity trust;
+10. fifth distinct wearer produces Established identity trust without auto-verifying Product facts;
+11. Verified remains admin/authoritative only;
+12. later reports/conflicts do not silently rewrite/unpublish Product history;
+13. Product report reasons create trust-aware catalog flags;
+14. Provisional/Corroborated issues start High while Established/Verified isolated ordinary disagreements start Low and repeated independent signals escalate;
+15. near-name/identifier/link signals create review evidence without automatic fuzzy merge;
+16. first Product/barcode evidence remains provisional and second distinct member corroborates it;
+17. multiple legitimate barcodes coexist under one Product;
+18. competing barcode/Product claims do not silently reassign;
+19. scanner confirmation image priority is Product/catalog photo → shared Fit Photo → placeholder;
+20. purchase context remains one owner-scoped observation per Fit Report;
+21. direct Product search is not gated by Fit Community/Department;
+22. Sleepwear app taxonomy matches replayed database vocabulary;
+23. owner interaction review occurs before a surface is marked owner-confirmed.
 
-# 22. Forbidden regressions
-
+# 23. Forbidden regressions
 Do not:
-- add fixed raw body columns back to `fit_profiles` as current architecture;
-- blend current-person Match and historical garment Match;
-- expose raw body measurements through social/search/feed/notifications;
+- expose raw current/historical body measurements through social/search/feed/product pages;
+- use Fit Community as Match math or Product Department;
+- require a Men/Women switch for direct Product search;
+- restore routine admin approval for every clean unique new garment;
+- let a member directly rewrite canonical Product fields;
+- collapse Provisional/Corroborated/Established/Verified identity trust into unrelated Product-fact catalog status;
+- auto-verify from member count;
+- use fuzzy similarity as automatic Product merge authority;
+- silently delete/unpublish an existing Product because one later report arrives;
+- promote a scanner fallback Fit Photo into canonical Product imagery;
+- require barcode presence for Product identity;
+- silently reassign a barcode between competing Products;
+- treat purchase context as Product truth;
 - create a second follow/catalog/sizing/moderation system;
-- create separate My Closet and Shared Closet data/component systems or treat legacy Private / Shared garment visibility as current product meaning;
-- make raw body/profile/private evidence public while implementing the public Closet;
-- let one manual fallback submission directly create canonical Product;
-- require barcode presence for Product identity corroboration;
-- let unresolved/corroborated candidate assistance turn that candidate into an ordinary Product/search result before canonicalization;
-- treat a second legitimate barcode for one Product as an automatic identity conflict;
-- call SerpAPI from ordinary member intake;
-- let raw external identity define Product truth;
-- auto-merge fuzzy/ambiguous duplicates without sufficient evidence/review;
-- let one member's repeated reports manufacture distinct-member Product identity corroboration;
-- let member disagreement silently overwrite canonical facts;
-- auto-upgrade member-vote Product identity to Verified;
-- overwrite one valid retailer listing with another;
 - rewrite applied migrations;
 - reintroduce star Fit Rating UI;
-- reintroduce Preferred Fit member UI/recommendation behavior without a new owner decision;
 - treat `supabase/schema.sql` as canonical.

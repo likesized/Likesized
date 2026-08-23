@@ -6,9 +6,10 @@ import { MeasurementHelpDialog } from "@/app/onboarding/MeasurementHelp";
 import helpStyles from "@/app/onboarding/MeasurementHelp.module.css";
 
 type UnitSystem = "imperial" | "metric";
+export type FitCommunity = "men" | "women" | "both";
 export type MeasurementType = { key:string; label:string; core:boolean; measurement_group:string; dimension:"length"|"weight"; manual_step_imperial:number|string; manual_step_metric:number|string; reconfirm_after_days:number|string; sort_order:number };
 export type BodyMeasurement = { measurement_type_key:string; entered_value:number|string; entered_unit:string; confirmed_at:string|null };
-type Props={username:string;isInitialSetup:boolean;unitSystem:UnitSystem;types:MeasurementType[];measurements:BodyMeasurement[];errorMessage:string|null};
+type Props={username:string;isInitialSetup:boolean;unitSystem:UnitSystem;fitCommunity:FitCommunity;types:MeasurementType[];measurements:BodyMeasurement[];errorMessage:string|null};
 type ReviewRow={key:string;label:string;value:string;status:string|null};
 
 const INCH_FRACTIONS=[{value:"0",label:"0"},{value:"0.25",label:"¼"},{value:"0.5",label:"½"},{value:"0.75",label:"¾"}];
@@ -27,11 +28,13 @@ function canonical(type:MeasurementType,value:number,unit:string){if(type.dimens
 function reviewValue(type:MeasurementType,raw:string,system:UnitSystem){const value=Number(raw);if(system==="imperial"&&type.dimension==="length"&&type.key==="height"){const total=Math.round(value);return `${Math.floor(total/12)} ft ${total%12} in`;}return `${value} ${targetUnit(type,system)}`;}
 function needsReconfirm(type:MeasurementType,row:BodyMeasurement|undefined){if(!row?.confirmed_at)return false;const confirmedAt=Date.parse(row.confirmed_at);const days=Number(type.reconfirm_after_days);if(!Number.isFinite(confirmedAt)||!Number.isFinite(days)||days<=0)return false;return Date.now()-confirmedAt>=days*DAY_MS;}
 function confirmedLabel(raw:string|null){if(!raw)return "an earlier date";const value=new Date(raw);return Number.isNaN(value.getTime())?"an earlier date":value.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});}
+function fitCommunityLabel(value:FitCommunity|""){return value==="men"?"Men":value==="women"?"Women":value==="both"?"Both":"Not selected";}
 
-export function FitProfileForm({username,isInitialSetup,unitSystem:initialSystem,types,measurements,errorMessage}:Props){
+export function FitProfileForm({username,isInitialSetup,unitSystem:initialSystem,fitCommunity:initialFitCommunity,types,measurements,errorMessage}:Props){
   const visibleTypes=types.filter((type)=>type.key!=="overbust");
   const byKey=new Map(measurements.map((row)=>[row.measurement_type_key,row]));
   const [system,setSystem]=useState<UnitSystem>(initialSystem);
+  const [communityDraft,setCommunityDraft]=useState<FitCommunity|"">(()=>isInitialSetup?"":initialFitCommunity);
   const [helpKey,setHelpKey]=useState<string|null>(null);
   const [reviewing,setReviewing]=useState(false);
   const [usernameDraft,setUsernameDraft]=useState(username);
@@ -77,12 +80,14 @@ export function FitProfileForm({username,isInitialSetup,unitSystem:initialSystem
     {reviewing?<>
       <p className={helpStyles.coreIntro}>Review what you entered. Nothing is saved until you confirm.</p>
       {isInitialSetup?<div className="evidence"><div><strong>Username</strong><span>{usernameDraft}</span></div></div>:null}
+      <div className="evidence"><div><strong>Fit Community</strong><span>{fitCommunityLabel(communityDraft)}</span></div></div>
       <div className={`evidenceList ${helpStyles.reviewGrid}`}>{reviewRows.map((row)=><div className={`evidence ${helpStyles.reviewItem}`} key={row.key}><div><strong>{row.label}</strong><span>{row.value}{row.status?` · ${row.status}`:""}</span></div></div>)}</div>
-      <input type="hidden" name="username" value={isInitialSetup?usernameDraft:""}/><input type="hidden" name="unit_system" value={system}/>{visibleTypes.map((type)=><span key={type.key}><input type="hidden" name={`measurement_${type.key}`} value={values[type.key]??""}/>{confirmedUnchanged.has(type.key)?<input type="hidden" name={`confirm_measurement__${type.key}`} value="1"/>:null}</span>)}
+      <input type="hidden" name="username" value={isInitialSetup?usernameDraft:""}/><input type="hidden" name="unit_system" value={system}/><input type="hidden" name="fit_community" value={communityDraft}/>{visibleTypes.map((type)=><span key={type.key}><input type="hidden" name={`measurement_${type.key}`} value={values[type.key]??""}/>{confirmedUnchanged.has(type.key)?<input type="hidden" name={`confirm_measurement__${type.key}`} value="1"/>:null}</span>)}
       <div className="buttonRow"><button type="button" className="secondaryButton" onClick={()=>setReviewing(false)}>← Back to Edit</button><button type="submit" className="primaryButton">Confirm & Save</button></div>
     </>:<>
       <p className={helpStyles.coreIntro}>Add only what you know right now. More details lead to better fit matches and recommendations. You can always update your profile measurements anytime.</p>
       <div className="fieldPair">{isInitialSetup?<label>Username<div><input name="username" type="text" value={usernameDraft} onChange={(event)=>setUsernameDraft(event.target.value)} minLength={3} maxLength={32} pattern="[A-Za-z0-9_]{3,32}" autoCapitalize="none" autoCorrect="off" spellCheck={false} required /></div></label>:null}<label>Units<select name="unit_system" value={system} onChange={(event)=>changeSystem(event.target.value as UnitSystem)}><option value="imperial">Inches / pounds</option><option value="metric">Centimeters / kilograms</option></select></label></div>
+      <label>Fit Community<select name="fit_community" value={communityDraft} onChange={(event)=>setCommunityDraft(event.target.value as FitCommunity)} required>{isInitialSetup?<option value="" disabled>Choose your Fit Community</option>:null}<option value="men">Men</option><option value="women">Women</option><option value="both">Both</option></select><span className="fieldHelp">Choose which member-fit community LikeSized should prioritize for your personalized feed and Fit Twin suggestions. This does not change your body Match %, and you can switch views anytime without changing this default.</span></label>
       <div className="fieldPair">{core.map(field)}</div>
       <details open={advanced.some((type)=>Boolean(values[type.key]))}><summary>Optional advanced measurements</summary><p className="muted">Add more detailed measurements for even smarter fit matches. Fill in only what you know and come back anytime to add more or make changes.</p><div className="fieldPair optionalFields">{advanced.map(field)}</div></details>
       <button type="submit" className="primaryButton fullButton">{isInitialSetup?"Review Fit Profile →":"Review Changes →"}</button>

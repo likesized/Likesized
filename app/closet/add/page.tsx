@@ -19,11 +19,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 function first(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
 
 export default async function AddGarmentPage({ searchParams }: { searchParams: SearchParams }) {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  if (!claimsData?.claims?.sub) redirect("/login?next=/closet/add");
   const params = await searchParams;
   const fixtureMode = allowExploreFixtures(first(params.preview) === "fixtures");
+  const supabase = await createClient();
+  const { data: claimsData } = await supabase.auth.getClaims();
+  if (!claimsData?.claims?.sub && !fixtureMode) redirect("/login?next=/closet/add");
+
   const addedRaw = first(params.added) ?? "";
   const updatedRaw = first(params.updated) ?? "";
   const addedClosetItemId = UUID.test(addedRaw) ? addedRaw : "";
@@ -48,10 +49,11 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
     }
   }
 
-  const [{ data: brands }, { data: materials }, { data: departments }] = await Promise.all([
+  const [{ data: brands }, { data: materials }, { data: departments }, { data: retailers }] = await Promise.all([
     supabase.from("brands").select("id,name").order("name").limit(2000),
     supabase.from("materials").select("key,label").order("label"),
     supabase.from("product_departments").select("key,label").order("sort_order"),
+    supabase.from("retailers").select("id,name,domain").order("name").limit(2000),
   ]);
 
   const fixtureProducts = fixtureMode ? EXPLORE_FIXTURE_PRODUCTS.map((product) => ({
@@ -90,8 +92,8 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
     {successClosetItemId ? <FitReportSuccessModal closetItemId={successClosetItemId} wasUpdated={wasUpdated} underReview={underReview} /> : null}
 
     <div className={`pageTitle ${styles.hero}`}><span className="eyebrow">MY CLOSET · NEW FIT REPORT</span><h1>Share how an item actually fits.</h1><p>Tell us a little about the garment so we can make your Fit Report useful to others.</p></div>
-    <FitReportForm action={fixtureMode ? undefined : addGarment}>
-      {fixtureMode ? <div className="authMessage"><b>Owner-review test environment.</b> Temporary garment choices are labeled through the preview and this form cannot save or write to Supabase.</div> : null}
+    <FitReportForm action={fixtureMode ? undefined : addGarment} previewOnly={fixtureMode}>
+      {fixtureMode ? <div className="authMessage"><b>Owner-review test environment.</b> You can complete the form and open the final review, but nothing here will save or write to Supabase.</div> : null}
       {errorMessage ? <div className="authMessage error">{errorMessage}</div> : null}
       <CatalogGarmentFields
         brands={brandOptions}
@@ -100,15 +102,18 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
       >
         <CatalogColorField />
         <GarmentSizeFields />
-        <label>Overall Fit Result<select name="fit" defaultValue="" required><option value="" disabled>Select physical fit</option><option value="too_small">Too small</option><option value="snug">Snug</option><option value="just_right">Just right</option><option value="relaxed">Relaxed</option><option value="too_big">Too big</option></select><span className="fieldHelp">Bad fits are useful evidence too.</span></label>
-        <label>Condition<select name="reported_condition" defaultValue="" required><option value="" disabled>Select condition</option><option value="new">New</option><option value="used">Used</option><option value="altered">Altered</option></select><span className="fieldHelp">Altered items stay in Fit History but are not treated as normal sizing evidence for other people.</span></label>
-        <label>Fit photo <span className="muted inlineMuted">optional</span><input name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><span className="fieldHelp"><b>Fit photos are shared with the LikeSized community. Don’t upload a photo you do not want other people to see.</b></span></label>
-        <label>Fit notes <span className="muted inlineMuted">optional</span><textarea name="fit_notes" maxLength={1000} rows={5} placeholder="Tell us more about how it fits. You can also share styling tips, wash or dry advice, or anything else that might help someone considering this item." /></label>
-        <label>Retail link <span className="muted inlineMuted">optional</span><input name="product_url" type="url" maxLength={1000} placeholder="https://..." /></label>
+        <label>Overall Fit Result<select name="fit" defaultValue="" required data-review-label="Overall Fit Result"><option value="" disabled>Select physical fit</option><option value="too_small">Too small</option><option value="snug">Snug</option><option value="just_right">Just right</option><option value="relaxed">Relaxed</option><option value="too_big">Too big</option></select><span className="fieldHelp">Bad fits are useful evidence too.</span></label>
+        <label>Condition<select name="reported_condition" defaultValue="" required data-review-label="Condition"><option value="" disabled>Select condition</option><option value="new">New</option><option value="used">Used</option><option value="altered">Altered</option></select><span className="fieldHelp">Altered items stay in Fit History but are not treated as normal sizing evidence for other people.</span></label>
+        <label>Fit photo <span className="muted inlineMuted">optional</span><input name="photo" type="file" accept="image/jpeg,image/png,image/webp" data-review-label="Fit photo" /><span className="fieldHelp"><b>Fit photos are shared with the LikeSized community. Don’t upload a photo you do not want other people to see.</b></span></label>
+        <label>Fit notes <span className="muted inlineMuted">optional</span><textarea name="fit_notes" maxLength={1000} rows={5} placeholder="Tell us more about how it fits. You can also share styling tips, wash or dry advice, or anything else that might help someone considering this item." data-review-label="Fit notes" /></label>
+        <label>Retail link <span className="muted inlineMuted">optional</span><input name="product_url" type="url" maxLength={1000} placeholder="https://..." data-review-label="Retail link" /></label>
 
-        <CatalogCommunityEnrichment materials={(materials ?? []).map((item) => ({ key: item.key, label: item.label }))} />
+        <CatalogCommunityEnrichment
+          materials={(materials ?? []).map((item) => ({ key: item.key, label: item.label }))}
+          retailers={(retailers ?? []).map((item) => ({ id: item.id, name: item.name, domain: item.domain }))}
+        />
 
-        <button className="primaryButton fullButton" type="submit" disabled={fixtureMode}>{fixtureMode ? "Preview only — saving disabled" : "Add Fit Report →"}</button>
+        <button className="primaryButton fullButton" type="submit">{fixtureMode ? "Review Fit Report →" : "Add Fit Report →"}</button>
       </CatalogGarmentFields>
     </FitReportForm>
   </main>;

@@ -27,7 +27,7 @@ const capabilities = [
     eyebrow: "STAY CONNECTED",
     title: "Follow the people whose fit you trust.",
     description: "See what they wear, share, and recommend next.",
-    href: "/following",
+    href: "/circle",
     link: "Get Inspired →",
   },
 ];
@@ -44,6 +44,10 @@ const faqs = [
   {
     question: "Why can my Match change by clothing type?",
     answer: "Different garments depend on different measurements. LikeSized emphasizes the measurements that matter for tops, bottoms, and specific garment types instead of using one generic score for everything.",
+  },
+  {
+    question: "What makes LikeSized different from other sizing and fashion tools?",
+    answer: "Many sizing tools start with size charts, general reviews, or a predicted size. LikeSized starts with real Fit Reports from people whose bodies are similar to yours and uses the measurements that matter for the garment you’re looking at. LikeSized also tracks fit down to the individual item whenever real Fit Reports exist. Two pairs of pants from the same brand can fit completely differently, so we don’t treat a brand, clothing category, or printed size as if it fits the same across every product. Strong Product-specific evidence can therefore give you a more relevant answer than broader brand or category patterns, while your exact body measurements stay private.",
   },
   {
     question: "What does Fit Result mean?",
@@ -75,7 +79,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
     const supabase = await createClient();
     const { data: claimsData, error } = await supabase.auth.getClaims();
     if (!error && claimsData?.claims?.sub) {
-      redirect("/outfits?feed=following");
+      redirect("/circle");
     }
   }
 

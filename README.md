@@ -4,139 +4,97 @@ V1 application for **LikeSized — See what fits people built like you.**
 
 ## Canonical source-of-truth roles
 - `AI_REPOSITORY_RULES.md` — repository/source-of-truth policy.
-- `docs/AI_MASTER_LOG.md` — sole roadmap, status, owner-decision, recovery/salvage, deployment and AI-handoff record.
+- `docs/AI_MASTER_LOG.md` — sole roadmap, status, owner-decision, recovery, deployment and AI-handoff record.
 - `docs/V1_PRODUCT_SPEC.md` — current product/fit architecture.
 - `supabase/schema_contract.md` — current database behavior/privacy contract and explicit implementation debt.
 - `supabase/migrations/` — executable ordered database history.
 - `README.md` — summary only; never a competing decision source.
 
-If the canonical docs disagree, stop feature work and reconcile them. Do not resurrect an old LOCKED decision from another branch/file.
+If canonical documents disagree, stop feature work and reconcile them. Do not resurrect superseded product meaning from Git history or another branch.
 
 ## Current implementation status
-Canonical recovery is complete and the recovery freeze is cleared. The primary active owner-preview implementation line is PR #47 / `correct-grouped-menu-layout`. PR #47 is not authorized for production merely because source or CI is ready.
-
-The current owner priority is the final **New Fit Report + community-built catalog** conversion. The earlier external/API catalog-import strategy is superseded. Historical provider migrations remain immutable ordered history where already applied, while the later community-catalog migration retires their active runtime objects.
-
-For exact branch status, verification checkpoints, deployment history and next action, read `docs/AI_MASTER_LOG.md`.
+Canonical recovery is complete. `main` is the one production line. The active owner-authorized deployment line is PR #51 / `agent/fit-report-review-purchase-context`; exact verification/deployment state belongs in `docs/AI_MASTER_LOG.md`.
 
 ## Current product meaning
 
-### Community-built catalog
+### Community-built Product catalog
 **A clothing catalog built by the people who actually wear it.**
 
-- LikeSized grows from the starter Product catalog plus member contributions rather than an external catalog API.
-- Barcode scanning searches LikeSized's own canonical catalog only.
-- Manual entry searches canonical Brand/Product records first.
-- Members answer the simple required observable garment questions and may leave genuinely unknown optional catalog-enrichment facts blank.
-- A later independent member sees accumulated Product facts, fills missing facts they know, or reports a specific field as incorrect.
-- Independent agreement strengthens Product facts; conflicts are preserved for review instead of silently overwriting another member's claim.
-- The owner-supplied 150 starter Products are seeded as Brand + Item/Model + Garment Type only. Unknown metadata is not fabricated.
+- Ordinary member intake searches LikeSized's own Product catalog; it does not call SerpAPI.
+- A clean, unique first member submission may automatically become a searchable canonical **Provisional** Product. Routine new clothing should not require admin approval.
+- Product identity trust has four tiers: **Provisional = 1 distinct wearer; Corroborated = 2–4; Established = 5+; Verified = authoritative/admin-reviewed**.
+- The five-wearer milestone remains stronger community evidence; it is no longer a publishing gate.
+- Community wearer count does not silently verify unrelated Product facts such as material, description, Department or controlled attributes.
+- If a new submission already carries a real duplicate, conflicting identity, barcode/listing collision, or other blocking signal, it remains unresolved for review rather than creating questionable Product truth.
+- Later conflicts or member reports do not automatically delete or unpublish an existing Product. They create review evidence while the Product remains usable until an audited resolution changes it.
+- Product identity confidence and Product-to-barcode confidence are separate.
 
-### New Fit Report
-Opening choice:
-- Scan barcode
-- Enter item manually
+### Exception-driven catalog review
+Every published Product can be reported through one **Report this item** action for inappropriate content, an image that does not match the Product, incorrect information, or another concern.
 
-Main order:
-1. Brand / Make
-2. Item / Model
-3. Garment Type
-4. up to four Type-specific controlled questions; each starts blank and requires a selection, with **Not sure** last
-5. Color
-6. Size
-7. Overall Fit Result
-8. Condition
-9. optional Fit Photo
-10. optional Fit notes
+Catalog flags are prioritized by trust and independent evidence:
+- Provisional (1 wearer) → high when flagged;
+- Corroborated (2–4 wearers) → high when flagged;
+- Established (5+ wearers) → one isolated ordinary disagreement starts low and repeated independent signals escalate medium/high;
+- Verified → isolated ordinary reports start low and repeated independent signals may escalate;
+- strong duplicate/identity/identifier conflicts can escalate regardless of tier.
 
-Then a clearly separated optional community-catalog section:
-- Retail link
-- UPC / Barcode when not already captured by scanning
-- Manufacturer Style / Article Number
-- controlled Material / Fabric Composition
-- Product photo
-- controlled Department
+LikeSized may also generate conservative internal possible-duplicate/identity flags from evidence such as closely related names, barcodes, retailer links, aliases, or other Product signals. These are review signals, not permission to fuzzy-merge Products automatically.
 
-Known Product facts are prefilled/read-only by default. A member reports a specific incorrect field as evidence rather than directly rewriting canonical Product truth.
+### Direct Product search vs Fit Community
+Direct Product search is global. A member does **not** need to switch to Men or Women to find a matching men's or women's Product.
+
+**Fit Community — Men / Women / Both** is a private member relevance preference for social/matching discovery such as People My Size and My Circle. It filters the people/wearers being surfaced; it is not Product Department and it never changes body Match %.
+
+A member's Fit Community does not change because they wear a garment sold in another Department.
+
+### Fit Profile and measurement privacy
+Exact current and historical body measurements remain private. LikeSized exposes safe derived Match/context, not raw measurements. Match logic remains garment-relevant. Any new public sex/body-specific measurement FAQ wording is pending owner review and is not part of the current deployment batch.
 
 ### Following vs Fit Twin
 **Following controls My Circle; Fit Twin is a designation inside it.**
 
-- Following = user-controlled social relationship stored in canonical `follows`.
-- A member may follow anyone regardless of Match %.
-- Fit Twin = **system-generated** strong current-person Match designation applied only to someone the member follows; the initial threshold is configurable and starts at 85% Overall Match.
-- A followed person may or may not qualify as a Fit Twin; a non-followed person is not one of that member's Fit Twins.
-- Style Feed is driven by Following and contains posts from My Circle.
-- Public relationship count is Followers, not Fit Twins.
-- `Save as Fit Twin`, `Saved Fit Twin`, and `Remove Fit Twin` are obsolete member-facing actions.
-- Legacy route/function/database names containing `fit_twin` are implementation debt, not product meaning.
+- Following is member-controlled and uses the one canonical `follows` graph.
+- Fit Twin is **system-generated** among followed members from strong current-person Match; the initial threshold starts at 85% Overall Match.
+- Follow alone does not make someone a Fit Twin.
+- Style Feed/My Circle are Following-driven; Fit Twin is designation/filter/context only.
+- `/following` is compatibility-only and resolves to My Circle.
+
+### New Fit Report
+Current main flow is Brand / Item → Overall Category → Specific Garment Type → optional Department → up to four controlled item-detail questions → Color → Size → Fit Result → Condition → optional Fit Photo → Fit Notes → Retail Link.
+
+A collapsed **Optional Additional Information** area collects Purchased From, Price Paid, Purchase Method, Approx. Purchase Date, barcode when not already scanned, Style/Article Number, Material/Fabric Composition and Product Photo. Purchase context is one member's acquisition observation, never Product truth.
+
+Before saving, **Does this look right?** reviews only the main Fit Report details. Optional additional information is not repeated there.
+
+### Barcode confidence and scanner confirmation
+- first distinct member supporting a new Product→barcode relationship = provisional barcode evidence;
+- second distinct member with corresponding Product Fit Report evidence = corroborated barcode relationship;
+- one Product may have multiple legitimate barcodes;
+- one barcode credibly supporting competing Products is flagged and never silently reassigned.
+
+On **Is this the item?**, scanner imagery prioritizes **Product/catalog photo → shared member Fit Photo → placeholder**. A Fit Photo fallback stays personal wear evidence and is never promoted into canonical Product imagery.
 
 ### Fit Result
-- Fit Result = Too Small / Snug / Just Right / Relaxed / Too Big.
-- There is **no current V1 1–5-star Fit Rating UI**.
-- A legacy DB type named `fit_rating` may store those physical outcomes, but that identifier does not authorize star/satisfaction UI.
+Fit Result is Too Small / Snug / Just Right / Relaxed / Too Big. There is **no current V1 1–5-star Fit Rating UI**.
 
 ### Matching and recommendations
-- current-person body matching and historical garment-evidence matching are separate contexts;
-- historical garment evidence remains attached to the immutable body state from that try-on;
-- Match % means garment-relevant body similarity, not probability the garment will fit;
-- Preferred Fit, confidence-aware matching, directional recommendation evidence and the recovered Fit Match rules remain canonical.
+Current-person Match and historical garment Match are separate. Match % means garment-relevant body similarity, not probability that an item will fit.
 
-Current recommendation hierarchy:
-**Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit**.
+Current recommendation hierarchy is **Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit**.
 
-Help Me Size It is fallback sizing assistance only when strong normal matched-wearer evidence is insufficient. It reuses the canonical recommendation engine and never creates a second sizing engine.
+Help Me Size It is fallback sizing assistance and reuses the canonical recommendation engine. It never creates a second sizing engine or invents a size when evidence is insufficient.
 
-`Would Buy Again` does not influence size recommendation/confidence.
+### Closet, Products and social surfaces
+The owner-locked target is one public member Closet for garments/Fit Reports, with owner-only controls layered onto the same content. Legacy per-garment private/shared implementation remains migration debt; raw body data stays private regardless.
 
-### Garment metadata boundaries
-- one controlled taxonomy is shared by Explore + New Fit Report;
-- required Type-specific Product questions use controlled values and explicit selection;
-- optional Material/Fabric Composition is now controlled community catalog enrichment, not free text and not recommendation input;
-- storing Material does not automatically make it a Browse filter;
-- Stretch is not an active V1 member input/classification/filter;
-- Color remains required controlled garment data.
-
-### Explore
-Current owner-approved direction includes:
-- Garments | Outfits;
-- My Fit Matches | All;
-- 75%+ My Fit Matches eligibility;
-- separate 85%+ Fit Alert threshold;
-- one canonical Product search result rather than duplicate wearer/Fit Report rows;
-- compact mobile search suggestions;
-- full-screen opaque mobile mini-browser;
-- image fallback instead of blank cards;
-- Product, wearer, Like, Wishlist, Shop and fallback Notify interactions must remain distinct;
-- no stars.
+Outfits remain V1 and reuse canonical Closet/Product data. Product Like, Wish Locker, Product notification, person notification and Shop are separate actions with separate intent.
 
 ### Retail links and commerce
-- one canonical Product may have multiple retailer listings;
-- new valid retailer links append/dedupe instead of overwriting other valid retailers;
-- **Like + Wishlist + Shopping Cart/Shop** appears on relevant garment surfaces only when a valid retailer listing exists;
-- no valid listing means no Shop action;
-- Skimlinks or another owner-approved affiliate layer is roadmap-locked after retailer-link behavior is stable;
-- affiliate routing must preserve the original canonical retailer listing and commission must never influence fit, recommendation, search relevance or ranking.
-
-### LikeLocker and Gift Lists
-LikeLocker opens to Garments and filters **Garments / Outfits / Wish Locker**. Ordinary Product likes, Outfit likes, and products specifically wanted for purchase remain distinct saved intents in that one destination.
-
-LikeSized Gift Lists remain roadmap-locked. They reuse canonical Product + canonical sizing/confidence systems, are owner-controlled for sharing, never expose raw measurements, and may surface eligible retail links without commerce influencing fit recommendations.
-
-### Admin / catalog quality
-Authorized admin review must ultimately cover:
-- Conflicting Product Facts
-- Possible Duplicates
-- Reported / Spam Content
-- Review / Audit History
-
-The roadmap requires canonical merge/split tools, field/description override + permanent lock/reopen, inappropriate Fit/Product/Outfit photo removal, spam intake/Fit Report removal, and accountable audit history. These extend the existing moderation/evidence system rather than creating a parallel catalog.
-
-### Outfits
-Outfits remain in V1. Earlier removal direction is superseded. Owned Outfits live in My Closet, other-member Outfit discovery lives in Explore, and followed-person Outfit activity lives in Style Feed.
+One Product may have multiple valid retailer listings. Listings append/dedupe rather than overwrite one another. Shop appears only when a valid destination exists. Commission must never affect Match, recommendation, Product identity, search relevance, ranking, or retailer choice.
 
 ## Database rule
-`supabase/migrations/` is the executable database history. Do not hard-code a migration count in documentation. Do not rewrite applied migrations. `supabase/schema.sql` is retired as an alternate schema source.
+`supabase/migrations/` is executable database history. Do not rewrite applied migrations. `supabase/schema.sql` is retired as an alternate schema source.
 
 ## Verification
-Canonical CI runs the integrity/drift check before typecheck/build/database replay. Current community-catalog work is not complete until canonical integrity, TypeScript, focused tests, production build, full fresh migration replay and database behavior/privacy tests pass on the current PR #47 head and the owner reviews the resulting Preview.
+Canonical CI runs `npm run canonical:check`, TypeScript, focused safeguards, production build, fresh migration replay and database behavior/privacy tests. Current branch status and exact next action are recorded only in `docs/AI_MASTER_LOG.md`.

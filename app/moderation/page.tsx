@@ -48,6 +48,7 @@ type Candidate = {
   garment_type_key: string;
   department_key: string | null;
   status: string;
+  identity_confidence: string;
   submission_count: number;
   last_submitted_at: string | null;
   last_researched_at: string | null;
@@ -61,6 +62,8 @@ type Submission = {
   retailer_url: string | null;
   department_key: string | null;
   product_photo_storage_path: string | null;
+  product_label_photo_storage_path: string | null;
+  identity_uncertain: boolean;
   created_at: string;
 };
 type ReviewFlag = { id: string; candidate_id: string | null; product_id: string | null; flag_type: string; details: Record<string, unknown>; created_at: string };
@@ -99,7 +102,7 @@ export default async function ModerationPage() {
     supabase.from("moderation_actions").select("id,action,target_type,reason,created_at").order("created_at", { ascending: false }).limit(20),
     supabase.from("content_reports").select("id", { count: "exact", head: true }).neq("status", "open"),
     supabase.from("products").select("id,name,garment_type_key,market_segment,brand:brands(name)").eq("catalog_review_needed", true).order("created_at", { ascending: true }),
-    supabase.from("catalog_candidates").select("id,brand_text,normalized_brand,model_text,normalized_model,garment_type_key,department_key,status,submission_count,last_submitted_at,last_researched_at").neq("status", "merged").order("submission_count", { ascending: false }).order("last_submitted_at", { ascending: false }).limit(100),
+    supabase.from("catalog_candidates").select("id,brand_text,normalized_brand,model_text,normalized_model,garment_type_key,department_key,status,identity_confidence,submission_count,last_submitted_at,last_researched_at").neq("status", "merged").order("submission_count", { ascending: false }).order("last_submitted_at", { ascending: false }).limit(100),
     supabase.from("catalog_review_flags").select("id,candidate_id,product_id,flag_type,details,created_at").eq("status", "open").order("created_at", { ascending: true }),
     supabase.from("products").select("id,name,normalized_name,garment_type_key,brand:brands(id,name,normalized_name)").neq("catalog_status", "rejected").order("name").limit(500),
     supabase.from("catalog_resolution_actions").select("id,action,reason,created_at,candidate_id,product_id").order("created_at", { ascending: false }).limit(30),
@@ -119,7 +122,7 @@ export default async function ModerationPage() {
   const candidateById = new Map(candidateRows.map((candidate) => [candidate.id, candidate]));
   const candidateIds = candidateRows.map((candidate) => candidate.id);
   const { data: submissionData } = candidateIds.length
-    ? await supabase.from("garment_submissions").select("id,candidate_id,identifier_type,identifier_value,manufacturer_style_number,retailer_url,department_key,product_photo_storage_path,created_at").in("candidate_id", candidateIds).order("created_at", { ascending: false })
+    ? await supabase.from("garment_submissions").select("id,candidate_id,identifier_type,identifier_value,manufacturer_style_number,retailer_url,department_key,product_photo_storage_path,product_label_photo_storage_path,identity_uncertain,created_at").in("candidate_id", candidateIds).order("created_at", { ascending: false })
     : { data: [] };
   const submissions = (submissionData ?? []) as Submission[];
   const submissionsByCandidate = new Map<string, Submission[]>();
@@ -134,11 +137,19 @@ export default async function ModerationPage() {
     list.push(flag);
     flagsByCandidate.set(flag.candidate_id, list);
   }
-  const pendingPhotoUrls = new Map<string, string>();
-  await Promise.all(submissions.filter((submission) => submission.product_photo_storage_path).slice(0, 100).map(async (submission) => {
-    const path = submission.product_photo_storage_path!;
-    const { data } = await supabase.storage.from("catalog-submission-photos").createSignedUrl(path, 1800);
-    if (data?.signedUrl) pendingPhotoUrls.set(submission.id, data.signedUrl);
+  const pendingProductPhotoUrls = new Map<string, string>();
+  const pendingLabelPhotoUrls = new Map<string, string>();
+  await Promise.all(submissions.slice(0, 100).flatMap((submission) => {
+    const jobs: Array<Promise<void>> = [];
+    if (submission.product_photo_storage_path) jobs.push((async () => {
+      const { data } = await supabase.storage.from("catalog-submission-photos").createSignedUrl(submission.product_photo_storage_path!, 1800);
+      if (data?.signedUrl) pendingProductPhotoUrls.set(submission.id, data.signedUrl);
+    })());
+    if (submission.product_label_photo_storage_path) jobs.push((async () => {
+      const { data } = await supabase.storage.from("catalog-submission-photos").createSignedUrl(submission.product_label_photo_storage_path!, 1800);
+      if (data?.signedUrl) pendingLabelPhotoUrls.set(submission.id, data.signedUrl);
+    })());
+    return jobs;
   }));
 
   const flaggedProductIds = productFlags.map((product) => product.id);
@@ -200,7 +211,7 @@ export default async function ModerationPage() {
 
     <section>
       <h2>Catalog enrichment</h2>
-      <p className="fieldHelp">Candidates are prioritized by member demand. Mapping or creating a Product reconnects the existing Closet/Fit Reports without changing their historical body or Fit Result evidence.</p>
+      <p className="fieldHelp">Candidates are prioritized by member demand. Mapping or creating a Product reconnects the existing Closet/Fit Reports without changing their historical body or Fit Result evidence. Unconfirmed items stay out of the live catalog until this review is resolved.</p>
       {candidateRows.length ? <div className={styles.queue}>{candidateRows.map((candidate) => {
         const evidence = submissionsByCandidate.get(candidate.id) ?? [];
         const candidateFlags = flagsByCandidate.get(candidate.id) ?? [];
@@ -212,7 +223,7 @@ export default async function ModerationPage() {
           .slice(0, 20);
         return <article className={styles.report} key={candidate.id}>
           <strong>{candidate.brand_text} · {candidate.model_text}</strong>
-          <div className={styles.meta}><span>{label(candidate.garment_type_key)}</span><span>{label(candidate.status)}</span><span>{candidate.submission_count} member submission{candidate.submission_count === 1 ? "" : "s"}</span><span>Last added {candidate.last_submitted_at ? new Date(candidate.last_submitted_at).toLocaleString() : "—"}</span></div>
+          <div className={styles.meta}><span>{label(candidate.garment_type_key)}</span><span>{label(candidate.identity_confidence)}</span><span>{label(candidate.status)}</span><span>{candidate.submission_count} member submission{candidate.submission_count === 1 ? "" : "s"}</span><span>Last added {candidate.last_submitted_at ? new Date(candidate.last_submitted_at).toLocaleString() : "—"}</span></div>
           {candidateFlags.length ? <div className={styles.dispute}><h3>Open flags</h3>{candidateFlags.map((flag) => <div key={flag.id}>
             <p><b>{label(flag.flag_type)}</b> · {typeof flag.details.reason === "string" ? flag.details.reason : "Review evidence"}</p>
             <form className={styles.actions} action={dismissCatalogFlag}>
@@ -222,14 +233,21 @@ export default async function ModerationPage() {
             </form>
           </div>)}</div> : null}
           {evidence.length ? <div className={styles.dispute}><h3>Recent member evidence</h3>{evidence.map((submission) => <div key={submission.id}>
-            {pendingPhotoUrls.get(submission.id) ? <>
-              <img className={styles.preview} src={pendingPhotoUrls.get(submission.id)} alt="Member product-only submission"/>
+            {submission.identity_uncertain ? <p><b>Member marked this identity as uncertain.</b></p> : null}
+            <div className={styles.meta}>
+              {pendingProductPhotoUrls.get(submission.id) ? <span>Product Photo</span> : null}
+              {pendingLabelPhotoUrls.get(submission.id) ? <span>Product Label / Tag Photo</span> : null}
+              {submission.retailer_url ? <a href={submission.retailer_url} target="_blank" rel="noreferrer">Open retail link</a> : null}
+            </div>
+            {pendingProductPhotoUrls.get(submission.id) ? <>
+              <img className={styles.preview} src={pendingProductPhotoUrls.get(submission.id)} alt="Member Product Photo evidence"/>
               <form className={styles.actions} action={removePendingProductPhoto}>
                 <input type="hidden" name="submission_id" value={submission.id}/>
                 <input name="reason" required maxLength={500} placeholder="Required reason to remove this Product Photo"/>
                 <button className={styles.danger}>Remove Product Photo</button>
               </form>
             </> : null}
+            {pendingLabelPhotoUrls.get(submission.id) ? <img className={styles.preview} src={pendingLabelPhotoUrls.get(submission.id)} alt="Member Product Label or Tag Photo evidence"/> : null}
             <p>{submission.identifier_value ? `${label(submission.identifier_type || "identifier")}: ${submission.identifier_value} · ` : ""}{submission.manufacturer_style_number ? `Style: ${submission.manufacturer_style_number} · ` : ""}{submission.department_key ? `Department: ${label(submission.department_key)} · ` : ""}{submission.retailer_url ? "Retail link supplied" : ""}</p>
           </div>)}</div> : null}
 
@@ -244,7 +262,7 @@ export default async function ModerationPage() {
             <input type="hidden" name="candidate_id" value={candidate.id}/>
             <input name="canonical_name" required maxLength={180} defaultValue={candidate.model_text} aria-label="Canonical Product name"/>
             <input name="reason" required maxLength={500} placeholder="Evidence supporting creation of one new canonical Product"/>
-            <button className={styles.dismiss}>Create verified Product + map</button>
+            <button className={styles.dismiss}>Create Product + map</button>
           </form>
 
           <form className={styles.actions} action={setCandidateStatus}>

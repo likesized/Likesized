@@ -44,11 +44,15 @@ Production migration `20260823054933 generalize_catalog_identity_confidence` is 
 
 This later additive migration replaces the older barcode-gated Product-level meaning with the generalized community-confidence model described below while preserving the already-applied barcode migrations as immutable history. The implementation passed canonical integrity, TypeScript/application safeguards, production build, fresh migration replay, and the full pgTAP/database suite before deployment.
 
-## New Fit Report category/review/purchase-context line — BRANCH ONLY
+## New Fit Report purchase-context + Sleepwear line — VERIFIED BRANCH, PRODUCTION AUTHORIZED
 
-`agent/fit-report-review-purchase-context` contains owner-approved UI/product-meaning changes for category-first garment narrowing, a final main-only **Does this look right?** confirmation, and optional purchase-context inputs.
+`agent/fit-report-review-purchase-context` now contains the owner-approved category-first flow, final main-only **Does this look right?** confirmation, optional purchase-context inputs **and their canonical persistence**, Sleepwear & Lingerie taxonomy, signed-in My Circle home routing, and approved FAQ differentiation copy.
 
-No production migration currently stores the new purchase-context fields. The branch UI must therefore remain non-production until an ordered migration plus canonical save/validation/metrics behavior is implemented and verified. Never describe purchase-context persistence as live merely because the form fields exist on a preview branch.
+Canonical local migrations awaiting production apply after the authorized merge are:
+- `20260823130000_add_sleepwear_lingerie_category.sql`;
+- `20260823130100_purchase_context_and_sleepwear_taxonomy.sql`.
+
+Until those migrations are actually applied, the production checkpoint above remains the authoritative deployed database state. Do not describe these new database structures as live merely because they exist on the verified branch.
 
 # 1. Privacy / body-state foundations
 
@@ -85,7 +89,8 @@ Current production still contains owner-update capability and a save boundary th
 - `garment_types`, `garment_attribute_definitions`, and `garment_attribute_options` hold database vocabulary aligned with `lib/garment-taxonomy.ts`.
 - `garment_types.intake_active` controls member-facing Type availability while preserving historical compatibility keys.
 - top-level garment category is a controlled UI/taxonomy grouping; the specific `garment_type_key` remains the persisted Product identity field.
-- New Fit Report may require category selection first and filter the specific type options without introducing a second garment taxonomy or duplicate category identity field.
+- New Fit Report requires category selection first and filters the specific type options without introducing a second garment taxonomy or duplicate category identity field.
+- Sleepwear & Lingerie is a first-class category with Pajama pants, Pajama shorts, Pajama set, Nightgown, Robe, Chemise, Babydoll, Teddy, Corset & bustier, and Costume lingerie. Sleep Shirt is intentionally absent. Sweatpants remains Bottoms; Bra/Bralette/Sports Bra/Underwear/Shapewear remain Intimates.
 - `color_families` stores controlled colors.
 - `product_variants.color_family_key` stores resolved Product/variant color where applicable.
 - `fit_reports.reported_condition` preserves New / Used / Altered.
@@ -227,6 +232,23 @@ This is state-based reuse, not chronological-episode identity.
 - `private.roll_fit_report_body_identity_baseline()` rolls accepted under-2% Product-relevant values into the active comparison baseline;
 - immutable `fit_profile_version_id` remains unchanged.
 
+## Purchase/acquisition context — OWNER LOCKED BRANCH IMPLEMENTATION
+
+The authorized branch adds `fit_report_purchase_context` as owner-scoped observation data keyed by `fit_report_id`.
+
+- `fit_report_id` is the primary key, so one counted Fit Report can contribute at most one acquisition observation;
+- blank purchase context creates no row;
+- `Purchased From` preserves free-form member text plus a normalized value; an exact match to an existing retailer may store `retailer_id` for analytics, but the answer never creates a Product retailer listing and never creates a new canonical retailer merely from free-form text;
+- Price Paid is fixed numeric, non-negative, and bounded;
+- Purchase Method is controlled to Online / In Store / Gift;
+- Month and Year are stored only as a valid pair; no exact day is invented;
+- another member's context is never inherited or prefilled;
+- repeated compatible-report processing upserts the same Fit Report key instead of manufacturing another metric observation;
+- direct member access is owner-only through RLS even though the garment/Fit Report itself is intended to be public member-facing content;
+- purchase context does not participate in Product identity, counted Fit Report identity, Product confidence, Match, recommendation scoring, or retailer ranking.
+
+Analytics must preserve denominators: total eligible entries, response counts/coverage, and values among actual responders. An unanswered field is missing data, not inherited Product data.
+
 # 6. Distinct Fit Report evidence counting — LIVE
 
 Product fit summary/evidence functions count legitimate distinct Fit Report situations rather than collapsing all reports by member. One member may therefore contribute multiple legitimate body-fit states/physical variants. Presentation surfaces that require unique people must dedupe wearers separately from evidence counting.
@@ -336,35 +358,13 @@ Owner-supplied starter catalog remains research/enrichment data. Empty/unreferen
 - normalized URL conflicts can trigger identity/duplicate review.
 - affiliate routing must preserve clean destination/provenance.
 - commission never affects Match, recommendation, Product identity, search ranking, or retailer choice.
-
-## Purchase-context acquisition observations — OWNER LOCKED TARGET, NOT YET IMPLEMENTED
-
-The approved New Fit Report purchase fields are:
-- `Purchased From` — free-form text with suggestions from existing `retailers` rows;
-- `Price Paid` — non-negative numeric currency value with at most normal currency precision;
-- `Purchase Method` — controlled Online / In Store / Received as a Gift;
-- `Approx. Purchase Date` — controlled Month + Year.
-
-These values belong to **one member's acquisition of one Closet/Fit Report entry**, not to the canonical Product or Product retailer listing.
-
-Required persistence semantics for the upcoming ordered migration/save boundary:
-- exactly zero or one acquisition observation per Fit Report/entry; a unique Fit Report key must prevent duplicate metric observations from repeated renders/submits;
-- a new member/entry starts blank and never inherits another member's purchase context;
-- free-form `Purchased From` must preserve what the member entered; a matching known retailer may be linked for analytics, but the text must not silently create/overwrite Product retailer listings or canonical Product facts;
-- Price Paid must be validated server/database-side as non-negative and represented without floating-point metric drift (for example integer minor units or an appropriate fixed numeric type);
-- Purchase Method must be constrained to the approved controlled values;
-- Month and Year must be stored as controlled approximate date components and validated as a sensible pair; no exact day should be invented;
-- purchase context does not participate in Product identity, counted Fit Report identity, Product confidence, Match, or recommendation scoring;
-- owner/member mutation rules for later correction or fill-missing behavior must follow the upcoming Closet mutation audit rather than introducing unrestricted overwrites now.
-
-Analytics must retain denominators: total eligible entries, response counts/coverage, and values among actual responders. Never count an unanswered retailer/method/price/date as inherited Product data. Reporting may later aggregate retailer demand, method distribution, price summaries, month/year trends, retailer catalog gaps/search misses, and affiliate opportunities without changing Product truth.
-
-The preview branch currently renders the fields but production has **no canonical purchase-context persistence yet**. Do not deploy those fields until this persistence/validation/metric boundary exists and passes database tests.
+- purchase-context retailer observations are separate from `retailer_listings`; where a member acquired a copy cannot silently become a Shop destination.
 
 # 16. Following, person notifications, and Product notifications
 
 - `follows` is the one canonical **Following** relationship; Fit Twin remains system-generated from current-person Match among followed members.
 - Fit Twin is derived current-person Match among followed members; there is no second Fit Twin subscription graph.
+- `/following` is compatibility-only and redirects to `/circle`; signed-in `/` uses My Circle as the canonical personalized home destination.
 - `private.following_notification_subscriptions` stores explicit per-person bell subscriptions.
 - Follow alone does not enable notifications.
 - Person bell ON may auto-follow; bell OFF stops future notifications but leaves Follow intact.
@@ -406,10 +406,10 @@ Help Me Size It reuses the canonical recommendation architecture. `Would Buy Aga
 
 # 20. Current implementation debt / open verification
 
-The generalized community-confidence migration and its prior New Fit Report application changes are live in production and passed the full pre-deploy verification suite. Remaining work includes:
-- `agent/fit-report-review-purchase-context` category-first/final-review/purchase-field UI requires owner sanity-check and branch verification; it is not production;
-- purchase-context persistence/validation/one-observation-per-Fit-Report metrics are not implemented; do not ship or silently discard those member answers;
-- owner production interaction for the deployed manual/barcode New Fit Report behavior and distinct-member corroboration flow;
+The generalized community-confidence migration and its prior New Fit Report application changes are live in production and passed the full pre-deploy verification suite. The active purchase-context/Sleepwear line is implemented and production-authorized but is not yet production until merge + migration apply + Vercel verification complete. Remaining work includes:
+- owner live interaction after deployment for category filtering, Sleepwear & Lingerie, purchase persistence, final confirmation, scanner/manual behavior, and actual Fit Report creation;
+- purchase-context reporting/admin metrics UI is not built yet even though canonical collection/persistence is implemented; future reporting must remain denominator-aware;
+- owner production interaction for distinct-member Product corroboration remains pending;
 - current legacy `closet_items.visibility` / private-vs-shared Closet RLS and presentation semantics must be removed or neutralized canonically to implement the owner-locked single public Closet model without exposing raw body/private system evidence;
 - exact Fit Report mutation restrictions are unresolved pending the Closet audit; current owner-update/backend reuse capability must not be mistaken for owner approval of unrestricted editing;
 - external barcode enrichment/provider experiment is not implemented;
@@ -447,10 +447,11 @@ Before a surface/major DB behavior is called complete, prove as applicable:
 15. size/objective/body-state splitting obeys locked identity rules;
 16. admin/SerpAPI boundaries do not bypass Product review;
 17. retailer listings append/dedupe;
-18. owner interaction review for the actual surface;
-19. when purchase-context persistence is implemented, repeated processing of the same Fit Report cannot manufacture more than one acquisition observation, another member's acquisition context is never inherited, controlled method/date/price validation is enforced, and analytics preserve response denominators;
-20. when the unified public Closet migration is implemented, another authenticated member can read the intended garment/Fit Report public content while owner-only mutation controls and raw body/private evidence remain protected;
-21. when the Closet mutation model is implemented, immutable/add-missing/correction/lifecycle boundaries are enforced at database/server boundaries rather than client UI only.
+18. purchase context is at most one owner-scoped observation per Fit Report, does not inherit across members, validates price/method/date, and does not create Product retailer truth;
+19. Sleepwear & Lingerie application taxonomy agrees with replayed database vocabulary and retains automatic Not sure intake handling;
+20. owner interaction review for the actual surface;
+21. when the unified public Closet migration is implemented, another authenticated member can read the intended garment/Fit Report public content while owner-only mutation controls and raw body/private evidence remain protected;
+22. when the Closet mutation model is implemented, immutable/add-missing/correction/lifecycle boundaries are enforced at database/server boundaries rather than client UI only.
 
 # 22. Forbidden regressions
 
@@ -458,6 +459,7 @@ Do not:
 - add fixed raw body columns back to `fit_profiles` as current architecture;
 - blend current-person Match and historical garment Match;
 - expose raw body measurements through social/search/feed/notifications;
+- expose another member's direct purchase-context row through public garment reads;
 - create a second follow/catalog/sizing/moderation system;
 - create separate My Closet and Shared Closet data/component systems or treat legacy Private / Shared garment visibility as current product meaning;
 - make raw body/profile/private evidence public while implementing the public Closet;
@@ -473,8 +475,9 @@ Do not:
 - auto-upgrade member-vote Product identity to Verified;
 - overwrite one valid retailer listing with another;
 - treat Purchased From / Price Paid / Purchase Method / Purchase Date as Product truth or copy another member's values into a new entry;
-- count repeated rendering/editing of one Fit Report as multiple purchase/acquisition observations;
-- deploy purchase-context inputs while their submitted values are silently discarded;
+- count repeated processing of one Fit Report as multiple purchase/acquisition observations;
+- turn Purchased From into a Product retailer listing or create a canonical retailer from free-form purchase text;
+- count skipped purchase fields as retailer/method/price/date observations;
 - introduce unrestricted post-submit Fit Report rewriting before the owner-approved Closet mutation contract is implemented;
 - rewrite applied migrations;
 - reintroduce star Fit Rating UI;

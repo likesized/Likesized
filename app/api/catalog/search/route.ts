@@ -18,6 +18,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 type LocalSearchRow = { id: string };
 type AliasRow = { product_id: string; normalized_alias: string };
 type SizeDefaultRow = { product_id: string; default_size_kind: string | null };
+type CandidateDefaultRow = { candidate_id: string; default_size_kind: string | null; identity_confidence: string };
 type BarcodeLookupRow = {
   match_kind: "product" | "candidate";
   product_id: string | null;
@@ -92,6 +93,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const query = clean(url.searchParams.get("q") ?? "");
   const brandQuery = clean(url.searchParams.get("brand") ?? "", 120);
+  const candidateType = clean(url.searchParams.get("candidate_type") ?? "", 80);
   const barcode = normalizeIdentifier(url.searchParams.get("barcode") ?? "");
 
   const supabase = await createClient();
@@ -115,6 +117,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ local: [] });
     }
 
+    let candidateDefault: CandidateDefaultRow | null = null;
+    if (brandQuery && query && candidateType) {
+      const { data, error: candidateDefaultError } = await supabase.rpc("lookup_corroborated_candidate_defaults", {
+        p_brand: brandQuery,
+        p_model: query,
+        p_garment_type_key: candidateType,
+      });
+      if (candidateDefaultError) throw candidateDefaultError;
+      candidateDefault = ((Array.isArray(data) ? data[0] : data) ?? null) as CandidateDefaultRow | null;
+    }
+
     if (brandQuery) {
       const normalizedBrand = normalizeSearchText(brandQuery);
       const { data: direct, error: brandError } = await supabase.from("brands").select("id").eq("normalized_name", normalizedBrand).maybeSingle();
@@ -125,7 +138,7 @@ export async function GET(request: Request) {
         if (aliasError) throw aliasError;
         brandId = alias?.brand_id ?? null;
       }
-      if (!brandId) return NextResponse.json({ local: [] });
+      if (!brandId) return NextResponse.json({ local: [], candidate_default: candidateDefault });
       const { data: candidates, error: candidateError } = await supabase
         .from("products")
         .select("id,name")
@@ -143,7 +156,7 @@ export async function GET(request: Request) {
         .sort((a, b) => Number(aliasSet.has(b.id)) - Number(aliasSet.has(a.id)) || a.name.localeCompare(b.name))
         .slice(0, 12)
         .map((item) => item.id);
-      return NextResponse.json({ local: await detailedProducts(supabase, ids) });
+      return NextResponse.json({ local: await detailedProducts(supabase, ids), candidate_default: candidateDefault });
     }
 
     if (query.length < 2) return NextResponse.json({ local: [] });

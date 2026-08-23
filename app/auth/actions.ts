@@ -26,7 +26,7 @@ async function sendPasswordReset(email: string) {
   const origin = await siteUrl();
 
   return supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: origin,
+    redirectTo: `${origin}/reset-password`,
   });
 }
 
@@ -98,7 +98,11 @@ export async function requestPasswordReset(formData: FormData) {
     redirect("/forgot-password?error=missing_email");
   }
 
-  await sendPasswordReset(email);
+  const { error } = await sendPasswordReset(email);
+  if (error) {
+    redirect("/forgot-password?error=recovery_failed");
+  }
+
   redirect("/check-email");
 }
 

@@ -61,7 +61,7 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
       <UsernameSettingsForm username={profile.username} />
     </section>
 
-    <section className="section">
+    <section id="notifications" className={`section ${styles.notificationSection}`}>
       <div className="sectionHeading"><div><span className="eyebrow">NOTIFICATIONS</span><h2>Following notifications</h2></div></div>
       <div className="evidenceList">
         <div className={`evidence ${styles.settingsEvidence}`}><div><strong>Following notifications are {notificationsEnabled?"on":"off"}</strong><span>Get an in-app notification when someone you follow shares a new Closet item, updates a shared Fit Report, or posts a new outfit.</span></div><form action={saveFollowingNotificationSettings}><input type="hidden" name="enabled" value={notificationsEnabled?"false":"true"}/><button className={notificationsEnabled?"secondaryButton":"primaryButton"} type="submit">Turn notifications {notificationsEnabled?"off":"on"}</button></form></div>

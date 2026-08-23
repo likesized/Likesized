@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { followPerson, unfollowPerson } from "@/app/people/actions";
+import { followPerson, setFollowingNotificationSubscription, unfollowPerson } from "@/app/people/actions";
 import { createClient } from "@/lib/supabase/server";
 
 type Params=Promise<{username:string}>;
@@ -14,6 +14,7 @@ type DimensionRow={fit_report_id:string;dimension_key:string;response_key:string
 type DimensionLabel={key:string;label:string};
 type ResponseLabel={dimension_key:string;response_key:string;label:string};
 type HistoricalMatch={fit_report_id:string;historical_match_score:number;historical_coverage_percent:number};
+type NotificationSubscription={followed_id:string};
 const FIT_LABELS:Record<string,string>={too_small:"Too small",snug:"Snug",just_right:"Just right",relaxed:"Relaxed",too_big:"Too big"};
 function one<T>(value:unknown):T|null{return Array.isArray(value)?((value[0] as T|undefined)??null):((value as T|null)??null);}
 function dateLabel(value:string){return new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric"}).format(new Date(value));}
@@ -37,14 +38,15 @@ export default async function MemberProfilePage({params}:{params:Params}){
   const profile=profileData as ProfileRecord;
   const isSelf=profile.id===viewerId;
 
-  const [{data:reportsData,error:reportsError},{data:followData,error:followError},overall,tops,bottoms]=await Promise.all([
+  const [{data:reportsData,error:reportsError},{data:followData,error:followError},{data:notificationData,error:notificationError},overall,tops,bottoms]=await Promise.all([
     supabase.from("fit_reports").select("id,closet_item_id,size_label,fit,would_buy_again,created_at,product:products(name,slug,category,garment_type_key,brand:brands(name))").eq("user_id",profile.id).order("created_at",{ascending:false}).limit(50),
     isSelf?Promise.resolve({data:null,error:null}):supabase.from("follows").select("followed_id").eq("follower_id",viewerId).eq("followed_id",profile.id).maybeSingle(),
+    isSelf?Promise.resolve({data:[],error:null}):supabase.rpc("get_following_notification_subscriptions"),
     isSelf?Promise.resolve(undefined):scoreFor(supabase,profile.id,"overall"),
     isSelf?Promise.resolve(undefined):scoreFor(supabase,profile.id,"tops"),
     isSelf?Promise.resolve(undefined):scoreFor(supabase,profile.id,"bottoms"),
   ]);
-  if(reportsError||followError)throw new Error("Could not load member fit evidence.");
+  if(reportsError||followError||notificationError)throw new Error("Could not load member fit evidence.");
 
   const reports=(reportsData??[]) as ReportRecord[];
   const closetIds=[...new Set(reports.map((row)=>row.closet_item_id))];
@@ -96,6 +98,7 @@ export default async function MemberProfilePage({params}:{params:Params}){
   dimensions.forEach((row)=>dimsByReport.set(row.fit_report_id,[...(dimsByReport.get(row.fit_report_id)??[]),row]));
   const historyByReport=new Map(historicalMatches.map((row)=>[row.fit_report_id,row]));
   const followed=Boolean(followData);
+  const notificationsOn=((notificationData??[]) as NotificationSubscription[]).some((row)=>row.followed_id===profile.id);
   const name=profile.display_name?.trim()||profile.username;
   const returnTo=`/people/${profile.username}`;
 
@@ -104,7 +107,7 @@ export default async function MemberProfilePage({params}:{params:Params}){
       {profilePhotoUrl?<img className="avatar photoAvatar profileAvatar" src={profilePhotoUrl} alt={`${name} profile`}/>:<div className="avatar profileAvatar">{name.slice(0,1).toUpperCase()}</div>}
       <span className="eyebrow">MEMBER PROFILE</span><h1>{name}</h1><p>@{profile.username}{profile.bio?` · ${profile.bio}`:""}</p><p>Current Fit Match scores compare your current bodies. Shared Closet history below stays tied to the body state from each actual try-on. Raw measurements are never shown.</p>
       {!isSelf?<div className="statsRow"><span><b>{typeof overall==="number"?`${overall}%`:"—"}</b> current overall</span><span><b>{typeof tops==="number"?`${tops}%`:"—"}</b> current tops</span><span><b>{typeof bottoms==="number"?`${bottoms}%`:"—"}</b> current bottoms</span></div>:null}
-      {!isSelf?<div className="authActions"><form action={followed?unfollowPerson:followPerson}><input type="hidden" name="target_user_id" value={profile.id}/><input type="hidden" name="return_to" value={returnTo}/><button className={followed?"secondaryButton":"primaryButton"} type="submit">{followed?"Unfollow":"Follow"}</button></form><Link className="secondaryButton" href="/people">Back to matches</Link></div>:<div className="authActions"><Link className="secondaryButton" href="/settings">Profile & Privacy</Link><Link className="secondaryButton" href="/onboarding">Edit Fit Profile</Link><Link className="secondaryButton" href="/closet">My Closet</Link></div>}
+      {!isSelf?<><div className="authActions"><form action={followed?unfollowPerson:followPerson}><input type="hidden" name="target_user_id" value={profile.id}/><input type="hidden" name="return_to" value={returnTo}/><button className={followed?"secondaryButton":"primaryButton"} type="submit">{followed?"Unfollow":"Follow"}</button></form><form action={setFollowingNotificationSubscription}><input type="hidden" name="target_user_id" value={profile.id}/><input type="hidden" name="enabled" value={notificationsOn?"false":"true"}/><input type="hidden" name="return_to" value={returnTo}/><button className={notificationsOn?"primaryButton":"secondaryButton"} type="submit" aria-pressed={notificationsOn}>{notificationsOn?"🔔 Notifications on":"🔔 Notify me"}</button></form><Link className="secondaryButton" href="/people">Back to matches</Link></div><p className="tiny">Follow adds this member to your Style Feed. The bell is separate; turning it on also follows them.</p></>:<div className="authActions"><Link className="secondaryButton" href="/settings">Profile & Privacy</Link><Link className="secondaryButton" href="/onboarding">Edit Fit Profile</Link><Link className="secondaryButton" href="/closet">My Closet</Link></div>}
     </div>
 
     <section className="section flush"><div className="sectionHeading"><div><span className="eyebrow">SHARED FIT HISTORY</span><h2>{isSelf?"Your visible fit-reference history":`${name}'s real garment evidence`}</h2></div></div>

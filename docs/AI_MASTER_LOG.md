@@ -26,6 +26,9 @@ GitHub `likesized/Likesized` is the source of truth. `main` is the single canoni
 - Branch work includes generalized manual/barcode Product corroboration, five-member automatic Corroborated Product promotion, separate Product-to-barcode confidence, safe Corroborated-candidate size-system defaults, focused pgTAP coverage, and synchronized canonical docs.
 - This branch is **not merged and not deployed**. Production authorization has not been given for this change.
 
+# CANONICAL RECOVERY / LINEAGE STATUS
+The 2026-08-21 canonical recovery is complete. Current work is normal owner-approved branch verification against the single `main` production line; the recovery freeze is not being reactivated by this historical status heading.
+
 ## Production Supabase checkpoint
 Production project: `rlksidwniuoxoacumyaf`.
 
@@ -221,6 +224,8 @@ Rules:
 
 One member may have multiple legitimate counted reports when Size, objective physical variant, or garment-relevant body state is genuinely distinct. Evidence counting and unique-wearer presentation are separate.
 
+There is **no current V1 1–5-star Fit Rating UI**. Fit Result remains Too Small / Snug / Just Right / Relaxed / Too Big and is not a star score.
+
 # MATERIAL / PRODUCT EVIDENCE — CURRENT
 
 ## Material default
@@ -259,7 +264,7 @@ Intended Fit on an individual Fit Report remains separate report/filter metadata
 # FOLLOWING / FIT TWIN / PERSON NOTIFICATION — OWNER LOCKED
 
 - Following is member-controlled and drives Style Feed.
-- Fit Twin is system-derived among followed members from current-person Match; current initial threshold starts at 85% Overall Match.
+- Fit Twin is **system-generated** among followed members from current-person Match; current initial threshold starts at 85% Overall Match.
 - one `follows` graph only.
 - Follow alone does **not** enable notifications.
 - person bell ON auto-follows if necessary and explicitly subscribes to future activity notifications.

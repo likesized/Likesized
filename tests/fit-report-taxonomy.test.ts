@@ -42,7 +42,7 @@ test("owner-approved intake copy and layout stay on the canonical New Fit Report
  assert.match(catalog,/Have the item with you\? Scan the barcode\. Otherwise, enter it manually and we’ll take it from there\./);
  assert.match(catalog,/Scan the barcode and we’ll check the LikeSized catalog\./);
  assert.match(catalog,/We don’t have this item yet, but no problem — you can help us add it with just a few quick questions\./);
- assert.match(intake,/Tell us more about how it fits\. You can also share styling tips, wash or dry advice, or anything else that might help someone considering this item\./);
+ assert.match(form,/Tell us more about how it fits\. You can also share styling tips, wash or dry advice, or anything else that might help someone considering this item\./);
 });
 
 test("category-first intake narrows garment type before item details",()=>{
@@ -58,7 +58,7 @@ test("category-first intake narrows garment type before item details",()=>{
 });
 
 test("final intake order keeps the normal Fit Report clear and collapses additional information",()=>{
- for(const required of ["Brand / Make","Item / Model","Overall category","Specific garment type","Color","Overall Fit Result","Condition","Fit photo","Fit notes"])assert.match(intake+catalog,new RegExp(required));
+ for(const required of ["Brand / Make","Item / Style / Model","Overall category","Specific garment type","Color","Overall Fit Result","Condition","Fit photos","Fit notes"])assert.match(intake+catalog+form,new RegExp(required));
  assert.match(catalog,/Department <span className="muted inlineMuted">optional<\/span>/);
  assert.match(intake,/Retail link <span className="muted inlineMuted">optional<\/span>/);
  assert.match(catalog,/<details className=\{styles\.optionalDetails\}>/);
@@ -66,7 +66,7 @@ test("final intake order keeps the normal Fit Report clear and collapses additio
  assert.match(catalog,/<summary className=\{styles\.optionalSummary\}>Optional Additional Information<\/summary>/);
  assert.match(catalog,/Help us learn more about this item/);
  assert.match(catalog,/Every bit of information helps LikeSized build a better garment listing/);
- for(const optional of ["Purchased From","Price Paid","Purchase Method","Approx. Purchase Date","UPC / barcode","Manufacturer Style / Article Number","Material / Fabric Composition","Product photo"])assert.match(catalog,new RegExp(optional));
+ for(const optional of ["Purchased From","Price Paid","Purchase Method","Approx. Purchase Date","UPC / barcode","Manufacturer Style / Article Number","Material / Fabric Composition","Product Photo","Product Label / Tag Photo"])assert.match(catalog,new RegExp(optional));
  assert.match(catalog,/type="number" inputMode="decimal" min="0" max="999999\.99" step="0\.01"/);
  assert.match(catalog,/<option value="online">Online<\/option>/);
  assert.match(catalog,/<option value="in_store">In Store<\/option>/);
@@ -75,9 +75,10 @@ test("final intake order keeps the normal Fit Report clear and collapses additio
  assert.match(catalog,/PURCHASE_YEARS/);
  assert.match(catalog,/list="retailer-options"/);
  assert.ok(intake.indexOf("Overall Fit Result") < intake.indexOf("Condition"));
- assert.ok(intake.indexOf("Condition") < intake.indexOf("Fit photo"));
- assert.ok(intake.indexOf("Fit notes") < intake.indexOf("Retail link"));
- assert.ok(intake.indexOf("Retail link") < intake.indexOf("<CatalogCommunityEnrichment"));
+ assert.ok(intake.indexOf("Condition") < intake.indexOf("Fit photos"));
+ assert.ok(intake.indexOf("Fit photos") < intake.indexOf("<FitNotesField"));
+ assert.ok(intake.indexOf("<FitNotesField") < intake.indexOf("<CatalogRetailLinkField"));
+ assert.ok(intake.indexOf("<CatalogRetailLinkField") < intake.indexOf("<CatalogCommunityEnrichment"));
  assert.ok(intake.indexOf("<CatalogCommunityEnrichment") < intake.indexOf("Add Fit Report →"));
  assert.ok(catalog.indexOf("Optional Additional Information") < catalog.indexOf("Purchased From"));
  assert.ok(catalog.indexOf("Purchased From") < catalog.indexOf("Price Paid"));
@@ -86,7 +87,8 @@ test("final intake order keeps the normal Fit Report clear and collapses additio
  assert.ok(catalog.indexOf("Approx. Purchase Date") < catalog.indexOf("UPC / barcode"));
  assert.ok(catalog.indexOf("UPC / barcode") < catalog.indexOf("Manufacturer Style / Article Number"));
  assert.ok(catalog.indexOf("Manufacturer Style / Article Number") < catalog.indexOf("Material / Fabric Composition"));
- assert.ok(catalog.indexOf("Material / Fabric Composition") < catalog.indexOf("Product photo"));
+ assert.ok(catalog.indexOf("Material / Fabric Composition") < catalog.indexOf("Product Photo"));
+ assert.ok(catalog.indexOf("Product Photo") < catalog.indexOf("Product Label / Tag Photo"));
  assert.match(catalog,/scannedBarcode[\s\S]*<input type="hidden" name="scanned_barcode" value=\{scannedBarcode\}/);
  assert.doesNotMatch(catalog,/Search retail catalog|Imported from retail catalog|catalog_source_provider|catalog_source_record/);
  assert.doesNotMatch(actions,/record_catalog_source_selection|catalog_source_provider|importedColorLabels/);
@@ -100,9 +102,10 @@ test("final confirmation reviews only main Fit Report fields before server submi
  assert.match(form,/\[data-review-label\], input\[name='size_normalized_label'\]/);
  assert.match(intake,/data-review-label="Overall Fit Result"/);
  assert.match(intake,/data-review-label="Condition"/);
- assert.match(intake,/data-review-label="Fit photo"/);
- assert.match(intake,/data-review-label="Fit notes"/);
- assert.match(intake,/data-review-label="Retail link"/);
+ assert.match(intake,/data-review-label="Front Fit Photo"/);
+ assert.match(intake,/data-review-label="Back Fit Photo"/);
+ assert.match(form,/data-review-label="Fit notes"/);
+ assert.match(catalog,/data-review-label="Retail link"/);
  assert.doesNotMatch(catalog,/name="purchased_from"[^>]*data-review-label/);
  assert.doesNotMatch(catalog,/name="price_paid"[^>]*data-review-label/);
  assert.doesNotMatch(catalog,/name="purchase_method"[^>]*data-review-label/);
@@ -112,6 +115,7 @@ test("final confirmation reviews only main Fit Report fields before server submi
  assert.doesNotMatch(catalog,/name="style_number"[^>]*data-review-label/);
  assert.doesNotMatch(catalog,/name="materials_json"[^>]*data-review-label/);
  assert.doesNotMatch(catalog,/name="product_photo"[^>]*data-review-label/);
+ assert.doesNotMatch(catalog,/name="product_label_photo"[^>]*data-review-label/);
 });
 
 test("known garments only carry forward editable size-system, department, and material defaults",()=>{

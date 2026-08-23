@@ -25,19 +25,21 @@ GitHub `likesized/Likesized` is the source of truth. `main` is the single canoni
 - Production includes intake-method-independent manual/barcode Product corroboration, five-member automatic Corroborated Product promotion, separate Product-to-barcode confidence, conflict gates, and safe Corroborated-candidate size-system defaults.
 - Production Supabase migration `20260823054933 generalize_catalog_identity_confidence` is applied from canonical local `supabase/migrations/20260823040000_generalize_catalog_identity_confidence.sql`.
 - PR #50 reconciled production-status canon to `main` as `9431366660f813bd2dda68ee5db9c6f4fdc5ddfa`.
-- Production owner interaction still needs the distinct-second-member Maidenform / Heirloom corroboration check.
+- Distinct-second-member production check is complete: Maidenform / Heirloom / bra candidate `de34b6dd-47c9-4795-af77-5117e4f8b554` reached **Corroborated** with 2 distinct confirming members, 0 identity conflicts, and 2 distinct-member barcode confirmations for UPC `196988323504`. It correctly remains unresolved/non-canonical because automatic Product promotion requires 5 distinct confirming members.
 
-## Active New Fit Report + Sleepwear line — IMPLEMENTED, PRODUCTION AUTHORIZED, DEPLOYMENT PENDING
+## Active New Fit Report + Sleepwear + Fit Community line — IMPLEMENTED, PRODUCTION AUTHORIZED, DEPLOYMENT PENDING
 - `agent/fit-report-review-purchase-context` is the one active branch, created from canonical `main` at `9431366660f813bd2dda68ee5db9c6f4fdc5ddfa`; PR #51 is its controlled merge path.
 - Owner visually sanity-checked the category-first / optional-information / final-review direction and explicitly authorized locking the completed changes and pushing them live for real Fit Report testing.
 - The branch now includes canonical purchase-context persistence rather than collecting and discarding optional answers.
 - The branch adds the owner-approved **Sleepwear & Lingerie** category and controlled questions.
 - The branch changes signed-in `/` to My Circle and adds the approved public FAQ comparison/differentiation entry.
-- Production deployment is not recorded as complete until PR #51 is merged, both new ordered Supabase migrations are applied, Vercel is READY on the merged `main`, and production smoke checks pass.
+- The branch adds the owner-approved **Fit Community** preference — Men / Women / Both — as a wearer/member relevance default without changing body Match math.
+- Production deployment is not recorded as complete until PR #51 is merged, all three new ordered Supabase migrations are applied, Vercel is READY on the merged `main`, and production smoke checks pass.
 
 Pending local migrations on this authorized line:
 - `20260823130000_add_sleepwear_lingerie_category.sql`
 - `20260823130100_purchase_context_and_sleepwear_taxonomy.sql`
+- `20260823140000_add_fit_community_preference.sql`
 
 # CANONICAL RECOVERY / LINEAGE STATUS
 The 2026-08-21 CANONICAL RECOVERY is complete. Current work is normal owner-approved development against the one `main` production line; no recovery freeze is active.
@@ -96,11 +98,11 @@ Grouped menu was owner-approved visually. Sign Out was later fixed and `Settings
 ## Auth — OWNER CONFIRMED
 Signup/Login/Forgot Password/Reset Password recovery behavior is audited and owner-confirmed: **Auth is good.**
 
-## Fit Profile — OWNER CONFIRMED
-Owner confirmed the re-audited Fit Profile: **All good.** Preferred Fit UI remains retired.
+## Fit Profile — BASE OWNER CONFIRMED; FIT COMMUNITY ADDITION APPROVED ON PR #51, LIVE VERIFICATION PENDING
+Owner confirmed the re-audited Fit Profile base: **All good.** Preferred Fit UI remains retired. PR #51 adds required first-setup Fit Community selection and editable current preference without adding Fit Community to Match math.
 
-## Settings — OWNER CONFIRMED
-Identity/profile-photo/privacy/notification-setting work was deployed and owner moved on with **Ok Next**.
+## Settings — BASE OWNER CONFIRMED; FIT COMMUNITY EDITING APPROVED ON PR #51, LIVE VERIFICATION PENDING
+Identity/profile-photo/privacy/notification-setting work was deployed and owner moved on with **Ok Next**. PR #51 adds owner-controlled Fit Community editing under Profile Settings.
 
 ## Notifications — ACTIVE AUDIT, NOT YET OWNER-CONFIRMED COMPLETE
 Approved structure includes:
@@ -226,9 +228,10 @@ Barcode confidence is separate from Product confidence.
 - ambiguous barcode identities are never auto-selected;
 - never use another member's Fit Photo as generic Product imagery.
 
-Known owner test artifact retained for later second-account verification:
+Known owner test artifact:
 - candidate `de34b6dd-47c9-4795-af77-5117e4f8b554` — Maidenform / Heirloom / bra;
-- UPC `196988323504`.
+- UPC `196988323504`;
+- live second-account test complete at 2 distinct confirmations / Corroborated / 0 conflicts.
 
 Do not remove user/test history blindly.
 
@@ -274,6 +277,17 @@ Kept / Returned / Exchanged and changes after use such as shrinkage belong to la
 - Existing `closet_items.visibility` / private-shared RLS/UI is legacy implementation debt to remove/neutralize during the Closet foundation audit.
 - Settle immutable/add-missing/correction/lifecycle mutation behavior before broad owner edit controls.
 
+# FIT COMMUNITY / PERSONALIZED RELEVANCE — OWNER LOCKED
+- Fit Profile has one current owner-private **Fit Community** preference: **Men / Women / Both**.
+- Fit Community is a personalization/community relevance field. It is **not** biological-sex truth, public gender identity, garment Department, Product identity, or a body measurement.
+- **Body Match answers how similarly two people are built. Fit Community answers which wearer/member community should normally populate the personalized experience.** Fit Community never changes the numeric Match calculation.
+- Men defaults People My Size, Fit Twin suggestions, and My Circle/social relevance to Men-compatible wearers; Women does the same for Women-compatible wearers; Both permits all communities.
+- A member choosing Both is compatible with Men and Women views so legacy members and cross-community members are not silently discarded.
+- Personalized social filtering is by the **wearer/posting member's Fit Community**, not by the Department assigned to the garment. A Women-community member who wears/reviews Men's 30×30 jeans remains Women-community content and can be useful to other Women-community members.
+- Garment Department remains Product/Fit Report context. Intentional Product browsing/detail pages must not discard otherwise useful Fit Reports merely because the garment Department differs from the wearer's Fit Community.
+- Men / Women / Both view controls may temporarily override the saved preference without changing it. Only an explicit Fit Profile/Profile Settings save changes the stored default.
+- PR #51 implements the saved preference plus People My Size and My Circle view overrides. Search/Explore-specific default/override presentation must be reconciled when those scheduled audits are reached rather than creating parallel filter logic now.
+
 # FOLLOWING / FIT TWIN / MY CIRCLE — OWNER LOCKED
 - Following is member-controlled.
 - Fit Twin is **system-generated** from current-person Match among followed members; current initial threshold starts at 85% Overall Match.
@@ -283,6 +297,7 @@ Kept / Returned / Exchanged and changes after use such as shrinkage belong to la
 - Follow alone does not enable notifications.
 - person bell ON may auto-follow and subscribes to future activity; bell OFF leaves Follow intact; Unfollow removes the person notification subscription.
 - global Following-notification setting defaults OFF and acts as master switch; re-enabling does not backfill missed activity.
+- Fit Community gates default wearer relevance before Fit Twin/social presentation; it never modifies the underlying body Match percentage.
 
 # PRODUCT ACTIONS / LIKELOCKER / WISH LOCKER / SHOP — OWNER LOCKED
 - **Heart — Like Locker:** Product like/popularity only; no shopping or notification side effect.
@@ -298,7 +313,7 @@ Admin all-Products/candidate tooling must expose identity status, distinct confi
 Priority:
 - weak Provisional/barely Corroborated genuine identity conflict = high;
 - Corroborated/auto-promoted with multiple/growing conflicts = medium;
-- Verified with one isolated ordinary member conflict = low while evidence remains;
+- Verified with one isolated ordinary member conflict = low while retaining evidence;
 - multiple independent conflicts, conflicts approaching confirmations, competing Product barcode links, or incorrect-merge signals escalate regardless of status.
 
 # SERPAPI — ADMIN RESEARCH ONLY
@@ -328,19 +343,19 @@ Preferred Fit by garment type is not current V1 behavior. It is removed from Fit
 1. Homepage + complete FAQ — PR #51 approved changes pending live verification.
 2. Global header + member Menu + admin entry/navigation.
 3. Auth — owner confirmed.
-4. Fit Profile — owner confirmed.
-5. Settings — owner confirmed.
+4. Fit Profile — base owner confirmed; Fit Community addition on PR #51 pending live verification.
+5. Settings — base owner confirmed; Fit Community editing on PR #51 pending live verification.
 6. Notifications.
 7. Unified Closet / member profile Closet view — one public Closet; settle immutable/add-missing/correction/lifecycle model.
 8. Update/Edit Fit Report within Closet foundation only after mutation model is locked.
-9. People My Size.
-10. My Circle / Following / Fit Twin behavior + legacy redirects; signed-in home destination now owner-locked to My Circle, full page customization waits for this audit.
+9. People My Size — audit Fit Community default/temporary override behavior with current-person Match.
+10. My Circle / Following / Fit Twin behavior + legacy redirects — audit Fit Community wearer relevance and signed-in home behavior.
 11. New Fit Report — generalized catalog confidence live; PR #51 category-first + purchase persistence + Sleepwear + final review production-authorized pending deployment/live test.
 12. New Outfit.
 13. Outfits / Style Feed.
-14. Garment/Product detail.
-15. Explore.
-16. Search + `/browse` compatibility.
+14. **Garment/Product detail — explicitly resolve Fit Evidence quality/degradation.** A high body Match must not make a poor Fit Result look positive. Product detail must distinguish “people built like you wore this size” from whether those reports say Too Small/Snug/Just Right/Relaxed/Too Big; determine prominent Fit Evidence/Fit Report warnings and how later dated lifecycle evidence such as Shrunk/Stretched affects recommendation confidence/warnings without rewriting the original Fit Report.
+15. Explore — reconcile Fit Community defaults/manual override with existing garment/outfit filters.
+16. Search + `/browse` compatibility — reconcile Fit Community defaults/manual override where relevant.
 17. LikeLocker / Wish Locker.
 18. Full Admin Catalog + Moderation.
 19. final mobile/desktop/nav/privacy/copy regression.
@@ -358,19 +373,21 @@ Before Beta:
 - run mobile/desktop/browser, privacy/RLS/security, performance, spam/moderation, and canonical-drift regression;
 - controlled Beta cohort; use real search misses, Product corroboration, Match usefulness, social behavior, purchase response coverage, and shopping behavior to drive priorities.
 
-During Beta watch Product hit rate vs manual intake, Fit Report friction, purchase response rates/retailer patterns, People My Size usefulness, real two-member corroboration, natural five-member promotion, barcode learning/conflicts/duplicates, and catalog gaps. Fix defects only in canonical owning sources.
+During Beta watch Product hit rate vs manual intake, Fit Report friction, purchase response rates/retailer patterns, People My Size usefulness, Fit Community relevance/default quality, real two-member corroboration, natural five-member promotion, barcode learning/conflicts/duplicates, and catalog gaps. Fix defects only in canonical owning sources.
 
 Early post-Beta perform **Mobile App Options + AI Build Viability** review before a separate app codebase: compare PWA vs React Native/Expo/other shared-code/native approaches; reuse Supabase/backend/domain logic where possible; assess camera/barcode/photo/push/deep-link/auth/store/release/testing needs and what AI can reliably implement vs where owner/specialist help is warranted. Do not promise issue-free app development; if approved, design one canonical mobile architecture before coding.
 
 Other post-Beta work is usage-driven: Product merge/split, richer aliases/locks/moderation, Product-photo promotion, admin SerpAPI research UX, barcode-provider feasibility, evidence tuning, affiliate expansion, catalog growth, recommendation tuning, infrastructure scaling, growth loops, Gift List/public-launch readiness.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- PR #51 is production-authorized but not live until merge + both migrations + Vercel verification complete.
+- PR #51 is production-authorized but not live until merge + all three pending migrations + Vercel verification complete.
 - Purchase-context persistence exists on PR #51; aggregate/admin reporting UI remains to build and must be denominator-aware.
-- Owner live interaction must verify actual Fit Report creation, category filtering, Sleepwear questions, optional purchase persistence, final confirmation, scanner/manual flows after deployment.
-- Second-account Maidenform / Heirloom Provisional → Corroborated production check remains pending; do not manufacture same-member votes or require five manual test accounts to prove the already automated five-member threshold.
+- Fit Community core persistence and People/My Circle filtering exist on PR #51; Search/Explore-specific default/override presentation waits for those scheduled audits.
+- Owner live interaction must verify actual Fit Report creation, category filtering, Sleepwear questions, optional purchase persistence, final confirmation, scanner/manual flows, Fit Community first-setup selection/editing, and People/My Circle Men/Women/Both override behavior after deployment.
+- Maidenform / Heirloom distinct-second-member production corroboration check is complete; no fake extra accounts are required to prove the automated five-member threshold.
 - Exact post-submit mutation behavior remains a Closet audit decision; no unrestricted rewriting.
 - Legacy per-garment Private/Shared Closet visibility remains implementation debt.
+- Product-detail Fit Evidence/degradation presentation remains deliberately deferred to audit #14 after Closet lifecycle semantics are locked.
 - Full admin all-Products confidence/evidence queue; external barcode provider probe; Product merge/split; aliases; spam moderation; Product-photo workflow; field lock/reopen; admin SerpAPI UI; starter-catalog enrichment; Department consensus; material same-member trust semantics; browser behavioral regression; remaining owner page audits all remain open as previously scoped.
 
 # AUDIT COMPLETION RULE
@@ -383,15 +400,15 @@ A surface is not complete merely because code exists or automated tests pass. Co
 - Barcode confirmation commit `490e0da88bac562ac1c8230149000f9f7e509806` deployed READY; production barcode migrations `20260823031508` and `20260823031701` applied.
 - PR #49 generalized Product confidence and deployed as `0b569e4a25b7f75a313e57ca94d79286ec3df1df`; production migration `20260823054933` applied; Vercel deployment `dpl_AbdpdRMyvdJ3c7C1sKeDe3qbQK66` READY.
 - PR #50 reconciled that production status as `9431366660f813bd2dda68ee5db9c6f4fdc5ddfa`.
-- PR #51 branch was created from that clean `main`, owner sanity-checked, expanded with canonical purchase persistence and Sleepwear & Lingerie, and explicitly production-authorized. Its live merge/deployment identifiers are intentionally not recorded until observed.
+- PR #51 branch was created from that clean `main`, owner sanity-checked, expanded with canonical purchase persistence, Sleepwear & Lingerie, Fit Community relevance, and explicitly production-authorized. Its live merge/deployment identifiers are intentionally not recorded until observed.
+- Live two-account confidence check proved Maidenform / Heirloom transitions to Corroborated at 2 distinct members while remaining non-canonical below the 5-member promotion threshold.
 
 # EXACT NEXT ACTION — CURRENT
-1. Finish exact-head PR #51 CI: canonical integrity, TypeScript, focused app safeguards, build, fresh migration replay, and full database tests.
-2. Immediately before merge, confirm PR #51 remains open/mergeable and branch is 0 behind `main`; reconcile and reverify if `main` changed.
-3. Merge PR #51 through the canonical PR path under the owner's explicit production authorization.
-4. Apply `20260823130000_add_sleepwear_lingerie_category.sql`, then `20260823130100_purchase_context_and_sleepwear_taxonomy.sql` through the approved Supabase migration path; never ad-hoc rewrite applied history.
-5. Verify the merged `main` Vercel production deployment is READY, production migration history includes both changes, public homepage/FAQ responds, and no new runtime errors appear.
-6. Read-only verify production has exactly the ten active Sleepwear & Lingerie types, purchase-context table/RLS/constraints, no migration-created purchase observations, and preserved prior catalog evidence.
-7. Owner then creates real production Fit Reports and checks category filtering, Sleepwear questions, optional purchase data, **Does this look right?**, scanner/manual behavior, and successful saves.
+1. Finish exact-head PR #51 CI after the Fit Community/database safeguard correction: canonical integrity, TypeScript, focused app safeguards, build, fresh migration replay, and full database tests.
+2. Immediately before deployment, confirm PR #51 remains open/mergeable and branch is 0 behind `main`; reconcile and reverify if `main` changed.
+3. Because the three PR #51 database migrations are additive/backward-compatible and the new application reads their structures, apply `20260823130000_add_sleepwear_lingerie_category.sql`, `20260823130100_purchase_context_and_sleepwear_taxonomy.sql`, then `20260823140000_add_fit_community_preference.sql` through the approved Supabase migration path immediately before the authorized merge. Never ad-hoc rewrite applied history.
+4. Merge PR #51 through the canonical PR path under the owner's explicit production authorization.
+5. Verify the merged `main` Vercel production deployment is READY, production migration history includes all three changes, public homepage/FAQ responds, and no new runtime errors appear.
+6. Read-only verify production has exactly the ten active Sleepwear & Lingerie types, purchase-context table/RLS/constraints with no migration-created observations, Fit Community enum/owner-private column/RLS, community-aware match/feed overloads, preserved prior catalog evidence, and unchanged numeric body Match math.
+7. Owner then creates real production Fit Reports and checks category filtering, Sleepwear questions, optional purchase data, **Does this look right?**, scanner/manual behavior, successful saves, Fit Community onboarding/editing, and Men/Women/Both temporary views.
 8. Update canonical deployment status with observed merge/migration/deployment IDs; then finish Notifications and move into unified Closet mutation/public-view audit.
-9. Separately, when the second account is available, complete the Maidenform / Heirloom distinct-member corroboration check.

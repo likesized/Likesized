@@ -122,7 +122,7 @@ export function CatalogColorField() {
 export function CatalogRetailLinkField() {
   const { retailLink, setRetailLink } = useCatalogGarment();
   return <label>Retail link <span className="muted inlineMuted">optional</span>
-    <input name="product_url" type="url" maxLength={1000} placeholder="https://..." value={retailLink} onChange={(event) => setRetailLink(event.target.value)} />
+    <input name="product_url" type="url" maxLength={1000} placeholder="https://..." value={retailLink} onChange={(event) => setRetailLink(event.target.value)} data-review-label="Retail link" />
   </label>;
 }
 

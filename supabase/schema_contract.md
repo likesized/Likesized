@@ -66,17 +66,20 @@ Database layers remain:
 
 `garment_submissions` preserves member-provided identity/enrichment evidence. `catalog_candidates` holds staging/review state. `catalog_review_flags` holds exception evidence. `catalog_resolution_actions` records accountable system/admin resolution history.
 
-## PR #51 latest owner-locked trust model — branch behavior
-`20260823150000_auto_post_provisional_products_and_item_reporting.sql` supersedes the older five-member canonicalization gate for current product meaning.
+## PR #51 four-tier Product identity trust — branch behavior
+`20260823150000_auto_post_provisional_products_and_item_reporting.sql` changes the older five-member **publishing** gate while preserving the five-member milestone as stronger evidence.
 
-A **clean unique first real member submission** may be materialized/mapped immediately to a canonical Product by the controlled system boundary:
-- one distinct attached member Fit Report → Product is **Provisional**;
-- two or more distinct attached member Fit Reports may strengthen a Provisional Product to **Corroborated**;
-- **Verified** remains admin/authoritative and is never achieved from member count alone.
+A **clean unique first real member submission** may be materialized/mapped immediately to a canonical Product by the controlled system boundary. Publishing and Product identity trust are separate:
+- **Provisional — 1 distinct wearer**;
+- **Corroborated — 2–4 distinct wearers**;
+- **Established — 5+ distinct wearers**;
+- **Verified — authoritative/admin-reviewed only**.
 
 Members still do not directly insert Product truth. Automatic posting runs through the same audited candidate→Product mapping architecture and records a system action.
 
-`products.identity_confirmation_count` stores the distinct member count currently attached through Product Fit Reports. `private.refresh_product_identity_confidence(product_id)` refreshes this count and may promote Provisional → Corroborated. It does not auto-demote existing stronger status and never auto-verifies.
+`products.identity_confirmation_count` stores the distinct member count currently attached through Product Fit Reports. `products.identity_trust_tier` stores the four-tier identity state. `private.refresh_product_identity_confidence(product_id)` recalculates those two fields from attached wearer evidence and authoritative Verified state.
+
+This identity tier is deliberately separate from `products.catalog_status`, which continues to carry broader field/catalog authority semantics. Wearer count must not silently promote description, material, Department, attributes or other Product facts.
 
 ## Blocking pre-post ambiguity
 A candidate does not auto-post when blocking identity evidence already exists. Examples include:
@@ -97,13 +100,15 @@ A later report/conflict does not automatically delete, unpublish or rewrite an e
 - `priority_score`: 1 / 2 / 3.
 
 Trust-aware priority rules:
-- Provisional Product or uncorroborated candidate with an open flag → High;
-- Corroborated Product/candidate → normally Medium; multiple independent reporters/conflict signals may escalate High;
-- Verified Product → normally Low for one isolated ordinary member report; multiple independent signals escalate Medium/High.
+- Provisional Product (1 wearer) with a credible issue → High;
+- Corroborated Product (2–4 wearers) with a credible issue → High because the disagreement may still reveal an undiscovered Product problem;
+- Established Product (5+ wearers) → one isolated ordinary disagreement starts Low, a second independent signal escalates Medium, and three or more independent signals escalate High;
+- Verified Product → isolated ordinary reports start Low, with repeated independent signals escalating Medium/High;
+- unresolved non-verified candidate flags are High because something already blocked safe automatic materialization.
 
 Competing identifiers, multiple identity conflicts and strong duplicate signals may escalate regardless of trust.
 
-`private.recalculate_product_review_priority` and `private.recalculate_candidate_review_priority` maintain current urgency. Triggers re-score flags when relevant status/evidence changes.
+`private.recalculate_product_review_priority` and `private.recalculate_candidate_review_priority` maintain current urgency. Triggers re-score flags when relevant evidence/status changes.
 
 # 6. Member Product reporting — PR #51 branch behavior
 `public.report_product_item(product_id, reason, details)` is the one member-facing Product report boundary.
@@ -125,7 +130,7 @@ The detector may add `possible_duplicate` review evidence but does **not** block
 
 Future internal checks may expand to reviewed aliases, stronger link/identifier relationships or other safe signals, but must preserve conservative merge rules.
 
-# 8. Barcode relationship confidence
+# 8. Barcode relationship confidence and scanner imagery
 Barcode confidence remains separate from Product confidence.
 
 - `private.product_barcode_evidence` stores private per-member Product→barcode evidence tied to that member's Product Fit Report.
@@ -136,6 +141,13 @@ Barcode confidence remains separate from Product confidence.
 - competing Product claims for one barcode mark review evidence and never silently reassign it.
 
 `private.barcode_identity_confirmations` remains immutable historical scan-confirmation evidence but does not define Product-level confidence by itself.
+
+PR #51 adds `public.get_scan_match_image_source(product_id,candidate_id)` as a narrow authenticated scanner-identification boundary. Scanner image priority is:
+1. Product/catalog photo;
+2. public/shared member Fit Photo;
+3. application placeholder/default when neither exists.
+
+The Fit Photo fallback never becomes canonical Product imagery or Product truth. Authenticated read policies permit scanner display of approved Product/catalog photo storage while shared Fit Photo access continues through its existing shared-photo boundary.
 
 # 9. Direct Product search
 `search_catalog_products` is the canonical broad textual Product search. Current direct Product search does not accept Fit Community or Department as a hidden gate.
@@ -197,7 +209,7 @@ Material defaults use exact complete recipe signatures; they are never averaged 
 # 14. Admin authorization / moderation
 `private.admin_users` remains the explicit admin authorization boundary. Catalog/moderation changes require authorized server/database boundaries and accountable history.
 
-Admin review is exception-driven, not a manual approval queue for every clean first garment. Required operating visibility includes Product/candidate trust, confirmation counts, open flags, priority, barcode confidence, retailer links, evidence history and system-vs-admin resolution provenance.
+Admin review is exception-driven, not a manual approval queue for every clean first garment. Required operating visibility includes Product/candidate identity trust, confirmation counts, open flags, priority, barcode confidence, retailer links, evidence history and system-vs-admin resolution provenance.
 
 Existing `content_reports` moderation covers supported member-visible photo/post targets. Product-level `member_report` uses `catalog_review_flags`, keeping Product identity/content concerns inside the catalog review architecture rather than creating a parallel Product moderation system.
 
@@ -243,14 +255,17 @@ Help Me Size It reuses this architecture. `Would Buy Again` does not affect size
 # 21. Current implementation debt / open verification
 Before PR #51 may be called complete:
 - full exact-head canonical/type/build/migration/database tests must pass;
-- new Provisional auto-post must be proven on a fresh migration replay;
-- member report priority must be proven at Provisional/Corroborated/Verified trust levels;
+- clean first-item auto-post and all four identity-trust tiers must be proven on a fresh migration replay;
+- member report priority must be proven at Provisional, Corroborated, Established and Verified trust levels;
+- scanner Product-photo → shared Fit Photo → placeholder behavior must remain safeguarded;
 - direct Product search global behavior must remain safeguarded;
-- Sleepwear, purchase context, Fit Community and New Fit Report review behavior require owner/live verification after any authorized deployment;
-- current production Maidenform/Heirloom historical evidence must be preserved through any backfill/materialization;
+- Sleepwear, purchase context, Fit Community and New Fit Report review behavior require owner/live verification after the authorized deployment;
+- current production Maidenform/Heirloom historical evidence must be preserved through backfill/materialization;
 - unified public Closet migration and mutation model remain future audit work;
 - complete all-Products admin priority/filter UX remains to build;
 - merge/split, alias UX, spam moderation, Product-photo review, external barcode-provider feasibility, SerpAPI admin UX and browser-level regression remain open where previously scoped.
+
+The proposed sex/body-specific public measurement FAQ wording is not approved for this deployment. It remains a copy decision for owner review rather than executable schema behavior.
 
 # 22. Verification contract
 Before this line is complete, prove as applicable:
@@ -262,18 +277,21 @@ Before this line is complete, prove as applicable:
 6. full database behavior/privacy tests;
 7. clean first unique member submission auto-materializes/maps a Provisional Product without routine admin approval;
 8. blocking pre-post ambiguity remains unresolved/reviewable;
-9. second distinct Product wearer can promote Provisional → Corroborated;
-10. Verified remains admin/authoritative only;
-11. later reports/conflicts do not silently rewrite/unpublish Product history;
-12. Product report reasons create trust-aware catalog flags;
-13. near-name/identifier/link signals create review evidence without automatic fuzzy merge;
-14. first Product/barcode evidence remains provisional and second distinct member corroborates it;
-15. multiple legitimate barcodes coexist under one Product;
-16. competing barcode/Product claims do not silently reassign;
-17. purchase context remains one owner-scoped observation per Fit Report;
-18. direct Product search is not gated by Fit Community/Department;
-19. Sleepwear app taxonomy matches replayed database vocabulary;
-20. owner interaction review occurs before a surface is marked owner-confirmed.
+9. second through fourth distinct Product wearers produce Corroborated identity trust;
+10. fifth distinct wearer produces Established identity trust without auto-verifying Product facts;
+11. Verified remains admin/authoritative only;
+12. later reports/conflicts do not silently rewrite/unpublish Product history;
+13. Product report reasons create trust-aware catalog flags;
+14. Provisional/Corroborated issues start High while Established/Verified isolated ordinary disagreements start Low and repeated independent signals escalate;
+15. near-name/identifier/link signals create review evidence without automatic fuzzy merge;
+16. first Product/barcode evidence remains provisional and second distinct member corroborates it;
+17. multiple legitimate barcodes coexist under one Product;
+18. competing barcode/Product claims do not silently reassign;
+19. scanner confirmation image priority is Product/catalog photo → shared Fit Photo → placeholder;
+20. purchase context remains one owner-scoped observation per Fit Report;
+21. direct Product search is not gated by Fit Community/Department;
+22. Sleepwear app taxonomy matches replayed database vocabulary;
+23. owner interaction review occurs before a surface is marked owner-confirmed.
 
 # 23. Forbidden regressions
 Do not:
@@ -282,9 +300,11 @@ Do not:
 - require a Men/Women switch for direct Product search;
 - restore routine admin approval for every clean unique new garment;
 - let a member directly rewrite canonical Product fields;
+- collapse Provisional/Corroborated/Established/Verified identity trust into unrelated Product-fact catalog status;
 - auto-verify from member count;
 - use fuzzy similarity as automatic Product merge authority;
 - silently delete/unpublish an existing Product because one later report arrives;
+- promote a scanner fallback Fit Photo into canonical Product imagery;
 - require barcode presence for Product identity;
 - silently reassign a barcode between competing Products;
 - treat purchase context as Product truth;

@@ -80,7 +80,7 @@ export default async function NotificationsPage({searchParams}:{searchParams:Sea
 
     {evidenceAlerts.length?<section><div className="sectionHeading"><div><span className="eyebrow">PRODUCT UPDATES</span><h2>New Fit Reports for products you’re watching</h2></div></div><div className={styles.list}>{evidenceAlerts.map((row)=>{const product=one<AlertProduct>(row.product);const brand=one<AlertBrand>(product?.brand);return <article className={`${styles.card} ${row.read_at?"":styles.unread}`} key={row.product_id}><div className={styles.avatar}>FIT</div><div><div className={styles.top}><div><strong>{brand?.name?`${brand.name} · `:""}{product?.name||"Product"}</strong><span className={styles.time}>{dateLabel(row.last_notified_at)}</span></div>{!row.read_at?<span className={styles.newBadge}>New</span>:null}</div><p className={styles.message}>New Fit Report evidence is available for this product.</p><div className={styles.actions}>{product?<Link className="textLink" href={`/item/${product.slug}`}>View product →</Link>:null}{!row.read_at?<form action={markProductEvidenceNotificationRead}><input type="hidden" name="product_id" value={row.product_id}/><button className={styles.readButton}>Mark read</button></form>:null}</div></div></article>})}</div></section>:null}
 
-    {notifications.length?<div className={styles.list}>{notifications.map((row)=>{
+    {notifications.length?<section><div className="sectionHeading"><div><span className="eyebrow">FOLLOWING ACTIVITY</span><h2>Updates from people you follow</h2></div></div><div className={styles.list}>{notifications.map((row)=>{
       const name=row.display_name?.trim()||row.username;
       const category=row.relevant_match_category;
       const score=matchMaps.get(category)?.get(row.actor_id);
@@ -110,6 +110,6 @@ export default async function NotificationsPage({searchParams}:{searchParams:Sea
           </div>
         </div>
       </article>;
-    })}</div>:!evidenceAlerts.length?<div className="emptyState"><span className="eyebrow">NO NOTIFICATIONS YET</span><h2>Nothing new yet.</h2><p>Updates from people you follow and products you’re watching will appear here.</p><Link className="primaryButton" href="/outfits?feed=following">Open Style Feed →</Link></div>:null}
+    })}</div></section>:!evidenceAlerts.length?<div className="emptyState"><span className="eyebrow">NO NOTIFICATIONS YET</span><h2>Nothing new yet.</h2><p>Updates from people you follow and products you’re watching will appear here.</p><Link className="primaryButton" href="/outfits?feed=following">Open Style Feed →</Link></div>:null}
   </main>;
 }

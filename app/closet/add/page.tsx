@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { addGarment } from "@/app/closet/actions";
-import { CatalogColorField, CatalogCommunityEnrichment, CatalogGarmentFields } from "@/app/closet/add/CatalogGarmentFields";
-import { FitReportForm } from "@/app/closet/add/FitReportForm";
+import { CatalogColorField, CatalogCommunityEnrichment, CatalogGarmentFields, CatalogRetailLinkField } from "@/app/closet/add/CatalogGarmentFields";
+import { FitNotesField, FitReportForm } from "@/app/closet/add/FitReportForm";
 import { FitReportSuccessModal } from "@/app/closet/add/FitReportSuccessModal";
 import { GarmentSizeFields } from "@/app/closet/add/GarmentSizeFields";
 import styles from "@/app/closet/add/fitReport.module.css";
@@ -83,7 +83,7 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
   const errorMessage = error === "invalid_fields"
     ? "Something still needs your attention. Review the highlighted fields below and try again."
     : error === "invalid_photo"
-      ? "Photos must be JPEG, PNG, or WebP and no larger than 8 MB."
+      ? "Photos must be JPEG, PNG, or WebP and no larger than 8 MB each."
       : error === "save_failed"
         ? "That Fit Report could not be saved. Please try again."
         : null;
@@ -104,9 +104,16 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
         <GarmentSizeFields />
         <label>Overall Fit Result<select name="fit" defaultValue="" required data-review-label="Overall Fit Result"><option value="" disabled>Select physical fit</option><option value="too_small">Too small</option><option value="snug">Snug</option><option value="just_right">Just right</option><option value="relaxed">Relaxed</option><option value="too_big">Too big</option></select><span className="fieldHelp">Bad fits are useful evidence too.</span></label>
         <label>Condition<select name="reported_condition" defaultValue="" required data-review-label="Condition"><option value="" disabled>Select condition</option><option value="new">New</option><option value="used">Used</option><option value="altered">Altered</option></select><span className="fieldHelp">Altered items stay in Fit History but are not treated as normal sizing evidence for other people.</span></label>
-        <label>Fit photo <span className="muted inlineMuted">optional</span><input name="photo" type="file" accept="image/jpeg,image/png,image/webp" data-review-label="Fit photo" /><span className="fieldHelp"><b>Fit photos are shared with the LikeSized community. Don’t upload a photo you do not want other people to see.</b></span></label>
-        <label>Fit notes <span className="muted inlineMuted">optional</span><textarea name="fit_notes" maxLength={1000} rows={5} placeholder="Tell us more about how it fits. You can also share styling tips, wash or dry advice, or anything else that might help someone considering this item." data-review-label="Fit notes" /></label>
-        <label>Retail link <span className="muted inlineMuted">optional</span><input name="product_url" type="url" maxLength={1000} placeholder="https://..." data-review-label="Retail link" /></label>
+        <fieldset className={styles.itemDetailsFieldset}>
+          <legend>Fit photos <span className="muted inlineMuted">optional</span></legend>
+          <div className={styles.photoEvidenceGrid}>
+            <label>Front photo<input name="photo_front" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+            <label>Back photo<input name="photo_back" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+          </div>
+          <span className="fieldHelp"><b>Fit photos are shared with the LikeSized community. Don’t upload a photo you do not want other people to see.</b></span>
+        </fieldset>
+        <FitNotesField />
+        <CatalogRetailLinkField />
 
         <CatalogCommunityEnrichment
           materials={(materials ?? []).map((item) => ({ key: item.key, label: item.label }))}

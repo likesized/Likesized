@@ -10,10 +10,21 @@ Every SQL file in this directory is part of the ordered executable database hist
 - `supabase/schema.sql` is retired and is not a current-state schema source.
 - The connected Supabase project is an execution/deployment ledger; the repository migration directory is the replay source.
 
-## Recovery rule — 2026-08-21
-Canonical recovery is active. PR #36 (`fit-match-engine-audit`) contains owner-approved migrations that must be deliberately salvaged into the recovery line and independently replayed/tested before being considered recovered. Their existence on the old branch does not mean they were applied to production.
+## Canonical recovery status — COMPLETE 2026-08-21
+The canonical recovery is complete. PR #43 promoted the verified recovery line to `main`.
 
-The exact preserved PR #36 migration filenames and salvage status live in `docs/AI_MASTER_LOG.md`.
+The owner-approved Fit Match/database work preserved in PR #36 (`fit-match-engine-audit`) was deliberately classified and recovered/re-sequenced into the canonical migration history before that promotion. The old PR #36 branch is historical source only and is not an alternate migration authority.
+
+The final salvage/cleanup disposition for PR #36 and other historical branches is recorded in `docs/AI_MASTER_LOG.md`.
+
+## Current production checkpoint — 2026-08-23
+The four PR #51 migration domains are live in production while their local filenames remain canonical replay history:
+- `20260823130000_add_sleepwear_lingerie_category.sql` → hosted ledger `20260823153830`.
+- `20260823130100_purchase_context_and_sleepwear_taxonomy.sql` → hosted ledger `20260823153856`.
+- `20260823140000_add_fit_community_preference.sql` → hosted ledger `20260823153931`.
+- `20260823150000_auto_post_provisional_products_and_item_reporting.sql` → hosted ledger `20260823154024`.
+
+Never rename or rewrite the local applied files to match hosted-assigned timestamps.
 
 ## Naming debt
 Some older migration filenames/types/functions contain `fit_twin` or `fit_rating` terminology from earlier product semantics. Do not infer current product meaning from those legacy identifiers:

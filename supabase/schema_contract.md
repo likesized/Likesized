@@ -311,7 +311,7 @@ Owner-supplied starter catalog remains research/enrichment data. Empty/unreferen
 
 # 16. Following, person notifications, and Product notifications
 
-- `follows` is the one member-controlled relationship graph.
+- `follows` is the one canonical **Following** relationship; Fit Twin remains system-generated from current-person Match among followed members.
 - Fit Twin is derived current-person Match among followed members; there is no second Fit Twin subscription graph.
 - `private.following_notification_subscriptions` stores explicit per-person bell subscriptions.
 - Follow alone does not enable notifications.

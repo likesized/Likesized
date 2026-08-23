@@ -10,23 +10,23 @@ function first(value: string | string[] | undefined) {
 
 const capabilities = [
   {
-    eyebrow: "PEOPLE MY SIZE",
+    eyebrow: "FIND PEOPLE MY SIZE",
     title: "Discover people shaped like you.",
-    description: "Ranked by what matters most.",
+    description: "Ranked by the measurements that matter most for each garment—not generic size charts that can vary widely between brands and products.",
     href: "/people",
     link: "Find My Matches →",
   },
   {
-    eyebrow: "WHAT WORKS FOR THEM",
+    eyebrow: "SEE WHAT WORKS FOR THEM",
     title: "Explore what your matches actually wear.",
-    description: "Learn which brands, sizes, and pieces fit best.",
+    description: "Learn which brands, sizes, and individual pieces work best on people built like you.",
     href: "/search",
     link: "Shop Smarter →",
   },
   {
-    eyebrow: "STAY CONNECTED",
-    title: "Follow the people whose fit you trust.",
-    description: "See what they wear, share, and recommend next.",
+    eyebrow: "BUILD YOUR CIRCLE",
+    title: "Follow people whose fit and style you trust.",
+    description: "See what they wear, how they style it, what they recommend, and the looks they create.",
     href: "/circle",
     link: "Get Inspired →",
   },
@@ -106,21 +106,15 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         </div>
       </section>
 
-      <section className="howItWorks section" id="how-it-works">
-        <span className="eyebrow">THE LOOP</span>
-        <h2 className="loopTitle">
-          <span className="loopTitleLine">The more you share,</span>
-          <span className="loopTitleLine">the smarter LikeSized gets.</span>
-        </h2>
-        <div className="steps">
-          <div><b>01</b><h3>Build your profile</h3><p>Tell us about your size and measurements.</p></div>
-          <div><b>02</b><h3>Find your matches</h3><p>Get ranked matches based on the measurements that matter most for each garment type.</p></div>
-          <div><b>03</b><h3>Share what works<span className="stepAside">(and what doesn’t)</span></h3><p>Help others learn from your real experience.</p></div>
-          <div><b>04</b><h3>Shop with better answers</h3><p>Use personalized insights from people like you to make smarter choices and get the fit right the first time.</p></div>
-        </div>
-      </section>
-
-      <section className="section">
+      <section
+        className="section"
+        id="how-it-works"
+        style={{
+          background: "linear-gradient(135deg, #e8dfd3 0%, #f3e6e9 100%)",
+          borderTop: "1px solid var(--line)",
+          borderBottom: "1px solid var(--line)",
+        }}
+      >
         <div className="sectionHeading">
           <div>
             <span className="eyebrow">WHAT LIKESIZED DOES</span>
@@ -133,7 +127,11 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         </div>
         <div className="cardGrid">
           {capabilities.map((capability) => (
-            <article className="matchCard" key={capability.eyebrow}>
+            <article
+              className="matchCard"
+              key={capability.eyebrow}
+              style={{ boxShadow: "0 18px 50px rgba(18, 18, 18, 0.08)" }}
+            >
               <div className="matchCardBody">
                 <span className="eyebrow">{capability.eyebrow}</span>
                 <div className="garment">
@@ -144,6 +142,20 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
               </div>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="howItWorks section" id="the-loop">
+        <span className="eyebrow">THE LOOP</span>
+        <h2 className="loopTitle">
+          <span className="loopTitleLine">The more you share,</span>
+          <span className="loopTitleLine">the smarter LikeSized gets.</span>
+        </h2>
+        <div className="steps">
+          <div><b>01</b><h3>Build your profile</h3><p>Tell us about your size and measurements.</p></div>
+          <div><b>02</b><h3>Find your matches</h3><p>Get ranked matches based on the measurements that matter most for each garment type.</p></div>
+          <div><b>03</b><h3>Share what works<span className="stepAside">(and what doesn’t)</span></h3><p>Help others learn from your real experience.</p></div>
+          <div><b>04</b><h3>Shop with better answers</h3><p>Use personalized insights from people like you to make smarter choices and get the fit right the first time.</p></div>
         </div>
       </section>
 

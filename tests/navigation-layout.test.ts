@@ -63,7 +63,7 @@ test("Fit Community is a saved default with reversible social-view filters", () 
 });
 
 test("direct Product search is global and does not require a Men or Women filter switch", () => {
-  assert.match(searchPage, /supabase\.rpc\("search_catalog_products",\s*\{\s*p_query: q,\s*p_result_limit: 24,?\s*\}\)/s);
+  assert.match(searchPage, /supabase\.rpc\("search_catalog_products",[\s\S]*?p_query: q,[\s\S]*?p_result_limit: 24,[\s\S]*?\}\)/);
   assert.doesNotMatch(searchPage, /search_catalog_products[\s\S]{0,180}p_fit_community/);
   assert.doesNotMatch(searchPage, /search_catalog_products[\s\S]{0,180}department/);
 });

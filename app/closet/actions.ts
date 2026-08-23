@@ -8,6 +8,7 @@ import type { GarmentMarketSegment, GarmentSizeKind } from "@/lib/domain";
 
 const FIT_RESULTS = new Set(["too_small", "snug", "just_right", "relaxed", "too_big"]);
 const REPORTED_CONDITIONS = new Set(["new", "used", "altered"]);
+const PURCHASE_METHODS = new Set(["online", "in_store", "gift"]);
 const COLOR_FAMILY_KEYS = new Set(COLOR_FAMILIES.map((item) => item.value));
 const SIZE_KINDS = new Set(["alpha", "numeric", "waist_inseam", "dress_shirt", "jacket", "bra", "shoe", "length_designation", "freeform", "not_sure"]);
 const ADULT_DEPARTMENTS = new Set(["womens", "mens", "unisex"]);
@@ -24,6 +25,14 @@ type ParsedSize = Record<string, string | number | null> & { kind: GarmentSizeKi
 type MaterialClaim = { material_key: string; percentage: number | null };
 type AttributeRow = { attribute_key: string; option_key: string };
 type KnownFitSaveRow = { fit_report_id: string; closet_item_id: string; created: boolean };
+type PurchaseContext = {
+  retailerText: string | null;
+  retailerNormalized: string | null;
+  pricePaid: number | null;
+  purchaseMethod: "online" | "in_store" | "gift" | null;
+  purchaseMonth: number | null;
+  purchaseYear: number | null;
+};
 
 function fail(code: string): never { redirect(`/closet/add?error=${encodeURIComponent(code)}`); }
 function text(formData: FormData, name: string) { return String(formData.get(name) ?? "").trim(); }
@@ -57,6 +66,40 @@ function parseMaterials(raw: string): MaterialClaim[] {
   }
   if (new Set(rows.map((row) => row.material_key)).size !== rows.length) throw new Error("Duplicate materials");
   return rows;
+}
+function parsePurchaseContext(formData: FormData): PurchaseContext {
+  const retailerText = text(formData, "purchased_from") || null;
+  const rawPrice = text(formData, "price_paid");
+  const rawMethod = text(formData, "purchase_method");
+  const rawMonth = text(formData, "purchase_month");
+  const rawYear = text(formData, "purchase_year");
+  if (retailerText && retailerText.length > 160) throw new Error("Invalid retailer");
+  let pricePaid: number | null = null;
+  if (rawPrice) {
+    if (!/^\d{1,6}(?:\.\d{1,2})?$/.test(rawPrice)) throw new Error("Invalid price");
+    pricePaid = Number(rawPrice);
+    if (!Number.isFinite(pricePaid) || pricePaid < 0 || pricePaid > 999999.99) throw new Error("Invalid price");
+  }
+  const purchaseMethod = rawMethod ? rawMethod as PurchaseContext["purchaseMethod"] : null;
+  if (purchaseMethod && !PURCHASE_METHODS.has(purchaseMethod)) throw new Error("Invalid purchase method");
+  if (Boolean(rawMonth) !== Boolean(rawYear)) throw new Error("Incomplete purchase date");
+  let purchaseMonth: number | null = null;
+  let purchaseYear: number | null = null;
+  if (rawMonth && rawYear) {
+    purchaseMonth = Number(rawMonth);
+    purchaseYear = Number(rawYear);
+    const now = new Date();
+    if (!Number.isInteger(purchaseMonth) || purchaseMonth < 1 || purchaseMonth > 12 || !Number.isInteger(purchaseYear) || purchaseYear < 1900 || purchaseYear > now.getFullYear()) throw new Error("Invalid purchase date");
+    if (purchaseYear === now.getFullYear() && purchaseMonth > now.getMonth() + 1) throw new Error("Future purchase date");
+  }
+  return {
+    retailerText,
+    retailerNormalized: retailerText ? normalizeSearchText(retailerText) || null : null,
+    pricePaid,
+    purchaseMethod,
+    purchaseMonth,
+    purchaseYear,
+  };
 }
 function garmentAnswerSnapshot(entries: AttributeRow[]) {
   return Object.fromEntries(entries.map((row) => [row.attribute_key, row.option_key]));
@@ -153,6 +196,29 @@ async function recordListing(supabase: SupabaseClient, productId: string, varian
   if (error && error.code !== "23505") throw error;
 }
 
+async function savePurchaseContext(supabase: SupabaseClient, userId: string, fitReportId: string, context: PurchaseContext) {
+  if (!context.retailerText && context.pricePaid === null && !context.purchaseMethod && context.purchaseMonth === null) return;
+  let retailerId: string | null = null;
+  if (context.retailerNormalized) {
+    const { data, error } = await supabase.from("retailers").select("id").eq("normalized_name", context.retailerNormalized).maybeSingle();
+    if (error) throw error;
+    retailerId = data?.id ?? null;
+  }
+  const { error } = await supabase.from("fit_report_purchase_context").upsert({
+    fit_report_id: fitReportId,
+    user_id: userId,
+    retailer_text: context.retailerText,
+    retailer_normalized: context.retailerNormalized,
+    retailer_id: retailerId,
+    price_paid: context.pricePaid,
+    purchase_method: context.purchaseMethod,
+    purchase_month: context.purchaseMonth,
+    purchase_year: context.purchaseYear,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "fit_report_id" });
+  if (error) throw error;
+}
+
 async function saveFitPhoto(supabase: SupabaseClient, userId: string, closetItemId: string, photo: File) {
   const extension = PHOTO_TYPES[photo.type];
   const storagePath = `${userId}/${closetItemId}/fit-${randomUUID()}.${extension}`;
@@ -220,7 +286,11 @@ export async function addGarment(formData: FormData) {
   const garmentCondition = reportedCondition === "altered" ? "altered" : "normal";
   const fitNotes = text(formData, "fit_notes") || null;
   let materialClaims: MaterialClaim[] = [];
-  try { materialClaims = parseMaterials(text(formData, "materials_json")); } catch { fail("invalid_fields"); }
+  let purchaseContext: PurchaseContext;
+  try {
+    materialClaims = parseMaterials(text(formData, "materials_json"));
+    purchaseContext = parsePurchaseContext(formData);
+  } catch { fail("invalid_fields"); }
 
   if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId && !UUID.test(existingProductId)) || !GARMENT_TYPE_BY_KEY.has(garmentType) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !COLOR_FAMILY_KEYS.has(colorFamily) || !FIT_RESULTS.has(fit) || !REPORTED_CONDITIONS.has(reportedCondition) || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000) || identifier.length > 120 || (styleNumber && styleNumber.length > 100) || (styleIssue && styleIssue.length > 180) || (barcodeIssue && barcodeIssue.length > 120)) fail("invalid_fields");
   if ((identifier && !/^\d{6,32}$/.test(identifier.replace(/\D/g, ""))) || (barcodeIssue && !/^\d{6,32}$/.test(barcodeIssue.replace(/\D/g, "")))) fail("invalid_fields");
@@ -307,6 +377,7 @@ export async function addGarment(formData: FormData) {
         }).select("id").single();
         if (reportError || !report) throw reportError ?? new Error("Could not save disputed Fit Report");
 
+        await savePurchaseContext(supabase, userId, report.id, purchaseContext);
         if (photo) fitPhotoPath = await saveFitPhoto(supabase, userId, newClosetItemId, photo);
 
         if (productPhoto) {
@@ -369,6 +440,7 @@ export async function addGarment(formData: FormData) {
         savedClosetItemId = saved.closet_item_id;
         updatedExisting = !saved.created;
 
+        await savePurchaseContext(supabase, userId, saved.fit_report_id, purchaseContext);
         if (identifier) {
           const { error: barcodeEvidenceError } = await supabase.rpc("record_product_barcode_evidence", {
             p_product_id: product.id,
@@ -455,6 +527,7 @@ export async function addGarment(formData: FormData) {
       }).select("id").single();
       if (reportError || !report) throw reportError ?? new Error("Could not save pending fit report");
 
+      await savePurchaseContext(supabase, userId, report.id, purchaseContext);
       if (photo) fitPhotoPath = await saveFitPhoto(supabase, userId, newClosetItemId, photo);
 
       if (productPhoto) {

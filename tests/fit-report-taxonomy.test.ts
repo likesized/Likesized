@@ -45,15 +45,28 @@ test("owner-approved intake copy and layout stay on the canonical New Fit Report
  assert.match(intake,/Tell us more about how it fits\. You can also share styling tips, wash or dry advice, or anything else that might help someone considering this item\./);
 });
 
-test("final intake order keeps fit essentials above additional catalog evidence",()=>{
+test("final intake order keeps the normal Fit Report clear and collapses additional catalog evidence",()=>{
  for(const required of ["Brand / Make","Item / Model","Garment type","Color","Overall Fit Result","Condition","Fit photo","Fit notes"])assert.match(intake+catalog,new RegExp(required));
+ assert.match(catalog,/Department <span className="muted inlineMuted">optional<\/span>/);
+ assert.match(intake,/Retail link <span className="muted inlineMuted">optional<\/span>/);
+ assert.match(catalog,/<details className=\{styles\.optionalDetails\}>/);
+ assert.doesNotMatch(catalog,/<details[^>]*\sopen(?:=|\s|>)/);
+ assert.match(catalog,/<summary className=\{styles\.optionalSummary\}>Optional Additional Information<\/summary>/);
  assert.match(catalog,/Help us learn more about this item/);
- assert.match(catalog,/Every bit of information helps us build a better garment listing/);
- for(const optional of ["Retail link","UPC / barcode","Manufacturer Style / Article Number","Department","Material / Fabric Composition","Product photo"])assert.match(catalog,new RegExp(optional));
+ assert.match(catalog,/Every bit of information helps LikeSized build a better garment listing/);
+ for(const optional of ["UPC / barcode","Manufacturer Style / Article Number","Material / Fabric Composition","Product photo"])assert.match(catalog,new RegExp(optional));
+ assert.ok(catalog.indexOf("Garment type") < catalog.indexOf("CatalogDepartmentField departments={departments}"));
+ assert.ok(catalog.indexOf("CatalogDepartmentField departments={departments}") < catalog.indexOf("<legend>Item details</legend>"));
  assert.ok(intake.indexOf("Overall Fit Result") < intake.indexOf("Condition"));
  assert.ok(intake.indexOf("Condition") < intake.indexOf("Fit photo"));
- assert.ok(intake.indexOf("Fit notes") < intake.indexOf("<CatalogCommunityEnrichment"));
- assert.ok(catalog.indexOf("Department") < catalog.indexOf("Material / Fabric Composition"));
+ assert.ok(intake.indexOf("Fit notes") < intake.indexOf("Retail link"));
+ assert.ok(intake.indexOf("Retail link") < intake.indexOf("<CatalogCommunityEnrichment"));
+ assert.ok(intake.indexOf("<CatalogCommunityEnrichment") < intake.indexOf("Add Fit Report →"));
+ assert.ok(catalog.indexOf("Optional Additional Information") < catalog.indexOf("UPC / barcode"));
+ assert.ok(catalog.indexOf("Optional Additional Information") < catalog.indexOf("Manufacturer Style / Article Number"));
+ assert.ok(catalog.indexOf("Optional Additional Information") < catalog.indexOf("Material / Fabric Composition"));
+ assert.ok(catalog.indexOf("Optional Additional Information") < catalog.indexOf("Product photo"));
+ assert.match(catalog,/scannedBarcode[\s\S]*<input type="hidden" name="scanned_barcode" value=\{scannedBarcode\}/);
  assert.doesNotMatch(catalog,/Search retail catalog|Imported from retail catalog|catalog_source_provider|catalog_source_record/);
  assert.doesNotMatch(actions,/record_catalog_source_selection|catalog_source_provider|importedColorLabels/);
 });

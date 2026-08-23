@@ -26,6 +26,8 @@ Current-state wording here must match owner-approved product meaning. Superseded
 
 Match % means **garment-relevant body similarity**, not probability a garment will fit.
 
+A high Match does not turn a poor Fit Result into positive evidence. A highly similar wearer reporting Too Small / Too Big is strong evidence that the worn size may be wrong for the viewer; body similarity and fit outcome are separate signals.
+
 # 3. Following vs Fit Twin — LOCKED
 
 - Following is member-controlled.
@@ -37,6 +39,20 @@ Match % means **garment-relevant body similarity**, not probability a garment wi
 - My Circle and Style Feed are Following-driven; Fit Twin is designation/filter/context only.
 - `/following` is legacy compatibility only and resolves to My Circle.
 - the signed-in `/` destination is **My Circle**; logged-out `/` remains the public LikeSized homepage. My Circle itself is customized only through its scheduled owner audit rather than by creating a second signed-in-home implementation.
+
+# 3A. Fit Community / personalized relevance — OWNER LOCKED
+
+Fit Profile has one current owner-private **Fit Community** preference: **Men / Women / Both**.
+
+- Fit Community is personalization/relevance metadata. It is not biological-sex truth, a public gender field, garment Department, Product identity, or a body measurement.
+- Fit Community never changes the numeric body Match formula. Body Match answers **how similarly two people are built**; Fit Community answers **which wearer/member community should normally populate the personalized experience**.
+- Men and Women default People My Size, Fit Twin suggestions, My Circle, and other personalized member surfaces to compatible wearer communities. Both permits all communities.
+- A member choosing Both remains compatible with Men and Women views so cross-community/legacy members are not silently excluded.
+- Personalized social filtering is based on the **wearer/posting member's Fit Community**, not on the Department assigned to the garment. A Women-community member reviewing Men's 30×30 jeans remains Women-community content and can be relevant to other Women-community members.
+- Garment Department stays attached to the garment for Product/search/sizing context. It must not be used as a blanket social-feed gate.
+- Intentional Product detail/browsing must not discard otherwise useful Fit Reports merely because the garment's Department differs from the wearer's Fit Community.
+- Men / Women / Both view controls may temporarily override the saved default. A temporary view switch never rewrites the Fit Profile; only an explicit Fit Profile/Profile Settings save changes the stored preference.
+- The current implementation provides Fit Community at onboarding/Profile Settings and applies it to People My Size and My Circle. Search/Explore-specific presentation and filters are reconciled during their scheduled audits instead of creating parallel logic early.
 
 # 4. Controlled community catalog — LOCKED
 
@@ -406,6 +422,8 @@ Physical values:
 
 There is no current V1 1–5-star Fit Rating UI. Bad fits are useful evidence and do not reduce body Match %.
 
+Product/recommendation presentation must not imply that a high-Match wearer using a size is positive evidence when that wearer reported a poor fit. The scheduled Garment/Product Detail audit owns the final Fit Evidence display and the way later lifecycle observations such as shrinkage/stretching affect warnings/recommendation quality while preserving the original report.
+
 # 19. Preferred Fit — RETIRED
 
 Old member-level **Preferred Fit by garment type** is not current V1 behavior.
@@ -461,6 +479,8 @@ Help Me Size It is fallback sizing assistance and reuses the canonical recommend
 - unresolved submissions are not ordinary Product results;
 - no blank image state and no stars.
 
+Fit Community default/temporary override behavior must be integrated with Explore/Search during those scheduled audits without changing Match scores or using garment Department as a proxy for wearer community.
+
 # 24. People Like You Who Wore This / evidence counting
 
 Fit summaries may count all legitimate distinct Fit Report situations, including multiple valid states from one member. Member-facing wearer lists should avoid repeating one person across top slots solely because they have multiple observations. Evidence counting and unique-wearer presentation are separate.
@@ -510,6 +530,7 @@ Gift Lists remain roadmap-locked after Product/retailer/save/recommendation foun
 - followed-person Outfit activity lives in Style Feed;
 - Outfit likes contribute Style Likes; Product likes do not;
 - Following drives feed; Fit Twin remains designation only.
+- Fit Community controls default wearer relevance in personalized social surfaces; the garment Department worn in an Outfit does not redefine the member's Fit Community.
 
 # 28. Images / sharing
 
@@ -522,7 +543,7 @@ Gift Lists remain roadmap-locked after Product/retailer/save/recommendation foun
 
 Homepage remains useful logged out and keeps FAQ inline. Signed-in `/` enters My Circle rather than a separate Following or Outfit-feed homepage. The FAQ includes a plain-language explanation of the LikeSized difference: real Fit Reports from people built like the viewer, garment-relevant matching, item-level Product evidence when reports exist because two items from the same brand/printed size can fit differently, and exact measurement privacy. Avoid unverifiable claims that no competitor can offer a particular feature.
 
-Before Beta, public story must accurately cover measurement privacy, Match %, current-person vs historical Match, People My Size, Following vs Fit Twin, Fit/Product Photo behavior, Fit Result/no stars, Help Me Size It, LikeLocker/Wish Locker, Outfits/Style Feed, controlled catalog/manual fallback, unresolved item review, admin-side SerpAPI role, shopping/affiliate behavior, immutable historical try-on state, and Gift Lists if implemented.
+Before Beta, public story must accurately cover measurement privacy, Match %, current-person vs historical Match, People My Size, Fit Community, Following vs Fit Twin, Fit/Product Photo behavior, Fit Result/no stars, Help Me Size It, LikeLocker/Wish Locker, Outfits/Style Feed, controlled catalog/manual fallback, unresolved item review, admin-side SerpAPI role, shopping/affiliate behavior, immutable historical try-on state, and Gift Lists if implemented.
 
 # 30. Data-quality rule
 

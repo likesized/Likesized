@@ -20,11 +20,12 @@ GitHub `likesized/Likesized` is the source of truth. `main` is the single canoni
 - Applied database migrations are immutable; corrections use later additive migrations.
 - Never create paid Supabase branches or other paid infrastructure.
 
-## Active owner-approved implementation line — VERIFIED, NOT PRODUCTION
-- `agent/catalog-evidence-confidence` is the current primary active line for the owner-approved catalog identity-confidence redesign.
+## Active owner-approved implementation line — REOPENED FOR APPROVED UI/CANON CHANGES, NOT PRODUCTION
+- `agent/catalog-evidence-confidence` is the current primary active line for the owner-approved catalog identity-confidence redesign plus the immediately related New Fit Report cleanup.
 - It was created from current `main`; do not start a second product-decision branch while this line is unresolved.
-- Branch work includes generalized manual/barcode Product corroboration, five-member automatic Corroborated Product promotion, separate Product-to-barcode confidence, safe Corroborated-candidate size-system defaults, focused pgTAP coverage, and synchronized canonical docs.
-- GitHub CI run `32618623877` / run #584 completed successfully after canonical integrity, TypeScript, focused application tests, production build, fresh replay of every canonical migration, and the full canonical database behavior/pgTAP suite.
+- Core branch work includes generalized manual/barcode Product corroboration, five-member automatic Corroborated Product promotion, separate Product-to-barcode confidence, safe Corroborated-candidate size-system defaults, focused pgTAP coverage, and synchronized canonical docs.
+- GitHub CI run `32618793673` / run #585 completed successfully on the prior branch head after canonical integrity, TypeScript, focused application tests, production build, fresh replay of every canonical migration, and the full canonical database behavior/pgTAP suite.
+- The owner subsequently approved a mobile New Fit Report information-architecture cleanup plus a public unified Closet/product-roadmap clarification. Those new branch changes must be re-verified before any production authorization request.
 - Draft PR #49 is **not merged and not deployed**. Production authorization has not been given for this change.
 
 # CANONICAL RECOVERY / LINEAGE STATUS
@@ -97,17 +98,31 @@ Current approved structure includes:
 
 Individual and Mark-all-read behavior covers both Following and Product notification records.
 
-Notification audit remains paused while the owner-approved Product identity-confidence branch awaits production authorization. Resume Audit #6 after this active line is explicitly resolved.
+Notification audit remains paused while the owner-approved Product identity-confidence/New Fit Report branch is finished and production-tested. Resume Audit #6 after this active line is explicitly resolved.
 
-## New Fit Report — OWNER CONFIRMED BASE FLOW; CATALOG CONFIDENCE BRANCH VERIFIED
-The owner previously confirmed the reworked New Fit Report flow except barcode scanning. During barcode testing:
+## New Fit Report — OWNER CONFIRMED BASE FLOW; ACTIVE MOBILE/CATALOG CLEANUP
+The owner previously confirmed the reworked New Fit Report base flow except barcode scanning. During barcode testing:
 - scanner was tuned for ordinary UPC/EAN retail barcodes and became much easier to use;
 - owner successfully scanned/submitted Maidenform / Heirloom UPC `196988323504`;
 - repeat scan exposed unresolved candidate recognition debt;
 - deployed **Is this the item?** confirmation was then observed working by the owner;
-- that successful test led to a broader owner decision: barcode presence must not be required for Product corroboration, manual and barcode evidence should feed the same Product identity, and multiple legitimate barcodes must be able to belong to one Product.
+- that successful test led to the broader owner decision that barcode presence must not be required for Product corroboration, manual and barcode evidence should feed the same Product identity, and multiple legitimate barcodes must be able to belong to one Product.
 
-The base New Fit Report surface remains owner-approved. The generalized confidence/autofill implementation is fully branch-verified but remains branch-only until explicit production authorization and deployment.
+The generalized confidence/autofill implementation passed full branch verification before the latest UI decision. The owner then approved this New Fit Report information structure:
+- Brand / Item;
+- Garment Type;
+- optional Department immediately after Garment Type;
+- Type-specific item-detail questions;
+- Color;
+- Size;
+- Overall Fit Result;
+- Condition;
+- Fit Photo;
+- Fit Notes;
+- optional Retail Link immediately below Fit Notes;
+- then a collapsed-by-default **Optional Additional Information** area containing UPC/barcode when not already scanned, Manufacturer Style / Article Number, Material / Fabric Composition, and Product Photo.
+
+The expanded optional area introduces itself with **Help us learn more about this item** and explains that extra details help LikeSized build a better garment listing. A barcode already captured by scanning remains attached invisibly and must not be requested again. The submit action stays outside the collapsed optional area. This cleanup is branch-only until implemented, re-verified, production-authorized, and owner-tested.
 
 # PRODUCT IDENTITY / BARCODE CONFIDENCE — OWNER LOCKED
 
@@ -153,14 +168,14 @@ Member experience:
 - **Yes** on a candidate prefills safe candidate identity and continues pending flow;
 - **No** or unknown barcode continues manual entry while retaining the barcode as evidence;
 - multiple conflicting identities for one barcode are never auto-selected;
-- never use another member's Fit Photo/private image as Product imagery.
+- never use another member's Fit Photo as generic Product imagery.
 
 ## Production vs branch implementation
 Production still has the older barcode-specific migrations:
 - `20260823031508 barcode_confirmation_corroboration`
 - `20260823031701 require_two_confirmed_barcode_submitters`
 
-The active branch supersedes their Product-level meaning through later additive migration `supabase/migrations/20260823040000_generalize_catalog_identity_confidence.sql`; applied migrations are not edited. Branch implementation adds generalized candidate confirmation/conflict counts, system promotion provenance, private Product-barcode evidence, separate barcode corroboration, narrow candidate size-system default lookup, and focused tests. The branch passed full CI including fresh migration replay/pgTAP, but it is not production until explicitly authorized and deployed.
+The active branch supersedes their Product-level meaning through later additive migration `supabase/migrations/20260823040000_generalize_catalog_identity_confidence.sql`; applied migrations are not edited. Branch implementation adds generalized candidate confirmation/conflict counts, system promotion provenance, private Product-barcode evidence, separate barcode corroboration, narrow candidate size-system default lookup, and focused tests. The core branch passed full CI including fresh migration replay/pgTAP before the latest owner-approved UI/canon changes; the updated branch must be re-verified before production.
 
 Known owner test artifact:
 - candidate `de34b6dd-47c9-4795-af77-5117e4f8b554` — Maidenform / Heirloom / bra;
@@ -252,6 +267,17 @@ Garment Type is Product identity. A known-Product Type conflict preserves the me
 - first/second unresolved submitters may therefore choose manually; later Corroborated users can benefit from the learned default;
 - nested US/UK/EU choices are not part of this broad-size default unless separately approved.
 
+# CLOSET / MEMBER CLOSET — OWNER LOCKED PUBLIC MODEL
+
+- LikeSized has **one canonical Closet system**, not separate My Closet and Shared Closet implementations.
+- Every member garment and every member Fit Report is public member-facing content by default and all the time; there is no product-level Private / Shared garment visibility mode.
+- When a member views their own Closet, they see the same public Closet content plus owner-only management controls such as Edit/Update where applicable.
+- When another member views that Closet, they see the same public garment/Fit Report content without owner-only management controls.
+- Build one canonical garment-card/Fit Report component foundation and reuse it across Closet, member/profile views, People My Size, My Circle, Style Feed, Product discovery, and other applicable surfaces rather than maintaining parallel card systems.
+- Do not collect or retain member garment fields merely to hide them indefinitely; retained garment/Fit Report data must serve a real product, matching, catalog, social, moderation, or historical-integrity purpose.
+- This public Closet rule does **not** make raw Fit Profile/body measurements public. Exact current/historical body measurements and private matching baselines remain protected system data; other members receive derived Match/context only.
+- Existing database/UI private/shared garment visibility remnants are legacy implementation debt and must be removed or neutralized canonically during the Closet foundation audit rather than treated as current product meaning.
+
 # PREFERRED FIT — RETIRED
 
 Preferred Fit by garment type is not current V1 behavior.
@@ -342,30 +368,63 @@ Locked disclosure when required:
 
 1. Homepage + complete FAQ
 2. Global header + member Menu + admin entry/navigation
-3. Signup/Login/Check Email/Forgot Password/Reset Password/auth errors
-4. Fit Profile
-5. Settings
+3. Signup/Login/Check Email/Forgot Password/Reset Password/auth errors — owner confirmed
+4. Fit Profile — owner confirmed
+5. Settings — owner confirmed
 6. Notifications
-7. People My Size
-8. Member profile/Shared Closet
-9. My Circle/Following/Fit Twin behavior + legacy redirects
-10. My Closet
-11. Update/Edit Fit Report
-12. New Fit Report — base owner-confirmed; generalized catalog confidence branch verified, awaiting production authorization
-13. New Outfit
-14. Outfits/Style Feed
-15. Garment/Product detail
-16. Explore
-17. Search + `/browse` compatibility
-18. LikeLocker/Wish Locker
-19. Full Admin Catalog + Moderation
-20. final mobile/desktop/nav/privacy/copy regression
+7. Unified Closet / member profile Closet view — one public Closet, owner controls only when self-viewing
+8. Update/Edit Fit Report within the Closet foundation
+9. People My Size
+10. My Circle/Following/Fit Twin behavior + legacy redirects
+11. New Fit Report — base owner-confirmed; active generalized catalog confidence + mobile optional-section cleanup must finish before returning to the ordered audits above
+12. New Outfit
+13. Outfits/Style Feed
+14. Garment/Product detail
+15. Explore
+16. Search + `/browse` compatibility
+17. LikeLocker/Wish Locker
+18. Full Admin Catalog + Moderation
+19. final mobile/desktop/nav/privacy/copy regression
+
+Dependency rule: after the active New Fit Report/catalog-confidence line is resolved, finish Notifications, then build/audit the unified Closet foundation **before** People My Size. Closet decisions/components are expected to be reused by member profiles, People My Size, My Circle, Style Feed, Product surfaces, and shopping.
+
+# BETA / POST-BETA ROADMAP — OWNER LOCKED DIRECTION
+
+Before Beta:
+- finish the ordered member-facing audits and reusable component foundations;
+- finish the minimum Admin Catalog/Moderation operating tools needed to safely manage candidates/conflicts/evidence;
+- expand/review the starter catalog enough that Beta members frequently find useful Products;
+- confirm retailer/Shop behavior;
+- run mobile/desktop/browser, privacy/RLS/security, performance, spam/moderation, and canonical-drift regression;
+- launch a controlled Beta cohort and use actual search misses, corroboration, Match usefulness, social behavior, and shopping behavior to drive priorities.
+
+During Beta:
+- watch existing-Product hit rate vs manual intake;
+- watch Fit Report completion/friction;
+- watch People My Size/garment Match usefulness;
+- watch real two-member corroboration, candidate growth, natural five-member promotion, barcode learning, conflicts, and duplicate prevention;
+- grow the catalog from real demand rather than guessing indefinitely;
+- fix defects only in canonical owning sources.
+
+Early post-Beta, before committing to a separate mobile codebase, perform a **Mobile App Options + AI Build Viability** review:
+- compare remaining mobile-first web/PWA versus native/cross-platform app value;
+- compare React Native/Expo, other shared-code approaches, and native Swift/Kotlin where warranted;
+- determine how much Supabase/auth/database/domain/matching/server logic can remain one backend/shared source of truth;
+- evaluate camera/barcode, photo upload, push notifications, deep links, authentication, device behavior, App Store/Google Play requirements, analytics/crash monitoring, release/signing, and physical-device testing;
+- explicitly assess which portions AI can reliably implement/test/maintain, which steps require owner involvement, and whether any part materially warrants a mobile specialist;
+- do **not** promise an issue-free app; require a production-quality testing/release plan;
+- if an app is approved, design one canonical mobile architecture before development so Product, Match, catalog, and evidence rules do not drift between web and app.
+
+Other post-Beta work remains driven by real usage: advanced Product merge/split tooling, richer alias/field-lock/moderation workflows, Product-photo promotion, full admin SerpAPI research UX, external barcode-provider feasibility, evidence calibration, affiliate expansion, catalog growth, recommendation tuning, infrastructure scaling, growth loops, and final public-launch readiness.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
 
-- generalized catalog-confidence migration/application changes are verified on `agent/catalog-evidence-confidence` but are not yet production-deployed;
-- production owner interaction still must validate the manual two-member Corroborated default flow, five-member automatic promotion, conflict gates, and alternate-barcode Product recognition after authorization/deployment;
-- full admin all-Products status/evidence/flags view and confidence-aware queue sorting/filtering remain Audit #19 work;
+- implement the owner-approved New Fit Report mobile information structure on `agent/catalog-evidence-confidence` and re-run full branch verification;
+- generalized catalog-confidence migration/application changes are verified on the prior branch head but are not yet production-deployed;
+- tomorrow/when a second account is available, production owner interaction should validate the same Maidenform / Heirloom identity from a second distinct member and confirm Provisional → Corroborated; do not manufacture extra same-member votes or require five manual test accounts merely to prove the automated five-member threshold;
+- after deployment, naturally observe/verify five-member automatic promotion, conflict gates, and alternate-barcode Product recognition as real evidence becomes available, while retaining automated DB coverage;
+- legacy per-garment private/shared Closet visibility must be removed or neutralized during the unified Closet foundation audit so product behavior matches the owner-locked all-public garment/Fit Report model;
+- full admin all-Products status/evidence/flags view and confidence-aware queue sorting/filtering remain later Admin Catalog work;
 - external barcode provider probe/test not yet implemented;
 - final owner confirmation of Notifications after matched Product alert semantics/copy;
 - broader Product action UI rollout/audit across Product cards/details where not yet implemented;
@@ -395,14 +454,15 @@ A surface is not complete merely because code exists or automated tests pass. Co
 - Scanner tuning commit `cd1b1f197e72affba88f767c02d6fc714a85ef6a` was deployed READY before the barcode confirmation work.
 - Barcode confirmation implementation commit `490e0da88bac562ac1c8230149000f9f7e509806` deployed to production as Vercel `dpl_3wtrHjFTPE4LdmPDvtyFmWZRJ84n`, **READY**. Production DB migrations `20260823031508` and `20260823031701` are applied.
 - Owner then approved replacing barcode-gated Product corroboration with intake-method-independent Product confidence, separate multi-barcode confidence, five-member automatic Corroborated Product promotion, conflict gates, and confidence-aware admin priority.
-- Active branch `agent/catalog-evidence-confidence` contains this replacement architecture in a later additive migration plus application/tests/docs. GitHub CI run `32618623877` / run #584 passed every gate, including a fresh migration replay and full database behavior suite. **No production merge/deployment has occurred for this branch.**
+- Active branch `agent/catalog-evidence-confidence` contains this replacement architecture in a later additive migration plus application/tests/docs. Prior branch head passed full CI, including fresh migration replay and the database behavior suite. Owner-approved mobile New Fit Report/public Closet canon decisions reopened the branch for additional work. **No production merge/deployment has occurred for this branch.**
 
 # EXACT NEXT ACTION — CURRENT
 
-Owner review/authorization checkpoint for draft PR #49:
-1. branch verification is complete and green;
-2. do not merge or deploy without explicit owner authorization;
-3. if the owner authorizes production, merge the verified branch into `main` through the controlled production path and apply the new ordered Supabase migration;
-4. verify production deployment/database migration state;
-5. owner-test manual two-member Corroborated default behavior, five-member automatic Product promotion, conflict blocking/review visibility, and alternate-barcode Product recognition;
-6. after owner confirmation, resume Audit #6 Notifications and then proceed to #7 People My Size.
+Continue on the single active `agent/catalog-evidence-confidence` line without touching production:
+1. synchronize `docs/V1_PRODUCT_SPEC.md` and `supabase/schema_contract.md` with the owner-approved public unified Closet model, New Fit Report mobile field organization, audit-order dependency, and post-Beta mobile-app viability checkpoint;
+2. implement the New Fit Report mobile cleanup in the owning canonical form/components — Department after Garment Type, Retail Link after Fit Notes, collapsed **Optional Additional Information** containing UPC/Style/Material/Product Photo, scanned barcode retained invisibly, submit outside the collapse;
+3. re-run canonical integrity, TypeScript/focused tests, production build, fresh migration replay, and full pgTAP/database behavior suite on the resulting branch head;
+4. inspect/fix every failure on the same branch; do not weaken canonical checks;
+5. only after the updated branch is fully green, present the exact diff/status and request explicit production authorization;
+6. after authorized deployment, run production smoke tests; when the second account is available, submit the same Maidenform / Heirloom identity from that distinct member and confirm Provisional → Corroborated;
+7. after this active line is owner-confirmed, resume Notifications, then unified Closet/Update Fit Report, then People My Size and My Circle in that dependency order.

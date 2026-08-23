@@ -11,6 +11,11 @@
   margin: 0;
 }
 
+.settingsEvidence :global(.secondaryButton),
+.profilePhotoControls :global(.secondaryButton) {
+  color: var(--ink);
+}
+
 .profileForm,
 .usernameForm {
   display: grid;
@@ -104,6 +109,11 @@
 .photoUploadForm > button,
 .profilePhotoControls > form > button {
   justify-self: start;
+}
+
+.photoUploadForm > button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
 }
 
 @media (max-width: 700px) {

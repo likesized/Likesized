@@ -12,7 +12,7 @@ Canonical ownership:
 
 GitHub `likesized/Likesized` is the source of truth. `main` is the single canonical production line. Current files describe current truth; Git history preserves superseded attempts. Never create patch/fixed/v2/temp/backup implementations, parallel product systems, or a second master plan.
 
-# CURRENT STATUS — 2026-08-22
+# CURRENT STATUS — 2026-08-23
 
 ## Canonical production line
 - `main` is the one canonical production implementation line and is coupled to Vercel production.
@@ -20,11 +20,12 @@ GitHub `likesized/Likesized` is the source of truth. `main` is the single canoni
 - Applied database migrations are immutable; corrections use later additive migrations.
 - Never create paid Supabase branches or other paid infrastructure.
 
-## Active owner-approved implementation line — NOT PRODUCTION
+## Active owner-approved implementation line — VERIFIED, NOT PRODUCTION
 - `agent/catalog-evidence-confidence` is the current primary active line for the owner-approved catalog identity-confidence redesign.
 - It was created from current `main`; do not start a second product-decision branch while this line is unresolved.
 - Branch work includes generalized manual/barcode Product corroboration, five-member automatic Corroborated Product promotion, separate Product-to-barcode confidence, safe Corroborated-candidate size-system defaults, focused pgTAP coverage, and synchronized canonical docs.
-- This branch is **not merged and not deployed**. Production authorization has not been given for this change.
+- GitHub CI run `32618623877` / run #584 completed successfully after canonical integrity, TypeScript, focused application tests, production build, fresh replay of every canonical migration, and the full canonical database behavior/pgTAP suite.
+- Draft PR #49 is **not merged and not deployed**. Production authorization has not been given for this change.
 
 # CANONICAL RECOVERY / LINEAGE STATUS
 The 2026-08-21 canonical recovery is complete. Current work is normal owner-approved branch verification against the single `main` production line; the recovery freeze is not being reactivated by this historical status heading.
@@ -96,9 +97,9 @@ Current approved structure includes:
 
 Individual and Mark-all-read behavior covers both Following and Product notification records.
 
-Notification audit remains paused while the owner-approved Product identity-confidence change is implemented/verified. Resume Audit #6 only after this active line is reconciled.
+Notification audit remains paused while the owner-approved Product identity-confidence branch awaits production authorization. Resume Audit #6 after this active line is explicitly resolved.
 
-## New Fit Report — OWNER CONFIRMED BASE FLOW; CATALOG CONFIDENCE CHANGE IN PROGRESS
+## New Fit Report — OWNER CONFIRMED BASE FLOW; CATALOG CONFIDENCE BRANCH VERIFIED
 The owner previously confirmed the reworked New Fit Report flow except barcode scanning. During barcode testing:
 - scanner was tuned for ordinary UPC/EAN retail barcodes and became much easier to use;
 - owner successfully scanned/submitted Maidenform / Heirloom UPC `196988323504`;
@@ -106,7 +107,7 @@ The owner previously confirmed the reworked New Fit Report flow except barcode s
 - deployed **Is this the item?** confirmation was then observed working by the owner;
 - that successful test led to a broader owner decision: barcode presence must not be required for Product corroboration, manual and barcode evidence should feed the same Product identity, and multiple legitimate barcodes must be able to belong to one Product.
 
-The base New Fit Report surface remains owner-approved, but the new confidence/autofill behavior is branch-only until verified and production-authorized.
+The base New Fit Report surface remains owner-approved. The generalized confidence/autofill implementation is fully branch-verified but remains branch-only until explicit production authorization and deployment.
 
 # PRODUCT IDENTITY / BARCODE CONFIDENCE — OWNER LOCKED
 
@@ -159,7 +160,7 @@ Production still has the older barcode-specific migrations:
 - `20260823031508 barcode_confirmation_corroboration`
 - `20260823031701 require_two_confirmed_barcode_submitters`
 
-The active branch supersedes their Product-level meaning through later additive migration `supabase/migrations/20260823040000_generalize_catalog_identity_confidence.sql`; applied migrations are not edited. Branch implementation adds generalized candidate confirmation/conflict counts, system promotion provenance, private Product-barcode evidence, separate barcode corroboration, narrow candidate size-system default lookup, and focused tests. It is not production until explicitly authorized and deployed.
+The active branch supersedes their Product-level meaning through later additive migration `supabase/migrations/20260823040000_generalize_catalog_identity_confidence.sql`; applied migrations are not edited. Branch implementation adds generalized candidate confirmation/conflict counts, system promotion provenance, private Product-barcode evidence, separate barcode corroboration, narrow candidate size-system default lookup, and focused tests. The branch passed full CI including fresh migration replay/pgTAP, but it is not production until explicitly authorized and deployed.
 
 Known owner test artifact:
 - candidate `de34b6dd-47c9-4795-af77-5117e4f8b554` — Maidenform / Heirloom / bra;
@@ -350,7 +351,7 @@ Locked disclosure when required:
 9. My Circle/Following/Fit Twin behavior + legacy redirects
 10. My Closet
 11. Update/Edit Fit Report
-12. New Fit Report — base owner-confirmed; generalized catalog confidence change currently branch-only
+12. New Fit Report — base owner-confirmed; generalized catalog confidence branch verified, awaiting production authorization
 13. New Outfit
 14. Outfits/Style Feed
 15. Garment/Product detail
@@ -362,8 +363,8 @@ Locked disclosure when required:
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
 
-- finish verification of `agent/catalog-evidence-confidence`: canonical check, TypeScript, focused tests, build, fresh migration replay/pgTAP;
-- generalized catalog-confidence migration/application changes are not yet production-deployed;
+- generalized catalog-confidence migration/application changes are verified on `agent/catalog-evidence-confidence` but are not yet production-deployed;
+- production owner interaction still must validate the manual two-member Corroborated default flow, five-member automatic promotion, conflict gates, and alternate-barcode Product recognition after authorization/deployment;
 - full admin all-Products status/evidence/flags view and confidence-aware queue sorting/filtering remain Audit #19 work;
 - external barcode provider probe/test not yet implemented;
 - final owner confirmation of Notifications after matched Product alert semantics/copy;
@@ -394,16 +395,14 @@ A surface is not complete merely because code exists or automated tests pass. Co
 - Scanner tuning commit `cd1b1f197e72affba88f767c02d6fc714a85ef6a` was deployed READY before the barcode confirmation work.
 - Barcode confirmation implementation commit `490e0da88bac562ac1c8230149000f9f7e509806` deployed to production as Vercel `dpl_3wtrHjFTPE4LdmPDvtyFmWZRJ84n`, **READY**. Production DB migrations `20260823031508` and `20260823031701` are applied.
 - Owner then approved replacing barcode-gated Product corroboration with intake-method-independent Product confidence, separate multi-barcode confidence, five-member automatic Corroborated Product promotion, conflict gates, and confidence-aware admin priority.
-- Active branch `agent/catalog-evidence-confidence` contains this replacement architecture in a later additive migration plus application/tests/docs. **No production merge/deployment has occurred for this branch.**
+- Active branch `agent/catalog-evidence-confidence` contains this replacement architecture in a later additive migration plus application/tests/docs. GitHub CI run `32618623877` / run #584 passed every gate, including a fresh migration replay and full database behavior suite. **No production merge/deployment has occurred for this branch.**
 
 # EXACT NEXT ACTION — CURRENT
 
-Finish verification of `agent/catalog-evidence-confidence` without touching production:
-1. run canonical integrity check;
-2. run TypeScript/typecheck and focused application tests;
-3. run production build;
-4. run fresh migration replay plus pgTAP, including `catalog_identity_confidence.test.sql`;
-5. inspect/fix every failure on the same active branch;
-6. only after all relevant gates are green, present the branch/PR for owner review and request explicit production authorization.
-
-After production authorization/deployment, owner-test the manual two-member Corroborated default flow, five-member automatic promotion, and alternate-barcode Product recognition. Then resume Audit #6 Notifications and proceed to #7 People My Size.
+Owner review/authorization checkpoint for draft PR #49:
+1. branch verification is complete and green;
+2. do not merge or deploy without explicit owner authorization;
+3. if the owner authorizes production, merge the verified branch into `main` through the controlled production path and apply the new ordered Supabase migration;
+4. verify production deployment/database migration state;
+5. owner-test manual two-member Corroborated default behavior, five-member automatic Product promotion, conflict blocking/review visibility, and alternate-barcode Product recognition;
+6. after owner confirmation, resume Audit #6 Notifications and then proceed to #7 People My Size.

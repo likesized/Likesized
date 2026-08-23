@@ -39,7 +39,7 @@ const faqs = [
   },
   {
     question: "What does Fit Result mean?",
-    answer: "Fit Result describes how a garment physically fit: Too Small, Snug, Just Right, Relaxed, or Too Big. It is not a star rating.",
+    answer: "Fit Result describes how a garment fits you: Too Small, Snug, Just Right, Relaxed, or Too Big. It is not a star rating.",
   },
   {
     question: "Can I follow someone who is not my Fit Twin?",

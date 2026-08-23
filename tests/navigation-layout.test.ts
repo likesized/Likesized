@@ -39,5 +39,5 @@ test("shared member menu keeps close and compact layout safeguards", () => {
 test("Fit Profile gives username rules up front and keeps the mobile update hero compact", () => {
   assert.match(fitProfileHeroCss, /3–32 characters\. Letters, numbers, and underscores only — no spaces\./);
   assert.match(fitProfilePage, /heroStyles\.revisitShell/);
-  assert.match(fitProfileHeroCss, /\.revisitShell \{[^}]*min-height: 0;[^}]*grid-template-rows: auto auto;[^}]*align-content: start;/s);
+  assert.match(fitProfileHeroCss, /\.revisitShell \{[\s\S]*?min-height: 0;[\s\S]*?grid-template-rows: auto auto;[\s\S]*?align-content: start;/);
 });

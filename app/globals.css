@@ -48,6 +48,8 @@ h2 { font-size:clamp(35px,5vw,62px); line-height:.95; letter-spacing:-2.4px; mar
 .matchCard { display:flex; background:var(--white); border:1px solid var(--line); border-radius:24px; overflow:hidden; }
 .photoPlaceholder { height:270px; padding:18px; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(135deg,#f5d5df,#f7e0c8); }
 .avatar { width:90px; height:90px; border-radius:50%; display:grid; place-items:center; background:var(--ink); color:var(--secondary); font-size:39px; font-weight:900; }
+.photoAvatar { object-fit:cover; display:block; }
+.profileAvatar { margin-bottom:18px; }
 .photoPlaceholder > span { align-self:flex-start; padding:7px 10px; border-radius:999px; background:rgba(255,255,255,.75); font-size:12px; font-weight:900; }
 .matchCardBody { width:100%; min-height:235px; padding:28px; display:flex; flex-direction:column; }
 .matchTopline { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }

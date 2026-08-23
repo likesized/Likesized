@@ -58,16 +58,12 @@ const faqs = [
     answer: "Yes. Following is your choice and helps you keep up with someone’s shared style and fit activity. It is separate from system-generated Fit Twin status.",
   },
   {
-    question: "Where does LikeSized get its product information?",
-    answer: "LikeSized learns from real people who own and wear the clothes. The details members share through Fit Reports help build and improve the LikeSized clothing catalog over time.",
+    question: "How does the community-built clothing catalog work?",
+    answer: "LikeSized’s clothing catalog is built from real Fit Reports shared by people who actually own and wear the clothes. Help us build the most accurate inventory possible by sharing what you know—and leaving anything you’re unsure about blank instead of guessing. Other members can help fill in missing details through their own Fit Reports. If you spot information that looks wrong or doesn’t match your item, you can flag it for review so the catalog keeps getting better over time.",
   },
   {
-    question: "What if I don’t know all the details about my item?",
-    answer: "Tell us what you confidently know. For the simple required garment questions, choose Not sure if needed. Optional catalog details can be left blank, and later members can help complete the record.",
-  },
-  {
-    question: "How do you know the product information is accurate?",
-    answer: "LikeSized looks for consistency across the information people share. When details line up, confidence grows. If something conflicts or isn’t clear, it’s flagged for review instead of automatically changing the product record.",
+    question: "What if I’m not sure of the item, style, or model?",
+    answer: "Enter the best information you can find on the garment, tag, packaging, or retailer listing. If you’re not completely confident, check “I’m not completely sure this is the correct item/style name.” Don’t guess just to fill in the form. LikeSized will hold the item for review while still letting you save your Fit Report and use it in your Styles. Providing a retail link, a clear Product Photo, and especially a photo of the product or style label can help us identify it accurately.",
   },
 ];
 

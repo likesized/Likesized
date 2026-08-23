@@ -44,13 +44,16 @@ Production migration `20260823054933 generalize_catalog_identity_confidence` is 
 
 This later additive migration replaces the older barcode-gated Product-level meaning with the generalized community-confidence model described below while preserving the already-applied barcode migrations as immutable history. The implementation passed canonical integrity, TypeScript/application safeguards, production build, fresh migration replay, and the full pgTAP/database suite before deployment.
 
-## New Fit Report purchase-context + Sleepwear line — VERIFIED BRANCH, PRODUCTION AUTHORIZED
+The live distinct-member check is complete: Maidenform / Heirloom / bra candidate `de34b6dd-47c9-4795-af77-5117e4f8b554` has 2 distinct confirmations, `identity_confidence='corroborated'`, 0 identity conflicts, and 2 distinct-member barcode confirmations for UPC `196988323504`; it remains unresolved/non-canonical below the 5-member auto-promotion threshold.
 
-`agent/fit-report-review-purchase-context` now contains the owner-approved category-first flow, final main-only **Does this look right?** confirmation, optional purchase-context inputs **and their canonical persistence**, Sleepwear & Lingerie taxonomy, signed-in My Circle home routing, and approved FAQ differentiation copy.
+## New Fit Report purchase-context + Sleepwear + Fit Community line — VERIFIED BRANCH, PRODUCTION AUTHORIZED
 
-Canonical local migrations awaiting production apply after the authorized merge are:
+`agent/fit-report-review-purchase-context` now contains the owner-approved category-first flow, final main-only **Does this look right?** confirmation, optional purchase-context inputs **and their canonical persistence**, Sleepwear & Lingerie taxonomy, signed-in My Circle home routing, approved FAQ differentiation copy, and owner-private Fit Community relevance.
+
+Canonical local migrations awaiting production apply after final exact-head verification are:
 - `20260823130000_add_sleepwear_lingerie_category.sql`;
-- `20260823130100_purchase_context_and_sleepwear_taxonomy.sql`.
+- `20260823130100_purchase_context_and_sleepwear_taxonomy.sql`;
+- `20260823140000_add_fit_community_preference.sql`.
 
 Until those migrations are actually applied, the production checkpoint above remains the authoritative deployed database state. Do not describe these new database structures as live merely because they exist on the verified branch.
 
@@ -64,6 +67,24 @@ Until those migrations are actually applied, the production checkpoint above rem
 - `private.fit_report_body_identity_measurements` stores established Product-relevant comparison baselines.
 - raw current/historical body measurements and private size references are never exposed to other members.
 - current-person Match and historical-garment Match return derived scores/context only.
+
+## Fit Community relevance — OWNER-APPROVED BRANCH IMPLEMENTATION
+
+Canonical migration `20260823140000_add_fit_community_preference.sql` adds the current owner-private personalization boundary without changing the body Match formula.
+
+- `public.fit_community` is controlled to `men`, `women`, `both`.
+- `fit_profiles.fit_community` stores the current owner preference under the existing owner-only Fit Profile RLS boundary.
+- existing members safely default to `both`; first-time onboarding requires an explicit current choice in the application.
+- Fit Community is current relevance metadata, not an immutable body snapshot, Product attribute, garment Department, or public gender field.
+- a six-argument `public.save_fit_profile(...)` overload wraps the established five-argument writer and stores Fit Community in the same database transaction while preserving the older boundary for compatibility.
+- `private.calculate_fit_matches_for_profile_community(...)` preserves the existing measurement/similarity/confidence calculation and narrows only the candidate-member set. `both` is compatible with Men and Women.
+- the established two-argument `public.get_fit_matches(...)` now resolves the saved Fit Community; a three-argument overload accepts an explicit temporary community view without changing the saved preference.
+- `private.get_following_feed_for_current_user_community(...)` filters followed activity by the **actor/wearer's Fit Community**, not the garment Department. A Women-community member posting Men's jeans remains Women-community activity.
+- the established two-argument `public.get_following_feed(...)` resolves the saved default; a three-argument overload accepts a temporary view override.
+- direct helper execution remains restricted to authenticated/service-role boundaries consistent with the existing private/public RPC architecture.
+- numeric body Match remains unchanged by Fit Community. A community filter determines relevance/candidate eligibility, not similarity score.
+
+Search/Explore-specific presentation remains scheduled application-audit work; the database override boundary is already reusable and must not be duplicated into a second relevance system.
 
 ## Public Closet target — OWNER LOCKED, LEGACY DB VISIBILITY STILL PRESENT
 
@@ -80,9 +101,11 @@ The Closet foundation audit must reconcile this canonically: preserve legitimate
 
 ## Closet mutation model — OWNER DIRECTION, NOT YET ENFORCED
 
-The owner is leaning toward immutable original Fit Report evidence after the final submission confirmation, with later Closet behavior separated into add-missing enrichment, deliberately audited corrections where justified, and dated lifecycle additions such as Kept / Returned / Exchanged / shrinkage.
+The owner is leaning toward immutable original Fit Report evidence after the final submission confirmation, with later Closet behavior separated into add-missing enrichment, deliberately audited corrections where justified, and dated lifecycle additions such as Kept / Returned / Exchanged / shrinkage/stretching.
 
 Current production still contains owner-update capability and a save boundary that can reuse/update compatible counted reports. That existing executable behavior is implementation reality, not approval for a broad unrestricted Edit Item product model. The Closet audit must settle the field-by-field mutation contract before new mutation/RLS restrictions are added.
+
+Later Product Detail recommendation/presentation must be able to consume these lifecycle observations separately from the original report so shrinkage/stretch warnings can degrade recommendation quality without rewriting historical try-on evidence.
 
 # 2. Controlled taxonomy foundations
 
@@ -360,10 +383,12 @@ Owner-supplied starter catalog remains research/enrichment data. Empty/unreferen
 - commission never affects Match, recommendation, Product identity, search ranking, or retailer choice.
 - purchase-context retailer observations are separate from `retailer_listings`; where a member acquired a copy cannot silently become a Shop destination.
 
-# 16. Following, person notifications, and Product notifications
+# 16. Following, Fit Community, person notifications, and Product notifications
 
 - `follows` is the one canonical **Following** relationship; Fit Twin remains system-generated from current-person Match among followed members.
 - Fit Twin is derived current-person Match among followed members; there is no second Fit Twin subscription graph.
+- `fit_profiles.fit_community` is a separate current relevance gate. It filters default wearer/member eligibility but never changes the numeric Match score or becomes part of a historical body snapshot.
+- My Circle community filtering uses the posting member's Fit Community, not the garment Department.
 - `/following` is compatibility-only and redirects to `/circle`; signed-in `/` uses My Circle as the canonical personalized home destination.
 - `private.following_notification_subscriptions` stores explicit per-person bell subscriptions.
 - Follow alone does not enable notifications.
@@ -391,6 +416,7 @@ Owner-supplied starter catalog remains research/enrichment data. Empty/unreferen
 - ordinary Product search deduplicates to one canonical Product result.
 - New Fit Report text suggestions can resolve reviewed Brand/Product aliases.
 - raw Fit Profile measurements/private size references must never be exposed through search.
+- Fit Community is not a Product search-identity field. Search/Explore may later use the shared community default/override behavior for personalized member/outfit relevance, but must not use garment Department as a substitute for wearer community.
 
 # 19. Recommendation foundations
 
@@ -404,14 +430,18 @@ Evidence hierarchy:
 
 Help Me Size It reuses the canonical recommendation architecture. `Would Buy Again` does not affect size recommendation/confidence. Pending/unmapped submissions do not count as exact canonical Product evidence until mapped.
 
+Body Match quality and Fit Result quality are separate signals. A high body Match attached to Too Small / Too Big evidence must not be presented as a positive size recommendation merely because the wearer is highly similar. Final Product-detail Fit Evidence display/degradation and lifecycle warning semantics remain scheduled audit work after the Closet lifecycle model is locked.
+
 # 20. Current implementation debt / open verification
 
-The generalized community-confidence migration and its prior New Fit Report application changes are live in production and passed the full pre-deploy verification suite. The active purchase-context/Sleepwear line is implemented and production-authorized but is not yet production until merge + migration apply + Vercel verification complete. Remaining work includes:
-- owner live interaction after deployment for category filtering, Sleepwear & Lingerie, purchase persistence, final confirmation, scanner/manual behavior, and actual Fit Report creation;
+The generalized community-confidence migration and its prior New Fit Report application changes are live in production and passed the full pre-deploy verification suite. The active purchase-context/Sleepwear/Fit Community line is implemented and production-authorized but is not yet production until all three migrations + merge + Vercel verification complete. Remaining work includes:
+- owner live interaction after deployment for category filtering, Sleepwear & Lingerie, purchase persistence, final confirmation, scanner/manual behavior, actual Fit Report creation, Fit Community first setup/editing, and People/My Circle Men/Women/Both temporary views;
 - purchase-context reporting/admin metrics UI is not built yet even though canonical collection/persistence is implemented; future reporting must remain denominator-aware;
-- owner production interaction for distinct-member Product corroboration remains pending;
+- live distinct-member Product corroboration check is complete for Maidenform / Heirloom; no manufactured extra accounts are required for the automated 5-member threshold;
+- Search/Explore-specific Fit Community default/temporary-view presentation remains scheduled audit work;
 - current legacy `closet_items.visibility` / private-vs-shared Closet RLS and presentation semantics must be removed or neutralized canonically to implement the owner-locked single public Closet model without exposing raw body/private system evidence;
 - exact Fit Report mutation restrictions are unresolved pending the Closet audit; current owner-update/backend reuse capability must not be mistaken for owner approval of unrestricted editing;
+- Product-detail Fit Evidence/degradation rules for poor fit outcomes and shrink/stretch lifecycle observations remain scheduled after Closet lifecycle semantics are locked;
 - external barcode enrichment/provider experiment is not implemented;
 - full Product-to-Product merge tooling;
 - audited Product/candidate split tooling;
@@ -449,9 +479,11 @@ Before a surface/major DB behavior is called complete, prove as applicable:
 17. retailer listings append/dedupe;
 18. purchase context is at most one owner-scoped observation per Fit Report, does not inherit across members, validates price/method/date, and does not create Product retailer truth;
 19. Sleepwear & Lingerie application taxonomy agrees with replayed database vocabulary and retains automatic Not sure intake handling;
-20. owner interaction review for the actual surface;
-21. when the unified public Closet migration is implemented, another authenticated member can read the intended garment/Fit Report public content while owner-only mutation controls and raw body/private evidence remain protected;
-22. when the Closet mutation model is implemented, immutable/add-missing/correction/lifecycle boundaries are enforced at database/server boundaries rather than client UI only.
+20. Fit Community is controlled Men/Women/Both, remains owner-private, defaults legacy members safely to Both, filters member eligibility rather than Match math, and uses wearer community rather than garment Department;
+21. temporary Fit Community view overrides do not mutate the saved Fit Profile preference;
+22. owner interaction review for the actual surface;
+23. when the unified public Closet migration is implemented, another authenticated member can read the intended garment/Fit Report public content while owner-only mutation controls and raw body/private evidence remain protected;
+24. when the Closet mutation model is implemented, immutable/add-missing/correction/lifecycle boundaries are enforced at database/server boundaries rather than client UI only.
 
 # 22. Forbidden regressions
 
@@ -460,7 +492,10 @@ Do not:
 - blend current-person Match and historical garment Match;
 - expose raw body measurements through social/search/feed/notifications;
 - expose another member's direct purchase-context row through public garment reads;
-- create a second follow/catalog/sizing/moderation system;
+- expose another member's private Fit Community field as raw profile data merely to implement relevance;
+- use Fit Community to alter numeric body Match %;
+- substitute garment Department for the wearer's Fit Community when filtering personalized social/member relevance;
+- create a second follow/catalog/sizing/moderation/relevance system;
 - create separate My Closet and Shared Closet data/component systems or treat legacy Private / Shared garment visibility as current product meaning;
 - make raw body/profile/private evidence public while implementing the public Closet;
 - let one manual fallback submission directly create canonical Product;

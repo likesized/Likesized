@@ -116,6 +116,36 @@
   cursor: not-allowed;
 }
 
+.privacySection {
+  padding-top: 34px;
+  padding-bottom: 44px;
+}
+
+.privacySection > :global(.eyebrow) {
+  margin-bottom: 10px;
+}
+
+.privacyFyi {
+  max-width: 760px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--white);
+}
+
+.privacyFyi strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+.privacyFyi p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 @media (max-width: 700px) {
   .settingsEvidence {
     grid-template-columns: 1fr;
@@ -159,5 +189,14 @@
 
   .usernameActions button {
     width: 100%;
+  }
+
+  .privacySection {
+    padding-top: 26px;
+    padding-bottom: 34px;
+  }
+
+  .privacyFyi {
+    padding: 16px;
   }
 }

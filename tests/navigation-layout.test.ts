@@ -5,6 +5,8 @@ import { readFileSync } from "node:fs";
 const header = readFileSync(new URL("../components/Header.tsx", import.meta.url), "utf8");
 const menu = readFileSync(new URL("../components/MemberMenu.tsx", import.meta.url), "utf8");
 const css = readFileSync(new URL("../components/HeaderResponsive.module.css", import.meta.url), "utf8");
+const fitProfilePage = readFileSync(new URL("../app/onboarding/page.tsx", import.meta.url), "utf8");
+const fitProfileHeroCss = readFileSync(new URL("../app/onboarding/FitProfileHero.module.css", import.meta.url), "utf8");
 
 test("desktop and mobile share one bell and one member menu", () => {
   assert.match(header, /<MemberMenu unreadCount=/);
@@ -32,4 +34,10 @@ test("shared member menu keeps close and compact layout safeguards", () => {
   assert.match(css, /\.memberNav \{[^}]*display:flex/);
   assert.match(css, /\.menuPanel/);
   assert.match(css, /\.sectionLabel/);
+});
+
+test("Fit Profile gives username rules up front and keeps the mobile update hero compact", () => {
+  assert.match(fitProfileHeroCss, /3–32 characters\. Letters, numbers, and underscores only — no spaces\./);
+  assert.match(fitProfilePage, /heroStyles\.revisitShell/);
+  assert.match(fitProfileHeroCss, /\.revisitShell \{[^}]*min-height: 0;[^}]*grid-template-rows: auto auto;[^}]*align-content: start;/s);
 });

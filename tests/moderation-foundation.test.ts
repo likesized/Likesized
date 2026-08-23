@@ -6,9 +6,12 @@ const migration=readFileSync("supabase/migrations/20260822000129_add_content_mod
 const submissionMigration=readFileSync("supabase/migrations/20260822162000_submission_first_catalog_foundation.sql","utf8");
 const adminControlsMigration=readFileSync("supabase/migrations/20260822174500_add_admin_catalog_operating_controls.sql","utf8");
 const aliasHardeningMigration=readFileSync("supabase/migrations/20260822174600_harden_reviewed_brand_alias_writes.sql","utf8");
+const exceptionReviewMigration=readFileSync("supabase/migrations/20260823150000_auto_post_provisional_products_and_item_reporting.sql","utf8");
 const page=readFileSync("app/moderation/page.tsx","utf8");
 const actions=readFileSync("app/moderation/actions.ts","utf8");
 const report=readFileSync("components/ReportContentForm.tsx","utf8");
+const itemPage=readFileSync("app/item/[slug]/page.tsx","utf8");
+const itemActions=readFileSync("app/item/[slug]/actions.ts","utf8");
 
 test("members report only supported photo content and admins retain an audit",()=>{
  assert.match(migration,/outfit_post.*fit_reference_photo/);
@@ -36,19 +39,36 @@ test("canonical Product conflicts remain reviewable and admin decisions stay aud
  assert.match(page,/Lock decision/);
 });
 
-test("pending catalog candidates are admin-reviewable without becoming a second Product graph",()=>{
+test("clean first-member items auto-post Provisional while flagged ambiguity stays in the existing catalog review graph",()=>{
  assert.match(submissionMigration,/create table public\.catalog_candidates/);
  assert.match(submissionMigration,/create table public\.garment_submissions/);
  assert.match(submissionMigration,/create table public\.catalog_review_flags/);
  assert.match(submissionMigration,/create table public\.catalog_resolution_actions/);
- assert.match(submissionMigration,/Admins read catalog candidates/);
- assert.match(submissionMigration,/Owners read own garment submissions/);
+ assert.match(exceptionReviewMigration,/if v_confirmations<1 then return null/);
+ assert.match(exceptionReviewMigration,/if v_conflicts>0 then/);
+ assert.match(exceptionReviewMigration,/v_product_status:=case when v_confirmations>=2 then 'corroborated'/);
+ assert.match(exceptionReviewMigration,/else 'provisional'/);
+ assert.match(exceptionReviewMigration,/Automatic community Product post/);
  assert.match(page,/Catalog enrichment/);
  assert.match(page,/Pending catalog candidates/);
  assert.match(page,/Map to an existing canonical Product/);
  assert.match(page,/Create verified Product \+ map/);
  assert.match(actions,/mapCatalogCandidate/);
  assert.match(actions,/createProductFromCandidate/);
+});
+
+test("every Product has one multi-purpose report action and trust-aware review priority",()=>{
+ assert.match(itemPage,/Report this item/);
+ assert.match(itemPage,/Inappropriate content/);
+ assert.match(itemPage,/Image doesn’t match this product/);
+ assert.match(itemPage,/Incorrect product information/);
+ assert.match(itemPage,/action=\{reportProductItem\}/);
+ assert.match(itemActions,/report_product_item/);
+ assert.match(exceptionReviewMigration,/member_report/);
+ assert.match(exceptionReviewMigration,/priority_score/);
+ assert.match(exceptionReviewMigration,/v_status='provisional'.*v_score:=3/s);
+ assert.match(exceptionReviewMigration,/v_status='verified'.*else 1/s);
+ assert.match(exceptionReviewMigration,/prefix_name_similarity/);
 });
 
 test("reviewed alias, flag, and Product Photo controls stay behind the audited admin boundary",()=>{

@@ -55,7 +55,7 @@ const faqs = [
   },
   {
     question: "How do you know the product information is accurate?",
-    answer: "LikeSized doesn’t treat one person’s answer as unquestionable fact. Product details strengthen as independent members agree. When people disagree, we preserve the conflict for review instead of silently replacing one answer with another.",
+    answer: "LikeSized looks for consistency across the information people share. When details line up, confidence grows. If something conflicts or isn’t clear, it’s flagged for review instead of automatically changing the product record.",
   },
 ];
 

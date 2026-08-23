@@ -290,6 +290,8 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
   const barcodeBusy = useRef(false);
   const productPhotoInput = useRef<HTMLInputElement>(null);
   const productLabelPhotoInput = useRef<HTMLInputElement>(null);
+  const brandInput = useRef<HTMLInputElement>(null);
+  const itemNameInput = useRef<HTMLInputElement>(null);
 
   const selectedType = GARMENT_TYPES.find((item) => item.key === type);
   const filteredTypes = category ? GARMENT_TYPES.filter((item) => item.category === category) : [];
@@ -491,7 +493,11 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
   }, [step]);
 
   useEffect(() => {
-    if (step !== "details" || product || !brand.trim()) { setItemSuggestions([]); return; }
+    const normalizedItem = normalizeCatalogText(itemName);
+    if (step !== "details" || (product && !itemIssue) || !brand.trim() || normalizedItem.length < 2) {
+      setItemSuggestions([]);
+      return;
+    }
     setItemSuggestions([]);
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
@@ -499,12 +505,11 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
         const response = await fetch(`/api/catalog/search?brand=${encodeURIComponent(brand)}&q=${encodeURIComponent(itemName)}`, { signal: controller.signal });
         const body = await response.json() as { local?: CatalogProduct[] };
         const normalizedBrand = normalizeCatalogText(brand);
-        const normalizedItem = normalizeCatalogText(itemName);
         const fixtures = fixtureProducts.filter((item) => normalizeCatalogText(item.brand_name) === normalizedBrand && normalizeCatalogText(item.name).includes(normalizedItem));
         const merged = [...fixtures, ...(body.local ?? [])]
           .filter((item) => normalizeCatalogText(item.brand_name) === normalizedBrand)
           .filter((item, index, all) => all.findIndex((other) => other.id === item.id) === index);
-        const exactMatch = normalizedItem ? merged.find((item) => normalizeCatalogText(item.name) === normalizedItem) : undefined;
+        const exactMatch = merged.find((item) => normalizeCatalogText(item.name) === normalizedItem);
         if (exactMatch) { chooseProduct(exactMatch); return; }
         setItemSuggestions(merged.slice(0, 12));
       } catch (cause) {
@@ -512,7 +517,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
       }
     }, 250);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [step, product, brand, itemName, fixtureProducts]);
+  }, [step, product, itemIssue, brand, itemName, fixtureProducts]);
 
   useEffect(() => {
     if (step !== "details" || product || !brand.trim() || !itemName.trim() || !type) {
@@ -599,6 +604,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     ? "We found a community-built match for this item, so we filled in what LikeSized already knows. If anything looks wrong, change it to match the item you have. Your correction will be saved with your Fit Report and automatically flagged for an accuracy review."
     : notice || "We don’t have this item yet, but no problem — you can help us add it with just a few quick questions.";
   const typeLocked = Boolean(product?.garment_type_key) && !typeIssue;
+  const showItemSuggestions = (!product || itemIssue) && Boolean(brand.trim()) && normalizeCatalogText(itemName).length >= 2 && itemSuggestions.length > 0;
 
   return <>
     <input type="hidden" name="existing_product_id" value={product?.id ?? ""}/>
@@ -621,18 +627,22 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
         {product?.image_url ? <div className="catalogSelectedItem"><img src={product.image_url} alt=""/><span><small>Selected item</small><b>{product.brand_name} · {product.name}</b></span></div> : null}
 
         <div className="fieldPair">
-          <label>Brand / Make
-            <input name="brand" list={brand.trim() && !product ? "brand-options" : undefined} maxLength={120} value={brand} readOnly={Boolean(product) && !brandIssue} onChange={(event) => { setBrand(event.target.value); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required data-review-label="Brand" />
-            <datalist id="brand-options">{brandSuggestions.map((item) => <option value={item.name} key={item.id}/>)}</datalist>
-            {product && !brandIssue ? <button className={styles.changeThis} type="button" onClick={() => { setBrandIssue(true); setBrand(""); }}>Change this</button> : null}
-          </label>
-          <div className={styles.itemField}>
-            <label>Item / Style / Model
-              <input name="product" maxLength={180} value={itemName} readOnly={Boolean(product) && !itemIssue} onChange={(event) => { setItemName(event.target.value); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required placeholder="e.g. 501 Original" autoComplete="off" data-review-label="Item" />
-              <span className="fieldHelp">Enter the specific item, style, or model shown on the garment, tag, packaging, or retailer listing. Examples: 501 Original, Align High-Rise Pant, Air Force 1.</span>
-              {product && !itemIssue ? <button className={styles.changeThis} type="button" onClick={() => { setItemIssue(true); setItemName(""); }}>Change this</button> : null}
+          <div className={styles.editableField}>
+            <label>Brand / Make
+              <input ref={brandInput} name="brand" list={brand.trim() && (!product || brandIssue) ? "brand-options" : undefined} maxLength={120} value={brand} readOnly={Boolean(product) && !brandIssue} onChange={(event) => { setBrand(event.target.value); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required data-review-label="Brand" />
+              <datalist id="brand-options">{brandSuggestions.map((item) => <option value={item.name} key={item.id}/>)}</datalist>
             </label>
-            {!product && brand.trim() && itemSuggestions.length ? <div className={styles.itemSuggestionDropdown} role="listbox" aria-label="Existing LikeSized items">{itemSuggestions.map((item) => <button className="catalogSuggestion" type="button" onClick={() => chooseProduct(item)} key={item.id}><span><b>{item.name}</b><small>Already in LikeSized</small></span></button>)}</div> : null}
+            {product && !brandIssue ? <button className={styles.changeThis} type="button" onClick={() => { setBrandIssue(true); setBrand(""); setItemSuggestions([]); window.requestAnimationFrame(() => brandInput.current?.focus()); }}>Change</button> : null}
+          </div>
+          <div className={styles.itemField}>
+            <div className={styles.itemSearchArea}>
+              <label>Item / Style / Model
+                <input ref={itemNameInput} name="product" maxLength={180} value={itemName} readOnly={Boolean(product) && !itemIssue} onChange={(event) => { setItemName(event.target.value); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required placeholder="e.g. 501 Original" autoComplete="off" data-review-label="Item" />
+              </label>
+              {showItemSuggestions ? <div className={styles.itemSuggestionDropdown} role="listbox" aria-label="Existing LikeSized items">{itemSuggestions.map((item) => <button className="catalogSuggestion" type="button" onClick={() => chooseProduct(item)} key={item.id}><span><b>{item.name}</b><small>Already in LikeSized</small></span></button>)}</div> : null}
+            </div>
+            <span className="fieldHelp">Enter the specific item, style, or model shown on the garment, tag, packaging, or retailer listing. Examples: 501 Original, Align High-Rise Pant, Air Force 1.</span>
+            {product && !itemIssue ? <button className={styles.changeThis} type="button" onClick={() => { setItemIssue(true); setItemName(""); setItemSuggestions([]); window.requestAnimationFrame(() => itemNameInput.current?.focus()); }}>Change</button> : null}
             {!product ? <label className={styles.uncertaintyCheck}><input name="item_identity_uncertain" type="checkbox" value="1" checked={identityUncertain} onChange={(event) => { const checked = event.target.checked; setIdentityUncertain(checked); if (checked) openIdentityHelp(); else setIdentityHelpOpen(false); }}/><span>I’m not completely sure this is the correct item/style name</span></label> : null}
           </div>
         </div>
@@ -645,13 +655,16 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
           {typeLocked ? <input type="hidden" name="garment_category" value={category}/> : null}
         </label>
 
-        <label>Specific garment type
-          <select name="garment_type" value={type} disabled={!category || typeLocked} onChange={(event) => { setType(event.target.value); setCandidateDefaultSizeKind(null); setAnswers({}); }} required data-review-label="Specific garment type">
-            <option value="" disabled>{category ? "Select the specific garment" : "Choose a category first"}</option>
-            {filteredTypes.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
-          </select>
-          {typeLocked ? <><input type="hidden" name="garment_type" value={type}/><button className={styles.changeThis} type="button" onClick={() => { setTypeIssue(true); setCategory(""); setType(""); setCandidateDefaultSizeKind(null); setAnswers({}); }}>Change this</button></> : null}
-        </label>
+        <div className={styles.editableField}>
+          <label>Specific garment type
+            <select name="garment_type" value={type} disabled={!category || typeLocked} onChange={(event) => { setType(event.target.value); setCandidateDefaultSizeKind(null); setAnswers({}); }} required data-review-label="Specific garment type">
+              <option value="" disabled>{category ? "Select the specific garment" : "Choose a category first"}</option>
+              {filteredTypes.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
+            </select>
+            {typeLocked ? <input type="hidden" name="garment_type" value={type}/> : null}
+          </label>
+          {typeLocked ? <button className={styles.changeThis} type="button" onClick={() => { setTypeIssue(true); setCategory(""); setType(""); setCandidateDefaultSizeKind(null); setAnswers({}); }}>Change</button> : null}
+        </div>
 
         <CatalogDepartmentField departments={departments} />
 

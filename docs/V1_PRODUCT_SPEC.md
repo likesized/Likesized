@@ -111,27 +111,31 @@ Product confidence itself does **not** require a barcode. Manual, barcode-assist
 
 # 6. New Fit Report information structure — LOCKED
 
-Primary Fit Report information:
+Main Fit Report flow, in order:
 1. Brand / Make — required.
 2. Item / Model — required.
 3. Garment Type — required; Category derives automatically.
-4. zero-to-four Type-specific controlled physical questions — each begins blank; **Not sure** is last and records no positive physical claim.
-5. Color family — required.
-6. Size — required structured size.
-7. Overall Fit Result — Too Small / Snug / Just Right / Relaxed / Too Big.
-8. Condition — New / Used / Altered.
-9. Fit Photo — optional.
-10. Fit notes — optional.
+4. Department — optional, immediately after Garment Type.
+5. zero-to-four Type-specific controlled physical questions — each begins blank; **Not sure** is last and records no positive physical claim.
+6. Color family — required.
+7. Size — required structured size.
+8. Overall Fit Result — Too Small / Snug / Just Right / Relaxed / Too Big.
+9. Condition — New / Used / Altered.
+10. Fit Photo — optional.
+11. Fit notes — optional.
+12. Retail link — optional, immediately below Fit Notes.
 
-Optional Product/candidate evidence:
-- Retail link
-- UPC / barcode when not already scanned
-- Manufacturer Style / Article Number
-- Material / Fabric Composition
-- Product Photo
-- Department
+Then show a clearly separated, collapsed-by-default **Optional Additional Information** section. When expanded, it introduces the fields with **Help us learn more about this item** and explains that extra details help LikeSized build a better garment listing.
 
-Fit Photo is personal wear evidence. Product Photo is separate catalog/candidate evidence. A private member Fit Photo is never promoted into generic Product imagery.
+The collapsed optional area contains:
+- UPC / barcode when not already scanned;
+- Manufacturer Style / Article Number;
+- Material / Fabric Composition;
+- Product Photo.
+
+If a barcode was already captured by the scanner, retain it as evidence through submission and do not ask the member to enter it again. The Fit Report submit action stays outside/below the collapsed optional area so the normal required flow is visually complete before enrichment fields.
+
+Fit Photo is public member wear evidence attached to the member's garment/Fit Report. Product Photo is separate catalog/candidate evidence. Never repurpose another member's Fit Photo as generic Product imagery.
 
 # 7. Size-system behavior — CURRENT
 
@@ -199,6 +203,20 @@ Member-facing states:
 - **FIT REPORT ADDED** — genuinely new counted state;
 - **FIT REPORT UPDATED** — compatible existing state reused;
 - **FIT REPORT SAVED · ITEM UNDER REVIEW** — member work preserved while Product identity requires review.
+
+## 9.1 Unified public Closet / member Closet — OWNER LOCKED
+
+LikeSized has one canonical Closet surface/data meaning rather than separate My Closet and Shared Closet systems.
+
+- Every member garment and every member Fit Report is public member-facing content all the time; there is no member garment Private / Shared visibility mode.
+- A member viewing their own Closet sees the same public garment/Fit Report content plus owner-only management controls such as Edit/Update where applicable.
+- Another member viewing that Closet sees the same public garment/Fit Report content without owner-only controls.
+- Closet/member/profile views must reuse one canonical garment-card and Fit Report presentation foundation rather than maintaining parallel private/public component systems.
+- Those components should be reused where applicable by People My Size, My Circle, Style Feed, Product discovery, and shopping surfaces.
+- Retain garment/Fit Report fields only when they serve a real product, matching, catalog, social, moderation, or historical-integrity purpose; do not preserve hidden garment data merely because a legacy private state once existed.
+- This public Closet rule does **not** expose raw Fit Profile measurements, historical body snapshots, or matching baselines. Exact body measurements remain private system data; other members receive only derived Match/context.
+
+Legacy database/UI visibility fields may remain temporarily during migration/reconciliation, but they are implementation debt, not current product meaning.
 
 # 10. Garment Type identity conflicts — LOCKED
 
@@ -411,7 +429,7 @@ Gift Lists remain roadmap-locked after Product/retailer/save/recommendation foun
 # 27. Outfits / Style Feed — V1 RETAINED
 
 - Outfits use owned Closet garments; no duplicate Product/taxonomy system.
-- owned Outfits live in My Closet;
+- a member's own Outfit management is reached from that member's owner view while public Outfit discovery uses the same canonical Outfit data rather than a separate shared copy.
 - other-member Outfit discovery lives in Explore;
 - followed-person Outfit activity lives in Style Feed;
 - Outfit likes contribute Style Likes; Product likes do not;
@@ -419,7 +437,7 @@ Gift Lists remain roadmap-locked after Product/retailer/save/recommendation foun
 
 # 28. Images / sharing
 
-- Fit Photo is optional personal wear evidence and follows current shared evidence boundary.
+- Fit Photo is optional public personal wear evidence attached to the member garment/Fit Report.
 - Product Photo is separate optional catalog/candidate evidence.
 - never use another member's personal Fit Photo as generic Product image.
 - New Outfit uploads use optimized WebP display/feed assets under deployed pipeline.

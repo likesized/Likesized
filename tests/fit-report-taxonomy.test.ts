@@ -195,7 +195,7 @@ test("known Product garment-type disagreement saves unresolved and flags admin i
 
 test("invalid submit is explicit and successful submit offers working Closet, styling, and dismiss actions",()=>{
  assert.match(form,/Fix or clear the highlighted entries below\. Everything else you entered has been kept\./);
- assert.match(form,/querySelectorAll<HTMLElement>\("input:invalid, select:invalid, textarea:invalid"\)/);
+ assert.match(form,/querySelectorAll<HTMLInputElement \| HTMLSelectElement \| HTMLTextAreaElement>\("input:invalid, select:invalid, textarea:invalid"\)/);
  assert.match(form,/scrollIntoView/);
  assert.match(success,/Thanks! Your Fit Report has been added\./);
  assert.match(success,/View it in My Closet/);

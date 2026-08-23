@@ -39,16 +39,19 @@ test("canonical Product conflicts remain reviewable and admin decisions stay aud
  assert.match(page,/Lock decision/);
 });
 
-test("clean first-member items auto-post Provisional while flagged ambiguity stays in the existing catalog review graph",()=>{
+test("clean first-member items auto-post while four Product identity-trust tiers remain separate from catalog fact status",()=>{
  assert.match(submissionMigration,/create table public\.catalog_candidates/);
  assert.match(submissionMigration,/create table public\.garment_submissions/);
  assert.match(submissionMigration,/create table public\.catalog_review_flags/);
  assert.match(submissionMigration,/create table public\.catalog_resolution_actions/);
  assert.match(exceptionReviewMigration,/if v_confirmations<1 then return null/);
  assert.match(exceptionReviewMigration,/if v_conflicts>0 then/);
- assert.match(exceptionReviewMigration,/v_product_status:=case when v_confirmations>=2 then 'corroborated'/);
- assert.match(exceptionReviewMigration,/else 'provisional'/);
+ assert.match(exceptionReviewMigration,/identity_trust_tier/);
+ assert.match(exceptionReviewMigration,/provisional','corroborated','established','verified/);
+ assert.match(exceptionReviewMigration,/when v_people>=5 then 'established'/);
+ assert.match(exceptionReviewMigration,/when v_people>=2 then 'corroborated'/);
  assert.match(exceptionReviewMigration,/Automatic community Product post/);
+ assert.doesNotMatch(exceptionReviewMigration,/set catalog_status=case[\s\S]*v_people>=2/);
  assert.match(page,/Catalog enrichment/);
  assert.match(page,/Pending catalog candidates/);
  assert.match(page,/Map to an existing canonical Product/);
@@ -66,8 +69,9 @@ test("every Product has one multi-purpose report action and trust-aware review p
  assert.match(itemActions,/report_product_item/);
  assert.match(exceptionReviewMigration,/member_report/);
  assert.match(exceptionReviewMigration,/priority_score/);
- assert.match(exceptionReviewMigration,/v_status='provisional'[\s\S]*v_score:=3/);
- assert.match(exceptionReviewMigration,/v_status='verified'[\s\S]*else 1/);
+ assert.match(exceptionReviewMigration,/v_tier in \('provisional','corroborated'\)[\s\S]*v_score:=3/);
+ assert.match(exceptionReviewMigration,/v_tier='established'[\s\S]*v_signal_count>=3 then 3[\s\S]*v_signal_count>=2 then 2[\s\S]*else 1/);
+ assert.match(exceptionReviewMigration,/v_tier='verified'[\s\S]*v_signal_count>=5 then 3[\s\S]*v_signal_count>=3 then 2[\s\S]*else 1/);
  assert.match(exceptionReviewMigration,/prefix_name_similarity/);
 });
 

@@ -70,7 +70,7 @@ export default async function NotificationsPage({searchParams}:{searchParams:Sea
       <p>Updates from people you follow and products you’re watching.</p>
       <div className={styles.toolbar}>
         <Link className="secondaryButton" href="/outfits?feed=following">Style Feed</Link>
-        <Link className="secondaryButton" href="/settings">Notification settings</Link>
+        <Link className="secondaryButton" href="/settings#notifications">Notification settings</Link>
         {unreadCount>0?<form action={markAllFollowingNotificationsRead}><button className="primaryButton" type="submit">Mark all read ({unreadCount})</button></form>:null}
       </div>
     </div>

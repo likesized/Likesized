@@ -109,10 +109,10 @@ export async function setCandidateStatus(formData: FormData) {
   const candidateId = String(formData.get("candidate_id") ?? "");
   const status = String(formData.get("candidate_status") ?? "");
   const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
-  if (!UUID.test(candidateId) || !new Set(["pending", "needs_enrichment", "needs_review"]).has(status) || !reason) throw new Error("Choose a valid catalog status and reason.");
+  if (!UUID.test(candidateId) || !new Set(["pending", "needs_enrichment", "needs_review", "needs_more_evidence"]).has(status) || !reason) throw new Error("Choose a valid catalog status and reason.");
   const { error } = await supabase.rpc("admin_set_catalog_candidate_status", { p_candidate_id: candidateId, p_status: status, p_reason: reason });
   if (error) throw new Error(error.message);
-  revalidatePath("/moderation");
+  revalidatePath("/moderation"); revalidatePath("/closet");
 }
 
 export async function dismissCatalogFlag(formData: FormData) {

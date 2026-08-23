@@ -6,9 +6,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 const PROFILE_PHOTO_MAX_BYTES = 400 * 1024;
+type FitCommunity = "men"|"women"|"both";
 
 function text(formData:FormData,name:string){return String(formData.get(name)??"").trim();}
 function fail(code:string):never{redirect(`/settings?error=${encodeURIComponent(code)}`);}
+function fitCommunity(value:string):FitCommunity|null{return value==="men"||value==="women"||value==="both"?value:null;}
 async function authenticatedSettingsClient(){const supabase=await createClient();const {data:claimsData,error}=await supabase.auth.getClaims();const userId=claimsData?.claims?.sub;if(error||!userId)redirect("/login?next=/settings");return{supabase,userId};}
 function validProfilePhoto(formData:FormData){const entry=formData.get("profile_photo");return entry instanceof File&&entry.size>0&&entry.type==="image/webp"&&entry.size<=PROFILE_PHOTO_MAX_BYTES?entry:null;}
 function revalidateProfileSurfaces(){revalidatePath("/settings");revalidatePath("/people");revalidatePath("/search");revalidatePath("/following");revalidatePath("/circle");revalidatePath("/outfits");}
@@ -31,6 +33,16 @@ export async function saveProfileSettings(formData:FormData){
   const {error}=await supabase.from("profiles").update({display_name:displayName||null,bio:bio||null,updated_at:new Date().toISOString()}).eq("id",userId);
   if(error){if(error.code==="23514")fail("invalid_profile");fail("save_failed");}
   revalidateProfileSurfaces();redirect("/settings?saved=1");
+}
+
+export async function saveFitCommunitySettings(formData:FormData){
+  const community=fitCommunity(text(formData,"fit_community"));
+  if(!community)fail("invalid_fit_community");
+  const {supabase,userId}=await authenticatedSettingsClient();
+  const {error}=await supabase.from("fit_profiles").update({fit_community:community,updated_at:new Date().toISOString()}).eq("user_id",userId);
+  if(error)fail("fit_community_save_failed");
+  revalidateProfileSurfaces();
+  redirect("/settings?community=saved");
 }
 
 export async function saveProfilePhoto(formData:FormData){

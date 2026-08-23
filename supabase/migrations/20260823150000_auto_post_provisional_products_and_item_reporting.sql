@@ -1,11 +1,20 @@
--- Owner-approved catalog flow: an unambiguous first member submission becomes a
+-- Owner-approved catalog flow: a clean unique first member submission becomes a
 -- searchable/usable Provisional Product automatically. Routine new-item entry does
--- not create an admin chore. Review is exception-driven by conflicts, duplicate
--- signals, identifier/listing collisions, or an explicit member report.
+-- not create an admin chore. Product publishing and Product trust are separate:
+--   Provisional = 1 distinct wearer
+--   Corroborated = 2-4 distinct wearers
+--   Established = 5+ distinct wearers
+--   Verified = authoritative/admin-reviewed Product
+-- Review is exception-driven by conflicts, duplicate signals, identifier/listing
+-- collisions, or an explicit member report. Stronger existing evidence lowers the
+-- initial urgency of one isolated later disagreement because it is more likely to be
+-- an entry error; repeated independent signals escalate it again.
 
 alter table public.products
   add column if not exists identity_confirmation_count integer not null default 0
-    check(identity_confirmation_count >= 0);
+    check(identity_confirmation_count >= 0),
+  add column if not exists identity_trust_tier text not null default 'provisional'
+    check(identity_trust_tier in ('provisional','corroborated','established','verified'));
 
 alter table public.catalog_review_flags
   add column if not exists priority text not null default 'medium'
@@ -28,6 +37,19 @@ create unique index if not exists catalog_review_member_report_open_uq
 create index if not exists catalog_review_flags_priority_idx
   on public.catalog_review_flags(status,priority_score desc,created_at);
 
+-- Product/catalog photos are intended catalog-identification evidence. They may be
+-- displayed to authenticated members. Personal Fit Photos remain governed by the
+-- existing shared-Closet photo policy and are only a fallback image source.
+drop policy if exists "Members read catalog submission product photos" on storage.objects;
+create policy "Members read catalog submission product photos"
+on storage.objects for select to authenticated
+using (bucket_id='catalog-submission-photos');
+
+drop policy if exists "Members read canonical product photos" on storage.objects;
+create policy "Members read canonical product photos"
+on storage.objects for select to authenticated
+using (bucket_id='product-photos');
+
 create or replace function private.recalculate_product_review_priority(p_product_id uuid)
 returns void
 language plpgsql
@@ -36,14 +58,18 @@ set search_path=''
 as $$
 declare
   v_status public.product_data_status;
+  v_tier text:='provisional';
   v_member_reporters integer:=0;
   v_conflict_signals integer:=0;
+  v_signal_count integer:=0;
   v_score smallint:=2;
   v_priority text:='medium';
 begin
   if p_product_id is null then return; end if;
-  select catalog_status into v_status from public.products where id=p_product_id;
+  select catalog_status,identity_trust_tier into v_status,v_tier
+  from public.products where id=p_product_id;
   if v_status is null then return; end if;
+  if v_status='verified'::public.product_data_status then v_tier:='verified'; end if;
 
   select count(distinct created_by)::integer into v_member_reporters
   from public.catalog_review_flags
@@ -54,14 +80,25 @@ begin
   where product_id=p_product_id and status='open'
     and flag_type in ('possible_duplicate','conflicting_product_fact','ambiguous_identity','retail_identifier_conflict');
 
-  if v_status='provisional'::public.product_data_status then
+  v_signal_count:=v_member_reporters+v_conflict_signals;
+
+  if v_tier in ('provisional','corroborated') then
+    -- One issue against only 1-4 agreeing wearers is still a plausible undiscovered
+    -- Product problem, so it should be reviewed quickly.
     v_score:=3;
-  elsif v_status='corroborated'::public.product_data_status then
-    v_score:=case when v_member_reporters>=2 or v_conflict_signals>=2 then 3 else 2 end;
-  elsif v_status='verified'::public.product_data_status then
+  elsif v_tier='established' then
+    -- Five or more agreeing wearers make one isolated disagreement more likely to be
+    -- an entry error. Independent repetition escalates it.
     v_score:=case
-      when v_member_reporters>=3 or v_conflict_signals>=3 then 3
-      when v_member_reporters>=2 or v_conflict_signals>=2 then 2
+      when v_signal_count>=3 then 3
+      when v_signal_count>=2 then 2
+      else 1
+    end;
+  elsif v_tier='verified' then
+    -- Verified remains reviewable, but one isolated ordinary report is low urgency.
+    v_score:=case
+      when v_signal_count>=5 then 3
+      when v_signal_count>=3 then 2
       else 1
     end;
   else
@@ -85,35 +122,23 @@ set search_path=''
 as $$
 declare
   v_status public.product_data_status;
-  v_reporters integer:=0;
-  v_conflicts integer:=0;
-  v_score smallint:=2;
-  v_priority text:='medium';
+  v_score smallint:=3;
+  v_priority text:='high';
 begin
   if p_candidate_id is null then return; end if;
-  select identity_confidence,identity_conflict_count into v_status,v_conflicts
-  from public.catalog_candidates where id=p_candidate_id;
+  select identity_confidence into v_status from public.catalog_candidates where id=p_candidate_id;
   if v_status is null then return; end if;
 
-  select count(distinct created_by)::integer into v_reporters
-  from public.catalog_review_flags
-  where candidate_id=p_candidate_id and status='open' and created_by is not null;
-
-  if v_status='provisional'::public.product_data_status then
-    v_score:=3;
-  elsif v_status='corroborated'::public.product_data_status then
-    v_score:=case when greatest(v_reporters,v_conflicts)>=2 then 3 else 2 end;
-  elsif v_status='verified'::public.product_data_status then
-    v_score:=case
-      when greatest(v_reporters,v_conflicts)>=3 then 3
-      when greatest(v_reporters,v_conflicts)>=2 then 2
-      else 1
-    end;
+  -- An unresolved candidate only reaches this queue because something blocked safe
+  -- automatic Product posting. Until resolved, that is high-priority catalog identity work.
+  if v_status='verified'::public.product_data_status then
+    v_score:=1;
+    v_priority:='low';
   else
-    v_score:=2;
+    v_score:=3;
+    v_priority:='high';
   end if;
 
-  v_priority:=case v_score when 3 then 'high' when 2 then 'medium' else 'low' end;
   update public.catalog_review_flags
   set priority=v_priority,priority_score=v_score
   where candidate_id=p_candidate_id and status='open'
@@ -148,43 +173,6 @@ after insert or delete or update of status,product_id,candidate_id,created_by,fl
 on public.catalog_review_flags
 for each row execute function private.refresh_catalog_review_priority_after_flag();
 
-create or replace function private.refresh_product_review_priority_after_status()
-returns trigger
-language plpgsql
-security definer
-set search_path=''
-as $$
-begin
-  perform private.recalculate_product_review_priority(new.id);
-  return new;
-end;
-$$;
-revoke all on function private.refresh_product_review_priority_after_status() from public,anon,authenticated;
-
-drop trigger if exists product_review_priority_after_status on public.products;
-create trigger product_review_priority_after_status
-after update of catalog_status on public.products
-for each row when (old.catalog_status is distinct from new.catalog_status)
-execute function private.refresh_product_review_priority_after_status();
-
-create or replace function private.refresh_candidate_review_priority_after_status()
-returns trigger
-language plpgsql
-security definer
-set search_path=''
-as $$
-begin
-  perform private.recalculate_candidate_review_priority(new.id);
-  return new;
-end;
-$$;
-revoke all on function private.refresh_candidate_review_priority_after_status() from public,anon,authenticated;
-
-drop trigger if exists candidate_review_priority_after_status on public.catalog_candidates;
-create trigger candidate_review_priority_after_status
-after update of identity_confidence,identity_conflict_count on public.catalog_candidates
-for each row execute function private.refresh_candidate_review_priority_after_status();
-
 create or replace function private.refresh_product_identity_confidence(p_product_id uuid)
 returns void
 language plpgsql
@@ -193,19 +181,28 @@ set search_path=''
 as $$
 declare
   v_people integer:=0;
+  v_status public.product_data_status;
+  v_tier text:='provisional';
 begin
   if p_product_id is null then return; end if;
+  select catalog_status into v_status from public.products where id=p_product_id;
+  if v_status is null then return; end if;
+
   select count(distinct user_id)::integer into v_people
   from public.fit_reports where product_id=p_product_id;
 
+  v_tier:=case
+    when v_status='verified'::public.product_data_status then 'verified'
+    when v_people>=5 then 'established'
+    when v_people>=2 then 'corroborated'
+    else 'provisional'
+  end;
+
   update public.products
   set identity_confirmation_count=v_people,
-      catalog_status=case
-        when catalog_status in ('verified'::public.product_data_status,'rejected'::public.product_data_status) then catalog_status
-        when catalog_status='provisional'::public.product_data_status and v_people>=2 then 'corroborated'::public.product_data_status
-        else catalog_status
-      end
-  where id=p_product_id;
+      identity_trust_tier=v_tier
+  where id=p_product_id
+    and (identity_confirmation_count is distinct from v_people or identity_trust_tier is distinct from v_tier);
 
   perform private.recalculate_product_review_priority(p_product_id);
 end;
@@ -230,6 +227,42 @@ drop trigger if exists fit_reports_refresh_product_identity_confidence on public
 create trigger fit_reports_refresh_product_identity_confidence
 after insert or delete or update of product_id on public.fit_reports
 for each row execute function private.refresh_product_identity_after_fit_report();
+
+create or replace function private.refresh_product_identity_after_catalog_status()
+returns trigger
+language plpgsql
+security definer
+set search_path=''
+as $$
+begin
+  perform private.refresh_product_identity_confidence(new.id);
+  return new;
+end;
+$$;
+revoke all on function private.refresh_product_identity_after_catalog_status() from public,anon,authenticated;
+
+drop trigger if exists product_identity_tier_after_catalog_status on public.products;
+create trigger product_identity_tier_after_catalog_status
+after insert or update of catalog_status on public.products
+for each row execute function private.refresh_product_identity_after_catalog_status();
+
+create or replace function private.refresh_candidate_review_priority_after_status()
+returns trigger
+language plpgsql
+security definer
+set search_path=''
+as $$
+begin
+  perform private.recalculate_candidate_review_priority(new.id);
+  return new;
+end;
+$$;
+revoke all on function private.refresh_candidate_review_priority_after_status() from public,anon,authenticated;
+
+drop trigger if exists candidate_review_priority_after_status on public.catalog_candidates;
+create trigger candidate_review_priority_after_status
+after update of identity_confidence,identity_conflict_count on public.catalog_candidates
+for each row execute function private.refresh_candidate_review_priority_after_status();
 
 create or replace function private.flag_possible_product_neighbors(p_product_id uuid)
 returns void
@@ -308,10 +341,75 @@ $$;
 revoke all on function public.report_product_item(uuid,text,text) from public,anon;
 grant execute on function public.report_product_item(uuid,text,text) to authenticated;
 
--- Supersede the former five-member canonicalization gate. Candidates remain useful as
--- a short staging/audit object, but a clean unique first member submission now becomes
--- the lowest-trust Provisional Product immediately. Any blocking flag keeps the
--- candidate unresolved for review instead of creating questionable Product truth.
+-- Returns only safe image sources for the scanner confirmation card. Product/catalog
+-- imagery is preferred; a Shared member Fit Photo is only the fallback. The caller
+-- still signs storage paths through normal Storage authorization.
+create or replace function public.get_scan_match_image_source(
+  p_product_id uuid default null,
+  p_candidate_id uuid default null
+)
+returns table(product_photo_url text,product_photo_storage_path text,fit_photo_storage_path text)
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare
+  v_user uuid:=auth.uid();
+  v_product_url text;
+  v_product_path text;
+  v_fit_path text;
+begin
+  if v_user is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  if (p_product_id is null)=(p_candidate_id is null) then
+    raise exception 'Choose exactly one scan image target' using errcode='22023';
+  end if;
+
+  if p_product_id is not null then
+    if not exists(select 1 from public.products where id=p_product_id and catalog_status<>'rejected'::public.product_data_status) then return; end if;
+
+    select pe.public_url,pe.storage_path
+    into v_product_url,v_product_path
+    from public.product_photo_evidence pe
+    where pe.product_id=p_product_id and pe.source_status<>'rejected'::public.product_data_status
+    order by case pe.source_status::text when 'verified' then 1 when 'corroborated' then 2 else 3 end,
+             pe.created_at desc,pe.id
+    limit 1;
+
+    select fr.storage_path into v_fit_path
+    from public.fit_reference_photos fr
+    join public.closet_items ci on ci.id=fr.closet_item_id
+    where ci.product_id=p_product_id and ci.visibility='shared'::public.closet_visibility
+    order by fr.created_at desc,fr.id
+    limit 1;
+  else
+    if not exists(select 1 from public.catalog_candidates where id=p_candidate_id and resolved_product_id is null and status<>'merged') then return; end if;
+
+    select gs.product_photo_storage_path into v_product_path
+    from public.garment_submissions gs
+    where gs.candidate_id=p_candidate_id and gs.product_photo_storage_path is not null
+    order by gs.created_at desc,gs.id
+    limit 1;
+
+    select fr.storage_path into v_fit_path
+    from public.garment_submissions gs
+    join public.closet_items ci on ci.id=gs.closet_item_id
+    join public.fit_reference_photos fr on fr.closet_item_id=ci.id
+    where gs.candidate_id=p_candidate_id and ci.visibility='shared'::public.closet_visibility
+    order by fr.created_at desc,fr.id
+    limit 1;
+  end if;
+
+  return query select v_product_url,v_product_path,v_fit_path;
+end;
+$$;
+revoke all on function public.get_scan_match_image_source(uuid,uuid) from public,anon;
+grant execute on function public.get_scan_match_image_source(uuid,uuid) to authenticated;
+
+-- Candidates remain a short staging/audit object, but a clean unique first member
+-- submission becomes the lowest-trust Provisional Product immediately. Any blocking
+-- identity flag keeps the candidate unresolved for review instead of creating
+-- questionable Product truth. The five-wearer milestone is preserved as Established
+-- identity trust; it is no longer a publishing gate.
 create or replace function private.auto_promote_catalog_candidate(p_candidate_id uuid)
 returns uuid
 language plpgsql
@@ -330,7 +428,7 @@ declare
   v_category public.garment_category;
   v_market public.garment_market_segment:='unknown'::public.garment_market_segment;
   v_slug text;
-  v_product_status public.product_data_status;
+  v_identity_tier text:='provisional';
 begin
   select * into v_candidate from public.catalog_candidates where id=p_candidate_id for update;
   if v_candidate.id is null or v_candidate.resolved_product_id is not null then return v_candidate.resolved_product_id; end if;
@@ -409,14 +507,14 @@ begin
 
   v_slug:=left(trim(both '-' from regexp_replace(lower(v_brand_slug||'-'||v_candidate.model_text||'-'||v_market::text),'[^a-z0-9]+','-','g')),140);
   if exists(select 1 from public.products where slug=v_slug) then v_slug:=left(v_slug,127)||'-'||substr(v_candidate.id::text,1,8); end if;
-  v_product_status:=case when v_confirmations>=2 then 'corroborated'::public.product_data_status else 'provisional'::public.product_data_status end;
+  v_identity_tier:=case when v_confirmations>=5 then 'established' when v_confirmations>=2 then 'corroborated' else 'provisional' end;
 
   insert into public.products(
     brand_id,name,slug,category,normalized_name,product_family_id,garment_type_key,market_segment,department_key,
-    catalog_status,catalog_review_needed,identity_confirmation_count
+    catalog_status,catalog_review_needed,identity_confirmation_count,identity_trust_tier
   ) values(
     v_brand_id,v_candidate.model_text,v_slug,v_category,v_candidate.normalized_model,v_family_id,v_candidate.garment_type_key,v_market,v_candidate.department_key,
-    v_product_status,false,v_confirmations
+    'provisional'::public.product_data_status,false,v_confirmations,v_identity_tier
   ) returning id into v_product_id;
 
   perform private.map_catalog_candidate_to_product(
@@ -431,7 +529,8 @@ end;
 $$;
 revoke all on function private.auto_promote_catalog_candidate(uuid) from public,anon,authenticated;
 
--- Backfill Product confirmation counts without demoting previously established trust.
+-- Backfill Product distinct-wearer counts and four-tier identity trust without using
+-- that trust to rewrite unrelated Product-fact catalog_status values.
 do $$
 declare v_product_id uuid; begin
   for v_product_id in select id from public.products loop
@@ -441,7 +540,7 @@ end $$;
 
 -- Existing real member-submitted candidates should no longer sit in a routine review
 -- queue merely because they were the first/only item. Clean ones resolve immediately;
--- flagged candidates remain unresolved.
+-- genuinely flagged candidates remain unresolved.
 do $$
 declare v_candidate_id uuid; begin
   for v_candidate_id in
@@ -454,7 +553,7 @@ declare v_candidate_id uuid; begin
   end loop;
 end $$;
 
--- Re-score any flags that predate this migration.
+-- Re-score flags that predate this migration.
 do $$
 declare v_id uuid; begin
   for v_id in select distinct product_id from public.catalog_review_flags where product_id is not null and status='open' loop
@@ -466,8 +565,12 @@ declare v_id uuid; begin
 end $$;
 
 comment on column public.products.identity_confirmation_count is
-  'Distinct members with Fit Reports currently attached to the Product; first clean submission may auto-post Provisional, 2+ may promote Provisional to Corroborated, Verified remains admin/authoritative.';
+  'Distinct members with Fit Reports currently attached to the Product. This count drives four-tier identity trust but is not itself a publishing gate.';
+comment on column public.products.identity_trust_tier is
+  'Product identity trust: Provisional=1 distinct wearer, Corroborated=2-4, Established=5+, Verified=authoritative/admin-reviewed.';
 comment on function public.report_product_item(uuid,text,text) is
-  'One member-facing Product report boundary for inappropriate content, image mismatch, incorrect information, or other concerns. Creates/refreshes an exception-driven catalog review flag whose priority derives from Product trust and independent report/conflict volume.';
+  'One member-facing Product report boundary for inappropriate content, image mismatch, incorrect information, or other concerns. Review priority derives from the four-tier Product identity trust level plus independent report/conflict volume.';
+comment on function public.get_scan_match_image_source(uuid,uuid) is
+  'Safe scanner-confirmation image sources. Product/catalog photo first; Shared member Fit Photo second; caller uses a placeholder if neither exists.';
 comment on column public.catalog_review_flags.priority is
-  'Current review urgency. Provisional/uncorroborated targets rate high; Corroborated normally medium; Verified normally low, with multiple independent signals escalating priority.';
+  'Current review urgency. Provisional/Corroborated Product issues start High; Established and Verified single reports start Low and escalate as independent signals accumulate.';

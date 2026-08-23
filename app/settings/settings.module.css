@@ -116,6 +116,10 @@
   cursor: not-allowed;
 }
 
+.notificationSection {
+  scroll-margin-top: 110px;
+}
+
 .privacySection {
   padding-top: 34px;
   padding-bottom: 44px;

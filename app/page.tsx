@@ -47,7 +47,7 @@ const faqs = [
   },
   {
     question: "Where does LikeSized get its product information?",
-    answer: "LikeSized is building a community-powered clothing catalog from the people who actually wear the clothes. One person might know the model, another the cut, another the material or other item details. As more members contribute, the picture gets better.",
+    answer: "LikeSized learns from real people who own and wear the clothes. The details members share through Fit Reports help build and improve the LikeSized clothing catalog over time.",
   },
   {
     question: "What if I don’t know all the details about my item?",

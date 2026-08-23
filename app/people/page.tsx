@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 type MatchCategory = "overall" | "tops" | "bottoms";
+type FitCommunity = "men" | "women" | "both";
 
 type FitMatch = {
   user_id: string;
@@ -20,6 +21,11 @@ const CATEGORY_LABELS: Record<MatchCategory, string> = {
   tops: "Tops",
   bottoms: "Bottoms",
 };
+const COMMUNITY_LABELS: Record<FitCommunity, string> = {
+  men: "Men",
+  women: "Women",
+  both: "Both",
+};
 
 function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -28,10 +34,20 @@ function first(value: string | string[] | undefined) {
 function matchCategory(value: string | undefined): MatchCategory {
   return value === "tops" || value === "bottoms" ? value : "overall";
 }
+function fitCommunity(value: string | undefined, fallback: FitCommunity): FitCommunity {
+  return value === "men" || value === "women" || value === "both" ? value : fallback;
+}
+function peopleHref(category:MatchCategory,community:FitCommunity){
+  const params=new URLSearchParams();
+  if(category!=="overall")params.set("category",category);
+  params.set("community",community);
+  return `/people?${params.toString()}`;
+}
 
 export default async function PeoplePage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   const category = matchCategory(first(params.category));
+  const requestedCommunity=first(params.community);
   const profileSaved = first(params.profile) === "saved";
   const followError = first(params.follow) === "error";
   const supabase = await createClient();
@@ -42,13 +58,15 @@ export default async function PeoplePage({ searchParams }: { searchParams: Searc
 
   const [{ data: profile, error: profileError }, { data: fitProfile, error: fitProfileError }] = await Promise.all([
     supabase.from("profiles").select("username").eq("id", userId).maybeSingle(),
-    supabase.from("fit_profiles").select("user_id").eq("user_id", userId).maybeSingle(),
+    supabase.from("fit_profiles").select("user_id,fit_community").eq("user_id", userId).maybeSingle(),
   ]);
   if (profileError || fitProfileError) throw new Error("Could not load your Fit Profile status.");
   if (!profile?.username || !fitProfile) redirect("/onboarding");
 
+  const savedCommunity=fitProfile.fit_community==="men"||fitProfile.fit_community==="women"?fitProfile.fit_community:"both";
+  const community=fitCommunity(requestedCommunity,savedCommunity);
   const [{ data: matchData, error: matchError }, { data: followData, error: followLoadError }] = await Promise.all([
-    supabase.rpc("get_fit_matches", { p_match_category: category, p_result_limit: 30 }),
+    supabase.rpc("get_fit_matches", { p_match_category: category, p_result_limit: 30, p_fit_community:community }),
     supabase.from("follows").select("followed_id").eq("follower_id", userId),
   ]);
   if (matchError || followLoadError) throw new Error("Could not load Fit Matches.");
@@ -63,7 +81,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Searc
 
   const followedIds = new Set((followData ?? []).map((row: { followed_id: string }) => row.followed_id));
   const categoryLabel = CATEGORY_LABELS[category];
-  const returnTo = category === "overall" ? "/people" : `/people?category=${category}`;
+  const returnTo = peopleHref(category,community);
 
   return (
     <main className="pageShell">
@@ -77,9 +95,14 @@ export default async function PeoplePage({ searchParams }: { searchParams: Searc
       {profileSaved ? <div className="authMessage">Fit Profile saved. Your match scores are current.</div> : null}
       {followError ? <div className="authMessage error">That follow change could not be saved.</div> : null}
 
+      <span className="muted">Fit Community · defaults to your Fit Profile. Switching this view does not change your saved preference.</span>
+      <div className="filterBar">
+        {(Object.keys(COMMUNITY_LABELS) as FitCommunity[]).map((key)=><Link key={key} className={`filter${community===key?" active":""}`} href={peopleHref(category,key)}>{COMMUNITY_LABELS[key]}</Link>)}
+      </div>
+      <span className="muted">Match view</span>
       <div className="filterBar">
         {(Object.keys(CATEGORY_LABELS) as MatchCategory[]).map((key) => (
-          <Link key={key} className={`filter${category === key ? " active" : ""}`} href={key === "overall" ? "/people" : `/people?category=${key}`}>
+          <Link key={key} className={`filter${category === key ? " active" : ""}`} href={peopleHref(key,community)}>
             {CATEGORY_LABELS[key]}
           </Link>
         ))}
@@ -116,7 +139,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Searc
         <div className="tableLike">
           <div className="matchCardBody">
             <strong>No Fit Matches yet.</strong>
-            <p className="muted">Your Fit Profile is ready. Matches will appear here as other members complete compatible Fit Profiles.</p>
+            <p className="muted">Your Fit Profile is ready. Matches will appear here as other members complete compatible Fit Profiles in this Fit Community.</p>
           </div>
         </div>
       )}

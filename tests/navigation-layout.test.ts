@@ -12,6 +12,7 @@ const fitProfileHeroCss = readFileSync(new URL("../app/onboarding/FitProfileHero
 const settingsPage = readFileSync(new URL("../app/settings/page.tsx", import.meta.url), "utf8");
 const peoplePage = readFileSync(new URL("../app/people/page.tsx", import.meta.url), "utf8");
 const circlePage = readFileSync(new URL("../app/circle/page.tsx", import.meta.url), "utf8");
+const searchPage = readFileSync(new URL("../app/search/page.tsx", import.meta.url), "utf8");
 
 test("desktop and mobile share one bell and one member menu", () => {
   assert.match(header, /<MemberMenu unreadCount=/);
@@ -59,4 +60,10 @@ test("Fit Community is a saved default with reversible social-view filters", () 
   assert.match(peoplePage, /Switching this view does not change your saved preference/);
   assert.match(circlePage, /p_fit_community:override/);
   assert.match(circlePage, /not by the garment’s Men’s or Women’s Department/);
+});
+
+test("direct Product search is global and does not require a Men or Women filter switch", () => {
+  assert.match(searchPage, /supabase\.rpc\("search_catalog_products",\s*\{\s*p_query: q,\s*p_result_limit: 24,?\s*\}\)/s);
+  assert.doesNotMatch(searchPage, /search_catalog_products[\s\S]{0,180}p_fit_community/);
+  assert.doesNotMatch(searchPage, /search_catalog_products[\s\S]{0,180}department/);
 });

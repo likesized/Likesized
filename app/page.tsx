@@ -42,6 +42,10 @@ const faqs = [
     answer: "No. Your exact current and historical body measurements stay private. Other members see safe Match percentages and the fit information you intentionally share.",
   },
   {
+    question: "Does LikeSized work for both men and women?",
+    answer: "Yes. LikeSized can match men and women, and every accurate measurement you add can improve precision. Some measurements may be especially useful depending on your body and the garments you wear. For many men’s fits, chest, shoulders, sleeve length, upper arm/bicep, waist, rise, and inseam can add useful detail. For many women’s fits, full bust, high bust, underbust, waist, hip/seat, torso length, and related shaping measurements can be especially informative. Those are examples, not rules—LikeSized still uses the garment-relevant measurements you provide, and any member can benefit from any measurement that applies to their body and clothing.",
+  },
+  {
     question: "Why can my Match change by clothing type?",
     answer: "Different garments depend on different measurements. LikeSized emphasizes the measurements that matter for tops, bottoms, and specific garment types instead of using one generic score for everything.",
   },

@@ -147,7 +147,7 @@ Direct Product search is **global** across men's, women's and unisex Products. A
 Fit Community filters people/wearer relevance in social discovery. Product Department/taxonomy filters may narrow explicit browse/explore contexts when the user chooses them, but they do not silently suppress a direct textual Product search.
 
 # 8. Public measurement FAQ copy — PENDING OWNER APPROVAL
-A future FAQ may explain that complete, accurate measurements improve Match precision and that different garments emphasize different measurements. The exact public wording and any sex/body-specific measurement examples are **not approved for this deployment** and must not be published until the owner reviews the copy.
+A future FAQ may explain that complete, accurate measurements improve Match precision and that different body/garment contexts can make certain measurements especially informative. The exact public wording and any sex/body-specific measurement examples are **not approved** and must not be published until the owner reviews the copy.
 
 # 9. Product/item reporting and exception-driven review — LOCKED
 Every published Product must expose one **Report this item** action. Initial reasons:
@@ -231,6 +231,24 @@ Key locked details:
 - Pajama set uses the printed whole-set size unless pieces are genuinely separate Products.
 - Costume lingerie questions are Garment form, Top style, Bottom style and Structure / Support. Closure is intentionally omitted in favor of Structure / Support.
 
+## Tracked fit variation identity — OWNER LOCKED, IMPLEMENTATION DEFERRED
+A tracked fit variation is not the base Product and is not the member's size.
+
+Only structured questions LikeSized actually asks for that Garment Type are even eligible to define a tracked variation, and each question must be explicitly classified before it participates.
+
+Question classes:
+- **Variation-defining:** a meaningful physical garment difference capable of materially changing fit evidence.
+- **Descriptive-only:** useful metadata/filter context but not a separate fit-evidence variation.
+- **Cosmetic/ignored:** not fit-variation identity.
+
+Absolute rules:
+- **Size never defines a tracked variation.** Size stays on the Fit Report.
+- **Color never defines a tracked variation.** Color is cosmetic for variation identity.
+- Do not assume every one of a Garment Type's up-to-four controlled questions is variation-defining.
+- One canonical variation-definition map must eventually be shared by Product Detail, recommendation/evidence aggregation and Admin tooling. Do not create parallel variation logic.
+
+The required classification audit is a roadmap prerequisite before later Product Detail Exact Variation behavior is implemented.
+
 # 14. Product evidence boundaries — LOCKED
 Shared Product facts resolve field by field; one Fit Report never wholesale-replaces another.
 
@@ -280,6 +298,26 @@ Recovered weights:
 
 Pending/unmapped submissions do not count as exact canonical Product evidence. `Would Buy Again` does not affect size recommendation/confidence.
 
+**Exact Variant** must eventually consume the one approved variation-definition map from Section 13. Size and Color are never variation-key fields.
+
+## Product Detail fit-evidence presentation — OWNER LOCKED, ROADMAP DEFERRED
+Do not implement this ahead of the Garment/Product Detail audit.
+
+Default evidence behavior:
+1. **Primary:** the closest Body Match for the exact variation being viewed, always first even when a related variation has a higher Body Match.
+2. When useful, explain under that exact-variation result: **“This is the closest Fit Report we currently have for this exact variation. A lower Body Match does not mean this item will not fit you — it means we do not yet have a report from someone closer to your measurements.”**
+3. When enough strong Body Match evidence exists for that exact variation, show a compact **Strong Fit Reports** aggregate underneath the closest individual report. The aggregate may summarize size worn + Fit Result, but it must never mix related variations.
+4. **Secondary:** only the single closest Body Match from related approved variations. Show what they wore and state the actual difference, such as different cut, rise, dress length, sleeve length, neckline, crop or leg cut.
+5. **See more evidence** opens all available evidence for the garment family: exact and related variations, Body Match, size worn, Fit Result, variation attributes/differences, aggregates and the individual reports behind them.
+
+Body Match means wearer-body similarity, not garment probability. Approved helper meaning: **“Body Match shows how closely your measurements match the person who submitted this Fit Report — not how likely the garment is to fit you.”**
+
+A high Body Match does not turn a bad Fit Result into a recommendation. Example: a 95% Body Match report where 30×30 was Too Small remains strong body-similarity evidence and poor size/outcome evidence. Recommendation interpretation may reduce confidence in that size without lowering Body Match itself.
+
+Later lifecycle evidence such as shrinking, stretching, alterations and Kept/Returned/Exchanged may affect recommendation confidence/warnings only after the Closet lifecycle model is settled. It must not rewrite the original try-on Fit Report.
+
+Do not collapse Body Match, exact-variation equality, size worn, Fit Result and lifecycle evidence into one synthetic fit percentage.
+
 # 20. Help Me Size It — LOCKED
 Help Me Size It is fallback sizing assistance and reuses the canonical recommendation engine. There is no second sizing engine/table and no invented size when evidence is insufficient.
 
@@ -312,7 +350,7 @@ Outfits use owned Closet garments and the same Product/taxonomy system. Other-me
 - Fit Photo = member wear evidence attached to the Fit Report/garment.
 - Product Photo = separate catalog evidence.
 - Product/catalog imagery is preferred on Product-identification surfaces.
-- A public/shared member Fit Photo may be used only as the scanner **Is this the item?** fallback when no Product/catalog photo exists. That fallback never promotes the Fit Photo into generic/canonical Product imagery.
+- A public/shared member Fit Photo may be used as the scanner **Is this the item?** fallback when no Product/catalog photo exists. That fallback never promotes the Fit Photo into generic/canonical Product imagery.
 
 # 25. Admin catalog target — LOCKED
 Admin must expose Products/candidates, identity-trust tier, distinct confirmation counts, open flags, flag priority, identifiers/barcode confidence, retailer links, evidence history and system-vs-admin resolution provenance.
@@ -321,11 +359,13 @@ Required review views/filters include at least Needs Review, Provisional, Corrob
 
 Admin work is exception-driven: duplicate/identity conflict, incorrect information, member reports, content/photo problems, identifier/listing collisions and evidence disagreements—not mandatory approval of every clean new garment.
 
+When variation tooling is reached, Admin must distinguish base Product identity, tracked fit variation, descriptive metadata, cosmetic fields and report-specific Size/Color/Fit Result. Admin tooling must not accidentally promote Size or Color into variation identity.
+
 # 26. SerpAPI — ADMIN RESEARCH ONLY
 SerpAPI checks private cache first, dedupes queries, respects caps and requires explicit resolution. Raw results never write directly to Product truth. Ordinary member search/intake/scanner does not use it.
 
 # 27. Public homepage / FAQ — LOCKED
-Homepage remains useful logged out; signed-in `/` enters My Circle. Published FAQ copy must be owner-approved and accurately explain current behavior without unverifiable competitor claims. The proposed measurement-specific men/women FAQ wording is pending owner review and is not part of this deployment.
+Homepage remains useful logged out; signed-in `/` enters My Circle. Published FAQ copy must be owner-approved and accurately explain current behavior without unverifiable competitor claims. The proposed measurement-specific men/women FAQ wording remains pending owner review and must not be published until approved.
 
 # 28. Data-quality rule
 **Controlled when possible. Normalize when necessary. Free text only when useful.**

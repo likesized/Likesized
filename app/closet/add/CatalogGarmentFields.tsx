@@ -33,6 +33,7 @@ type PendingBarcodeMatch = {
   brand_name: string;
   product_name: string;
   garment_type_key: string | null;
+  image_url: string | null;
   identity_confidence: string;
 };
 type BarcodeMatch =
@@ -327,6 +328,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
           brand_name: body.barcode_match.brand_name,
           product_name: body.barcode_match.product_name,
           garment_type_key: body.barcode_match.garment_type_key,
+          image_url: body.barcode_match.image_url,
           identity_confidence: body.barcode_match.identity_confidence,
         } }, barcode);
         return;
@@ -501,13 +503,13 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     const matchBrand = barcodeMatch.kind === "product" ? barcodeMatch.product.brand_name : barcodeMatch.candidate.brand_name;
     const matchName = barcodeMatch.kind === "product" ? barcodeMatch.product.name : barcodeMatch.candidate.product_name;
     const matchType = barcodeMatch.kind === "product" ? barcodeMatch.product.garment_type_key : barcodeMatch.candidate.garment_type_key;
-    const matchImage = barcodeMatch.kind === "product" ? barcodeMatch.product.image_url : null;
+    const matchImage = barcodeMatch.kind === "product" ? barcodeMatch.product.image_url : barcodeMatch.candidate.image_url;
     const typeLabel = GARMENT_TYPES.find((item) => item.key === matchType)?.label;
     return <section className={`fitDimensionFields ${styles.scanSection}`}>
       <button className="catalogBackButton" type="button" onClick={() => { setBarcodeMatch(null); setError(""); setStep("scan"); }}>← Scan again</button>
       <div className="privacyNote"><b>Is this the item?</b><div>{barcodeMatch.kind === "product" ? "LikeSized found this Product for the barcode you scanned." : "LikeSized has seen this barcode before, but the Product is still being confirmed."}</div></div>
       <div className="catalogSelectedItem">
-        {matchImage ? <img src={matchImage} alt=""/> : null}
+        {matchImage ? <img src={matchImage} alt=""/> : <div className="garmentThumb" aria-hidden="true">{matchBrand.slice(0, 1).toUpperCase() || "LS"}</div>}
         <span><small>{barcodeMatch.kind === "product" ? "LikeSized catalog match" : "Previously submitted to LikeSized"}</small><b>{matchBrand} · {matchName}</b>{typeLabel ? <small>{typeLabel}</small> : null}<small>Barcode {scannedBarcode}</small></span>
       </div>
       {loadingBarcode ? <p className="fieldHelp" role="status">Confirming…</p> : null}

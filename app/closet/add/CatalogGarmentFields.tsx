@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { COLOR_FAMILIES, GARMENT_CATEGORIES, GARMENT_TYPES, questionsForGarmentType } from "@/lib/garment-taxonomy";
+import { COLOR_FAMILIES, GARMENT_CATEGORIES, GARMENT_TYPES, questionsForGarmentType, type GarmentCategoryKey } from "@/lib/garment-taxonomy";
 import type { GarmentSizeKind } from "@/lib/domain";
 import styles from "./fitReport.module.css";
 
@@ -26,6 +26,7 @@ export type CatalogProduct = {
   listings?: ProductListing[];
 };
 export type CatalogOption = { key: string; label: string };
+export type CatalogRetailerOption = { id: string; name: string; domain: string | null };
 
 type PendingBarcodeMatch = {
   candidate_id: string;
@@ -64,6 +65,12 @@ type CatalogContextValue = {
 };
 const CatalogContext = createContext<CatalogContextValue>({ product: null, candidateDefaultSizeKind: null, scannedBarcode: "" });
 const PERCENTAGES = Array.from({ length: 100 }, (_, index) => String(index + 1));
+const PURCHASE_MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+const CURRENT_YEAR = new Date().getFullYear();
+const PURCHASE_YEARS = Array.from({ length: CURRENT_YEAR - 1899 }, (_, index) => String(CURRENT_YEAR - index));
 
 export function useCatalogGarment() {
   return useContext(CatalogContext);
@@ -77,10 +84,13 @@ function applicableQuestions(typeKey: string, answers: Record<string, string>) {
     (item) => item.key !== "neckline_height" || (answers.top_sleeve !== "strapless" && answers.swim_top !== "strapless"),
   );
 }
+function categoryForType(typeKey: string | null | undefined): GarmentCategoryKey | "" {
+  return GARMENT_TYPES.find((item) => item.key === typeKey)?.category ?? "";
+}
 
 export function CatalogColorField() {
   const colors = [...COLOR_FAMILIES].sort((a, b) => a.label.localeCompare(b.label));
-  return <label>Color<select name="color_family" defaultValue="" required><option value="" disabled>Select a color</option>{colors.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>;
+  return <label>Color<select name="color_family" defaultValue="" required data-review-label="Color"><option value="" disabled>Select a color</option>{colors.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>;
 }
 
 function CatalogDepartmentField({ departments }: { departments: CatalogOption[] }) {
@@ -94,7 +104,7 @@ function CatalogDepartmentField({ departments }: { departments: CatalogOption[] 
   }, [product?.id, knownDepartment]);
 
   return <label>Department <span className="muted inlineMuted">optional</span>
-    <select name="department" value={department} onChange={(event) => setDepartment(event.target.value)}>
+    <select name="department" value={department} onChange={(event) => setDepartment(event.target.value)} data-review-label="Department">
       <option value="">Choose a department</option>
       {sortedDepartments.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
       <option value="not_sure">Not sure</option>
@@ -103,13 +113,16 @@ function CatalogDepartmentField({ departments }: { departments: CatalogOption[] 
   </label>;
 }
 
-export function CatalogCommunityEnrichment({ materials }: { materials: CatalogOption[] }) {
+export function CatalogCommunityEnrichment({ materials, retailers }: { materials: CatalogOption[]; retailers: CatalogRetailerOption[] }) {
   const { product, scannedBarcode } = useCatalogGarment();
   const sortedMaterials = useMemo(() => [...materials]
     .filter((item) => item.key !== "other" && item.key !== "not_sure" && item.label.toLowerCase() !== "other")
     .sort((a, b) => a.label.localeCompare(b.label)), [materials]);
+  const sortedRetailers = useMemo(() => [...retailers].sort((a, b) => a.name.localeCompare(b.name)), [retailers]);
   const knownMaterials = useMemo(() => (product?.materials ?? []).filter((row) => row.source_status !== "rejected"), [product]);
   const [materialRows, setMaterialRows] = useState<Array<{ material_key: string; percentage: string }>>([{ material_key: "", percentage: "" }]);
+  const [purchaseMonth, setPurchaseMonth] = useState("");
+  const [purchaseYear, setPurchaseYear] = useState("");
 
   useEffect(() => {
     setMaterialRows(knownMaterials.length
@@ -128,6 +141,43 @@ export function CatalogCommunityEnrichment({ materials }: { materials: CatalogOp
         <b>Help us learn more about this item</b>
         <div>Share any extra details you know. Every bit of information helps LikeSized build a better garment listing.</div>
       </div>
+
+      <label>Purchased From <span className="muted inlineMuted">optional</span>
+        <input name="purchased_from" list="retailer-options" maxLength={160} autoComplete="off" placeholder="Start typing a retailer" />
+        <datalist id="retailer-options">{sortedRetailers.map((item) => <option value={item.name} key={item.id}>{item.domain ?? ""}</option>)}</datalist>
+        <span className="fieldHelp">Choose a suggestion when it matches, or enter the retailer yourself.</span>
+      </label>
+
+      <label>Price Paid <span className="muted inlineMuted">optional</span>
+        <input name="price_paid" type="number" inputMode="decimal" min="0" max="999999.99" step="0.01" placeholder="0.00" />
+      </label>
+
+      <label>Purchase Method <span className="muted inlineMuted">optional</span>
+        <select name="purchase_method" defaultValue="">
+          <option value="">Choose a method</option>
+          <option value="online">Online</option>
+          <option value="in_store">In Store</option>
+          <option value="gift">Received as a Gift</option>
+        </select>
+      </label>
+
+      <fieldset className="fitDimensionFields">
+        <legend>Approx. Purchase Date <span className="muted inlineMuted">optional</span></legend>
+        <div className="fieldPair">
+          <label>Month
+            <select name="purchase_month" value={purchaseMonth} required={Boolean(purchaseYear)} onChange={(event) => setPurchaseMonth(event.target.value)}>
+              <option value="">Choose month</option>
+              {PURCHASE_MONTHS.map((month, index) => <option value={String(index + 1)} key={month}>{month}</option>)}
+            </select>
+          </label>
+          <label>Year
+            <select name="purchase_year" value={purchaseYear} required={Boolean(purchaseMonth)} onChange={(event) => setPurchaseYear(event.target.value)}>
+              <option value="">Choose year</option>
+              {PURCHASE_YEARS.map((year) => <option value={year} key={year}>{year}</option>)}
+            </select>
+          </label>
+        </div>
+      </fieldset>
 
       {scannedBarcode
         ? <input type="hidden" name="scanned_barcode" value={scannedBarcode}/>
@@ -175,6 +225,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
   const [barcodeMatch, setBarcodeMatch] = useState<BarcodeMatch | null>(null);
   const [brand, setBrand] = useState("");
   const [itemName, setItemName] = useState("");
+  const [category, setCategory] = useState<GarmentCategoryKey | "">("");
   const [type, setType] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [brandIssue, setBrandIssue] = useState(false);
@@ -190,6 +241,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
   const barcodeBusy = useRef(false);
 
   const selectedType = GARMENT_TYPES.find((item) => item.key === type);
+  const filteredTypes = category ? GARMENT_TYPES.filter((item) => item.category === category) : [];
   const questions = applicableQuestions(type, answers);
   const brandSuggestions = brand.trim()
     ? brands.filter((item) => normalizeCatalogText(item.name).includes(normalizeCatalogText(brand))).slice(0, 12)
@@ -206,6 +258,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     setCandidateDefaultSizeKind(null);
     setBrand("");
     setItemName("");
+    setCategory("");
     setType("");
     setAnswers({});
     setBrandIssue(false);
@@ -221,6 +274,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     setCandidateDefaultSizeKind(null);
     setBrand(item.brand_name);
     setItemName(item.name);
+    setCategory(categoryForType(item.garment_type_key));
     setType(item.garment_type_key ?? "");
     setAnswers({});
     setBrandIssue(false);
@@ -321,6 +375,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
       setBarcodeMatch(null);
       setBrand(candidate.brand_name);
       setItemName(candidate.product_name);
+      setCategory(categoryForType(candidate.garment_type_key));
       setType(candidate.garment_type_key ?? "");
       setScannedBarcode(barcode);
       setNotice("We’ve seen this barcode before. You confirmed the item, so we filled in the identity LikeSized already knows. Finish the details for your copy.");
@@ -467,6 +522,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
   const guidance = product
     ? "We found this item. Answer the item details for your copy; learned size, Department, and material defaults can still be changed."
     : notice || "We don’t have this item yet, but no problem — you can help us add it with just a few quick questions.";
+  const typeLocked = Boolean(product?.garment_type_key) && !typeIssue;
 
   return <>
     <input type="hidden" name="existing_product_id" value={product?.id ?? ""}/>
@@ -478,25 +534,33 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
 
         <div className="fieldPair">
           <label>Brand / Make
-            <input name="brand" list={brand.trim() && !product ? "brand-options" : undefined} maxLength={120} value={brand} readOnly={Boolean(product) && !brandIssue} onChange={(event) => { setBrand(event.target.value); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required />
+            <input name="brand" list={brand.trim() && !product ? "brand-options" : undefined} maxLength={120} value={brand} readOnly={Boolean(product) && !brandIssue} onChange={(event) => { setBrand(event.target.value); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required data-review-label="Brand" />
             <datalist id="brand-options">{brandSuggestions.map((item) => <option value={item.name} key={item.id}/>)}</datalist>
             {product && !brandIssue ? <button className="catalogBackButton" type="button" onClick={() => { setBrandIssue(true); setBrand(""); }}>Report an issue</button> : null}
           </label>
           <label>Item / Model
-            <input name="product" maxLength={180} value={itemName} readOnly={Boolean(product) && !itemIssue} onChange={(event) => { setItemName(event.target.value); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required placeholder="e.g. 501 Original" />
+            <input name="product" maxLength={180} value={itemName} readOnly={Boolean(product) && !itemIssue} onChange={(event) => { setItemName(event.target.value); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required placeholder="e.g. 501 Original" data-review-label="Item" />
             {product && !itemIssue ? <button className="catalogBackButton" type="button" onClick={() => { setItemIssue(true); setItemName(""); }}>Report an issue</button> : null}
           </label>
         </div>
 
         {!product && brand.trim() && itemSuggestions.length ? <div className="catalogSuggestionList">{itemSuggestions.map((item) => <button className="catalogSuggestion" type="button" onClick={() => chooseProduct(item)} key={item.id}><span><b>{item.brand_name} · {item.name}</b><small>Already in LikeSized</small></span></button>)}</div> : null}
 
-        <label>Garment type
-          <select name="garment_type" value={type} disabled={Boolean(product?.garment_type_key) && !typeIssue} onChange={(event) => { setType(event.target.value); setCandidateDefaultSizeKind(null); setAnswers({}); }} required>
-            <option value="" disabled>Select the specific garment</option>
-            {GARMENT_CATEGORIES.map((category) => <optgroup key={category.value} label={category.label}>{GARMENT_TYPES.filter((item) => item.category === category.value).map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}</optgroup>)}
+        <label>Overall category
+          <select name="garment_category" value={category} disabled={typeLocked} onChange={(event) => { setCategory(event.target.value as GarmentCategoryKey); setType(""); setCandidateDefaultSizeKind(null); setAnswers({}); }} required data-review-label="Overall category">
+            <option value="" disabled>Select a category</option>
+            {GARMENT_CATEGORIES.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}
           </select>
-          {product?.garment_type_key && !typeIssue ? <><input type="hidden" name="garment_type" value={type}/><button className="catalogBackButton" type="button" onClick={() => { setTypeIssue(true); setType(""); setCandidateDefaultSizeKind(null); setAnswers({}); }}>Report an issue</button></> : null}
-          {selectedType ? <span className="fieldHelp">LikeSized files this under {GARMENT_CATEGORIES.find((item) => item.value === selectedType.category)?.label} automatically.</span> : null}
+          {typeLocked ? <input type="hidden" name="garment_category" value={category}/> : null}
+        </label>
+
+        <label>Specific garment type
+          <select name="garment_type" value={type} disabled={!category || typeLocked} onChange={(event) => { setType(event.target.value); setCandidateDefaultSizeKind(null); setAnswers({}); }} required data-review-label="Specific garment type">
+            <option value="" disabled>{category ? "Select the specific garment" : "Choose a category first"}</option>
+            {filteredTypes.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
+          </select>
+          {typeLocked ? <><input type="hidden" name="garment_type" value={type}/><button className="catalogBackButton" type="button" onClick={() => { setTypeIssue(true); setCategory(""); setType(""); setCandidateDefaultSizeKind(null); setAnswers({}); }}>Report an issue</button></> : null}
+          {selectedType && !typeLocked ? <span className="fieldHelp">Only {GARMENT_CATEGORIES.find((item) => item.value === selectedType.category)?.label} options are shown here.</span> : null}
         </label>
 
         <CatalogDepartmentField departments={departments} />
@@ -505,7 +569,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
           <legend>Item details</legend>
           <p className="fieldHelp">Choose an answer for each simple item detail. If you truly can’t tell, Not sure is always the last choice.</p>
           <div className="fieldPair">{questions.map((item) => <label key={item.key}>{item.label}
-            <select name={`product_attribute__${item.key}`} value={answers[item.key] ?? ""} required onChange={(event) => {
+            <select name={`product_attribute__${item.key}`} value={answers[item.key] ?? ""} required data-review-label={item.label} onChange={(event) => {
               const value = event.target.value;
               setAnswers((current) => {
                 const next = { ...current, [item.key]: value };

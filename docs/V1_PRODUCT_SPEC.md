@@ -31,6 +31,7 @@ Match % means **garment-relevant body similarity**, not probability a garment wi
 - It never changes Match %.
 - People My Size and My Circle may default to the saved preference and allow a temporary view switch without rewriting it.
 - The community belongs to the person wearing/posting the garment. Wearing a men's or women's Department item does not change the member's community.
+- Fit Community is asked during first-time profile setup. After onboarding it is managed in Profile Settings, not My Measurements.
 
 ## Following / Fit Twin
 - Following is member-controlled.
@@ -45,13 +46,14 @@ Match % means **garment-relevant body similarity**, not probability a garment wi
 # 4. Controlled community Product catalog — LOCKED
 LikeSized uses one controlled community-built canonical Product catalog.
 
-> **Members contribute garments and Fit Reports. A clean, unique first member submission may be system-posted immediately as a Provisional Product; members still do not directly write canonical Product truth.**
+> **Members contribute garments and Fit Reports. A clean, unique first member submission may be system-posted immediately as a Provisional Product; members still do not directly write canonical Product truth. Explicitly uncertain identity stays Unconfirmed until admin review.**
 
 A canonical Product is the normalized identity used for Product search, evidence, Product details, variants, identifiers, Product photos, retailer listings and reviewed shared facts.
 
-## Four Product identity-trust tiers
+## Pre-publication Unconfirmed + four live Product identity-trust tiers
 Publishing and identity-trust strength are separate. A clean Product does not wait for five reports before it may appear.
 
+- **Unconfirmed — pre-publication candidate only.** A member explicitly said the Item / Style / Model identity may be wrong. It is below Provisional and hard-gates automatic publication. It can never be a live Product status.
 - **Provisional — 1 distinct wearer.** A clean unique first submission may auto-post immediately.
 - **Corroborated — 2–4 distinct wearers.** Independent wearer evidence strengthens the identity.
 - **Established — 5+ distinct wearers.** The five-wearer milestone remains the stronger community-evidence tier.
@@ -60,13 +62,34 @@ Publishing and identity-trust strength are separate. A clean Product does not wa
 
 The identity-trust tier is separate from field-level Product fact authority. Community wearer count does not silently verify Product description, material, Department, attributes or other facts.
 
-A candidate is a staging/audit object, not a second public catalog. A candidate remains unresolved when a blocking ambiguity already exists—for example conflicting identity, competing exact Products, barcode/listing collision or another genuine duplicate signal. Clean candidates are materialized/mapped automatically instead of creating a routine admin queue.
+A candidate is a staging/audit object, not a second public catalog. A candidate remains unresolved when a blocking ambiguity already exists—for example explicit member identity uncertainty, conflicting identity, competing exact Products, barcode/listing collision or another genuine duplicate signal. Clean candidates are materialized/mapped automatically instead of creating a routine admin queue.
+
+## Unconfirmed active review — invisible to the member
+When a member checks **I’m not completely sure this is the correct item/style name**:
+- the Fit Report and Closet garment save normally;
+- the garment remains fully usable in the member's Closet and in Styles/Outfits;
+- active admin review creates no member-facing warning, badge or abnormal state;
+- the unresolved identity does not appear as a Product in other members' search, suggestions, browse/discovery or unresolved barcode-match suggestions;
+- admin may map it to an existing Product or create/map a new Product after identity review;
+- a new Product created from this path starts at Provisional unless separate authoritative evidence supports stronger trust.
+
+## Needs More Evidence — private owner follow-up
+If admin cannot reasonably identify an Unconfirmed item, the candidate moves to **Needs More Evidence** instead of remaining indefinitely in the active review queue.
+
+Only then does the submitting member see a small private disclaimer in their own personal Closet view. The disclaimer explains that:
+- the garment still works normally in their Closet and Styles/Outfits;
+- the unresolved item remains unavailable in other members' garment searches until verified;
+- **Add More Information** lets them provide a Retail/Product webpage, Product Photo and/or Product Label / Tag Photo.
+
+Previously supplied evidence stays preserved. Submitting new evidence automatically returns the candidate to active Needs Review and refreshes its review priority. The disclaimer and review state are not visible to other members.
 
 ## Later conflicts do not unpublish history
 An already-posted Product is not automatically deleted, hidden, demoted or rewritten because a later member reports a problem. The Product remains usable while review evidence is retained unless an audited resolution changes its identity/status.
 
 ## Identity boundaries
 Product identity centers on normalized Brand + Item + Garment Type. Size, Color, retailer, Fit Result, materials, report-scoped physical answers, condition, notes, purchase context and legitimate alternate barcodes do not independently define a new base Product.
+
+Explicit uncertainty does not change those identity fields. The member still enters their best Item / Style / Model text; the uncertainty signal says that text must not become automatic Product truth.
 
 Fuzzy title similarity alone never forces a merge. Internal similarity/identifier/listing signals may create review flags, but reassignment/merge remains conservative and auditable.
 
@@ -81,13 +104,16 @@ Barcode confidence is separate from Product confidence.
 - One Product may have multiple legitimate barcodes.
 - A second legitimate barcode is not an identity conflict merely because another barcode already exists.
 - One barcode accumulating credible evidence toward competing Products is flagged and never silently reassigned.
+- Unresolved Unconfirmed and Needs More Evidence candidates are never offered as barcode-match suggestions to other members.
 
 ## Scanner flow
 - Supports normal retail UPC/EAN 1-D barcodes; QR is not required.
-- Lookup checks canonical identifiers, unique provisional Product→barcode evidence and unresolved candidate evidence.
+- Lookup checks canonical identifiers, unique provisional Product→barcode evidence and eligible unresolved candidate evidence, excluding Unconfirmed/Needs More Evidence.
 - Unique recognition pauses at **Is this the item?**.
 - Confirmation card shows Brand, Item, Category/Type, **Yes — this is the item**, and **No — enter manually**.
 - Scanner confirmation image priority is: **Product/catalog photo first → public/shared member Fit Photo second → default/placeholder if neither exists**.
+- When front/back Fit Photos both exist, Front is preferred for scanner fallback.
+- The confirmation image is click/tap expandable in an accessible lightbox.
 - A member Fit Photo used as scanner fallback remains personal wear evidence only; it is not promoted into canonical Product imagery or Product truth.
 - Physical garment questions stay in the Fit Report, not the barcode identity card.
 - Unknown/no match continues manual fallback while retaining barcode evidence.
@@ -101,7 +127,7 @@ Ordinary member intake never calls SerpAPI.
 
 ## Main information order
 1. Brand / Make — required.
-2. Item / Model — required.
+2. Item / Style / Model — required.
 3. **Overall Category** — required.
 4. **Specific Garment Type** — required and filtered to the selected category.
 5. Department — optional.
@@ -110,9 +136,25 @@ Ordinary member intake never calls SerpAPI.
 8. Size — required structured size.
 9. Overall Fit Result — Too Small / Snug / Just Right / Relaxed / Too Big.
 10. Condition — New / Used / Altered.
-11. Fit Photo — optional.
-12. Fit Notes — optional.
+11. Front Fit Photo and Back Fit Photo — each optional, separate roles.
+12. Fit Notes — optional, up to 2,000 characters.
 13. Retail Link — optional.
+
+Item / Style / Model stays required for new manual items. Do not offer a generic blank **No model** escape. Helper copy tells the member to enter the specific item, style or model shown on the garment, tag, packaging or retailer listing. Examples must not duplicate the separate Brand field.
+
+Manual Item suggestions render as the actual dropdown immediately under the Item / Style / Model field.
+
+## Identity uncertainty checkbox/modal
+For a brand-new manually entered item, the member may check **I’m not completely sure this is the correct item/style name**.
+
+Checking opens the identity-help modal immediately with the same underlying evidence fields used later in the form:
+- Retail Link;
+- Product Label / Tag Photo;
+- Product Photo.
+
+**Save & Continue** keeps those values and auto-populates the later form fields. **I’ll Add This Later** closes the modal without erasing the Unconfirmed signal. The form must never create duplicate copies of the same evidence values.
+
+The checkbox creates the Unconfirmed pre-publication behavior in Section 4. It is not a way to leave Item / Style / Model blank.
 
 ## Optional Additional Information — collapsed by default
 Exact order:
@@ -123,7 +165,9 @@ Exact order:
 5. UPC / barcode when not already scanned.
 6. Manufacturer Style / Article Number.
 7. Material / Fabric Composition.
-8. Product Photo.
+8. Product Photo + Product Label / Tag Photo shown together as separate evidence roles.
+
+Product Photo is catalog-display evidence. Product Label / Tag Photo is private identity-review evidence and must never become Product display imagery merely because it exists.
 
 If scanner already captured a barcode, retain it and do not ask again. Submit remains below/outside the optional area.
 
@@ -146,6 +190,8 @@ Direct Product search is **global** across men's, women's and unisex Products. A
 
 Fit Community filters people/wearer relevance in social discovery. Product Department/taxonomy filters may narrow explicit browse/explore contexts when the user chooses them, but they do not silently suppress a direct textual Product search.
 
+Unconfirmed and Needs More Evidence are unresolved candidate states, not Products. They never appear in other members' direct Product search, suggestions or ordinary Product discovery until admin resolves them.
+
 # 8. Public measurement FAQ copy — PENDING OWNER APPROVAL
 A future FAQ may explain that complete, accurate measurements improve Match precision and that different body/garment contexts can make certain measurements especially informative. The exact public wording and any sex/body-specific measurement examples are **not approved** and must not be published until the owner reviews the copy.
 
@@ -160,13 +206,21 @@ A report creates/refreshes review evidence; it does not let the reporter directl
 
 LikeSized may also create review flags from conflicts and conservative internal signals such as possible duplicate names, competing identifiers/barcodes, reused retailer links, aliases or other identity evidence. Internal similarity is a flagging aid, never an automatic fuzzy merge.
 
-## Review priority
-Priority derives from the four Product identity-trust tiers plus independent evidence:
+## Published Product review priority
+Priority derives from the four live Product identity-trust tiers plus independent evidence:
 - **Provisional (1 wearer) → High** when a credible issue is flagged.
 - **Corroborated (2–4 wearers) → High** when a credible issue is flagged; at this evidence level the conflict may still reveal an undiscovered Product problem.
 - **Established (5+ wearers) → Low** for one isolated ordinary disagreement because a single entry error is more likely after substantial agreement; repeated independent signals escalate to Medium and then High.
 - **Verified → Low** for one isolated ordinary member report; multiple independent reports/conflicts may escalate Medium/High.
 - Competing barcode/Product claims, strong duplicate evidence or multiple identity conflicts may escalate regardless of current trust.
+
+## Unconfirmed identity-review priority
+Explicit Unconfirmed intake review is prioritized by the requested identity evidence the member supplied:
+- Retail/Product webpage + Product Photo + Product Label / Tag Photo = highest review usefulness;
+- partial requested evidence = intermediate priority;
+- none of those requested evidence types = lowest priority because the identity may be impossible to determine.
+
+If admin cannot reasonably resolve the item, moving it to Needs More Evidence parks it outside the active review queue. New member evidence reopens active review and recalculates priority.
 
 Low priority means review later, not discard the evidence.
 
@@ -178,7 +232,9 @@ For a resolved Product, a counted Fit Report represents a distinct state for:
 - objective physical garment-answer fingerprint
 - garment-relevant body state
 
-Fit Result, Intended Fit, Condition, Color, material, retailer URL, barcode, Style/Article Number, Department, notes, photos and purchase context do not independently create another counted report.
+Fit Result, Intended Fit, Condition, Color, material, retailer URL, barcode, Style/Article Number, Department, notes, Product Photo, Product Label / Tag Photo, Fit Photos and purchase context do not independently create another counted report.
+
+An unresolved Unconfirmed garment still preserves its Fit Report/body evidence while Product identity remains unresolved. Admin resolution later maps that history to the canonical Product without rewriting the original try-on/body evidence.
 
 ## Objective fingerprint
 - physical controlled answers may participate;
@@ -199,7 +255,9 @@ The owner direction is to preserve original confirmed try-on evidence rather tha
 
 Kept / Returned / Exchanged and after-use changes such as shrinkage/stretching belong to later dated lifecycle observations rather than silent rewrites of the original try-on report.
 
-Do not introduce unrestricted Edit Item product meaning before this contract is settled.
+PR #53's **Add More Information** flow is a narrow unresolved-identity evidence addition, not unrestricted Fit Report editing. It may add/replace the owner-supplied retail/product webpage, Product Photo and Product Label / Tag Photo for an unresolved Unconfirmed garment and return it to admin review; it does not directly rewrite Product truth.
+
+Do not introduce unrestricted Edit Item product meaning before the broader mutation contract is settled.
 
 # 12. Unified public Closet target — LOCKED
 LikeSized has one canonical member Closet meaning, not separate My Closet and Shared Closet systems.
@@ -207,6 +265,10 @@ LikeSized has one canonical member Closet meaning, not separate My Closet and Sh
 - Self view adds owner-only management controls to the same public content.
 - Visitor view uses the same canonical garment/Fit Report foundation without owner controls.
 - Raw body measurements, historical snapshots and private matching baselines remain protected.
+- Active Unconfirmed review is invisible even to the owner; the garment looks and works normally.
+- Only Needs More Evidence shows a small private owner-only disclaimer and **Add More Information** action.
+- Other members never see Unconfirmed/Needs More Evidence status or the private disclaimer.
+- Unconfirmed/Needs More Evidence garments remain usable by the owner in Styles/Outfits even though they are not shared catalog Products.
 - Legacy `closet_items.visibility` and private/shared RLS/UI are implementation debt to reconcile during Closet audit.
 
 # 13. Controlled taxonomy — LOCKED
@@ -252,7 +314,11 @@ The required classification audit is a roadmap prerequisite before later Product
 # 14. Product evidence boundaries — LOCKED
 Shared Product facts resolve field by field; one Fit Report never wholesale-replaces another.
 
-Product identity becoming Provisional, Corroborated, Established or Verified does **not** turn another member's Size, Color, Material, Fit Result, physical answers, Condition, Notes, purchase context or Fit Photo into unquestioned Product truth.
+Product identity becoming Provisional, Corroborated, Established or Verified does **not** turn another member's Size, Color, Material, Fit Result, physical answers, Condition, Notes, purchase context, Product Label / Tag Photo or Fit Photo into unquestioned Product truth.
+
+Product Photo and Product Label / Tag Photo are distinct:
+- Product Photo may be catalog-display evidence subject to normal evidence/moderation rules.
+- Product Label / Tag Photo is private identity evidence used for review and must not be promoted to generic Product imagery.
 
 Material default uses complete exact submitted recipes/compositions, never averaged recipes nobody submitted. Verified evidence outranks member-derived defaults.
 
@@ -296,7 +362,7 @@ Recovered weights:
 - Brand + Garment Type 0.58
 - Category Fit 0.42
 
-Pending/unmapped submissions do not count as exact canonical Product evidence. `Would Buy Again` does not affect size recommendation/confidence.
+Pending/unmapped submissions, including Unconfirmed and Needs More Evidence, do not count as exact canonical Product evidence. `Would Buy Again` does not affect size recommendation/confidence.
 
 **Exact Variant** must eventually consume the one approved variation-definition map from Section 13. Size and Color are never variation-key fields.
 
@@ -328,7 +394,8 @@ Help Me Size It is fallback sizing assistance and reuses the canonical recommend
 - My Fit Matches eligibility begins at 75%+ relevant historical Match.
 - Strict explicit taxonomy filters do not silently relax.
 - Ordinary Product results dedupe to one canonical Product.
-- Provisional/Corroborated/Established/Verified Products remain searchable unless rejected/otherwise explicitly moderated; unresolved candidates are not ordinary Product results.
+- Provisional/Corroborated/Established/Verified Products remain searchable unless rejected/otherwise explicitly moderated.
+- Unresolved candidates are not ordinary Product results; Unconfirmed/Needs More Evidence are explicitly excluded from other-member search, suggestions, browse/discovery and unresolved barcode suggestions.
 - Direct textual Product search remains global as defined in Section 7.
 - No blank image state and no star Fit Rating.
 
@@ -346,18 +413,24 @@ Locked disclosure when required: **“LikeSized may earn a commission from purch
 # 23. Outfits / Style Feed — V1 RETAINED
 Outfits use owned Closet garments and the same Product/taxonomy system. Other-member Outfit discovery lives in Explore; followed-person activity lives in Style Feed. Outfit likes and Product likes remain separate.
 
+An owner may use an Unconfirmed or Needs More Evidence garment in their own Styles/Outfits. The garment's admin-review status/private disclaimer must not leak to other viewers and does not create a searchable Product identity until resolved.
+
 # 24. Images — LOCKED
-- Fit Photo = member wear evidence attached to the Fit Report/garment.
-- Product Photo = separate catalog evidence.
+- Front Fit Photo and Back Fit Photo = separate optional member wear-evidence roles attached to the Closet/Fit Report garment; either may exist independently.
+- Product Photo = separate catalog-display evidence.
+- Product Label / Tag Photo = separate private identity-review evidence, never generic Product imagery.
 - Product/catalog imagery is preferred on Product-identification surfaces.
-- A public/shared member Fit Photo may be used as the scanner **Is this the item?** fallback when no Product/catalog photo exists. That fallback never promotes the Fit Photo into generic/canonical Product imagery.
+- A public/shared member Fit Photo may be used as the scanner **Is this the item?** fallback when no Product/catalog photo exists; Front is preferred when both fit-photo roles exist.
+- That fallback never promotes the Fit Photo into generic/canonical Product imagery.
 
 # 25. Admin catalog target — LOCKED
-Admin must expose Products/candidates, identity-trust tier, distinct confirmation counts, open flags, flag priority, identifiers/barcode confidence, retailer links, evidence history and system-vs-admin resolution provenance.
+Admin must expose Products/candidates, identity-trust tier, distinct confirmation counts, open flags, flag priority, identifiers/barcode confidence, retailer links, Product Photo/Label evidence history and system-vs-admin resolution provenance.
 
-Required review views/filters include at least Needs Review, Provisional, Corroborated, Established, Verified, Has Conflicts and priority.
+Required review views/filters include at least Needs Review, **Needs More Evidence**, Provisional, Corroborated, Established, Verified, Has Conflicts and priority.
 
-Admin work is exception-driven: duplicate/identity conflict, incorrect information, member reports, content/photo problems, identifier/listing collisions and evidence disagreements—not mandatory approval of every clean new garment.
+Unconfirmed active review is an exception queue prioritized by requested identity evidence. If admin cannot reasonably resolve an item, **Needs More Evidence** parks it outside active review. Member-added follow-up evidence automatically returns it to active Needs Review and recalculates priority.
+
+Admin work is exception-driven: duplicate/identity conflict, explicit member uncertainty, incorrect information, member reports, content/photo problems, identifier/listing collisions and evidence disagreements—not mandatory approval of every clean new garment.
 
 When variation tooling is reached, Admin must distinguish base Product identity, tracked fit variation, descriptive metadata, cosmetic fields and report-specific Size/Color/Fit Result. Admin tooling must not accidentally promote Size or Color into variation identity.
 
@@ -365,7 +438,11 @@ When variation tooling is reached, Admin must distinguish base Product identity,
 SerpAPI checks private cache first, dedupes queries, respects caps and requires explicit resolution. Raw results never write directly to Product truth. Ordinary member search/intake/scanner does not use it.
 
 # 27. Public homepage / FAQ — LOCKED
-Homepage remains useful logged out; signed-in `/` enters My Circle. Published FAQ copy must be owner-approved and accurately explain current behavior without unverifiable competitor claims. The proposed measurement-specific men/women FAQ wording remains pending owner review and must not be published until approved.
+Homepage remains useful logged out; signed-in `/` enters My Circle.
+
+Homepage order is Hero → distinct **WHAT LIKESIZED DOES** feature band → **THE LOOP** → FAQ. Published FAQ copy must be owner-approved and accurately explain current behavior without unverifiable competitor claims.
+
+The FAQ includes the community-built catalog explanation and a dedicated explanation for what to do when the member is not sure of the item/style/model, including use of the uncertainty checkbox instead of guessing. The proposed measurement-specific men/women FAQ wording remains pending owner review and must not be published until separately approved.
 
 # 28. Data-quality rule
 **Controlled when possible. Normalize when necessary. Free text only when useful.**

@@ -54,6 +54,13 @@ export default async function PeoplePage({ searchParams }: { searchParams: Searc
   if (matchError || followLoadError) throw new Error("Could not load Fit Matches.");
 
   const matches = (matchData ?? []) as FitMatch[];
+  const avatarUrlByUser = new Map<string, string>();
+  await Promise.all(matches.map(async (person) => {
+    if (!person.avatar_url) return;
+    const { data: signed } = await supabase.storage.from("profile-photos").createSignedUrl(person.avatar_url, 60 * 30);
+    if (signed?.signedUrl) avatarUrlByUser.set(person.user_id, signed.signedUrl);
+  }));
+
   const followedIds = new Set((followData ?? []).map((row: { followed_id: string }) => row.followed_id));
   const categoryLabel = CATEGORY_LABELS[category];
   const returnTo = category === "overall" ? "/people" : `/people?category=${category}`;
@@ -88,6 +95,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Searc
                 name={person.display_name?.trim() || person.username}
                 handle={`@${person.username}`}
                 style={followed ? "Following" : `${categoryLabel} Fit Match`}
+                avatarUrl={avatarUrlByUser.get(person.user_id) ?? null}
                 match={person.match_score}
                 secondary={`${categoryLabel} measurements · exact measurements stay private`}
                 description={`How closely this person’s ${categoryLabel.toLowerCase()}-relevant body measurements match yours.`}

@@ -86,7 +86,7 @@ export function FitNotesField() {
   const [value, setValue] = useState("");
   return <label>Fit notes <span className="muted inlineMuted">optional</span>
     <span className={styles.fitNotesLabelRow}><span className="fieldHelp">Fit, styling tips, wash or dry advice, or anything else that could help someone considering this item.</span><span className={styles.fitNotesCount}>{value.length} / 2000</span></span>
-    <textarea name="fit_notes" maxLength={2000} rows={6} value={value} onChange={(event) => setValue(event.target.value)} placeholder="Tell us more about how it fits. You can also share styling tips, wash or dry advice, or anything else that might help someone considering this item." />
+    <textarea name="fit_notes" maxLength={2000} rows={6} value={value} onChange={(event) => setValue(event.target.value)} placeholder="Tell us more about how it fits. You can also share styling tips, wash or dry advice, or anything else that might help someone considering this item." data-review-label="Fit notes" />
   </label>;
 }
 

@@ -203,7 +203,7 @@ test("invalid submit is explicit and successful submit offers working Closet, st
  assert.match(success,/Close Fit Report confirmation/);
  assert.match(success,/window\.history\.replaceState\(null, "", "\/closet\/add"\)/);
  assert.match(success,/window\.location\.assign/);
- assert.match(actions,/closet\/add\?added=/);
+ assert.match(actions,/redirect\(`\/closet\/add\?\$\{updatedExisting \? "updated" : "added"\}=/);
  assert.match(outfits,/defaultChecked=\{item\.id===preselectedClosetItemId\}/);
 });
 

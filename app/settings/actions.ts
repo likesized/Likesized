@@ -1,20 +1,26 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+const PROFILE_PHOTO_MAX_BYTES = 400 * 1024;
+
 function text(formData:FormData,name:string){return String(formData.get(name)??"").trim();}
 function fail(code:string):never{redirect(`/settings?error=${encodeURIComponent(code)}`);}
 async function authenticatedSettingsClient(){const supabase=await createClient();const {data:claimsData,error}=await supabase.auth.getClaims();const userId=claimsData?.claims?.sub;if(error||!userId)redirect("/login?next=/settings");return{supabase,userId};}
+function validProfilePhoto(formData:FormData){const entry=formData.get("profile_photo");return entry instanceof File&&entry.size>0&&entry.type==="image/webp"&&entry.size<=PROFILE_PHOTO_MAX_BYTES?entry:null;}
+function revalidateProfileSurfaces(){revalidatePath("/settings");revalidatePath("/people");revalidatePath("/search");revalidatePath("/following");revalidatePath("/circle");revalidatePath("/outfits");}
 
 export async function saveUsernameSettings(formData:FormData){
+  if(text(formData,"confirm_username_change")!=="1")fail("username_locked");
   const username=text(formData,"username");
   if(!/^[A-Za-z0-9_]{3,32}$/.test(username))fail("invalid_username");
   const {supabase,userId}=await authenticatedSettingsClient();
   const {error}=await supabase.from("profiles").update({username,updated_at:new Date().toISOString()}).eq("id",userId);
   if(error){if(error.code==="23505")fail("username_taken");if(error.code==="23514")fail("invalid_username");fail("username_save_failed");}
-  revalidatePath("/settings");revalidatePath("/people");revalidatePath("/search");revalidatePath("/following");revalidatePath("/outfits");
+  revalidateProfileSurfaces();
   redirect("/settings?username=saved");
 }
 
@@ -24,7 +30,33 @@ export async function saveProfileSettings(formData:FormData){
   const {supabase,userId}=await authenticatedSettingsClient();
   const {error}=await supabase.from("profiles").update({display_name:displayName||null,bio:bio||null,updated_at:new Date().toISOString()}).eq("id",userId);
   if(error){if(error.code==="23514")fail("invalid_profile");fail("save_failed");}
-  revalidatePath("/settings");revalidatePath("/people");revalidatePath("/search");revalidatePath("/following");revalidatePath("/outfits");redirect("/settings?saved=1");
+  revalidateProfileSurfaces();redirect("/settings?saved=1");
+}
+
+export async function saveProfilePhoto(formData:FormData){
+  const photo=validProfilePhoto(formData);if(!photo)fail("invalid_profile_photo");
+  const {supabase,userId}=await authenticatedSettingsClient();
+  const {data:profile,error:profileError}=await supabase.from("profiles").select("avatar_url").eq("id",userId).maybeSingle();
+  if(profileError)fail("profile_photo_save_failed");
+  const oldPath=typeof profile?.avatar_url==="string"?profile.avatar_url:null;
+  const newPath=`${userId}/${randomUUID()}.webp`;
+  const {error:uploadError}=await supabase.storage.from("profile-photos").upload(newPath,await photo.arrayBuffer(),{contentType:"image/webp",upsert:false});
+  if(uploadError)fail("profile_photo_save_failed");
+  const {error:updateError}=await supabase.from("profiles").update({avatar_url:newPath,updated_at:new Date().toISOString()}).eq("id",userId);
+  if(updateError){await supabase.storage.from("profile-photos").remove([newPath]);fail("profile_photo_save_failed");}
+  if(oldPath?.startsWith(`${userId}/`))await supabase.storage.from("profile-photos").remove([oldPath]);
+  revalidateProfileSurfaces();redirect("/settings?photo=saved");
+}
+
+export async function removeProfilePhoto(){
+  const {supabase,userId}=await authenticatedSettingsClient();
+  const {data:profile,error:profileError}=await supabase.from("profiles").select("avatar_url").eq("id",userId).maybeSingle();
+  if(profileError)fail("profile_photo_save_failed");
+  const oldPath=typeof profile?.avatar_url==="string"?profile.avatar_url:null;
+  const {error:updateError}=await supabase.from("profiles").update({avatar_url:null,updated_at:new Date().toISOString()}).eq("id",userId);
+  if(updateError)fail("profile_photo_save_failed");
+  if(oldPath?.startsWith(`${userId}/`))await supabase.storage.from("profile-photos").remove([oldPath]);
+  revalidateProfileSurfaces();redirect("/settings?photo=removed");
 }
 
 export async function saveFollowingNotificationSettings(formData:FormData){

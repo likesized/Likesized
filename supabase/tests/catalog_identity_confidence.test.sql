@@ -123,13 +123,15 @@ select is(
   'Two-member corroboration does not yet create a canonical Product'
 );
 
-perform set_config('request.jwt.claim.role','authenticated',true);
-perform set_config('request.jwt.claim.sub','ca000000-0000-4000-8000-000000000002',true);
+set local role authenticated;
+set local request.jwt.claim.role='authenticated';
+set local request.jwt.claim.sub='ca000000-0000-4000-8000-000000000002';
 select is(
   (select default_size_kind from public.lookup_corroborated_candidate_defaults('Community Confidence Brand','Consensus Tee','t_shirt')),
   'alpha',
   'Corroborated unresolved identity exposes only its unique learned broad size-system default'
 );
+reset role;
 
 select pg_temp.add_pending_identity('ca000000-0000-4000-8000-000000000003','Consensus Tee');
 select pg_temp.add_pending_identity('ca000000-0000-4000-8000-000000000004','Consensus Tee');
@@ -161,7 +163,9 @@ select is(
 -- A new barcode attached to an already-known Product starts provisional. The second
 -- distinct member corroborates that Product->barcode relationship. Another legitimate
 -- barcode may then do the same without becoming an identity conflict.
-perform set_config('request.jwt.claim.sub','ca000000-0000-4000-8000-000000000001',true);
+set local role authenticated;
+set local request.jwt.claim.role='authenticated';
+set local request.jwt.claim.sub='ca000000-0000-4000-8000-000000000001';
 select is(
   public.record_product_barcode_evidence(
     (select p.id from public.products p where p.normalized_name='consensustee'),
@@ -181,8 +185,11 @@ select is(
   (select p.id from public.products p where p.normalized_name='consensustee'),
   'A unique provisional barcode relationship can still recognize the known Product for the next member'
 );
+reset role;
 
-perform set_config('request.jwt.claim.sub','ca000000-0000-4000-8000-000000000002',true);
+set local role authenticated;
+set local request.jwt.claim.role='authenticated';
+set local request.jwt.claim.sub='ca000000-0000-4000-8000-000000000002';
 select is(
   public.record_product_barcode_evidence(
     (select p.id from public.products p where p.normalized_name='consensustee'),
@@ -192,14 +199,20 @@ select is(
   'corroborated',
   'Second distinct member corroborates the Product-to-barcode relationship'
 );
+reset role;
 
-perform set_config('request.jwt.claim.sub','ca000000-0000-4000-8000-000000000001',true);
+set local role authenticated;
+set local request.jwt.claim.role='authenticated';
+set local request.jwt.claim.sub='ca000000-0000-4000-8000-000000000001';
 select public.record_product_barcode_evidence(
   (select p.id from public.products p where p.normalized_name='consensustee'),
   (select fr.id from public.fit_reports fr join public.products p on p.id=fr.product_id where fr.user_id='ca000000-0000-4000-8000-000000000001' and p.normalized_name='consensustee' limit 1),
   '222222222222'
 );
-perform set_config('request.jwt.claim.sub','ca000000-0000-4000-8000-000000000002',true);
+reset role;
+set local role authenticated;
+set local request.jwt.claim.role='authenticated';
+set local request.jwt.claim.sub='ca000000-0000-4000-8000-000000000002';
 select is(
   public.record_product_barcode_evidence(
     (select p.id from public.products p where p.normalized_name='consensustee'),
@@ -209,6 +222,7 @@ select is(
   'corroborated',
   'A second legitimate retailer barcode can independently corroborate to the same Product'
 );
+reset role;
 select ok(
   (select count(*)=2 and bool_and(pi.source_status='corroborated'::public.product_data_status)
    from public.product_identifiers pi join public.products p on p.id=pi.product_id

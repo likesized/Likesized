@@ -48,7 +48,7 @@ export function MemberMenu({ unreadCount, isAdmin = false }: MemberMenuProps) {
           <Link href="/settings" onClick={closeMenu}>Settings</Link>
           <Link href="/?view=info#faq" onClick={closeMenu}>Help / FAQ</Link>
           {isAdmin ? <Link href="/moderation" onClick={closeMenu}>Admin Moderation</Link> : null}
-          <form action="/auth/signout" method="post" onSubmit={closeMenu}><button type="submit">Sign Out</button></form>
+          <form action="/auth/signout" method="post"><button type="submit">Sign Out</button></form>
         </div>
       ) : null}
     </div>

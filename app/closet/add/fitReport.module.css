@@ -91,6 +91,14 @@
   margin-right: auto;
 }
 
+.catalogDetails {
+  gap: 18px;
+}
+
+.catalogDetails :global(.fieldPair) {
+  margin-bottom: 0;
+}
+
 .optionalDetails {
   overflow: hidden;
   border: 1px solid var(--line);
@@ -132,6 +140,10 @@
 .optionalDetailsBody {
   gap: 18px;
   padding: 20px;
+}
+
+.optionalDetailsBody :global(.privacyNote) {
+  margin-top: 0;
 }
 
 .sizeFields {

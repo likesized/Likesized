@@ -394,6 +394,12 @@ begin
       format('Automatic community mapping after %s distinct confirmations and %s identity conflict(s)',v_confirmations,v_conflicts),
       'existing_product','auto_map_existing'
     );
+    if v_conflicts>0 then
+      update public.products set catalog_review_needed=true where id=v_product_id;
+      insert into public.catalog_review_flags(flag_type,product_id,details)
+      values('ambiguous_identity',v_product_id,jsonb_build_object('reason','Auto-promoted community identity retained one prior identity conflict','confirmations',v_confirmations,'conflicts',v_conflicts,'source_candidate_id',p_candidate_id))
+      on conflict do nothing;
+    end if;
     return v_product_id;
   elsif coalesce(cardinality(v_product_ids),0)>1 then
     update public.catalog_candidates set status='needs_review',updated_at=now() where id=p_candidate_id;
@@ -440,6 +446,11 @@ begin
     format('Automatic community Product creation after %s distinct confirmations and %s identity conflict(s)',v_confirmations,v_conflicts),
     'new_product','auto_create_product'
   );
+  if v_conflicts>0 then
+    insert into public.catalog_review_flags(flag_type,product_id,details)
+    values('ambiguous_identity',v_product_id,jsonb_build_object('reason','Auto-promoted community identity retained one prior identity conflict','confirmations',v_confirmations,'conflicts',v_conflicts,'source_candidate_id',p_candidate_id))
+    on conflict do nothing;
+  end if;
   return v_product_id;
 end;
 $$;
@@ -470,8 +481,9 @@ end;
 $$;
 revoke all on function private.refresh_candidate_identity_after_submission() from public,anon,authenticated;
 drop trigger if exists refresh_candidate_identity_after_submission on public.garment_submissions;
-create trigger refresh_candidate_identity_after_submission
-after insert or update of candidate_id on public.garment_submissions
+create constraint trigger refresh_candidate_identity_after_submission
+after insert on public.garment_submissions
+deferrable initially deferred
 for each row execute function private.refresh_candidate_identity_after_submission();
 
 -- The old barcode helper no longer defines Product identity confidence. It now delegates

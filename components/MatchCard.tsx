@@ -5,6 +5,7 @@ type MatchCardProps = {
   name: string;
   handle: string;
   style: string;
+  avatarUrl?: string | null;
   match?: number;
   secondary?: string;
   description?: string;
@@ -20,6 +21,7 @@ export function MatchCard({
   name,
   handle,
   style,
+  avatarUrl,
   match,
   secondary,
   description,
@@ -35,7 +37,7 @@ export function MatchCard({
   return (
     <article className="matchCard">
       <div className="photoPlaceholder">
-        <div className="avatar">{name.slice(0, 1).toUpperCase()}</div>
+        {avatarUrl ? <img className="avatar photoAvatar" src={avatarUrl} alt={`${name} profile`} /> : <div className="avatar">{name.slice(0, 1).toUpperCase()}</div>}
         <span>{style}</span>
       </div>
       <div className="matchCardBody">

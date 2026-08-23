@@ -90,7 +90,7 @@ as $$
 $$;
 revoke all on function private.candidate_default_size_kind(uuid) from public,anon,authenticated;
 
-create or replace function public.lookup_corrobated_candidate_defaults(
+create or replace function public.lookup_corroborated_candidate_defaults(
   p_brand text,
   p_model text,
   p_garment_type_key text
@@ -124,8 +124,8 @@ begin
   from public.catalog_candidates c where c.id=v_ids[1];
 end;
 $$;
-revoke all on function public.lookup_corrobated_candidate_defaults(text,text,text) from public,anon;
-grant execute on function public.lookup_corrobated_candidate_defaults(text,text,text) to authenticated;
+revoke all on function public.lookup_corroborated_candidate_defaults(text,text,text) from public,anon;
+grant execute on function public.lookup_corroborated_candidate_defaults(text,text,text) to authenticated;
 
 create or replace function private.refresh_product_barcode_link(p_product_id uuid,p_barcode text)
 returns void
@@ -137,7 +137,6 @@ declare
   v_barcode text:=public.normalize_identifier(coalesce(p_barcode,''));
   v_people integer:=0;
   v_existing_product uuid;
-  v_existing_status public.product_data_status;
   v_original text;
   v_kind public.product_identifier_type;
 begin
@@ -150,8 +149,8 @@ begin
 
   if v_people<2 then return; end if;
 
-  select pi.product_id,pi.source_status
-  into v_existing_product,v_existing_status
+  select pi.product_id
+  into v_existing_product
   from public.product_identifiers pi
   where pi.identifier_type in ('upc'::public.product_identifier_type,'barcode'::public.product_identifier_type)
     and pi.normalized_value=v_barcode
@@ -686,5 +685,5 @@ comment on column public.catalog_candidates.identity_conflict_count is
   'Independent open identity-review evidence used to gate automatic Product promotion.';
 comment on table private.product_barcode_evidence is
   'Private per-member Product-to-barcode evidence. Two distinct member Fit Reports may corroborate one barcode relationship; one Product may have multiple barcodes.';
-comment on function public.lookup_corrobated_candidate_defaults(text,text,text) is
+comment on function public.lookup_corroborated_candidate_defaults(text,text,text) is
   'Narrow New Fit Report helper: exact unresolved corroborated candidate identity and its unique member-derived broad size-system default. Not ordinary Product search.';

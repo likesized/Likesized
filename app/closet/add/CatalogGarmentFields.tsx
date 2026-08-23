@@ -63,8 +63,24 @@ type CatalogContextValue = {
   product: CatalogProduct | null;
   candidateDefaultSizeKind: GarmentSizeKind | null;
   scannedBarcode: string;
+  retailLink: string;
+  setRetailLink: (value: string) => void;
+  productPhotoName: string;
+  productLabelPhotoName: string;
+  chooseProductPhoto: () => void;
+  chooseProductLabelPhoto: () => void;
 };
-const CatalogContext = createContext<CatalogContextValue>({ product: null, candidateDefaultSizeKind: null, scannedBarcode: "" });
+const CatalogContext = createContext<CatalogContextValue>({
+  product: null,
+  candidateDefaultSizeKind: null,
+  scannedBarcode: "",
+  retailLink: "",
+  setRetailLink: () => undefined,
+  productPhotoName: "",
+  productLabelPhotoName: "",
+  chooseProductPhoto: () => undefined,
+  chooseProductLabelPhoto: () => undefined,
+});
 const PERCENTAGES = Array.from({ length: 100 }, (_, index) => String(index + 1));
 const PURCHASE_MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -89,9 +105,25 @@ function categoryForType(typeKey: string | null | undefined): GarmentCategoryKey
   return GARMENT_TYPES.find((item) => item.key === typeKey)?.category ?? "";
 }
 
+function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  return <div className={styles.imageLightbox} role="dialog" aria-modal="true" aria-label="Product image preview" onClick={onClose}>
+    <div className={styles.imageLightboxCard} onClick={(event) => event.stopPropagation()}>
+      <button className={styles.imageLightboxClose} type="button" aria-label="Close image preview" onClick={onClose}>×</button>
+      <img src={src} alt={alt}/>
+    </div>
+  </div>;
+}
+
 export function CatalogColorField() {
   const colors = [...COLOR_FAMILIES].sort((a, b) => a.label.localeCompare(b.label));
   return <label>Color<select name="color_family" defaultValue="" required data-review-label="Color"><option value="" disabled>Select a color</option>{colors.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>;
+}
+
+export function CatalogRetailLinkField() {
+  const { retailLink, setRetailLink } = useCatalogGarment();
+  return <label>Retail link <span className="muted inlineMuted">optional</span>
+    <input name="product_url" type="url" maxLength={1000} placeholder="https://..." value={retailLink} onChange={(event) => setRetailLink(event.target.value)} data-review-label="Retail link" />
+  </label>;
 }
 
 function CatalogDepartmentField({ departments }: { departments: CatalogOption[] }) {
@@ -110,12 +142,11 @@ function CatalogDepartmentField({ departments }: { departments: CatalogOption[] 
       {sortedDepartments.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
       <option value="not_sure">Not sure</option>
     </select>
-    {knownDepartment ? <span className="fieldHelp">Preselected from what LikeSized currently knows. Change it if your item says otherwise.</span> : null}
   </label>;
 }
 
 export function CatalogCommunityEnrichment({ materials, retailers }: { materials: CatalogOption[]; retailers: CatalogRetailerOption[] }) {
-  const { product, scannedBarcode } = useCatalogGarment();
+  const { product, scannedBarcode, productPhotoName, productLabelPhotoName, chooseProductPhoto, chooseProductLabelPhoto } = useCatalogGarment();
   const sortedMaterials = useMemo(() => [...materials]
     .filter((item) => item.key !== "other" && item.key !== "not_sure" && item.label.toLowerCase() !== "other")
     .sort((a, b) => a.label.localeCompare(b.label)), [materials]);
@@ -211,10 +242,20 @@ export function CatalogCommunityEnrichment({ materials, retailers }: { materials
         <input type="hidden" name="materials_json" value={JSON.stringify(materialClaims)} />
       </fieldset>
 
-      <label>Product photo <span className="muted inlineMuted">optional</span>
-        <input name="product_photo" type="file" accept="image/jpeg,image/png,image/webp" />
-        <span className="fieldHelp">A clear photo of the item by itself helps LikeSized identify the exact product.</span>
-      </label>
+      <div className={styles.photoEvidenceGrid}>
+        <div className={styles.photoEvidenceCard}>
+          <strong>Product Photo <span className="muted inlineMuted">optional</span></strong>
+          <span className="fieldHelp">A clear photo of the item by itself helps LikeSized identify the exact product.</span>
+          <button className="catalogManualButton" type="button" onClick={chooseProductPhoto}>{productPhotoName ? "Replace Product Photo" : "Add Product Photo"}</button>
+          {productPhotoName ? <small>{productPhotoName}</small> : null}
+        </div>
+        <div className={styles.photoEvidenceCard}>
+          <strong>Product Label / Tag Photo <span className="muted inlineMuted">optional</span></strong>
+          <span className="fieldHelp">Photograph the label or tag that shows the style, article, or identifying information.</span>
+          <button className="catalogManualButton" type="button" onClick={chooseProductLabelPhoto}>{productLabelPhotoName ? "Replace Label Photo" : "Add Label Photo"}</button>
+          {productLabelPhotoName ? <small>{productLabelPhotoName}</small> : null}
+        </div>
+      </div>
     </div>
   </details>;
 }
@@ -237,9 +278,18 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loadingBarcode, setLoadingBarcode] = useState(false);
+  const [identityUncertain, setIdentityUncertain] = useState(false);
+  const [identityHelpOpen, setIdentityHelpOpen] = useState(false);
+  const [retailLink, setRetailLink] = useState("");
+  const [modalRetailDraft, setModalRetailDraft] = useState("");
+  const [productPhotoName, setProductPhotoName] = useState("");
+  const [productLabelPhotoName, setProductLabelPhotoName] = useState("");
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const scannerVideo = useRef<HTMLVideoElement>(null);
   const scannerControls = useRef<{ stop: () => void } | null>(null);
   const barcodeBusy = useRef(false);
+  const productPhotoInput = useRef<HTMLInputElement>(null);
+  const productLabelPhotoInput = useRef<HTMLInputElement>(null);
 
   const selectedType = GARMENT_TYPES.find((item) => item.key === type);
   const filteredTypes = category ? GARMENT_TYPES.filter((item) => item.category === category) : [];
@@ -253,6 +303,12 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     scannerControls.current = null;
   }
   useEffect(() => () => stopScanner(), []);
+  useEffect(() => {
+    if (!lightboxImage) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setLightboxImage(null); };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [lightboxImage]);
 
   function resetDetails() {
     setProduct(null);
@@ -266,6 +322,14 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     setItemIssue(false);
     setTypeIssue(false);
     setItemSuggestions([]);
+    setIdentityUncertain(false);
+    setIdentityHelpOpen(false);
+    setRetailLink("");
+    setModalRetailDraft("");
+    setProductPhotoName("");
+    setProductLabelPhotoName("");
+    if (productPhotoInput.current) productPhotoInput.current.value = "";
+    if (productLabelPhotoInput.current) productLabelPhotoInput.current.value = "";
   }
 
   function chooseProduct(item: CatalogProduct, barcode = scannedBarcode) {
@@ -281,6 +345,8 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     setBrandIssue(false);
     setItemIssue(false);
     setTypeIssue(false);
+    setIdentityUncertain(false);
+    setIdentityHelpOpen(false);
     setScannedBarcode(barcode);
     setNotice("");
     setError("");
@@ -306,6 +372,11 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     setNotice(message);
     setError("");
     setStep("details");
+  }
+
+  function openIdentityHelp() {
+    setModalRetailDraft(retailLink);
+    setIdentityHelpOpen(true);
   }
 
   async function lookupBarcode(code: string) {
@@ -505,48 +576,66 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     const matchType = barcodeMatch.kind === "product" ? barcodeMatch.product.garment_type_key : barcodeMatch.candidate.garment_type_key;
     const matchImage = barcodeMatch.kind === "product" ? barcodeMatch.product.image_url : barcodeMatch.candidate.image_url;
     const typeLabel = GARMENT_TYPES.find((item) => item.key === matchType)?.label;
-    return <section className={`fitDimensionFields ${styles.scanSection}`}>
-      <button className="catalogBackButton" type="button" onClick={() => { setBarcodeMatch(null); setError(""); setStep("scan"); }}>← Scan again</button>
-      <div className="privacyNote"><b>Is this the item?</b><div>{barcodeMatch.kind === "product" ? "LikeSized found this Product for the barcode you scanned." : "LikeSized has seen this barcode before, but the Product is still being confirmed."}</div></div>
-      <div className="catalogSelectedItem">
-        {matchImage ? <img src={matchImage} alt=""/> : <div className="garmentThumb" aria-hidden="true">{matchBrand.slice(0, 1).toUpperCase() || "LS"}</div>}
-        <span><small>{barcodeMatch.kind === "product" ? "LikeSized catalog match" : "Previously submitted to LikeSized"}</small><b>{matchBrand} · {matchName}</b>{typeLabel ? <small>{typeLabel}</small> : null}<small>Barcode {scannedBarcode}</small></span>
-      </div>
-      {loadingBarcode ? <p className="fieldHelp" role="status">Confirming…</p> : null}
-      {error ? <p className="fieldHelp" role="status">{error}</p> : null}
-      <div className={styles.catalogStartActions}>
-        <button className="catalogSearchButton" type="button" disabled={loadingBarcode} onClick={() => void confirmBarcodeMatch()}>Yes — this is the item</button>
-        <button className="catalogManualButton" type="button" disabled={loadingBarcode} onClick={() => enterManualAfterScan("Enter the item details manually. We’ll keep the scanned barcode with your Fit Report as evidence.")}>No — enter manually</button>
-      </div>
-    </section>;
+    return <>
+      <section className={`fitDimensionFields ${styles.scanSection}`}>
+        <button className="catalogBackButton" type="button" onClick={() => { setBarcodeMatch(null); setError(""); setStep("scan"); }}>← Scan again</button>
+        <div className="privacyNote"><b>Is this the item?</b><div>{barcodeMatch.kind === "product" ? "LikeSized found this Product for the barcode you scanned." : "LikeSized has seen this barcode before, but the Product is still being confirmed."}</div></div>
+        <div className="catalogSelectedItem">
+          {matchImage ? <button className={styles.scanMatchImageButton} type="button" aria-label="Open matched product image" onClick={() => setLightboxImage(matchImage)}><img src={matchImage} alt={`${matchBrand} ${matchName}`}/></button> : <div className="garmentThumb" aria-hidden="true">{matchBrand.slice(0, 1).toUpperCase() || "LS"}</div>}
+          <span><small>{barcodeMatch.kind === "product" ? "LikeSized catalog match" : "Previously submitted to LikeSized"}</small><b>{matchBrand} · {matchName}</b>{typeLabel ? <small>{typeLabel}</small> : null}<small>Barcode {scannedBarcode}</small></span>
+        </div>
+        {loadingBarcode ? <p className="fieldHelp" role="status">Confirming…</p> : null}
+        {error ? <p className="fieldHelp" role="status">{error}</p> : null}
+        <div className={styles.catalogStartActions}>
+          <button className="catalogSearchButton" type="button" disabled={loadingBarcode} onClick={() => void confirmBarcodeMatch()}>Yes — this is the item</button>
+          <button className="catalogManualButton" type="button" disabled={loadingBarcode} onClick={() => enterManualAfterScan("Enter the item details manually. We’ll keep the scanned barcode with your Fit Report as evidence.")}>No — enter manually</button>
+        </div>
+      </section>
+      {lightboxImage ? <ImageLightbox src={lightboxImage} alt={`${matchBrand} ${matchName}`} onClose={() => setLightboxImage(null)}/> : null}
+    </>;
   }
 
   const guidance = product
-    ? "We found this item. Answer the item details for your copy; learned size, Department, and material defaults can still be changed."
+    ? "We found a community-built match for this item, so we filled in what LikeSized already knows. If anything looks wrong, change it to match the item you have. Your correction will be saved with your Fit Report and automatically flagged for an accuracy review."
     : notice || "We don’t have this item yet, but no problem — you can help us add it with just a few quick questions.";
   const typeLocked = Boolean(product?.garment_type_key) && !typeIssue;
 
   return <>
     <input type="hidden" name="existing_product_id" value={product?.id ?? ""}/>
-    <CatalogContext.Provider value={{ product, candidateDefaultSizeKind, scannedBarcode }}>
-      <section className="fitDimensionFields">
+    <input ref={productPhotoInput} className={styles.hiddenFileInput} name="product_photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setProductPhotoName(event.target.files?.[0]?.name ?? "")} />
+    <input ref={productLabelPhotoInput} className={styles.hiddenFileInput} name="product_label_photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setProductLabelPhotoName(event.target.files?.[0]?.name ?? "")} />
+    <CatalogContext.Provider value={{
+      product,
+      candidateDefaultSizeKind,
+      scannedBarcode,
+      retailLink,
+      setRetailLink,
+      productPhotoName,
+      productLabelPhotoName,
+      chooseProductPhoto: () => productPhotoInput.current?.click(),
+      chooseProductLabelPhoto: () => productLabelPhotoInput.current?.click(),
+    }}>
+      <section className={`fitDimensionFields ${styles.catalogDetails}`}>
         <button className="catalogBackButton" type="button" onClick={reset}>← Start over</button>
-        <div className="privacyNote">{product ? <><b>Community-built product info</b><div>{guidance}</div></> : <b>{guidance}</b>}</div>
+        <div className="privacyNote">{product ? <><b>Matched with the LikeSized community</b><div>{guidance}</div></> : <b>{guidance}</b>}</div>
         {product?.image_url ? <div className="catalogSelectedItem"><img src={product.image_url} alt=""/><span><small>Selected item</small><b>{product.brand_name} · {product.name}</b></span></div> : null}
 
         <div className="fieldPair">
           <label>Brand / Make
             <input name="brand" list={brand.trim() && !product ? "brand-options" : undefined} maxLength={120} value={brand} readOnly={Boolean(product) && !brandIssue} onChange={(event) => { setBrand(event.target.value); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required data-review-label="Brand" />
             <datalist id="brand-options">{brandSuggestions.map((item) => <option value={item.name} key={item.id}/>)}</datalist>
-            {product && !brandIssue ? <button className="catalogBackButton" type="button" onClick={() => { setBrandIssue(true); setBrand(""); }}>Report an issue</button> : null}
+            {product && !brandIssue ? <button className={styles.changeThis} type="button" onClick={() => { setBrandIssue(true); setBrand(""); }}>Change this</button> : null}
           </label>
-          <label>Item / Model
-            <input name="product" maxLength={180} value={itemName} readOnly={Boolean(product) && !itemIssue} onChange={(event) => { setItemName(event.target.value); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required placeholder="e.g. 501 Original" data-review-label="Item" />
-            {product && !itemIssue ? <button className="catalogBackButton" type="button" onClick={() => { setItemIssue(true); setItemName(""); }}>Report an issue</button> : null}
-          </label>
+          <div className={styles.itemField}>
+            <label>Item / Style / Model
+              <input name="product" maxLength={180} value={itemName} readOnly={Boolean(product) && !itemIssue} onChange={(event) => { setItemName(event.target.value); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required placeholder="e.g. 501 Original" autoComplete="off" data-review-label="Item" />
+              <span className="fieldHelp">Enter the specific item, style, or model shown on the garment, tag, packaging, or retailer listing. Examples: 501 Original, Align High-Rise Pant, Air Force 1.</span>
+              {product && !itemIssue ? <button className={styles.changeThis} type="button" onClick={() => { setItemIssue(true); setItemName(""); }}>Change this</button> : null}
+            </label>
+            {!product && brand.trim() && itemSuggestions.length ? <div className={styles.itemSuggestionDropdown} role="listbox" aria-label="Existing LikeSized items">{itemSuggestions.map((item) => <button className="catalogSuggestion" type="button" onClick={() => chooseProduct(item)} key={item.id}><span><b>{item.name}</b><small>Already in LikeSized</small></span></button>)}</div> : null}
+            {!product ? <label className={styles.uncertaintyCheck}><input name="item_identity_uncertain" type="checkbox" value="1" checked={identityUncertain} onChange={(event) => { const checked = event.target.checked; setIdentityUncertain(checked); if (checked) openIdentityHelp(); else setIdentityHelpOpen(false); }}/><span>I’m not completely sure this is the correct item/style name</span></label> : null}
+          </div>
         </div>
-
-        {!product && brand.trim() && itemSuggestions.length ? <div className="catalogSuggestionList">{itemSuggestions.map((item) => <button className="catalogSuggestion" type="button" onClick={() => chooseProduct(item)} key={item.id}><span><b>{item.brand_name} · {item.name}</b><small>Already in LikeSized</small></span></button>)}</div> : null}
 
         <label>Overall category
           <select name="garment_category" value={category} disabled={typeLocked} onChange={(event) => { setCategory(event.target.value as GarmentCategoryKey); setType(""); setCandidateDefaultSizeKind(null); setAnswers({}); }} required data-review-label="Overall category">
@@ -561,16 +650,15 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
             <option value="" disabled>{category ? "Select the specific garment" : "Choose a category first"}</option>
             {filteredTypes.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
           </select>
-          {typeLocked ? <><input type="hidden" name="garment_type" value={type}/><button className="catalogBackButton" type="button" onClick={() => { setTypeIssue(true); setCategory(""); setType(""); setCandidateDefaultSizeKind(null); setAnswers({}); }}>Report an issue</button></> : null}
-          {selectedType && !typeLocked ? <span className="fieldHelp">Only {GARMENT_CATEGORIES.find((item) => item.value === selectedType.category)?.label} options are shown here.</span> : null}
+          {typeLocked ? <><input type="hidden" name="garment_type" value={type}/><button className={styles.changeThis} type="button" onClick={() => { setTypeIssue(true); setCategory(""); setType(""); setCandidateDefaultSizeKind(null); setAnswers({}); }}>Change this</button></> : null}
         </label>
 
         <CatalogDepartmentField departments={departments} />
 
-        {type ? <fieldset className="fitDimensionFields">
+        {type ? <fieldset className={styles.itemDetailsFieldset}>
           <legend>Item details</legend>
           <p className="fieldHelp">Choose an answer for each simple item detail. If you truly can’t tell, Not sure is always the last choice.</p>
-          <div className="fieldPair">{questions.map((item) => <label key={item.key}>{item.label}
+          <div className={styles.questionGrid}>{questions.map((item) => <label key={item.key}>{item.label}
             <select name={`product_attribute__${item.key}`} value={answers[item.key] ?? ""} required data-review-label={item.label} onChange={(event) => {
               const value = event.target.value;
               setAnswers((current) => {
@@ -588,5 +676,21 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
       </section>
       {children}
     </CatalogContext.Provider>
+
+    {identityHelpOpen ? <div className={styles.reviewOverlay} role="dialog" aria-modal="true" aria-labelledby="identity-help-title" onClick={() => setIdentityHelpOpen(false)}>
+      <div className={styles.identityHelpCard} onClick={(event) => event.stopPropagation()}>
+        <h2 id="identity-help-title">No problem — we’ll help verify it.</h2>
+        <p>Enter the best information you have and continue your Fit Report. We’ll flag this item for review. Please provide as much detail as possible—a retail link and clear photos of the garment or its tag/style label are especially helpful.</p>
+        <label>Retail Link <span className="muted inlineMuted">optional</span><input type="url" maxLength={1000} placeholder="https://..." value={modalRetailDraft} onChange={(event) => setModalRetailDraft(event.target.value)}/></label>
+        <div className={styles.identityEvidenceActions}>
+          <div><strong>Photo of Tag / Style Label</strong><button className="catalogManualButton" type="button" onClick={() => productLabelPhotoInput.current?.click()}>{productLabelPhotoName ? "Replace Photo" : "Add Photo"}</button>{productLabelPhotoName ? <small>{productLabelPhotoName}</small> : null}</div>
+          <div><strong>Product Photo</strong><button className="catalogManualButton" type="button" onClick={() => productPhotoInput.current?.click()}>{productPhotoName ? "Replace Photo" : "Add Photo"}</button>{productPhotoName ? <small>{productPhotoName}</small> : null}</div>
+        </div>
+        <div className={styles.reviewActions}>
+          <button className="secondaryButton" type="button" onClick={() => setIdentityHelpOpen(false)}>I’ll Add This Later</button>
+          <button className="primaryButton" type="button" onClick={() => { setRetailLink(modalRetailDraft.trim()); setIdentityHelpOpen(false); }}>Save & Continue</button>
+        </div>
+      </div>
+    </div> : null}
   </>;
 }

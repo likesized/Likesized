@@ -25,6 +25,7 @@ type ParsedSize = Record<string, string | number | null> & { kind: GarmentSizeKi
 type MaterialClaim = { material_key: string; percentage: number | null };
 type AttributeRow = { attribute_key: string; option_key: string };
 type KnownFitSaveRow = { fit_report_id: string; closet_item_id: string; created: boolean };
+type FitPhotoRole = "front" | "back";
 type PurchaseContext = {
   retailerText: string | null;
   retailerNormalized: string | null;
@@ -36,6 +37,7 @@ type PurchaseContext = {
 
 function fail(code: string): never { redirect(`/closet/add?error=${encodeURIComponent(code)}`); }
 function text(formData: FormData, name: string) { return String(formData.get(name) ?? "").trim(); }
+function file(formData: FormData, name: string) { const entry = formData.get(name); return entry instanceof File && entry.size > 0 ? entry : null; }
 function normalizeSearchText(value: string) { return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, ""); }
 function normalizeIdentifier(value: string) { return value.trim().toUpperCase().replace(/[\s_.-]+/g, ""); }
 function normalizeProductUrl(raw: string) {
@@ -219,10 +221,10 @@ async function savePurchaseContext(supabase: SupabaseClient, userId: string, fit
   if (error) throw error;
 }
 
-async function saveFitPhoto(supabase: SupabaseClient, userId: string, closetItemId: string, photo: File) {
+async function saveFitPhoto(supabase: SupabaseClient, userId: string, closetItemId: string, photo: File, role: FitPhotoRole) {
   const extension = PHOTO_TYPES[photo.type];
-  const storagePath = `${userId}/${closetItemId}/fit-${randomUUID()}.${extension}`;
-  const { data: existing, error: lookupError } = await supabase.from("fit_reference_photos").select("id,storage_path").eq("closet_item_id", closetItemId).eq("user_id", userId).maybeSingle();
+  const storagePath = `${userId}/${closetItemId}/${role}-${randomUUID()}.${extension}`;
+  const { data: existing, error: lookupError } = await supabase.from("fit_reference_photos").select("id,storage_path").eq("closet_item_id", closetItemId).eq("user_id", userId).eq("photo_role", role).maybeSingle();
   if (lookupError) throw lookupError;
   const { error: uploadError } = await supabase.storage.from("fit-reference-photos").upload(storagePath, await photo.arrayBuffer(), { contentType: photo.type, upsert: false });
   if (uploadError) throw uploadError;
@@ -231,10 +233,28 @@ async function saveFitPhoto(supabase: SupabaseClient, userId: string, closetItem
     if (updateError) { await supabase.storage.from("fit-reference-photos").remove([storagePath]); throw updateError; }
     await supabase.storage.from("fit-reference-photos").remove([existing.storage_path]);
   } else {
-    const { error: metadataError } = await supabase.from("fit_reference_photos").insert({ user_id: userId, closet_item_id: closetItemId, storage_path: storagePath });
+    const { error: metadataError } = await supabase.from("fit_reference_photos").insert({ user_id: userId, closet_item_id: closetItemId, storage_path: storagePath, photo_role: role });
     if (metadataError) { await supabase.storage.from("fit-reference-photos").remove([storagePath]); throw metadataError; }
   }
   return storagePath;
+}
+
+async function uploadPrivateCatalogPhoto(supabase: SupabaseClient, userId: string, closetItemId: string, photo: File, kind: "product" | "label") {
+  const extension = PHOTO_TYPES[photo.type];
+  const storagePath = `${userId}/pending/${closetItemId}/${kind}-${randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from("catalog-submission-photos").upload(storagePath, await photo.arrayBuffer(), { contentType: photo.type, upsert: false });
+  if (error) throw error;
+  return storagePath;
+}
+
+async function saveKnownProductLabelPhoto(supabase: SupabaseClient, userId: string, productId: string, fitReportId: string, photo: File) {
+  const extension = PHOTO_TYPES[photo.type];
+  const storagePath = `${userId}/labels/${productId}/${fitReportId}/${randomUUID()}.${extension}`;
+  const { error: uploadError } = await supabase.storage.from("catalog-submission-photos").upload(storagePath, await photo.arrayBuffer(), { contentType: photo.type, upsert: false });
+  if (uploadError) throw uploadError;
+  const { data, error: metadataError } = await supabase.from("product_label_photo_evidence").insert({ product_id: productId, fit_report_id: fitReportId, storage_path: storagePath, submitted_by: userId }).select("id").single();
+  if (metadataError) { await supabase.storage.from("catalog-submission-photos").remove([storagePath]); throw metadataError; }
+  return { path: storagePath, evidenceId: data.id as string };
 }
 
 async function validatedProductAttributes(supabase: SupabaseClient, formData: FormData, garmentType: string) {
@@ -267,6 +287,7 @@ export async function addGarment(formData: FormData) {
   const brandName = text(formData, "brand");
   const productName = text(formData, "product");
   const existingProductId = text(formData, "existing_product_id") || null;
+  const identityUncertain = !existingProductId && text(formData, "item_identity_uncertain") === "1";
   const garmentType = text(formData, "garment_type");
   const sizeKind = text(formData, "size_kind") as GarmentSizeKind;
   const structuredSizeLabel = text(formData, "size_normalized_label");
@@ -292,17 +313,17 @@ export async function addGarment(formData: FormData) {
     purchaseContext = parsePurchaseContext(formData);
   } catch { fail("invalid_fields"); }
 
-  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId && !UUID.test(existingProductId)) || !GARMENT_TYPE_BY_KEY.has(garmentType) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !COLOR_FAMILY_KEYS.has(colorFamily) || !FIT_RESULTS.has(fit) || !REPORTED_CONDITIONS.has(reportedCondition) || (fitNotes && fitNotes.length > 1000) || (productUrl && productUrl.length > 1000) || identifier.length > 120 || (styleNumber && styleNumber.length > 100) || (styleIssue && styleIssue.length > 180) || (barcodeIssue && barcodeIssue.length > 120)) fail("invalid_fields");
+  if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId && !UUID.test(existingProductId)) || !GARMENT_TYPE_BY_KEY.has(garmentType) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !COLOR_FAMILY_KEYS.has(colorFamily) || !FIT_RESULTS.has(fit) || !REPORTED_CONDITIONS.has(reportedCondition) || (fitNotes && fitNotes.length > 2000) || (productUrl && productUrl.length > 1000) || identifier.length > 120 || (styleNumber && styleNumber.length > 100) || (styleIssue && styleIssue.length > 180) || (barcodeIssue && barcodeIssue.length > 120)) fail("invalid_fields");
   if ((identifier && !/^\d{6,32}$/.test(identifier.replace(/\D/g, ""))) || (barcodeIssue && !/^\d{6,32}$/.test(barcodeIssue.replace(/\D/g, "")))) fail("invalid_fields");
   if (department && !ADULT_DEPARTMENTS.has(department)) fail("invalid_fields");
   let normalizedProductUrl: string | null = null;
   if (productUrl) { try { normalizedProductUrl = normalizeProductUrl(productUrl); } catch { fail("invalid_fields"); } }
 
-  const photoEntry = formData.get("photo");
-  const photo = photoEntry instanceof File && photoEntry.size > 0 ? photoEntry : null;
-  const productPhotoEntry = formData.get("product_photo");
-  const productPhoto = productPhotoEntry instanceof File && productPhotoEntry.size > 0 ? productPhotoEntry : null;
-  for (const candidate of [photo, productPhoto]) if (candidate && (!PHOTO_TYPES[candidate.type] || candidate.size > 8 * 1024 * 1024)) fail("invalid_photo");
+  const photoFront = file(formData, "photo_front");
+  const photoBack = file(formData, "photo_back");
+  const productPhoto = file(formData, "product_photo");
+  const productLabelPhoto = file(formData, "product_label_photo");
+  for (const candidate of [photoFront, photoBack, productPhoto, productLabelPhoto]) if (candidate && (!PHOTO_TYPES[candidate.type] || candidate.size > 8 * 1024 * 1024)) fail("invalid_photo");
 
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
@@ -342,11 +363,14 @@ export async function addGarment(formData: FormData) {
   const newClosetItemId = randomUUID();
   let savedClosetItemId: string = newClosetItemId;
   let updatedExisting = false;
-  let fitPhotoPath: string | null = null;
-  let productPhotoPath: string | null = null;
-  let productPhotoBucket: "product-photos" | "catalog-submission-photos" | null = null;
+  const fitPhotoPaths: string[] = [];
+  const catalogPhotoPaths: string[] = [];
+  let publicProductPhotoPath: string | null = null;
+  let publicProductPhotoEvidenceId: string | null = null;
+  let labelPhotoEvidenceId: string | null = null;
   try {
-    const known = await resolveKnownCatalogProduct(supabase, existingProductId, brandName, styleNumber, identifier, productUrl);
+    const resolvedKnown = await resolveKnownCatalogProduct(supabase, existingProductId, brandName, styleNumber, identifier, productUrl);
+    const known = identityUncertain ? null : resolvedKnown;
     const normalizedSizeId = await getNormalizedSize(supabase, structuredSizeLabel, sizeKind, sizingSystem);
 
     if (known) {
@@ -378,15 +402,13 @@ export async function addGarment(formData: FormData) {
         if (reportError || !report) throw reportError ?? new Error("Could not save disputed Fit Report");
 
         await savePurchaseContext(supabase, userId, report.id, purchaseContext);
-        if (photo) fitPhotoPath = await saveFitPhoto(supabase, userId, newClosetItemId, photo);
+        if (photoFront) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, newClosetItemId, photoFront, "front"));
+        if (photoBack) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, newClosetItemId, photoBack, "back"));
 
-        if (productPhoto) {
-          const extension = PHOTO_TYPES[productPhoto.type];
-          productPhotoPath = `${userId}/pending/${newClosetItemId}/${randomUUID()}.${extension}`;
-          productPhotoBucket = "catalog-submission-photos";
-          const { error: uploadError } = await supabase.storage.from("catalog-submission-photos").upload(productPhotoPath, await productPhoto.arrayBuffer(), { contentType: productPhoto.type, upsert: false });
-          if (uploadError) throw uploadError;
-        }
+        let productPhotoPath: string | null = null;
+        let productLabelPhotoPath: string | null = null;
+        if (productPhoto) { productPhotoPath = await uploadPrivateCatalogPhoto(supabase, userId, newClosetItemId, productPhoto, "product"); catalogPhotoPaths.push(productPhotoPath); }
+        if (productLabelPhoto) { productLabelPhotoPath = await uploadPrivateCatalogPhoto(supabase, userId, newClosetItemId, productLabelPhoto, "label"); catalogPhotoPaths.push(productLabelPhotoPath); }
 
         const normalizedIdentifier = identifier ? normalizeIdentifier(identifier) : "";
         const identifierKind = identifier ? (/^\d{8}$|^\d{12,14}$/.test(normalizedIdentifier) ? "upc" : "barcode") : null;
@@ -408,6 +430,8 @@ export async function addGarment(formData: FormData) {
           p_attributes: attributeClaims,
           p_materials: materialClaims,
           p_product_photo_storage_path: productPhotoPath,
+          p_product_label_photo_storage_path: productLabelPhotoPath,
+          p_identity_uncertain: false,
         });
         if (pendingError || !candidateId) throw pendingError ?? new Error("Could not save disputed garment evidence");
 
@@ -491,17 +515,23 @@ export async function addGarment(formData: FormData) {
           if (error) throw error;
         }
 
-        if (photo) fitPhotoPath = await saveFitPhoto(supabase, userId, savedClosetItemId, photo);
+        if (photoFront) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, savedClosetItemId, photoFront, "front"));
+        if (photoBack) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, savedClosetItemId, photoBack, "back"));
 
         if (productPhoto) {
           const extension = PHOTO_TYPES[productPhoto.type];
-          productPhotoPath = `${userId}/${product.id}/${randomUUID()}.${extension}`;
-          productPhotoBucket = "product-photos";
-          const { error: uploadError } = await supabase.storage.from("product-photos").upload(productPhotoPath, await productPhoto.arrayBuffer(), { contentType: productPhoto.type, upsert: false });
+          publicProductPhotoPath = `${userId}/${product.id}/${randomUUID()}.${extension}`;
+          const { error: uploadError } = await supabase.storage.from("product-photos").upload(publicProductPhotoPath, await productPhoto.arrayBuffer(), { contentType: productPhoto.type, upsert: false });
           if (uploadError) throw uploadError;
-          const publicUrl = supabase.storage.from("product-photos").getPublicUrl(productPhotoPath).data.publicUrl;
-          const { error: evidenceError } = await supabase.from("product_photo_evidence").insert({ product_id: product.id, storage_path: productPhotoPath, public_url: publicUrl, submitted_by: userId });
-          if (evidenceError) throw evidenceError;
+          const publicUrl = supabase.storage.from("product-photos").getPublicUrl(publicProductPhotoPath).data.publicUrl;
+          const { data: productPhotoEvidence, error: productPhotoEvidenceError } = await supabase.from("product_photo_evidence").insert({ product_id: product.id, storage_path: publicProductPhotoPath, public_url: publicUrl, submitted_by: userId }).select("id").single();
+          if (productPhotoEvidenceError) throw productPhotoEvidenceError;
+          publicProductPhotoEvidenceId = productPhotoEvidence.id as string;
+        }
+        if (productLabelPhoto) {
+          const labelEvidence = await saveKnownProductLabelPhoto(supabase, userId, product.id, saved.fit_report_id, productLabelPhoto);
+          catalogPhotoPaths.push(labelEvidence.path);
+          labelPhotoEvidenceId = labelEvidence.evidenceId;
         }
       }
     } else {
@@ -528,15 +558,13 @@ export async function addGarment(formData: FormData) {
       if (reportError || !report) throw reportError ?? new Error("Could not save pending fit report");
 
       await savePurchaseContext(supabase, userId, report.id, purchaseContext);
-      if (photo) fitPhotoPath = await saveFitPhoto(supabase, userId, newClosetItemId, photo);
+      if (photoFront) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, newClosetItemId, photoFront, "front"));
+      if (photoBack) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, newClosetItemId, photoBack, "back"));
 
-      if (productPhoto) {
-        const extension = PHOTO_TYPES[productPhoto.type];
-        productPhotoPath = `${userId}/pending/${newClosetItemId}/${randomUUID()}.${extension}`;
-        productPhotoBucket = "catalog-submission-photos";
-        const { error: uploadError } = await supabase.storage.from("catalog-submission-photos").upload(productPhotoPath, await productPhoto.arrayBuffer(), { contentType: productPhoto.type, upsert: false });
-        if (uploadError) throw uploadError;
-      }
+      let productPhotoPath: string | null = null;
+      let productLabelPhotoPath: string | null = null;
+      if (productPhoto) { productPhotoPath = await uploadPrivateCatalogPhoto(supabase, userId, newClosetItemId, productPhoto, "product"); catalogPhotoPaths.push(productPhotoPath); }
+      if (productLabelPhoto) { productLabelPhotoPath = await uploadPrivateCatalogPhoto(supabase, userId, newClosetItemId, productLabelPhoto, "label"); catalogPhotoPaths.push(productLabelPhotoPath); }
 
       const normalizedIdentifier = identifier ? normalizeIdentifier(identifier) : "";
       const identifierKind = identifier ? (/^\d{8}$|^\d{12,14}$/.test(normalizedIdentifier) ? "upc" : "barcode") : null;
@@ -558,12 +586,17 @@ export async function addGarment(formData: FormData) {
         p_attributes: attributeClaims,
         p_materials: materialClaims,
         p_product_photo_storage_path: productPhotoPath,
+        p_product_label_photo_storage_path: productLabelPhotoPath,
+        p_identity_uncertain: identityUncertain,
       });
       if (pendingError) throw pendingError;
     }
   } catch {
-    if (fitPhotoPath && !updatedExisting) await supabase.storage.from("fit-reference-photos").remove([fitPhotoPath]);
-    if (productPhotoPath && productPhotoBucket) await supabase.storage.from(productPhotoBucket).remove([productPhotoPath]);
+    if (!updatedExisting && fitPhotoPaths.length) await supabase.storage.from("fit-reference-photos").remove(fitPhotoPaths);
+    if (labelPhotoEvidenceId) await supabase.from("product_label_photo_evidence").delete().eq("id", labelPhotoEvidenceId).eq("submitted_by", userId);
+    if (catalogPhotoPaths.length) await supabase.storage.from("catalog-submission-photos").remove(catalogPhotoPaths);
+    if (publicProductPhotoEvidenceId) await supabase.from("product_photo_evidence").delete().eq("id", publicProductPhotoEvidenceId).eq("submitted_by", userId);
+    if (publicProductPhotoPath) await supabase.storage.from("product-photos").remove([publicProductPhotoPath]);
     if (!updatedExisting) await supabase.from("closet_items").delete().eq("id", newClosetItemId).eq("user_id", userId);
     fail("save_failed");
   }

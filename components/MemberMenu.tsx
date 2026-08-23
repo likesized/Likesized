@@ -44,7 +44,7 @@ export function MemberMenu({ unreadCount, isAdmin = false }: MemberMenuProps) {
           <Link href="/outfits/new" onClick={closeMenu}>New Outfit</Link>
 
           <div className={styles.sectionLabel}>Account</div>
-          <Link href="/onboarding" onClick={closeMenu}>Fit Profile</Link>
+          <Link href="/onboarding" onClick={closeMenu}>My Measurements</Link>
           <Link href="/settings" onClick={closeMenu}>Profile Settings</Link>
           <Link href="/?view=info#faq" onClick={closeMenu}>Help / FAQ</Link>
           {isAdmin ? <Link href="/moderation" onClick={closeMenu}>Admin Moderation</Link> : null}

@@ -11,8 +11,8 @@ test("homepage capability calls to action keep their approved rhythm", () => {
   assert.doesNotMatch(home, /See Following/);
 });
 
-test("The Loop appears before What LikeSized Does", () => {
-  assert.ok(home.indexOf("THE LOOP") < home.indexOf("WHAT LIKESIZED DOES"));
+test("What LikeSized Does appears before The Loop", () => {
+  assert.ok(home.indexOf("WHAT LIKESIZED DOES") < home.indexOf("THE LOOP"));
 });
 
 test("public homepage contains substantive approved FAQ content only", () => {

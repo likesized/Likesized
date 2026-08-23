@@ -99,6 +99,201 @@
   margin-bottom: 0;
 }
 
+.changeThis {
+  width: fit-content;
+  margin-top: 7px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-dark, var(--ink));
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.itemField {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.itemSuggestionDropdown {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  overflow: hidden;
+  margin-top: -3px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--white);
+  box-shadow: 0 14px 36px rgba(18, 18, 18, 0.12);
+}
+
+.itemSuggestionDropdown :global(.catalogSuggestion) {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  text-align: left;
+}
+
+.itemSuggestionDropdown :global(.catalogSuggestion:last-child) {
+  border-bottom: 0;
+}
+
+.uncertaintyCheck {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.uncertaintyCheck input {
+  width: auto;
+  margin-top: 2px;
+  flex: 0 0 auto;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.photoEvidenceGrid,
+.identityEvidenceActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.photoEvidenceCard,
+.identityEvidenceActions > div {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+.photoEvidenceCard small,
+.identityEvidenceActions small {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+}
+
+.itemDetailsFieldset {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.questionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 22px;
+  align-items: start;
+}
+
+.scanMatchImageButton {
+  display: block;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.scanMatchImageButton img {
+  display: block;
+}
+
+.imageLightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.82);
+}
+
+.imageLightboxCard {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(94vw, 980px);
+  max-height: 92vh;
+}
+
+.imageLightboxCard img {
+  display: block;
+  max-width: 100%;
+  max-height: 88vh;
+  object-fit: contain;
+  border-radius: 14px;
+}
+
+.imageLightboxClose {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  z-index: 2;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 999px;
+  background: #111;
+  color: #fff;
+  font: inherit;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.identityHelpCard {
+  width: min(100%, 620px);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 30px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--white);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+}
+
+.identityHelpCard h2 {
+  margin-bottom: 10px;
+}
+
+.identityHelpCard > p {
+  margin: 0 0 20px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.identityHelpCard > label {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
 .optionalDetails {
   overflow: hidden;
   border: 1px solid var(--line);
@@ -291,6 +486,7 @@
 
 .reviewActions {
   justify-content: flex-end;
+  margin-top: 20px;
 }
 
 @media (max-width: 640px) {
@@ -307,12 +503,24 @@
   }
 
   .sizePair,
-  .sizeTriple {
+  .sizeTriple,
+  .questionGrid,
+  .photoEvidenceGrid,
+  .identityEvidenceActions {
     grid-template-columns: 1fr;
   }
 
+  .questionGrid {
+    gap: 14px;
+  }
+
+  .itemDetailsFieldset {
+    padding: 15px;
+  }
+
   .successCard,
-  .reviewCard {
+  .reviewCard,
+  .identityHelpCard {
     width: 100%;
     max-height: calc(100vh - 24px);
     padding: 30px 20px 20px;
@@ -333,5 +541,10 @@
   .successActions button,
   .reviewActions button {
     width: 100%;
+  }
+
+  .imageLightboxClose {
+    top: 4px;
+    right: 4px;
   }
 }

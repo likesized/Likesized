@@ -71,15 +71,25 @@ function reviewValue(field: HTMLInputElement | HTMLSelectElement | HTMLTextAreaE
 }
 
 function collectReviewRows(form: HTMLFormElement): ReviewRow[] {
-  const fields = Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("[data-review-label], input[name='size_normalized_label']"));
+  const fields = Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("[data-review-label], input[name='size_normalized_label'], input[name='product_url']"));
   return fields.flatMap((field) => {
     const value = reviewValue(field);
     if (!value) return [];
     const label = field.name === "size_normalized_label"
       ? "Size"
-      : field.dataset.reviewLabel?.trim() ?? "";
+      : field.name === "product_url"
+        ? "Retail link"
+        : field.dataset.reviewLabel?.trim() ?? "";
     return label ? [{ label, value }] : [];
   });
+}
+
+export function FitNotesField() {
+  const [value, setValue] = useState("");
+  return <label>Fit notes <span className="muted inlineMuted">optional</span>
+    <span className={styles.fitNotesLabelRow}><span className="fieldHelp">Fit, styling tips, wash or dry advice, or anything else that could help someone considering this item.</span><span className={styles.fitNotesCount}>{value.length} / 2000</span></span>
+    <textarea name="fit_notes" maxLength={2000} rows={6} value={value} onChange={(event) => setValue(event.target.value)} placeholder="Tell us more about how it fits. You can also share styling tips, wash or dry advice, or anything else that might help someone considering this item." data-review-label="Fit notes" />
+  </label>;
 }
 
 export function FitReportForm({ action, previewOnly = false, children }: { action?: ServerAction; previewOnly?: boolean; children: ReactNode }) {

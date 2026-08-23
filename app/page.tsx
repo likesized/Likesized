@@ -10,23 +10,23 @@ function first(value: string | string[] | undefined) {
 
 const capabilities = [
   {
-    eyebrow: "PEOPLE MY SIZE",
+    eyebrow: "FIND PEOPLE MY SIZE",
     title: "Discover people shaped like you.",
-    description: "Ranked by what matters most.",
+    description: "Ranked by the measurements that matter most for each garment—not generic size charts that can vary widely between brands and products.",
     href: "/people",
     link: "Find My Matches →",
   },
   {
-    eyebrow: "WHAT WORKS FOR THEM",
+    eyebrow: "SEE WHAT WORKS FOR THEM",
     title: "Explore what your matches actually wear.",
-    description: "Learn which brands, sizes, and pieces fit best.",
+    description: "Learn which brands, sizes, and individual pieces work best on people built like you.",
     href: "/search",
     link: "Shop Smarter →",
   },
   {
-    eyebrow: "STAY CONNECTED",
-    title: "Follow the people whose fit you trust.",
-    description: "See what they wear, share, and recommend next.",
+    eyebrow: "BUILD YOUR CIRCLE",
+    title: "Follow people whose fit and style you trust.",
+    description: "See what they wear, how they style it, what they recommend, and the looks they create.",
     href: "/circle",
     link: "Get Inspired →",
   },
@@ -58,16 +58,12 @@ const faqs = [
     answer: "Yes. Following is your choice and helps you keep up with someone’s shared style and fit activity. It is separate from system-generated Fit Twin status.",
   },
   {
-    question: "Where does LikeSized get its product information?",
-    answer: "LikeSized learns from real people who own and wear the clothes. The details members share through Fit Reports help build and improve the LikeSized clothing catalog over time.",
+    question: "How does the community-built clothing catalog work?",
+    answer: "LikeSized’s clothing catalog is built from real Fit Reports shared by people who actually own and wear the clothes. Help us build the most accurate inventory possible by sharing what you know—and leaving anything you’re unsure about blank instead of guessing. Other members can help fill in missing details through their own Fit Reports. If you spot information that looks wrong or doesn’t match your item, you can flag it for review so the catalog keeps getting better over time.",
   },
   {
-    question: "What if I don’t know all the details about my item?",
-    answer: "Tell us what you confidently know. For the simple required garment questions, choose Not sure if needed. Optional catalog details can be left blank, and later members can help complete the record.",
-  },
-  {
-    question: "How do you know the product information is accurate?",
-    answer: "LikeSized looks for consistency across the information people share. When details line up, confidence grows. If something conflicts or isn’t clear, it’s flagged for review instead of automatically changing the product record.",
+    question: "What if I’m not sure of the item, style, or model?",
+    answer: "Enter the best information you can find on the garment, tag, packaging, or retailer listing. If you’re not completely confident, check “I’m not completely sure this is the correct item/style name.” Don’t guess just to fill in the form. LikeSized will hold the item for review while still letting you save your Fit Report and use it in your Styles. Providing a retail link, a clear Product Photo, and especially a photo of the product or style label can help us identify it accurately.",
   },
 ];
 
@@ -106,21 +102,15 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         </div>
       </section>
 
-      <section className="howItWorks section" id="how-it-works">
-        <span className="eyebrow">THE LOOP</span>
-        <h2 className="loopTitle">
-          <span className="loopTitleLine">The more you share,</span>
-          <span className="loopTitleLine">the smarter LikeSized gets.</span>
-        </h2>
-        <div className="steps">
-          <div><b>01</b><h3>Build your profile</h3><p>Tell us about your size and measurements.</p></div>
-          <div><b>02</b><h3>Find your matches</h3><p>Get ranked matches based on the measurements that matter most for each garment type.</p></div>
-          <div><b>03</b><h3>Share what works<span className="stepAside">(and what doesn’t)</span></h3><p>Help others learn from your real experience.</p></div>
-          <div><b>04</b><h3>Shop with better answers</h3><p>Use personalized insights from people like you to make smarter choices and get the fit right the first time.</p></div>
-        </div>
-      </section>
-
-      <section className="section">
+      <section
+        className="section"
+        id="how-it-works"
+        style={{
+          background: "linear-gradient(135deg, #e8dfd3 0%, #f3e6e9 100%)",
+          borderTop: "1px solid var(--line)",
+          borderBottom: "1px solid var(--line)",
+        }}
+      >
         <div className="sectionHeading">
           <div>
             <span className="eyebrow">WHAT LIKESIZED DOES</span>
@@ -133,7 +123,11 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         </div>
         <div className="cardGrid">
           {capabilities.map((capability) => (
-            <article className="matchCard" key={capability.eyebrow}>
+            <article
+              className="matchCard"
+              key={capability.eyebrow}
+              style={{ boxShadow: "0 18px 50px rgba(18, 18, 18, 0.08)" }}
+            >
               <div className="matchCardBody">
                 <span className="eyebrow">{capability.eyebrow}</span>
                 <div className="garment">
@@ -144,6 +138,20 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
               </div>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="howItWorks section" id="the-loop">
+        <span className="eyebrow">THE LOOP</span>
+        <h2 className="loopTitle">
+          <span className="loopTitleLine">The more you share,</span>
+          <span className="loopTitleLine">the smarter LikeSized gets.</span>
+        </h2>
+        <div className="steps">
+          <div><b>01</b><h3>Build your profile</h3><p>Tell us about your size and measurements.</p></div>
+          <div><b>02</b><h3>Find your matches</h3><p>Get ranked matches based on the measurements that matter most for each garment type.</p></div>
+          <div><b>03</b><h3>Share what works<span className="stepAside">(and what doesn’t)</span></h3><p>Help others learn from your real experience.</p></div>
+          <div><b>04</b><h3>Shop with better answers</h3><p>Use personalized insights from people like you to make smarter choices and get the fit right the first time.</p></div>
         </div>
       </section>
 

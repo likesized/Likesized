@@ -27,6 +27,31 @@ export type CatalogProduct = {
 };
 export type CatalogOption = { key: string; label: string };
 
+type PendingBarcodeMatch = {
+  candidate_id: string;
+  brand_name: string;
+  product_name: string;
+  garment_type_key: string | null;
+  identity_confidence: string;
+};
+type BarcodeMatch =
+  | { kind: "product"; product: CatalogProduct }
+  | { kind: "candidate"; candidate: PendingBarcodeMatch };
+type BarcodeLookupResponse = {
+  local?: CatalogProduct[];
+  barcode_match?: {
+    match_kind: "product" | "candidate";
+    product_id: string | null;
+    candidate_id: string | null;
+    brand_name: string;
+    product_name: string;
+    garment_type_key: string | null;
+    image_url: string | null;
+    identity_confidence: string;
+  };
+  error?: string;
+};
+
 type CatalogContextValue = {
   product: CatalogProduct | null;
   scannedBarcode: string;
@@ -132,8 +157,9 @@ export function CatalogCommunityEnrichment({ materials, departments }: { materia
 }
 
 export function CatalogGarmentFields({ brands, fixtureProducts = [], children }: { brands: Brand[]; fixtureProducts?: CatalogProduct[]; children: ReactNode }) {
-  const [step, setStep] = useState<"start" | "scan" | "details">("start");
+  const [step, setStep] = useState<"start" | "scan" | "confirm" | "details">("start");
   const [product, setProduct] = useState<CatalogProduct | null>(null);
+  const [barcodeMatch, setBarcodeMatch] = useState<BarcodeMatch | null>(null);
   const [brand, setBrand] = useState("");
   const [itemName, setItemName] = useState("");
   const [type, setType] = useState("");
@@ -176,6 +202,7 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
 
   function chooseProduct(item: CatalogProduct, barcode = scannedBarcode) {
     stopScanner();
+    setBarcodeMatch(null);
     setProduct(item);
     setBrand(item.brand_name);
     setItemName(item.name);
@@ -191,6 +218,26 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
     setStep("details");
   }
 
+  function showBarcodeMatch(match: BarcodeMatch, barcode: string) {
+    stopScanner();
+    setBarcodeMatch(match);
+    setScannedBarcode(barcode);
+    setNotice("");
+    setError("");
+    setStep("confirm");
+  }
+
+  function enterManualAfterScan(message: string) {
+    const barcode = scannedBarcode;
+    stopScanner();
+    resetDetails();
+    setBarcodeMatch(null);
+    setScannedBarcode(barcode);
+    setNotice(message);
+    setError("");
+    setStep("details");
+  }
+
   async function lookupBarcode(code: string) {
     const barcode = code.replace(/\D/g, "");
     if (!barcode || barcodeBusy.current) return;
@@ -200,13 +247,24 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
     setScannedBarcode(barcode);
     try {
       const fixture = fixtureProducts.find((item) => (item.identifiers ?? []).some((identifier) => (identifier.identifier_type === "upc" || identifier.identifier_type === "barcode") && identifier.original_value.replace(/\D/g, "") === barcode));
-      if (fixture) { chooseProduct(fixture, barcode); return; }
+      if (fixture) { showBarcodeMatch({ kind: "product", product: fixture }, barcode); return; }
       const response = await fetch(`/api/catalog/search?barcode=${encodeURIComponent(barcode)}`);
-      const body = await response.json() as { local?: CatalogProduct[]; error?: string };
+      const body = await response.json() as BarcodeLookupResponse;
       if (!response.ok) throw new Error(body.error ?? "Barcode lookup failed.");
-      if (body.local?.[0]) { chooseProduct(body.local[0], barcode); return; }
+      if (body.local?.[0]) { showBarcodeMatch({ kind: "product", product: body.local[0] }, barcode); return; }
+      if (body.barcode_match?.match_kind === "candidate" && body.barcode_match.candidate_id) {
+        showBarcodeMatch({ kind: "candidate", candidate: {
+          candidate_id: body.barcode_match.candidate_id,
+          brand_name: body.barcode_match.brand_name,
+          product_name: body.barcode_match.product_name,
+          garment_type_key: body.barcode_match.garment_type_key,
+          identity_confidence: body.barcode_match.identity_confidence,
+        } }, barcode);
+        return;
+      }
       stopScanner();
       resetDetails();
+      setBarcodeMatch(null);
       setScannedBarcode(barcode);
       setNotice("We don’t have this item yet, but no problem — you can help us add it with just a few quick questions.");
       setStep("details");
@@ -215,6 +273,48 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
     } finally {
       setLoadingBarcode(false);
       barcodeBusy.current = false;
+    }
+  }
+
+  async function confirmBarcodeMatch() {
+    if (!barcodeMatch || !scannedBarcode) return;
+    setLoadingBarcode(true);
+    setError("");
+    try {
+      const productId = barcodeMatch.kind === "product" ? barcodeMatch.product.id : null;
+      const candidateId = barcodeMatch.kind === "candidate" ? barcodeMatch.candidate.candidate_id : null;
+      const isFixture = productId ? fixtureProducts.some((item) => item.id === productId) : false;
+      if (!isFixture) {
+        const response = await fetch("/api/catalog/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ barcode: scannedBarcode, product_id: productId, candidate_id: candidateId }),
+        });
+        const body = await response.json() as { error?: string };
+        if (!response.ok) throw new Error(body.error ?? "That barcode match could not be confirmed.");
+      }
+
+      if (barcodeMatch.kind === "product") {
+        chooseProduct(barcodeMatch.product, scannedBarcode);
+        return;
+      }
+
+      const candidate = barcodeMatch.candidate;
+      const barcode = scannedBarcode;
+      stopScanner();
+      resetDetails();
+      setBarcodeMatch(null);
+      setBrand(candidate.brand_name);
+      setItemName(candidate.product_name);
+      setType(candidate.garment_type_key ?? "");
+      setScannedBarcode(barcode);
+      setNotice("We’ve seen this barcode before. You confirmed the item, so we filled in the identity LikeSized already knows. Finish the details for your copy.");
+      setError("");
+      setStep("details");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "That barcode match could not be confirmed.");
+    } finally {
+      setLoadingBarcode(false);
     }
   }
 
@@ -274,6 +374,7 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
   function beginManual() {
     stopScanner();
     resetDetails();
+    setBarcodeMatch(null);
     setScannedBarcode("");
     setNotice("");
     setError("");
@@ -282,6 +383,7 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
   function reset() {
     stopScanner();
     resetDetails();
+    setBarcodeMatch(null);
     setScannedBarcode("");
     setNotice("");
     setError("");
@@ -290,7 +392,7 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
 
   if (step === "start") return <section className={`fitDimensionFields ${styles.catalogStart}`}>
     <div className={styles.catalogStartActions}>
-      <button className="catalogSearchButton" type="button" onClick={() => { setError(""); setStep("scan"); }}>Scan barcode</button>
+      <button className="catalogSearchButton" type="button" onClick={() => { setBarcodeMatch(null); setError(""); setStep("scan"); }}>Scan barcode</button>
       <span className="fieldHelp">or</span>
       <button className="catalogManualButton" type="button" onClick={beginManual}>Enter item manually</button>
     </div>
@@ -298,13 +400,35 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
   </section>;
 
   if (step === "scan") return <section className={`fitDimensionFields ${styles.scanSection}`}>
-    <button className="catalogBackButton" type="button" onClick={() => { stopScanner(); setError(""); setStep("start"); }}>← Back</button>
+    <button className="catalogBackButton" type="button" onClick={() => { stopScanner(); setBarcodeMatch(null); setError(""); setStep("start"); }}>← Back</button>
     <p className="fieldHelp">Scan the barcode and we’ll check the LikeSized catalog.</p>
     <video className="barcodeScanner" ref={scannerVideo} muted playsInline />
     {loadingBarcode ? <p className="fieldHelp" role="status">Checking LikeSized…</p> : null}
     {error ? <p className="fieldHelp" role="status">{error}</p> : null}
     <button className="catalogManualButton" type="button" onClick={beginManual}>Enter item manually instead</button>
   </section>;
+
+  if (step === "confirm" && barcodeMatch) {
+    const matchBrand = barcodeMatch.kind === "product" ? barcodeMatch.product.brand_name : barcodeMatch.candidate.brand_name;
+    const matchName = barcodeMatch.kind === "product" ? barcodeMatch.product.name : barcodeMatch.candidate.product_name;
+    const matchType = barcodeMatch.kind === "product" ? barcodeMatch.product.garment_type_key : barcodeMatch.candidate.garment_type_key;
+    const matchImage = barcodeMatch.kind === "product" ? barcodeMatch.product.image_url : null;
+    const typeLabel = GARMENT_TYPES.find((item) => item.key === matchType)?.label;
+    return <section className={`fitDimensionFields ${styles.scanSection}`}>
+      <button className="catalogBackButton" type="button" onClick={() => { setBarcodeMatch(null); setError(""); setStep("scan"); }}>← Scan again</button>
+      <div className="privacyNote"><b>Is this the item?</b><div>{barcodeMatch.kind === "product" ? "LikeSized found this Product for the barcode you scanned." : "LikeSized has seen this barcode before, but the Product is still being confirmed."}</div></div>
+      <div className="catalogSelectedItem">
+        {matchImage ? <img src={matchImage} alt=""/> : null}
+        <span><small>{barcodeMatch.kind === "product" ? "LikeSized catalog match" : "Previously submitted to LikeSized"}</small><b>{matchBrand} · {matchName}</b>{typeLabel ? <small>{typeLabel}</small> : null}<small>Barcode {scannedBarcode}</small></span>
+      </div>
+      {loadingBarcode ? <p className="fieldHelp" role="status">Confirming…</p> : null}
+      {error ? <p className="fieldHelp" role="status">{error}</p> : null}
+      <div className={styles.catalogStartActions}>
+        <button className="catalogSearchButton" type="button" disabled={loadingBarcode} onClick={() => void confirmBarcodeMatch()}>Yes — this is the item</button>
+        <button className="catalogManualButton" type="button" disabled={loadingBarcode} onClick={() => enterManualAfterScan("Enter the item details manually. We’ll keep the scanned barcode with your Fit Report as evidence.")}>No — enter manually</button>
+      </div>
+    </section>;
+  }
 
   const guidance = product
     ? "We found this item. Answer the item details for your copy; learned size, Department, and material defaults can still be changed."

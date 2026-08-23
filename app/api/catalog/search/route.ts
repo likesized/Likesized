@@ -13,9 +13,21 @@ function normalizeIdentifier(value: string) {
   return value.trim().toUpperCase().replace(/[\s_.-]+/g, "");
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 type LocalSearchRow = { id: string };
 type AliasRow = { product_id: string; normalized_alias: string };
 type SizeDefaultRow = { product_id: string; default_size_kind: string | null };
+type BarcodeLookupRow = {
+  match_kind: "product" | "candidate";
+  product_id: string | null;
+  candidate_id: string | null;
+  brand_name: string;
+  product_name: string;
+  garment_type_key: string | null;
+  image_url: string | null;
+  identity_confidence: string;
+};
 
 type DetailedProduct = {
   id: string;
@@ -89,15 +101,18 @@ export async function GET(request: Request) {
   try {
     if (barcode) {
       if (!/^\d{8}$|^\d{12,14}$/.test(barcode)) return NextResponse.json({ local: [] });
-      const { data: productId, error } = await supabase.rpc("resolve_catalog_product", {
-        p_existing_product_id: null,
-        p_brand_name: null,
-        p_style_number: null,
-        p_identifier: barcode,
-        p_normalized_url: null,
-      });
+      const { data: matchData, error } = await supabase.rpc("lookup_barcode_catalog_match", { p_barcode: barcode });
       if (error) throw error;
-      return NextResponse.json({ local: productId ? await detailedProducts(supabase, [String(productId)]) : [] });
+      const match = (Array.isArray(matchData) ? matchData[0] : matchData) as BarcodeLookupRow | null;
+      if (!match) return NextResponse.json({ local: [] });
+      if (match.match_kind === "product" && match.product_id) {
+        const local = await detailedProducts(supabase, [match.product_id]);
+        return NextResponse.json({ local, barcode_match: match });
+      }
+      if (match.match_kind === "candidate" && match.candidate_id) {
+        return NextResponse.json({ local: [], barcode_match: match });
+      }
+      return NextResponse.json({ local: [] });
     }
 
     if (brandQuery) {
@@ -144,5 +159,30 @@ export async function GET(request: Request) {
     return NextResponse.json({ local: await detailedProducts(supabase, ids) });
   } catch {
     return NextResponse.json({ error: "LikeSized catalog search is temporarily unavailable." }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  if (!claims?.claims?.sub) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+
+  try {
+    const body = await request.json() as { barcode?: unknown; product_id?: unknown; candidate_id?: unknown };
+    const barcode = normalizeIdentifier(typeof body.barcode === "string" ? body.barcode : "");
+    const productId = typeof body.product_id === "string" && UUID.test(body.product_id) ? body.product_id : null;
+    const candidateId = typeof body.candidate_id === "string" && UUID.test(body.candidate_id) ? body.candidate_id : null;
+    if (!/^\d{8}$|^\d{12,14}$/.test(barcode) || (productId === null) === (candidateId === null)) {
+      return NextResponse.json({ error: "Invalid barcode confirmation." }, { status: 400 });
+    }
+    const { data: status, error } = await supabase.rpc("confirm_barcode_catalog_match", {
+      p_barcode: barcode,
+      p_product_id: productId,
+      p_candidate_id: candidateId,
+    });
+    if (error) throw error;
+    return NextResponse.json({ ok: true, status });
+  } catch {
+    return NextResponse.json({ error: "That barcode match could not be confirmed." }, { status: 500 });
   }
 }

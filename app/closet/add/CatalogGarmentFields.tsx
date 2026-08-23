@@ -51,12 +51,18 @@ type BarcodeLookupResponse = {
   };
   error?: string;
 };
+type CandidateDefault = {
+  candidate_id: string;
+  default_size_kind: GarmentSizeKind | null;
+  identity_confidence: string;
+};
 
 type CatalogContextValue = {
   product: CatalogProduct | null;
+  candidateDefaultSizeKind: GarmentSizeKind | null;
   scannedBarcode: string;
 };
-const CatalogContext = createContext<CatalogContextValue>({ product: null, scannedBarcode: "" });
+const CatalogContext = createContext<CatalogContextValue>({ product: null, candidateDefaultSizeKind: null, scannedBarcode: "" });
 const PERCENTAGES = Array.from({ length: 100 }, (_, index) => String(index + 1));
 
 export function useCatalogGarment() {
@@ -159,6 +165,7 @@ export function CatalogCommunityEnrichment({ materials, departments }: { materia
 export function CatalogGarmentFields({ brands, fixtureProducts = [], children }: { brands: Brand[]; fixtureProducts?: CatalogProduct[]; children: ReactNode }) {
   const [step, setStep] = useState<"start" | "scan" | "confirm" | "details">("start");
   const [product, setProduct] = useState<CatalogProduct | null>(null);
+  const [candidateDefaultSizeKind, setCandidateDefaultSizeKind] = useState<GarmentSizeKind | null>(null);
   const [barcodeMatch, setBarcodeMatch] = useState<BarcodeMatch | null>(null);
   const [brand, setBrand] = useState("");
   const [itemName, setItemName] = useState("");
@@ -190,6 +197,7 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
 
   function resetDetails() {
     setProduct(null);
+    setCandidateDefaultSizeKind(null);
     setBrand("");
     setItemName("");
     setType("");
@@ -204,6 +212,7 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
     stopScanner();
     setBarcodeMatch(null);
     setProduct(item);
+    setCandidateDefaultSizeKind(null);
     setBrand(item.brand_name);
     setItemName(item.name);
     setType(item.garment_type_key ?? "");
@@ -371,6 +380,25 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
     return () => { clearTimeout(timer); controller.abort(); };
   }, [step, product, brand, itemName, fixtureProducts]);
 
+  useEffect(() => {
+    if (step !== "details" || product || !brand.trim() || !itemName.trim() || !type) {
+      setCandidateDefaultSizeKind(null);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/catalog/search?brand=${encodeURIComponent(brand)}&q=${encodeURIComponent(itemName)}&candidate_type=${encodeURIComponent(type)}`, { signal: controller.signal });
+        const body = await response.json() as { candidate_default?: CandidateDefault | null };
+        if (!response.ok) return;
+        setCandidateDefaultSizeKind(body.candidate_default?.default_size_kind ?? null);
+      } catch (cause) {
+        if ((cause as Error).name !== "AbortError") setCandidateDefaultSizeKind(null);
+      }
+    }, 250);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [step, product, brand, itemName, type]);
+
   function beginManual() {
     stopScanner();
     resetDetails();
@@ -436,7 +464,7 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
 
   return <>
     <input type="hidden" name="existing_product_id" value={product?.id ?? ""}/>
-    <CatalogContext.Provider value={{ product, scannedBarcode }}>
+    <CatalogContext.Provider value={{ product, candidateDefaultSizeKind, scannedBarcode }}>
       <section className="fitDimensionFields">
         <button className="catalogBackButton" type="button" onClick={reset}>← Start over</button>
         <div className="privacyNote">{product ? <><b>Community-built product info</b><div>{guidance}</div></> : <b>{guidance}</b>}</div>
@@ -444,12 +472,12 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
 
         <div className="fieldPair">
           <label>Brand / Make
-            <input name="brand" list={brand.trim() && !product ? "brand-options" : undefined} maxLength={120} value={brand} readOnly={Boolean(product) && !brandIssue} onChange={(event) => { setBrand(event.target.value); setItemSuggestions([]); }} required />
+            <input name="brand" list={brand.trim() && !product ? "brand-options" : undefined} maxLength={120} value={brand} readOnly={Boolean(product) && !brandIssue} onChange={(event) => { setBrand(event.target.value); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required />
             <datalist id="brand-options">{brandSuggestions.map((item) => <option value={item.name} key={item.id}/>)}</datalist>
             {product && !brandIssue ? <button className="catalogBackButton" type="button" onClick={() => { setBrandIssue(true); setBrand(""); }}>Report an issue</button> : null}
           </label>
           <label>Item / Model
-            <input name="product" maxLength={180} value={itemName} readOnly={Boolean(product) && !itemIssue} onChange={(event) => { setItemName(event.target.value); setItemSuggestions([]); }} required placeholder="e.g. 501 Original" />
+            <input name="product" maxLength={180} value={itemName} readOnly={Boolean(product) && !itemIssue} onChange={(event) => { setItemName(event.target.value); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required placeholder="e.g. 501 Original" />
             {product && !itemIssue ? <button className="catalogBackButton" type="button" onClick={() => { setItemIssue(true); setItemName(""); }}>Report an issue</button> : null}
           </label>
         </div>
@@ -457,11 +485,11 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
         {!product && brand.trim() && itemSuggestions.length ? <div className="catalogSuggestionList">{itemSuggestions.map((item) => <button className="catalogSuggestion" type="button" onClick={() => chooseProduct(item)} key={item.id}><span><b>{item.brand_name} · {item.name}</b><small>Already in LikeSized</small></span></button>)}</div> : null}
 
         <label>Garment type
-          <select name="garment_type" value={type} disabled={Boolean(product?.garment_type_key) && !typeIssue} onChange={(event) => { setType(event.target.value); setAnswers({}); }} required>
+          <select name="garment_type" value={type} disabled={Boolean(product?.garment_type_key) && !typeIssue} onChange={(event) => { setType(event.target.value); setCandidateDefaultSizeKind(null); setAnswers({}); }} required>
             <option value="" disabled>Select the specific garment</option>
             {GARMENT_CATEGORIES.map((category) => <optgroup key={category.value} label={category.label}>{GARMENT_TYPES.filter((item) => item.category === category.value).map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}</optgroup>)}
           </select>
-          {product?.garment_type_key && !typeIssue ? <><input type="hidden" name="garment_type" value={type}/><button className="catalogBackButton" type="button" onClick={() => { setTypeIssue(true); setType(""); setAnswers({}); }}>Report an issue</button></> : null}
+          {product?.garment_type_key && !typeIssue ? <><input type="hidden" name="garment_type" value={type}/><button className="catalogBackButton" type="button" onClick={() => { setTypeIssue(true); setType(""); setCandidateDefaultSizeKind(null); setAnswers({}); }}>Report an issue</button></> : null}
           {selectedType ? <span className="fieldHelp">LikeSized files this under {GARMENT_CATEGORIES.find((item) => item.value === selectedType.category)?.label} automatically.</span> : null}
         </label>
 

@@ -66,8 +66,8 @@ test("every Product has one multi-purpose report action and trust-aware review p
  assert.match(itemActions,/report_product_item/);
  assert.match(exceptionReviewMigration,/member_report/);
  assert.match(exceptionReviewMigration,/priority_score/);
- assert.match(exceptionReviewMigration,/v_status='provisional'.*v_score:=3/s);
- assert.match(exceptionReviewMigration,/v_status='verified'.*else 1/s);
+ assert.match(exceptionReviewMigration,/v_status='provisional'[\s\S]*v_score:=3/);
+ assert.match(exceptionReviewMigration,/v_status='verified'[\s\S]*else 1/);
  assert.match(exceptionReviewMigration,/prefix_name_similarity/);
 });
 

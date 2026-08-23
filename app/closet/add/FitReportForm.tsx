@@ -6,6 +6,8 @@ import styles from "./fitReport.module.css";
 type ServerAction = (formData: FormData) => void | Promise<void>;
 type ReviewRow = { label: string; value: string };
 
+const FIT_REPORT_FORM_ID = "fit-report-form";
+
 function clearInvalidState(form: HTMLFormElement) {
   form.querySelectorAll(".fieldInvalid").forEach((node) => node.classList.remove("fieldInvalid"));
   form.querySelectorAll(".fieldOptionalInvalid").forEach((node) => node.classList.remove("fieldOptionalInvalid"));
@@ -88,7 +90,7 @@ export function FitNotesField() {
   const [value, setValue] = useState("");
   return <label>Fit notes <span className="muted inlineMuted">optional</span>
     <span className={styles.fitNotesLabelRow}><span className="fieldHelp">Fit, styling tips, wash or dry advice, or anything else that could help someone considering this item.</span><span className={styles.fitNotesCount}>{value.length} / 2000</span></span>
-    <textarea name="fit_notes" maxLength={2000} rows={6} value={value} onChange={(event) => setValue(event.target.value)} placeholder="Tell us more about how it fits. You can also share styling tips, wash or dry advice, or anything else that might help someone considering this item." data-review-label="Fit notes" />
+    <textarea name="fit_notes" maxLength={2000} rows={6} value={value} onChange={(event) => setValue(event.target.value)} data-review-label="Fit notes" />
   </label>;
 }
 
@@ -97,9 +99,11 @@ export function FitReportForm({ action, previewOnly = false, children }: { actio
   const confirmedRef = useRef(false);
   const [reviewRows, setReviewRows] = useState<ReviewRow[]>([]);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   return <>
     <form
+      id={FIT_REPORT_FORM_ID}
       ref={formRef}
       className={`garmentForm ${styles.form}`}
       action={action}
@@ -110,6 +114,8 @@ export function FitReportForm({ action, previewOnly = false, children }: { actio
         validateBarcodeFields(form);
         if (!form.checkValidity()) {
           event.preventDefault();
+          confirmedRef.current = false;
+          setSubmitting(false);
           showInvalidState(form, true);
           return;
         }
@@ -161,16 +167,19 @@ export function FitReportForm({ action, previewOnly = false, children }: { actio
         </div>
         {previewOnly ? <div className={styles.previewNote}>Preview only — nothing will be saved.</div> : null}
         <div className={styles.reviewActions}>
-          <button className="secondaryButton" type="button" onClick={() => setReviewOpen(false)}>← Go Back & Edit</button>
-          <button className="primaryButton" type="button" onClick={() => {
-            if (previewOnly) {
-              setReviewOpen(false);
-              return;
-            }
-            confirmedRef.current = true;
-            setReviewOpen(false);
-            formRef.current?.requestSubmit();
-          }}>{previewOnly ? "Looks right — preview only" : "Confirm Fit Report →"}</button>
+          <button className="secondaryButton" type="button" disabled={submitting} onClick={() => setReviewOpen(false)}>← Go Back & Edit</button>
+          {previewOnly
+            ? <button className="primaryButton" type="button" onClick={() => setReviewOpen(false)}>Looks right — preview only</button>
+            : <button
+                className="primaryButton"
+                type="submit"
+                form={FIT_REPORT_FORM_ID}
+                disabled={submitting}
+                onClick={() => {
+                  confirmedRef.current = true;
+                  setSubmitting(true);
+                }}
+              >{submitting ? "Saving Fit Report…" : "Confirm Fit Report →"}</button>}
         </div>
       </div>
     </div> : null}

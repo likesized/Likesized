@@ -74,5 +74,5 @@ test("signed-in home is My Circle and public FAQ explains item-level evidence", 
   assert.match(homepage, /What makes LikeSized different from other sizing and fashion tools\?/);
   assert.match(homepage, /tracks fit down to the individual item whenever real Fit Reports exist/);
   assert.match(homepage, /Two pairs of pants from the same brand can fit completely differently/);
-  assert.match(homepage, /exact body measurements stay private/);
+  assert.match(homepage, /exact current and historical body measurements stay private/);
 });

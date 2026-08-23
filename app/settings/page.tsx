@@ -55,18 +55,18 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
     {notificationState==="off"?<div className="authMessage">Following notifications turned off.</div>:null}
     {errorMessage?<div className="authMessage error">{errorMessage}</div>:null}
 
-    <section className="section flush">
+    <section className={`${styles.settingsSection} ${styles.firstSettingsSection}`}>
       <div className="sectionHeading"><div><span className="eyebrow">PROFILE</span><h2>Member-facing identity</h2></div></div>
       <ProfilePhotoForm currentPhotoUrl={currentPhotoUrl} fallbackInitial={fallbackInitial} />
       <ProfileIdentityForm displayName={profile.display_name??""} bio={profile.bio??""} />
     </section>
 
-    <section className="section">
+    <section className={styles.settingsSection}>
       <div className="sectionHeading"><div><span className="eyebrow">ACCOUNT</span><h2>Username</h2></div></div>
       <UsernameSettingsForm username={profile.username} />
     </section>
 
-    <section className="section">
+    <section className={styles.settingsSection}>
       <div className="sectionHeading"><div><span className="eyebrow">FIT COMMUNITY</span><h2>Your personalized default</h2></div></div>
       <div className="evidenceList">
         <div className={`evidence ${styles.settingsEvidence}`}>
@@ -79,14 +79,14 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
       </div>
     </section>
 
-    <section id="notifications" className={`section ${styles.notificationSection}`}>
+    <section id="notifications" className={`${styles.settingsSection} ${styles.notificationSection}`}>
       <div className="sectionHeading"><div><span className="eyebrow">NOTIFICATIONS</span><h2>Following notifications</h2></div></div>
       <div className="evidenceList">
         <div className={`evidence ${styles.settingsEvidence}`}><div><strong>Following notifications are {notificationsEnabled?"on":"off"}</strong><span>This is the master switch for people whose notification bell you turn on. Following someone by itself only adds them to your Style Feed.</span></div><form action={saveFollowingNotificationSettings}><input type="hidden" name="enabled" value={notificationsEnabled?"false":"true"}/><button className={notificationsEnabled?"secondaryButton":"primaryButton"} type="submit">Turn notifications {notificationsEnabled?"off":"on"}</button></form></div>
       </div>
     </section>
 
-    <section className={`section ${styles.privacySection}`}>
+    <section className={`${styles.settingsSection} ${styles.privacySection}`}>
       <span className="eyebrow">PRIVACY</span>
       <div className={styles.privacyFyi}>
         <strong>Privacy</strong>

@@ -29,6 +29,27 @@ This rule exists to keep production batches small enough for owner review and to
 - Applied database migrations are immutable; corrections use later ordered migrations.
 - No paid Supabase branches.
 
+## PR #55 owner-review follow-up — VERIFIED / NOT DEPLOYED
+Draft PR #55 **Polish FAQ, Settings, and Fit Report review flow** on `agent/cosmetic-faq-followup` is a branch-only owner-review batch. It does not change database schema or migration history and has not been merged to `main` or authorized for production deployment.
+
+Owner-approved branch scope:
+- homepage FAQ is consolidated/reordered to teach Fit Report and Body Match before advanced evidence, while retaining the approved low-Body-Match, exact-before-related and Strong Fit Reports explanations;
+- Profile Settings uses one local spacing system instead of nested global section/form padding;
+- Item / Style / Model suggestions require actual typed search text, begin after two normalized characters and render as an anchored overlay instead of a form-pushing card;
+- known-Product **Change** controls are compact, do not wrap, and unlock/focus Brand or Item editing on mobile while preserving the original Product link so corrections remain evidence rather than direct Product truth edits;
+- Fit Notes guidance appears once above a clean textarea;
+- mobile Fit Report spacing, especially Optional Additional Information, is normalized without broad global CSS changes;
+- final confirmation uses a two-column evidence grid on normal mobile widths and falls to one column only on extremely narrow screens;
+- **Confirm Fit Report** uses a native associated form submit with visible Saving feedback instead of the prior programmatic `requestSubmit()` path that could appear to do nothing on mobile;
+- focused UI regression safeguards were added and wired into canonical CI.
+
+Verification record:
+- CI #688 exposed one stale privacy-copy assertion in the older Sleepwear/purchase-context safeguard; the current approved privacy wording remained present, so the safeguard was reconciled to that wording rather than reverting product copy;
+- exact-head CI **#689** (`32669133621`) on head `656e52cb4280f153c0b3b95b8f288b0f035abc7a` passed canonical integrity, exact dependency install, TypeScript, all existing focused application safeguards, the new Fit Report UI regression suite, production build, full fresh replay of every canonical migration and full database behavior/privacy tests;
+- PR diff audit contained only the owner-review FAQ/Settings/Fit Report source, focused safeguards and CI wiring; no migration/schema/security-audit change was mixed into this batch.
+
+Production state remains PR #53 until the owner separately authorizes PR #55 for merge/deployment. Foundation Technical Audit security findings remain a separate required integrity line and are not part of PR #55.
+
 ## PR #53 production database checkpoint — LIVE
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
@@ -466,17 +487,17 @@ SerpAPI is never ordinary member intake or Product authority. Admin research che
 A surface is not complete merely because code exists. Completion requires current/live inspection, owner interaction, corrections, production verification, owner confirmation and this master update.
 
 Current order:
-1. Homepage + FAQ — PR #53 production behavior is live and public sanity passed; measurement-specific sex/body FAQ wording remains pending owner approval.
+1. Homepage + FAQ — PR #53 production behavior is live and public sanity passed; PR #55 has an owner-approved revised FAQ teaching order/copy verified branch-only and **not deployed**; measurement-specific sex/body FAQ wording remains pending owner approval.
 2. Global header + member Menu + admin entry/navigation — PR #53 contains live **My Measurements** naming; broader owner interaction audit remains.
 3. Auth — owner confirmed.
 4. Fit Profile / My Measurements — PR #53 keeps Fit Community in onboarding but removes post-onboarding editing from My Measurements; production code/database is live, owner interaction audit remains.
-5. Profile Settings — PR #53 makes this the sole post-onboarding Fit Community editor and retains username management; production code/database is live, owner interaction audit remains.
+5. Profile Settings — PR #53 makes this the sole post-onboarding Fit Community editor and retains username management; PR #55 fixes the discovered double-padding/spacing issue on a verified branch but is **not deployed**; broader owner interaction audit remains.
 6. Notifications — unfinished audit after Foundation Technical Audit.
 7. Unified Closet/member profile Closet — PR #53 adds the narrow private Needs More Evidence owner-only follow-up and front/back Fit Photo compatibility; full legacy private/shared cleanup and lifecycle model still remain for the ordered Closet audit.
 8. Update/Edit Fit Report only within settled Closet mutation model — PR #53 aligns later Fit Notes to 2,000 characters and preserves unresolved garment identity snapshots; full lifecycle/mutation audit remains.
 9. People My Size — Fit Community implemented; full audit remains.
 10. My Circle / Following / Fit Twin — Fit Community implemented; full audit remains.
-11. New Fit Report — PR #53 production code/database is live with Item / Style / Model uncertainty modal, front/back Fit Photos, Product/Label evidence separation and Unconfirmed creation; authenticated owner interaction audit remains.
+11. New Fit Report — PR #53 production code/database is live with Item / Style / Model uncertainty modal, front/back Fit Photos, Product/Label evidence separation and Unconfirmed creation; PR #55 fixes owner-found Item search/Change/mobile spacing/Fit Notes/final-confirmation/Confirm-submit issues on a verified branch but is **not deployed**; authenticated owner interaction audit remains.
 11A. **Garment-question variation classification audit** — classify every structured question as variation-defining / descriptive-only / cosmetic; Size and Color excluded absolutely. Do not implement Product Detail Exact Variation until this is settled.
 12. New Outfit — Unconfirmed/Needs More Evidence garments remain usable as owner garments; no special public review badge.
 13. Outfits / Style Feed — same rule: unresolved review state must not leak to viewers.
@@ -538,15 +559,15 @@ During Beta watch direct Product hit rate/manual intake, Unconfirmed resolution/
 Post-Beta: review Mobile App Options + AI Build Viability before approving a separate mobile codebase; expand Gift/public/email wishlist behavior; refine affiliate optimization without changing shopper relevance; expand admin research/catalog tooling where useful.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- PR #53 is production-complete; this reconciliation records the deployed state without changing product behavior.
-- Exact public sex/body-specific measurement FAQ wording remains pending owner review and was not part of the frozen batch.
+- PR #55 is exact-head verified owner-review work but remains branch-only and **not deployed** until separate owner production authorization.
+- Exact public sex/body-specific measurement FAQ wording remains pending owner review and was not part of the frozen PR #53 batch or PR #55.
 - PR #53 adds practical Unconfirmed/Needs More Evidence queue behavior, but full Admin all-Products priority/filter/merge/split presentation remains for the ordered Admin audit.
 - Purchase-context aggregate/admin reporting UI remains open.
 - Unified public Closet legacy visibility cleanup remains open beyond the narrow owner-only Needs More Evidence follow-up.
 - Exact post-submit mutation/lifecycle schema remains open.
 - Product merge/split, richer alias management, spam handling, broader Product-photo moderation, field lock/reopen, external barcode-provider evaluation, SerpAPI admin UX, starter-catalog enrichment and authenticated browser regression remain open where previously scoped.
 - Variation-definition audit (#11A) must be completed before Product Detail Exact Variation UI uses controlled questions as tracked variations.
-- Foundation Technical Audit is the required next integrity checkpoint before normal roadmap implementation resumes.
+- Foundation Technical Audit is the required next integrity checkpoint before normal roadmap implementation resumes; its security findings must remain separate from PR #55 cosmetic/FAQ work.
 - Branch cleanup is authorized by the classification ledger above; the desired long-lived branch state is `main` only after active reconciliation work is merged and verified.
 - `main` is currently not branch-protected. This is not a current repository-rule violation, but enabling required PR + CI protection is a separate owner decision and must not be changed silently.
 
@@ -561,10 +582,12 @@ Post-Beta: review Mobile App Options + AI Build Viability before approving a sep
 - PR #51 merged at `93d9414a29f81b5732c42bf277cc085db5e93998`; exact-head CI #668 passed; four ordered migrations were applied in production; Vercel `dpl_AXBaKS6TRWxUv81kKFYULYT22AFu` reached READY on `likesized.com`.
 - PR #52 merged documentation/status reconciliation to `main` at `05f496cbe6cb412681bcd2530f7748aca85db681`.
 - PR #53 exact-head CI #684 passed all application/build/fresh-migration/database gates; hosted migrations `20260823205559`, `20260823205714`, `20260823205746` were applied/verified database-first; exact tested head was squash-merged to `main` as `c2fc26233cfbee961ff9e0ea95f4338d1ce641fc`; Vercel production `dpl_8tpiSJWtNSYzgnKBWzFCByBz6cgg` is READY on `likesized.com`; public/auth-guard/runtime sanity passed.
+- PR #55 owner-review branch is verified through CI #689 at `656e52cb4280f153c0b3b95b8f288b0f035abc7a`; it contains no database migration and is **not merged/deployed**.
 
 # EXACT NEXT ACTION — CURRENT
-1. Complete this docs-only post-PR-#53 production reconciliation through exact-head CI and merge; do not alter product code or applied migrations.
-2. Conduct the **Foundation Technical Audit** above against production behavior commit `c2fc26233cfbee961ff9e0ea95f4338d1ce641fc` and the hosted PR #53 database state.
-3. Prioritize Product/candidate materialization, Unconfirmed/Needs More Evidence ownership/privacy, barcode/image fallback, front/back Fit Photos, Product-vs-Label evidence boundaries, trust refresh, Fit Report/body-state identity, RLS and migration replay.
-4. Record audit findings/debt canonically in this master and `supabase/schema_contract.md`; fix underlying issues in one active line only if the audit finds real defects. Do not jump ahead to Product Detail/Exact Variation implementation.
-5. After the Foundation Technical Audit is resolved/recorded, resume the ordered owner audits/roadmap in sequence under a separately authorized development/deployment batch.
+1. Owner-review PR #55. Do not merge or deploy it until the owner explicitly authorizes this specific production batch.
+2. If the owner authorizes PR #55 production: freeze this batch, run/confirm exact-head CI on the final canonical-doc head, merge with expected-head protection, verify the resulting Vercel production deployment and perform live public/protected-route/runtime sanity without falsely claiming authenticated flows that were not exercised.
+3. Conduct the **Foundation Technical Audit** against the production foundation, including Product/candidate materialization, Unconfirmed/Needs More Evidence ownership/privacy, barcode/image fallback, front/back Fit Photos, Product-vs-Label evidence boundaries, trust refresh, Fit Report/body-state identity, RLS and full migration replay.
+4. Turn the owner-requested backend regression review into explicit test cases for normal known items, conflicting reports, the **I’m not completely sure** path, Needs More Evidence re-entry, barcode resolution, duplicate protection, trust progression, Product/Label privacy and fixed-input Match/recommendation behavior.
+5. Record Foundation audit findings/debt canonically in this master and `supabase/schema_contract.md`; fix underlying issues in one active line only if the audit finds real defects. Do not jump ahead to Product Detail/Exact Variation implementation.
+6. After the Foundation Technical Audit is resolved/recorded, resume the ordered owner audits/roadmap in sequence under a separately authorized development/deployment batch.

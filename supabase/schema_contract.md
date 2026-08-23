@@ -11,11 +11,12 @@ Ordered SQL files in `supabase/migrations/` are the executable database history 
 
 This file owns current database behavior/privacy plus explicit implementation debt. Product meaning lives in `docs/V1_PRODUCT_SPEC.md`; roadmap/status/audit order live in `docs/AI_MASTER_LOG.md`.
 
-# Production checkpoint — 2026-08-22
+# Production checkpoint — 2026-08-23
 
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
 Latest observed applied migration tail:
+- `20260823054933` — `generalize_catalog_identity_confidence` — canonical local source `20260823040000_generalize_catalog_identity_confidence.sql`
 - `20260823031701` — `require_two_confirmed_barcode_submitters`
 - `20260823031508` — `barcode_confirmation_corroboration`
 - `20260823023807` — `one_shot_matched_product_notifications`
@@ -37,11 +38,11 @@ Latest observed applied migration tail:
 
 Local migration filenames remain the canonical replay history. Supabase-assigned production timestamps may differ from local filenames; do not rename applied local files to match generated production timestamps.
 
-## Active branch change — NOT PRODUCTION
+## Generalized catalog identity confidence — LIVE PRODUCTION
 
-`agent/catalog-evidence-confidence` contains owner-approved but not-yet-deployed migration `20260823040000_generalize_catalog_identity_confidence.sql`. The prior branch head passed canonical integrity, TypeScript/application tests, production build, fresh migration replay, and the full pgTAP/database suite. The branch has since been reopened for owner-approved New Fit Report UI/canonical documentation changes and must be re-verified before production authorization.
+Production migration `20260823054933 generalize_catalog_identity_confidence` is the applied Supabase record for canonical local migration `supabase/migrations/20260823040000_generalize_catalog_identity_confidence.sql`.
 
-The branch migration replaces the older barcode-gated Product meaning with the generalized community-confidence model described below; it does not rewrite the already-applied barcode migrations.
+This later additive migration replaces the older barcode-gated Product-level meaning with the generalized community-confidence model described below while preserving the already-applied barcode migrations as immutable history. The implementation passed canonical integrity, TypeScript/application safeguards, production build, fresh migration replay, and the full pgTAP/database suite before deployment.
 
 # 1. Privacy / body-state foundations
 
@@ -84,7 +85,7 @@ The database separates:
 2. pending catalog candidate;
 3. canonical Product.
 
-Members do not directly create canonical Products from manual fallback. On the active branch, controlled system rules may automatically canonicalize a candidate after the owner-locked five-distinct-member threshold is satisfied.
+Members do not directly create canonical Products from manual fallback. In production, controlled system rules may automatically canonicalize a candidate after the owner-locked five-distinct-member threshold is satisfied.
 
 ## Known Product
 - Closet item/Fit Report references the canonical Product.
@@ -102,9 +103,9 @@ Members do not directly create canonical Products from manual fallback. On the a
 
 Candidate workflow states include `pending`, `needs_enrichment`, `needs_review`, and `merged`.
 
-## Product identity confidence — OWNER APPROVED / ACTIVE BRANCH
+## Product identity confidence — LIVE PRODUCTION
 
-Product identity confidence no longer depends on having a barcode.
+Product identity confidence does not depend on having a barcode.
 
 `catalog_candidates` tracks:
 - `identity_confidence` — provisional / corroborated / verified / rejected vocabulary;
@@ -112,7 +113,7 @@ Product identity confidence no longer depends on having a barcode.
 - `identity_conflict_count` — independent open identity-review evidence currently gating automatic promotion;
 - `auto_promoted_at` — records threshold-driven system canonicalization.
 
-Locked thresholds implemented by the branch migration:
+Locked thresholds implemented in production:
 - 1 distinct member → provisional;
 - 2 distinct members → corroborated;
 - 5 distinct members → eligible for automatic map/create as a corroborated canonical Product;
@@ -131,7 +132,7 @@ Conflict gate:
 
 `catalog_resolution_actions.actor_kind` distinguishes `admin` from `system`; automatic mapping/creation is audited as `auto_map_existing` / `auto_create_product`. System promotion never impersonates an admin.
 
-The branch uses a deferred post-submission constraint trigger so Product promotion evaluates only after `record_pending_garment_submission(...)` has finished preserving the member submission and running its existing conflict checks.
+Production uses a deferred post-submission constraint trigger so Product promotion evaluates only after `record_pending_garment_submission(...)` has finished preserving the member submission and running its existing conflict checks.
 
 ## Narrow Corroborated-candidate defaults
 
@@ -144,11 +145,11 @@ The candidate broad size-system helper counts distinct members per normalized si
 - `brands` and `products` are the one canonical Product graph.
 - reviewed `brand_aliases` and `product_aliases` normalize proven naming variants without creating duplicate public identities.
 - Product families are explicit compatible groups, not fuzzy-title buckets.
-- `product_identifiers` stores canonical UPC/barcode/other identifier relationships and on the active branch carries source/status provenance.
+- `product_identifiers` stores canonical UPC/barcode/other identifier relationships and carries source/status provenance.
 - Style/Article Number is evidence and is not globally unique Product identity by default.
 - `retailer_listings` is the one-to-many canonical retailer destination relationship for resolved Products/variants.
 
-## Barcode relationship confidence — OWNER APPROVED / ACTIVE BRANCH
+## Barcode relationship confidence — LIVE PRODUCTION
 
 Barcode confidence is separate from Product confidence.
 
@@ -162,7 +163,7 @@ Barcode confidence is separate from Product confidence.
 
 The New Fit Report known-Product save path calls `public.record_product_barcode_evidence(product_id, fit_report_id, barcode)` instead of immediately writing a member-entered barcode into `product_identifiers`.
 
-`private.barcode_identity_confirmations` remains preserved from the already-applied scan-confirmation history and still records explicit **Is this the item?** interactions, but it no longer defines Product-level corroboration by itself on the active branch.
+`private.barcode_identity_confirmations` remains preserved from the already-applied scan-confirmation history and still records explicit **Is this the item?** interactions, but it no longer defines Product-level corroboration by itself in production.
 
 Identity resolution remains conservative:
 - fuzzy title alone cannot force merge;
@@ -260,7 +261,7 @@ Implementation debt: recipe-frequency selection and independent-member Product-i
 
 New Fit Report may preselect that kind for a known Product while the actual member size remains blank/editable.
 
-On the active branch, a uniquely matched unresolved Corroborated candidate may also preselect its unique highest-vote **broad size kind** using distinct-member candidate evidence. Actual size remains blank. Nested US/UK/EU sizing systems are not automatically inferred by this rule.
+A uniquely matched unresolved Corroborated candidate may also preselect its unique highest-vote **broad size kind** using distinct-member candidate evidence. Actual size remains blank. Nested US/UK/EU sizing systems are not automatically inferred by this rule.
 
 # 10. Preferred Fit — LEGACY / INERT
 
@@ -367,9 +368,8 @@ Help Me Size It reuses the canonical recommendation architecture. `Would Buy Aga
 
 # 20. Current implementation debt / open verification
 
-Do not claim these complete merely because branch foundations exist:
-- latest `agent/catalog-evidence-confidence` head requires canonical check, TypeScript, focused application tests, production build, fresh migration replay, and full pgTAP after the owner-approved New Fit Report/canon changes;
-- the generalized community-confidence migration is **not deployed to production**;
+The generalized community-confidence migration and its New Fit Report application changes are live in production and passed the full pre-deploy verification suite. Remaining work includes:
+- owner production interaction for the newly deployed manual/barcode New Fit Report behavior and distinct-member corroboration flow;
 - current legacy `closet_items.visibility` / private-vs-shared Closet RLS and presentation semantics must be removed or neutralized canonically to implement the owner-locked single public Closet model without exposing raw body/private system evidence;
 - external barcode enrichment/provider experiment is not implemented;
 - full Product-to-Product merge tooling;

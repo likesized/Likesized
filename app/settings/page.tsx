@@ -36,7 +36,7 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
   const notificationState=first(params.notifications);
   const error=first(params.error);
   const errorMessage=error==="invalid_profile"?"Display name or bio is too long.":error==="save_failed"?"Your profile settings could not be saved.":error==="username_locked"?"Click Change username before editing your username.":error==="invalid_username"?"Choose a username with 3–32 letters, numbers, or underscores.":error==="username_taken"?"That username is already taken or temporarily reserved. Try another one.":error==="username_save_failed"?"Your username could not be changed.":error==="invalid_profile_photo"?"Choose a valid profile photo and try again.":error==="profile_photo_save_failed"?"Your profile photo could not be saved. Try again in a moment.":error==="notification_save_failed"?"Your notification preference could not be saved.":null;
-  const notificationsEnabled=notificationSettings?.[0]?.fit_twin_activity_enabled!==false;
+  const notificationsEnabled=notificationSettings?.[0]?.fit_twin_activity_enabled===true;
   const fallbackInitial=(profile.display_name?.trim()||profile.username).slice(0,1).toUpperCase();
 
   return <main className="pageShell">
@@ -64,7 +64,7 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
     <section id="notifications" className={`section ${styles.notificationSection}`}>
       <div className="sectionHeading"><div><span className="eyebrow">NOTIFICATIONS</span><h2>Following notifications</h2></div></div>
       <div className="evidenceList">
-        <div className={`evidence ${styles.settingsEvidence}`}><div><strong>Following notifications are {notificationsEnabled?"on":"off"}</strong><span>Get an in-app notification when someone you follow shares a new Closet item, updates a shared Fit Report, or posts a new outfit.</span></div><form action={saveFollowingNotificationSettings}><input type="hidden" name="enabled" value={notificationsEnabled?"false":"true"}/><button className={notificationsEnabled?"secondaryButton":"primaryButton"} type="submit">Turn notifications {notificationsEnabled?"off":"on"}</button></form></div>
+        <div className={`evidence ${styles.settingsEvidence}`}><div><strong>Following notifications are {notificationsEnabled?"on":"off"}</strong><span>This is the master switch for people whose notification bell you turn on. Following someone by itself only adds them to your Style Feed.</span></div><form action={saveFollowingNotificationSettings}><input type="hidden" name="enabled" value={notificationsEnabled?"false":"true"}/><button className={notificationsEnabled?"secondaryButton":"primaryButton"} type="submit">Turn notifications {notificationsEnabled?"off":"on"}</button></form></div>
       </div>
     </section>
 

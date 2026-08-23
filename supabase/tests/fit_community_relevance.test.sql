@@ -46,10 +46,10 @@ select matches((
   where n.nspname='private' and p.proname='get_following_feed_for_current_user_community'
 ),'actor_fp.fit_community','Following relevance is tied to the posting member Fit Community');
 
-select unlike((
+select ok(position('department' in lower((
   select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='private' and p.proname='get_following_feed_for_current_user_community'
-),'department','Garment Department is not used as the member-community gate');
+)))=0,'Garment Department is not used as the member-community gate');
 
 select * from finish();
 rollback;

@@ -125,7 +125,7 @@ async function flagPossibleDuplicate(supabase: SupabaseClient, productIds: strin
   if (error) throw error;
 }
 
-async function recordIdentifier(supabase: SupabaseClient, productId: string, variantId: string, original: string, kind: "manufacturer_style" | "upc" | "barcode") {
+async function recordIdentifier(supabase: SupabaseClient, productId: string, variantId: string, original: string, kind: "manufacturer_style") {
   if (!original) return;
   const normalized = normalizeIdentifier(original);
   const { data: existing, error: lookupError } = await supabase.from("product_identifiers").select("id,product_id").eq("identifier_type", kind).eq("normalized_value", normalized).is("retailer_id", null).maybeSingle();
@@ -370,9 +370,12 @@ export async function addGarment(formData: FormData) {
         updatedExisting = !saved.created;
 
         if (identifier) {
-          const normalized = normalizeIdentifier(identifier);
-          const identifierKind: "upc" | "barcode" = /^\d{8}$|^\d{12,14}$/.test(normalized) ? "upc" : "barcode";
-          await recordIdentifier(supabase, product.id, variantId, identifier, identifierKind);
+          const { error: barcodeEvidenceError } = await supabase.rpc("record_product_barcode_evidence", {
+            p_product_id: product.id,
+            p_fit_report_id: saved.fit_report_id,
+            p_barcode: identifier,
+          });
+          if (barcodeEvidenceError) throw barcodeEvidenceError;
         }
         if (styleNumber) await recordIdentifier(supabase, product.id, variantId, styleNumber, "manufacturer_style");
         if (productUrl) await recordListing(supabase, product.id, variantId, productUrl);
@@ -408,7 +411,11 @@ export async function addGarment(formData: FormData) {
           if (error) throw error;
         }
         if (barcodeIssue) {
-          const { error } = await supabase.rpc("record_member_product_identity_issue", { p_product_id: product.id, p_field_key: "barcode", p_value: barcodeIssue });
+          const { error } = await supabase.rpc("record_product_barcode_evidence", {
+            p_product_id: product.id,
+            p_fit_report_id: saved.fit_report_id,
+            p_barcode: barcodeIssue,
+          });
           if (error) throw error;
         }
 

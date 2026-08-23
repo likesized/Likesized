@@ -69,7 +69,6 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
       <div className="sectionHeading"><div><span className="eyebrow">NOTIFICATIONS</span><h2>Following activity alerts</h2></div></div>
       <div className="evidenceList">
         <div className={`evidence ${styles.settingsEvidence}`}><div><strong>{notificationsEnabled?"On":"Off"} by default for future activity</strong><span>Alerts cover new Shared Closet garments, new garment fit updates, and new outfits from people you follow. Following is separate from Fit Twin status. Likes never create alerts.</span></div><form action={saveFollowingNotificationSettings}><input type="hidden" name="enabled" value={notificationsEnabled?"false":"true"}/><button className={notificationsEnabled?"secondaryButton":"primaryButton"} type="submit">Turn {notificationsEnabled?"off":"on"}</button></form></div>
-        <div className={`evidence ${styles.settingsEvidence}`}><div><strong>In-app only in V1</strong><span>No Following activity emails or phone push notifications are sent in V1.</span></div><Link className="secondaryButton" href="/notifications">Open notifications</Link></div>
       </div>
     </section>
 

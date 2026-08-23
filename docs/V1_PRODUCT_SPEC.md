@@ -29,7 +29,7 @@ Match % means **garment-relevant body similarity**, not probability a garment wi
 # 3. Following vs Fit Twin — LOCKED
 
 - Following is member-controlled.
-- Fit Twin is system-derived among followed members from strong current-person Match quality.
+- Fit Twin is **system-generated** among followed members from strong current-person Match quality.
 - one canonical `follows` graph exists; there is no separate user-controlled Fit Twin graph.
 - member actions are Follow / Following / Unfollow.
 - public relationship count is Followers.
@@ -40,11 +40,23 @@ Match % means **garment-relevant body similarity**, not probability a garment wi
 
 LikeSized uses one controlled community-built canonical Product catalog.
 
-> **Members contribute garments and Fit Reports. Members do not directly create canonical Products.**
+> **Members contribute garments and Fit Reports. Members do not directly create canonical Products. Controlled system rules may automatically promote a community candidate once the locked evidence threshold is satisfied.**
 
 A canonical Product is the normalized identity used for Product search, exact-Product evidence, Product details, variants, identifiers, Product photos, retailer listings, and reviewed shared facts.
 
-A member submission is evidence. Manual Brand/Model text, barcode, retailer URL, Style/Article Number, Product Photo, raw external search result, Shopping `product_id`, color/size/retailer listing, or another single weak signal does not by itself create or define canonical Product truth.
+A member submission is evidence. Manual Brand/Model text, one barcode, retailer URL, Style/Article Number, Product Photo, raw external search result, Shopping `product_id`, color/size/retailer listing, or another single weak signal does not by itself create or define canonical Product truth.
+
+Product identity confidence is independent of intake method. Matching manual submissions, barcode-assisted submissions, or a mixture of both may support the same normalized Brand + Item + Garment Type candidate.
+
+Locked Product-identity thresholds:
+- **1 distinct confirming member → Provisional.**
+- **2 distinct confirming members → Corroborated.** The candidate may provide narrow safe New Fit Report assistance but is still not an ordinary Product/search result.
+- **5 distinct confirming members → automatic canonical Product promotion is allowed** when identity is unambiguous and conflict rules permit it. Automatic promotion creates/maps a **Corroborated** Product, never a Verified Product.
+- **Verified** remains stronger authoritative/admin-reviewed evidence and is never granted merely from member count.
+
+A genuine identity conflict does not erase prior confirmations. One conflict may coexist with five confirmations and still permit automatic promotion while retaining a review flag. Two or more independent identity conflicts freeze automatic promotion at Corroborated + Needs Review. Conflicts equal to or greater than confirmations are always Needs Review. Size, color, retailer URL, legitimate alternate barcode, Fit Result, materials, and other report/variant differences are not identity conflicts by themselves.
+
+From the ordinary member's point of view, Corroborated and Verified Products use the same simple known-Product flow and safe editable defaults. The difference is backend trust: Verified authoritative evidence can outrank conflicting community-derived evidence.
 
 **SERPAPI RESULT ≠ CANONICAL PRODUCT.**
 
@@ -59,7 +71,7 @@ Ordinary member intake never calls SerpAPI.
 ## 5.1 Known Product
 When exact Product exists:
 - select canonical Product;
-- prefill reviewed Product facts where available;
+- prefill reviewed/learned safe Product facts where available;
 - member disagreement is evidence/review, not silent overwrite;
 - save Fit Report against that Product.
 
@@ -70,61 +82,72 @@ When Product is unresolved:
 - preserve best-known identity/enrichment evidence;
 - create/associate pending catalog candidate;
 - keep member garment usable while review is pending;
-- do not directly create a canonical Product.
+- do not directly create a canonical Product from one member submission.
 
-Authorized later resolution may map the submission to an existing Product or create a genuinely new canonical Product while preserving original member evidence and immutable body snapshot.
+A second distinct matching member may corroborate the unresolved candidate whether either member used a barcode or both entered the item manually. A uniquely matched Corroborated candidate may then supply safe editable intake defaults such as the learned broad size-system kind, while remaining excluded from ordinary Product search until canonicalized.
+
+Authorized admin resolution may map the submission to an existing Product or create a genuinely new canonical Product. Separately, the controlled five-member system threshold may automatically map/create an unambiguous Corroborated Product. Both paths preserve original member evidence and immutable body snapshots.
 
 ## 5.3 Barcode — OWNER LOCKED
 
 - Scanner supports ordinary retail UPC/EAN 1-D barcodes; QR is not required.
-- Barcode lookup checks LikeSized's canonical Product identifiers and unresolved candidate barcode evidence. Ordinary member intake does **not** call SerpAPI or an external barcode catalog.
+- Barcode lookup checks LikeSized's canonical Product identifiers, unique provisional Product-to-barcode evidence, and unresolved candidate barcode evidence. Ordinary member intake does **not** call SerpAPI or an external barcode catalog.
 - A unique recognized barcode pauses on **Is this the item?** before identity fields are accepted.
 - **Yes — this is the item** on a canonical Product loads that Product and continues known-Product flow.
-- **Yes** on an unresolved candidate prefills previously seen Brand / Item / Garment Type but the Fit Report remains pending/unresolved until authorized resolution.
+- **Yes** on an unresolved candidate prefills previously seen Brand / Item / Garment Type and continues the pending candidate flow.
 - **No — enter manually** switches to manual entry while retaining the scanned barcode as evidence.
 - unknown barcode retains the scan and continues manual fallback.
 - multiple conflicting identities for the same barcode are never auto-selected.
 
-Identity confidence:
-- one member's evidence is provisional;
-- corroboration requires **two distinct members who each explicitly confirm Yes for the same barcode identity and each complete corresponding Fit Report/submission evidence**;
-- repeated reports from one member do not satisfy the distinct-member rule;
-- Verified remains stronger authoritative/admin-reviewed identity, never an automatic member-vote outcome;
-- corroborated unresolved evidence remains a candidate, not an ordinary Product/search result.
+Barcode confidence is separate from Product confidence:
+- one Product may legitimately have multiple barcodes/UPCs, including different retailer or packaging identifiers;
+- the first distinct member who associates a new barcode with an already-known Product creates a **Provisional Product-to-barcode relationship**;
+- a second distinct member with corresponding Product Fit Report evidence corroborates that Product-to-barcode relationship;
+- once corroborated, that barcode may become a canonical Product identifier for future direct recognition;
+- a new barcode on a known Product does not create a new Product and is not an identity conflict merely because another valid barcode already exists;
+- the same barcode accumulating credible evidence for competing Products is an identity conflict and must be flagged rather than silently reassigned.
+
+Product confidence itself does **not** require a barcode. Manual, barcode-assisted, and mixed submissions use the same distinct-member Product thresholds in Section 4.
 
 # 6. New Fit Report information structure — LOCKED
 
-Primary Fit Report information:
+Main Fit Report flow, in order:
 1. Brand / Make — required.
 2. Item / Model — required.
 3. Garment Type — required; Category derives automatically.
-4. zero-to-four Type-specific controlled physical questions — each begins blank; **Not sure** is last and records no positive physical claim.
-5. Color family — required.
-6. Size — required structured size.
-7. Overall Fit Result — Too Small / Snug / Just Right / Relaxed / Too Big.
-8. Condition — New / Used / Altered.
-9. Fit Photo — optional.
-10. Fit notes — optional.
+4. Department — optional, immediately after Garment Type.
+5. zero-to-four Type-specific controlled physical questions — each begins blank; **Not sure** is last and records no positive physical claim.
+6. Color family — required.
+7. Size — required structured size.
+8. Overall Fit Result — Too Small / Snug / Just Right / Relaxed / Too Big.
+9. Condition — New / Used / Altered.
+10. Fit Photo — optional.
+11. Fit notes — optional.
+12. Retail link — optional, immediately below Fit Notes.
 
-Optional Product/candidate evidence:
-- Retail link
-- UPC / barcode when not already scanned
-- Manufacturer Style / Article Number
-- Material / Fabric Composition
-- Product Photo
-- Department
+Then show a clearly separated, collapsed-by-default **Optional Additional Information** section. When expanded, it introduces the fields with **Help us learn more about this item** and explains that extra details help LikeSized build a better garment listing.
 
-Fit Photo is personal wear evidence. Product Photo is separate catalog/candidate evidence.
+The collapsed optional area contains:
+- UPC / barcode when not already scanned;
+- Manufacturer Style / Article Number;
+- Material / Fabric Composition;
+- Product Photo.
+
+If a barcode was already captured by the scanner, retain it as evidence through submission and do not ask the member to enter it again. The Fit Report submit action stays outside/below the collapsed optional area so the normal required flow is visually complete before enrichment fields.
+
+Fit Photo is public member wear evidence attached to the member's garment/Fit Report. Product Photo is separate catalog/candidate evidence. Never repurpose another member's Fit Photo as generic Product imagery.
 
 # 7. Size-system behavior — CURRENT
 
 Supported structured size families include alpha, numeric, waist×inseam, dress/work shirt, jacket, bra, shoe, length designation, freeform fallback, and Not sure.
 
 - unresolved/new Product with no learned default starts at **Choose your measurement system**;
-- known Product may preselect a unique most-common prior size-system kind;
-- tie produces no preselection;
+- a uniquely matched Corroborated unresolved candidate may preselect the unique most-common prior **broad size-system kind** from distinct-member submissions;
+- known Product may preselect its unique most-common prior broad size-system kind;
+- tie/no usable history produces no preselection;
 - member can change the suggested kind;
-- actual size always starts blank and is never copied from another member.
+- actual size always starts blank and is never copied from another member;
+- nested sizing-system choices such as US/UK/EU remain separate and are not implied by the broad-size default unless separately approved.
 
 # 8. Counted Fit Report identity — OWNER LOCKED
 
@@ -181,6 +204,20 @@ Member-facing states:
 - **FIT REPORT UPDATED** — compatible existing state reused;
 - **FIT REPORT SAVED · ITEM UNDER REVIEW** — member work preserved while Product identity requires review.
 
+## 9.1 Unified public Closet / member Closet — OWNER LOCKED
+
+LikeSized has one canonical Closet surface/data meaning rather than separate My Closet and Shared Closet systems.
+
+- Every member garment and every member Fit Report is public member-facing content all the time; there is no member garment Private / Shared visibility mode.
+- A member viewing their own Closet sees the same public garment/Fit Report content plus owner-only management controls such as Edit/Update where applicable.
+- Another member viewing that Closet sees the same public garment/Fit Report content without owner-only controls.
+- Closet/member/profile views must reuse one canonical garment-card and Fit Report presentation foundation rather than maintaining parallel private/public component systems.
+- Those components should be reused where applicable by People My Size, My Circle, Style Feed, Product discovery, and shopping surfaces.
+- Retain garment/Fit Report fields only when they serve a real product, matching, catalog, social, moderation, or historical-integrity purpose; do not preserve hidden garment data merely because a legacy private state once existed.
+- This public Closet rule does **not** expose raw Fit Profile measurements, historical body snapshots, or matching baselines. Exact body measurements remain private system data; other members receive only derived Match/context.
+
+Legacy database/UI visibility fields may remain temporarily during migration/reconciliation, but they are implementation debt, not current product meaning.
+
 # 10. Garment Type identity conflicts — LOCKED
 
 Garment Type is Product identity, not a report-level majority-vote field.
@@ -197,6 +234,8 @@ When member-selected Type conflicts with a known Product:
 
 Shared Product facts resolve field by field; one Fit Report never wholesale-replaces another.
 
+Product identity confidence is separate from report-scoped Product facts. A Product becoming Corroborated or automatically canonical does not turn size, color, material, Fit Result, the controlled garment-question answers, condition, notes, or another member's photos into unquestioned Product truth.
+
 ## Material/Fabric Composition
 - member material default uses complete **exact submitted recipes/compositions**;
 - never average percentages into a composition nobody submitted;
@@ -205,7 +244,7 @@ Shared Product facts resolve field by field; one Fit Report never wholesale-repl
 - verified authoritative Product material evidence outranks member-derived defaults;
 - updating same counted Fit Report replaces that report's prior recipe vote.
 
-Current recipe-frequency selection counts valid Fit Reports. Distinct-member barcode identity corroboration is a separate trust rule and does not alter material voting automatically.
+Current recipe-frequency selection counts valid Fit Reports. Product-identity distinct-member thresholds do not silently alter material voting semantics.
 
 # 12. Pending catalog candidates — LOCKED
 
@@ -215,9 +254,17 @@ Candidate workflow lifecycle:
 - Needs Review
 - Merged
 
-Workflow status and identity confidence are separate. Candidate identity evidence may be provisional or corroborated while still unresolved. Verified identity remains authoritative/admin-reviewed. Corroborated candidate evidence does not make the candidate canonical or searchable as a normal Product.
+Workflow status and identity confidence are separate. Candidate identity evidence may be Provisional or Corroborated while still unresolved. Verified identity remains authoritative/admin-reviewed.
 
-Queue priority should favor real member demand with submission frequency, recency, affected reports, flags, identity confidence, and admin judgment.
+Corroborated unresolved candidates remain excluded from ordinary Product search, but an exact unique New Fit Report identity may use safe learned defaults. At five distinct confirming members, the system may automatically map/create a Corroborated canonical Product if the candidate has no blocking ambiguity. Five confirmations plus one identity conflict may still promote while preserving review visibility; two or more independent identity conflicts block automatic promotion.
+
+Queue priority should focus first on preventing weak uncertain identities from accumulating bad downstream data:
+- Provisional/barely Corroborated identity conflict → **high priority**;
+- Corroborated/auto-promoted Product with multiple or growing conflicts → **medium priority**;
+- Verified Product with one isolated member conflict → **low priority** while retaining the evidence;
+- barcode collisions across Products, multiple independent conflicts, conflicts approaching confirmations, or signs of an incorrect merge always escalate.
+
+Low priority means safe to review later, never delete/ignore the evidence.
 
 # 13. Duplicate prevention / aliases / resolution — LOCKED
 
@@ -229,16 +276,23 @@ No fuzzy title, raw external title, retailer listing, color, size, Shopping prod
 
 Admin merge/split must preserve Fit Reports, immutable body links, submissions, identifiers, aliases, listings, evidence, valid photos, and audit history.
 
+An already-promoted Product is not deleted or demoted merely because one later conflict arrives. Keep it usable, preserve the conflict, flag it for review, and only change canonical identity through the audited resolution process.
+
 # 14. Admin catalog + moderation — LOCKED TARGET
 
 Only explicitly authorized admins may access administrative controls.
 
 Required operating areas:
 1. Catalog Enrichment
-2. Conflicting Product Facts
-3. Possible Duplicates / Identity Review
-4. Reported / Spam Content
-5. Review / Audit History
+2. All Products / Identity Status
+3. Conflicting Product Facts
+4. Possible Duplicates / Identity Review
+5. Reported / Spam Content
+6. Review / Audit History
+
+The all-Products admin view must expose, as applicable: Product/candidate identity status, distinct confirming-member count, identity-conflict count, known barcodes and each barcode's confidence, retailer links, open flags, evidence history, and whether canonicalization came from admin review or automatic community promotion. Filters must support at least Needs Review, Corroborated, auto-promoted, Verified, and Has Conflicts.
+
+Admin review ordering follows the confidence-aware priority rules in Section 12. A Verified Product with one isolated conflict should not outrank a weak candidate whose identity could become entrenched incorrectly.
 
 Admin must ultimately support candidate inspection/demand ordering, map/create, merge/split, aliases, field verification/lock/reopen, photo/content moderation, spam handling, retailer/identifier conflict resolution, and accountable history.
 
@@ -375,7 +429,7 @@ Gift Lists remain roadmap-locked after Product/retailer/save/recommendation foun
 # 27. Outfits / Style Feed — V1 RETAINED
 
 - Outfits use owned Closet garments; no duplicate Product/taxonomy system.
-- owned Outfits live in My Closet;
+- a member's own Outfit management is reached from that member's owner view while public Outfit discovery uses the same canonical Outfit data rather than a separate shared copy.
 - other-member Outfit discovery lives in Explore;
 - followed-person Outfit activity lives in Style Feed;
 - Outfit likes contribute Style Likes; Product likes do not;
@@ -383,7 +437,7 @@ Gift Lists remain roadmap-locked after Product/retailer/save/recommendation foun
 
 # 28. Images / sharing
 
-- Fit Photo is optional personal wear evidence and follows current shared evidence boundary.
+- Fit Photo is optional public personal wear evidence attached to the member garment/Fit Report.
 - Product Photo is separate optional catalog/candidate evidence.
 - never use another member's personal Fit Photo as generic Product image.
 - New Outfit uploads use optimized WebP display/feed assets under deployed pipeline.

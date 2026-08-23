@@ -10,9 +10,8 @@ select ok(pg_get_functiondef('public.get_product_fit_summary(uuid)'::regprocedur
 select ok(pg_get_functiondef('public.get_product_evidence_candidates(uuid,uuid,integer)'::regprocedure) like '%garment_condition=''normal''%','recommendation evidence excludes materially changed garments');
 select ok(pg_get_functiondef('public.get_product_evidence_candidates(uuid,uuid,integer)'::regprocedure) like '%visibility=''shared''%','recommendation evidence keeps Shared Closet boundary');
 select ok(
-  position('row_number() over' in lower(pg_get_functiondef('public.get_product_evidence_candidates(uuid,uuid,integer)'::regprocedure))) > 0
-  and position('partition by s.user_id' in lower(pg_get_functiondef('public.get_product_evidence_candidates(uuid,uuid,integer)'::regprocedure))) > 0,
-  'evidence remains unique-wearer capped'
+  position('partition by s.user_id' in lower(pg_get_functiondef('public.get_product_evidence_candidates(uuid,uuid,integer)'::regprocedure))) = 0,
+  'recommendation evidence counts distinct Fit Report situations instead of capping by wearer'
 );
 select ok(has_function_privilege('authenticated','public.get_product_fit_summary(uuid)','EXECUTE'),'authenticated users can read safe normal-condition summary');
 select ok(not has_function_privilege('anon','public.get_product_fit_summary(uuid)','EXECUTE'),'anonymous users cannot read product fit summary');

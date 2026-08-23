@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, auth;
 
-select plan(40);
+select plan(42);
 
 insert into auth.users(id,aud,role,email,created_at,updated_at)
 values
@@ -90,8 +90,10 @@ select is((select total_count from public.search_outfits('Ribcage',5) limit 1),1
 select is((select count(*) from public.get_fit_matches('overall',100) where user_id='fc500000-0000-4000-8000-000000000002'::uuid),0::bigint,'member search does not bypass minimum Fit Match evidence requirements');
 select is((select count(*) from public.profiles where id='fc500000-0000-4000-8000-000000000002'::uuid),1::bigint,'signed-in member can open discovered member profile');
 select is((select count(*) from public.body_measurements where user_id='fc500000-0000-4000-8000-000000000002'::uuid),0::bigint,'member discovery does not grant raw body measurement access');
-select lives_ok($$insert into public.follows(follower_id,followed_id) values('fc500000-0000-4000-8000-000000000001'::uuid,'fc500000-0000-4000-8000-000000000002'::uuid)$$,'discovered member can be saved through canonical Fit Twin follow relationship');
-select is((select count(*) from public.follows where follower_id='fc500000-0000-4000-8000-000000000001'::uuid and followed_id='fc500000-0000-4000-8000-000000000002'::uuid),1::bigint,'search/profile follow uses the same canonical relationship as People My Size');
+select lives_ok($$insert into public.follows(follower_id,followed_id) values('fc500000-0000-4000-8000-000000000001'::uuid,'fc500000-0000-4000-8000-000000000002'::uuid)$$,'discovered member can be followed through the canonical Following relationship');
+select is((select count(*) from public.follows where follower_id='fc500000-0000-4000-8000-000000000001'::uuid and followed_id='fc500000-0000-4000-8000-000000000002'::uuid),1::bigint,'search/profile Follow uses the same canonical relationship as People My Size');
+select is((select count(*) from public.get_following_notification_subscriptions() where followed_id='fc500000-0000-4000-8000-000000000002'::uuid),0::bigint,'Follow alone does not opt the member into person notifications');
+select is(public.set_following_notification_subscription('fc500000-0000-4000-8000-000000000002'::uuid,true),true,'explicit person-bell opt-in enables notifications for the followed member');
 reset role;
 
 set local role authenticated;
@@ -110,9 +112,9 @@ set local request.jwt.claim.sub='fc500000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
 select is((select count(*) from public.get_following_feed(50,null) where actor_id='fc500000-0000-4000-8000-000000000002'::uuid),1::bigint,'new Shared activity from searched-and-followed member appears in Following Feed');
 select is((select product_slug from public.get_following_feed(50,null) where actor_id='fc500000-0000-4000-8000-000000000002'::uuid limit 1),'levi-ribcage-straight-jeans','Following Feed preserves canonical product navigation from search loop');
-select is((select count(*) from public.get_fit_twin_activity_notifications(50,null) where actor_id='fc500000-0000-4000-8000-000000000002'::uuid),1::bigint,'searched-and-followed member Shared activity creates Fit Twin notification');
+select is((select count(*) from public.get_fit_twin_activity_notifications(50,null) where actor_id='fc500000-0000-4000-8000-000000000002'::uuid),1::bigint,'explicitly subscribed followed-member Shared activity creates one person notification');
 select is((select actor_id from public.get_fit_twin_activity_notifications(50,null) limit 1),'fc500000-0000-4000-8000-000000000002'::uuid,'notification belongs to the canonical followed member discovered through search');
-select is((select id from public.search_members('alex_fit',24) limit 1),'fc500000-0000-4000-8000-000000000002'::uuid,'member remains searchable after being saved as Fit Twin');
+select is((select id from public.search_members('alex_fit',24) limit 1),'fc500000-0000-4000-8000-000000000002'::uuid,'member remains searchable after being followed');
 reset role;
 
 select ok(not has_function_privilege('anon','public.search_catalog_products(text,integer)','EXECUTE'),'anonymous visitors cannot execute authenticated catalog search RPC');

@@ -16,15 +16,17 @@ insert into auth.users(id,aud,role,email,created_at,updated_at) values
 select ok(private.is_admin('fb100000-0000-4000-8000-000000000001'),'First account is bootstrapped as admin');
 select ok(not private.is_admin('fb100000-0000-4000-8000-000000000002'),'Later accounts are not auto-promoted');
 
+-- Give watcher and reporting member enough identical Tops measurements for the one-shot
+-- Product watch to qualify at the current 75%+ historical garment Match boundary.
 set local role authenticated;
 set local request.jwt.claim.sub='fb100000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
-select public.save_fit_profile('moderation_owner','metric','[{"measurement_type_key":"height","entered_value":170,"entered_unit":"cm","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
+select public.save_fit_profile('moderation_owner','metric','[{"measurement_type_key":"chest_circumference","entered_value":100,"entered_unit":"cm","source":"manual","method":"tape"},{"measurement_type_key":"shoulder_width","entered_value":45,"entered_unit":"cm","source":"manual","method":"tape"},{"measurement_type_key":"torso_body_length","entered_value":63,"entered_unit":"cm","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
 reset role;
 set local role authenticated;
 set local request.jwt.claim.sub='fb100000-0000-4000-8000-000000000002';
 set local request.jwt.claim.role='authenticated';
-select public.save_fit_profile('moderation_actor','metric','[{"measurement_type_key":"height","entered_value":171,"entered_unit":"cm","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
+select public.save_fit_profile('moderation_actor','metric','[{"measurement_type_key":"chest_circumference","entered_value":100,"entered_unit":"cm","source":"manual","method":"tape"},{"measurement_type_key":"shoulder_width","entered_value":45,"entered_unit":"cm","source":"manual","method":"tape"},{"measurement_type_key":"torso_body_length","entered_value":63,"entered_unit":"cm","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
 reset role;
 
 insert into public.brands(id,name,slug) values('fb110000-0000-4000-8000-000000000001','Evidence Test','evidence-test');
@@ -54,7 +56,7 @@ reset role;
 set local role authenticated;
 set local request.jwt.claim.sub='fb100000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
-select ok((select last_notified_at is not null from public.product_evidence_notifications where product_id='fb120000-0000-4000-8000-000000000001'),'A later Fit Report activates the requested notification');
+select ok((select last_notified_at is not null and active=false and matched_fit_report_id='fb140000-0000-4000-8000-000000000001'::uuid from public.product_evidence_notifications where product_id='fb120000-0000-4000-8000-000000000001'),'A future 75%+ matched Fit Report fires the one-shot Product notification and turns the watch off');
 select ok(public.report_content('outfit_post','fb150000-0000-4000-8000-000000000001','spam_or_scam',null) is not null,'Member can report supported shared photo content');
 select is((select count(*) from public.content_reports where target_id='fb150000-0000-4000-8000-000000000001'),1::bigint,'Reporter can read the submitted report');
 reset role;

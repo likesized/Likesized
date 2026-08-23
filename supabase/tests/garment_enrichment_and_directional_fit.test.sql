@@ -48,6 +48,21 @@ values('b2000000-0000-4000-8000-000000000003'::uuid,'upc','012345678905','012345
 insert into public.retailer_listings(product_id,product_url,normalized_url)
 values('b2000000-0000-4000-8000-000000000003'::uuid,'https://example.test/verified-tee','https://example.test/verified-tee');
 
+-- Member evidence is report-scoped. These private reports are only provenance anchors and
+-- therefore do not participate in the later Shared recommendation/fit-distribution checks.
+insert into public.closet_items(id,user_id,product_id,size_label,visibility) values
+('b3000000-0000-4000-8000-000000000101','b0000000-0000-4000-8000-000000000001','b2000000-0000-4000-8000-000000000001','M','private'),
+('b3000000-0000-4000-8000-000000000102','b0000000-0000-4000-8000-000000000002','b2000000-0000-4000-8000-000000000002','M','private'),
+('b3000000-0000-4000-8000-000000000103','b0000000-0000-4000-8000-000000000003','b2000000-0000-4000-8000-000000000001','M','private'),
+('b3000000-0000-4000-8000-000000000203','b0000000-0000-4000-8000-000000000003','b2000000-0000-4000-8000-000000000002','M','private'),
+('b3000000-0000-4000-8000-000000000104','b0000000-0000-4000-8000-000000000004','b2000000-0000-4000-8000-000000000001','M','private');
+insert into public.fit_reports(id,user_id,closet_item_id,product_id,size_label,fit,would_buy_again) values
+('b4000000-0000-4000-8000-000000000101','b0000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000101','b2000000-0000-4000-8000-000000000001','M','just_right',true),
+('b4000000-0000-4000-8000-000000000102','b0000000-0000-4000-8000-000000000002','b3000000-0000-4000-8000-000000000102','b2000000-0000-4000-8000-000000000002','M','just_right',true),
+('b4000000-0000-4000-8000-000000000103','b0000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000103','b2000000-0000-4000-8000-000000000001','M','just_right',true),
+('b4000000-0000-4000-8000-000000000203','b0000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000203','b2000000-0000-4000-8000-000000000002','M','just_right',true),
+('b4000000-0000-4000-8000-000000000104','b0000000-0000-4000-8000-000000000004','b3000000-0000-4000-8000-000000000104','b2000000-0000-4000-8000-000000000001','M','just_right',true);
+
 -- A member cannot masquerade as a trusted manufacturer source.
 set local role authenticated;
 set local request.jwt.claim.role='authenticated';
@@ -59,15 +74,17 @@ select throws_like(
 );
 select public.record_member_product_evidence(
  p_product_id := 'b2000000-0000-4000-8000-000000000001'::uuid,
+ p_fit_report_id := 'b4000000-0000-4000-8000-000000000101'::uuid,
  p_garment_type := 't_shirt',
  p_market_segment := 'unisex',
  p_attributes := '[{"attribute_key":"sleeve_length","option_key":"long"}]'::jsonb,
  p_materials := '[{"material_key":"cotton","percentage":100}]'::jsonb,
  p_source_reference := 'member-label'
 );
--- Same member logging the same Product again is not a second vote.
+-- Updating the same counted Fit Report replaces its prior evidence instead of adding a vote.
 select public.record_member_product_evidence(
  p_product_id := 'b2000000-0000-4000-8000-000000000001'::uuid,
+ p_fit_report_id := 'b4000000-0000-4000-8000-000000000101'::uuid,
  p_garment_type := 't_shirt',
  p_market_segment := 'unisex',
  p_attributes := '[{"attribute_key":"sleeve_length","option_key":"long"}]'::jsonb,
@@ -76,21 +93,22 @@ select public.record_member_product_evidence(
 );
 reset role;
 
-select is((select source_status::text from public.product_attribute_values where product_id='b2000000-0000-4000-8000-000000000001'::uuid and attribute_key='sleeve_length'),'provisional','first member garment attribute is provisional');
+select is((select count(*)::integer from public.product_attribute_values where product_id='b2000000-0000-4000-8000-000000000001'::uuid and attribute_key='sleeve_length'),0,'report-scoped physical answers do not become a canonical single-value Product attribute');
 select is((select source_status::text from public.product_materials where product_id='b2000000-0000-4000-8000-000000000001'::uuid and material_key='cotton'),'provisional','first member material composition is provisional');
 select is((select catalog_status::text from public.products where id='b2000000-0000-4000-8000-000000000001'::uuid),'provisional','one member does not verify or corroborate Product classification');
-select is((select count(*)::integer from public.product_attribute_evidence where product_id='b2000000-0000-4000-8000-000000000001'::uuid and attribute_key='sleeve_length'),1,'repeat logging by the same member counts as one attribute vote');
+select is((select count(*)::integer from public.product_attribute_evidence where product_id='b2000000-0000-4000-8000-000000000001'::uuid and attribute_key='sleeve_length'),1,'updating the same Fit Report keeps one attribute evidence row');
 
 create temporary table provisional_wrist on commit drop as
 select weight from private.product_match_measurements('b2000000-0000-4000-8000-000000000001'::uuid) where measurement_type_key='wrist_circumference';
-select ok((select weight from provisional_wrist)>0,'provisional long-sleeve evidence may softly introduce wrist relevance');
+select is((select count(*) from provisional_wrist),0::bigint,'report-scoped long-sleeve evidence does not rewrite the canonical Product match-measurement map');
 
--- Give the peer Product one provisional matching construction attribute and a Shared bad Fit Report.
+-- Give the peer Product one matching report-scoped physical answer and a Shared bad Fit Report.
 set local role authenticated;
 set local request.jwt.claim.role='authenticated';
 set local request.jwt.claim.sub='b0000000-0000-4000-8000-000000000002';
 select public.record_member_product_evidence(
  p_product_id := 'b2000000-0000-4000-8000-000000000002'::uuid,
+ p_fit_report_id := 'b4000000-0000-4000-8000-000000000102'::uuid,
  p_garment_type := 't_shirt',
  p_market_segment := 'unisex',
  p_attributes := '[{"attribute_key":"sleeve_length","option_key":"long"}]'::jsonb,
@@ -109,15 +127,17 @@ set local request.jwt.claim.sub='b0000000-0000-4000-8000-000000000001';
 create temporary table before_corroboration on commit drop as
 select * from public.get_product_evidence_candidates('b2000000-0000-4000-8000-000000000001'::uuid,null,50);
 reset role;
-select is((select evidence_level::text from before_corroboration where user_id='b0000000-0000-4000-8000-000000000002'::uuid),'brand_garment_type','one-member provisional attribute overlap does not create Similar Garments evidence');
-select is((select attribute_overlap from before_corroboration where user_id='b0000000-0000-4000-8000-000000000002'::uuid),0,'provisional overlap is excluded from Similar Garments overlap count');
+select is((select evidence_level::text from before_corroboration where fit_report_id='b4000000-0000-4000-8000-000000000021'::uuid),'brand_garment_type','report-scoped physical-answer overlap does not create Similar Garments Product evidence');
+select is((select attribute_overlap from before_corroboration where fit_report_id='b4000000-0000-4000-8000-000000000021'::uuid),0,'report-scoped physical answers are excluded from Product-level Similar Garments overlap');
 
--- A second independent member agreeing with both Products promotes the facts.
+-- A second independent member can corroborate Product classification/material evidence while
+-- the controlled physical answers remain report-scoped variant evidence.
 set local role authenticated;
 set local request.jwt.claim.role='authenticated';
 set local request.jwt.claim.sub='b0000000-0000-4000-8000-000000000003';
 select public.record_member_product_evidence(
  p_product_id := 'b2000000-0000-4000-8000-000000000001'::uuid,
+ p_fit_report_id := 'b4000000-0000-4000-8000-000000000103'::uuid,
  p_garment_type := 't_shirt',
  p_market_segment := 'unisex',
  p_attributes := '[{"attribute_key":"sleeve_length","option_key":"long"}]'::jsonb,
@@ -126,6 +146,7 @@ select public.record_member_product_evidence(
 );
 select public.record_member_product_evidence(
  p_product_id := 'b2000000-0000-4000-8000-000000000002'::uuid,
+ p_fit_report_id := 'b4000000-0000-4000-8000-000000000203'::uuid,
  p_garment_type := 't_shirt',
  p_market_segment := 'unisex',
  p_attributes := '[{"attribute_key":"sleeve_length","option_key":"long"}]'::jsonb,
@@ -134,10 +155,10 @@ select public.record_member_product_evidence(
 );
 reset role;
 
-select is((select source_status::text from public.product_attribute_values where product_id='b2000000-0000-4000-8000-000000000001'::uuid and attribute_key='sleeve_length'),'corroborated','two independent members promote agreeing attribute evidence');
-select ok((select confidence from public.product_attribute_values where product_id='b2000000-0000-4000-8000-000000000001'::uuid and attribute_key='sleeve_length')>=.80,'corroborated attribute confidence is at least 0.80');
+select is((select count(distinct submitted_by)::integer from public.product_attribute_evidence where product_id='b2000000-0000-4000-8000-000000000001'::uuid and attribute_key='sleeve_length' and option_key='long'),2,'two independent report-scoped observations remain preserved as two member evidence sources');
+select is((select count(*)::integer from public.product_attribute_values where product_id='b2000000-0000-4000-8000-000000000001'::uuid and attribute_key='sleeve_length'),0,'multiple report-scoped physical answers still do not create a canonical single-value Product attribute');
 select is((select catalog_status::text from public.products where id='b2000000-0000-4000-8000-000000000001'::uuid),'corroborated','two members agreeing on garment type and segment corroborate Product classification');
-select ok((select weight from private.product_match_measurements('b2000000-0000-4000-8000-000000000001'::uuid) where measurement_type_key='wrist_circumference')>(select weight from provisional_wrist),'corroboration increases the attribute contribution to the match path');
+select is((select count(*) from private.product_match_measurements('b2000000-0000-4000-8000-000000000001'::uuid) where measurement_type_key='wrist_circumference'),0::bigint,'report-scoped observations do not mutate the Product match-measurement map after multiple submissions');
 
 set local role authenticated;
 set local request.jwt.claim.role='authenticated';
@@ -145,15 +166,17 @@ set local request.jwt.claim.sub='b0000000-0000-4000-8000-000000000001';
 create temporary table after_corroboration on commit drop as
 select * from public.get_product_evidence_candidates('b2000000-0000-4000-8000-000000000001'::uuid,null,50);
 reset role;
-select is((select evidence_level::text from after_corroboration where user_id='b0000000-0000-4000-8000-000000000002'::uuid),'similar_garments','corroborated controlled overlap qualifies as Similar Garments evidence');
-select ok((select attribute_overlap from after_corroboration where user_id='b0000000-0000-4000-8000-000000000002'::uuid)>=1,'corroborated overlap contributes to the Similar Garments overlap count');
+select is((select evidence_level::text from after_corroboration where fit_report_id='b4000000-0000-4000-8000-000000000021'::uuid),'brand_garment_type','corroborated Product classification still does not turn report-scoped physical answers into Similar Garments Product facts');
+select is((select attribute_overlap from after_corroboration where fit_report_id='b4000000-0000-4000-8000-000000000021'::uuid),0,'Product-level Similar Garments overlap remains zero without a canonical Product attribute');
 
--- Conflicting later member evidence flags review but does not displace the stronger consensus.
+-- A conflicting report-scoped physical answer is a legitimate fit-variant observation and does
+-- not by itself mark the Product identity as conflicting or overwrite a canonical Product slot.
 set local role authenticated;
 set local request.jwt.claim.role='authenticated';
 set local request.jwt.claim.sub='b0000000-0000-4000-8000-000000000004';
 select public.record_member_product_evidence(
  p_product_id := 'b2000000-0000-4000-8000-000000000001'::uuid,
+ p_fit_report_id := 'b4000000-0000-4000-8000-000000000104'::uuid,
  p_garment_type := 't_shirt',
  p_market_segment := 'unisex',
  p_attributes := '[{"attribute_key":"sleeve_length","option_key":"short"}]'::jsonb,
@@ -161,8 +184,8 @@ select public.record_member_product_evidence(
  p_source_reference := 'conflicting-member'
 );
 reset role;
-select ok((select catalog_review_needed from public.products where id='b2000000-0000-4000-8000-000000000001'::uuid),'conflicting member garment facts flag the Product for review');
-select is((select option_key from public.product_attribute_values where product_id='b2000000-0000-4000-8000-000000000001'::uuid and attribute_key='sleeve_length'),'long','one conflicting vote does not replace the stronger long-sleeve consensus');
+select is((select catalog_review_needed from public.products where id='b2000000-0000-4000-8000-000000000001'::uuid),false,'report-scoped physical-answer variation does not by itself flag Product identity for review');
+select is((select count(*)::integer from public.product_attribute_values where product_id='b2000000-0000-4000-8000-000000000001'::uuid and attribute_key='sleeve_length'),0,'conflicting report-scoped answers remain raw evidence instead of overwriting a Product attribute');
 
 -- Product resolution prefers exact identifiers before any new catalog creation.
 set local role authenticated;
@@ -194,7 +217,8 @@ select ok(
  'Too Big is stronger negative evidence when the viewer is smaller than the wearer'
 );
 
--- Add latest Shared exact-product reports from two unique wearers plus a Private report.
+-- Add more Shared exact-product reports plus a Private report. Every distinct Shared Fit
+-- Report situation counts; the earlier Shared Too Small report remains valid evidence.
 set local role authenticated;
 set local request.jwt.claim.role='authenticated';
 set local request.jwt.claim.sub='b0000000-0000-4000-8000-000000000001';
@@ -225,9 +249,9 @@ set local request.jwt.claim.role='authenticated';
 set local request.jwt.claim.sub='b0000000-0000-4000-8000-000000000003';
 create temporary table fit_summary on commit drop as select * from public.get_product_fit_summary('b2000000-0000-4000-8000-000000000002'::uuid);
 reset role;
-select is((select total_fit_count from fit_summary),2,'physical fit distribution uses latest Shared observation per unique wearer');
-select is((select just_right_count from fit_summary),1,'latest unique-wearer distribution counts Just right');
-select is((select snug_count from fit_summary),1,'latest unique-wearer distribution counts Snug');
+select is((select total_fit_count from fit_summary),3,'physical fit distribution counts every distinct Shared Fit Report situation');
+select is((select just_right_count from fit_summary),1,'distinct-situation distribution counts Just right');
+select is((select snug_count from fit_summary),1,'distinct-situation distribution counts Snug');
 
 select * from finish();
 rollback;

@@ -6,13 +6,17 @@ import { createClient } from "@/lib/supabase/server";
 type MeasurementType = { key:string; dimension:"length"|"weight" };
 type ExistingSizeReference = { reference_type:"bra"|"shoe"|"shirt"|"pants"|"dress"|"other"; original_size_label:string; sizing_system:string|null; band_size:number|string|null; cup_designation:string|null; shoe_size:number|string|null };
 type ExistingFitPreference = { garment_type_key:string; preference:"fitted"|"standard"|"relaxed" };
+type FitCommunity = "men"|"women"|"both";
 
 function fail(code:string):never{redirect(`/onboarding?error=${encodeURIComponent(code)}`);}
 function text(formData:FormData,name:string){return String(formData.get(name)??"").trim();}
 function isCanonicalImperialLength(key:string,value:number){const multiplier=key==="height"?1:4;return Math.abs(value*multiplier-Math.round(value*multiplier))<0.000001;}
+function fitCommunity(value:string):FitCommunity|null{return value==="men"||value==="women"||value==="both"?value:null;}
 
 export async function saveFitProfile(formData:FormData){
   const unitSystem=text(formData,"unit_system")==="metric"?"metric":"imperial";
+  const community=fitCommunity(text(formData,"fit_community"));
+  if(!community)fail("invalid_fit_community");
   const supabase=await createClient();
   const {data:claimsData,error:claimsError}=await supabase.auth.getClaims();
   const userId=claimsData?.claims?.sub;
@@ -49,7 +53,7 @@ export async function saveFitProfile(formData:FormData){
   const sizeReferences=((existingSizeReferences??[]) as ExistingSizeReference[]).map((row)=>({reference_type:row.reference_type,original_size_label:row.original_size_label,sizing_system:row.sizing_system,band_size:row.band_size,cup_designation:row.cup_designation,shoe_size:row.shoe_size}));
   const fitPreferences=((existingFitPreferences??[]) as ExistingFitPreference[]).map((row)=>({garment_type_key:row.garment_type_key,preference:row.preference}));
 
-  const {error}=await supabase.rpc("save_fit_profile",{p_username:username,p_unit_system:unitSystem,p_measurements:rows,p_size_references:sizeReferences,p_fit_preferences:fitPreferences});
+  const {error}=await supabase.rpc("save_fit_profile",{p_username:username,p_unit_system:unitSystem,p_measurements:rows,p_size_references:sizeReferences,p_fit_preferences:fitPreferences,p_fit_community:community});
   if(error){
     if(error.code==="23505")fail("username_taken");
     if(error.code==="22023")fail("invalid_measurements");

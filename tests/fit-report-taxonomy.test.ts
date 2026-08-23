@@ -60,7 +60,7 @@ test("category-first intake narrows garment type before item details",()=>{
 test("final intake order keeps the normal Fit Report clear and collapses additional information",()=>{
  for(const required of ["Brand / Make","Item / Style / Model","Overall category","Specific garment type","Color","Overall Fit Result","Condition","Fit photos","Fit notes"])assert.match(intake+catalog+form,new RegExp(required));
  assert.match(catalog,/Department <span className="muted inlineMuted">optional<\/span>/);
- assert.match(intake,/Retail link <span className="muted inlineMuted">optional<\/span>/);
+ assert.match(catalog,/Retail link <span className="muted inlineMuted">optional<\/span>/);
  assert.match(catalog,/<details className=\{styles\.optionalDetails\}>/);
  assert.doesNotMatch(catalog,/<details[^>]*\sopen(?:=|\s|>)/);
  assert.match(catalog,/<summary className=\{styles\.optionalSummary\}>Optional Additional Information<\/summary>/);

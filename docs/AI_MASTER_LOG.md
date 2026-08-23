@@ -21,9 +21,10 @@ This rule exists to keep production batches small enough for owner review and to
 
 ## Canonical production line — LIVE
 - `main` is the one production implementation line and is coupled to Vercel production.
-- Current production commit: `93d9414a29f81b5732c42bf277cc085db5e93998` — merge of PR #51, **Finalize Fit Report flow, member relevance, and catalog trust**.
+- Current production commit: `05f496cbe6cb412681bcd2530f7748aca85db681` — PR #52 documentation/status reconciliation after PR #51.
+- PR #51 behavior baseline remains production source for the last deployed product batch: merge commit `93d9414a29f81b5732c42bf277cc085db5e93998`, **Finalize Fit Report flow, member relevance, and catalog trust**.
 - PR #51 exact-head LikeSized CI run **#668** (`32648986342`) completed successfully before merge: canonical integrity, TypeScript, focused safeguards, production build, fresh replay of every canonical migration and full database behavior/privacy tests.
-- Vercel production deployment `dpl_AXBaKS6TRWxUv81kKFYULYT22AFu` is READY and aliases `likesized.com`.
+- Vercel production deployment `dpl_AXBaKS6TRWxUv81kKFYULYT22AFu` is the recorded PR #51 behavior deployment and aliases `likesized.com`; PR #52 was docs/status only.
 - Applied database migrations are immutable; corrections use later ordered migrations.
 - No paid Supabase branches.
 
@@ -51,24 +52,47 @@ Known production evidence preserved through the materialization/backfill:
 - PR #50 reconciled that production status at `9431366660f813bd2dda68ee5db9c6f4fdc5ddfa`.
 - PR #51 supersedes their pre-PR-#51 status descriptions but does not rewrite their immutable history.
 
-# CURRENT OWNER REVIEW / NEXT CHANGE LIST — NOT YET DEPLOYED
-The owner is actively reviewing the PR #51 production surfaces and is keeping a single repair list. Do not interrupt that review by silently adding new implementation work.
+# CURRENT FROZEN REPAIR BATCH — PR #53 — NOT YET DEPLOYED
+The owner completed the post-PR-#51 repair list and explicitly authorized a deployment/sanity-check cycle because the accumulated changes touch several connected surfaces. That authorization froze this batch. Later genuinely new requests belong to the next batch; restoration of the already-locked Unconfirmed/Needs More Evidence conversation after a browser-context loss is part of this frozen batch, not new scope.
 
-Already owner-approved items for the next repair list:
-1. New Fit Report: remove the category helper sentence such as **“Only Bottoms options are shown here.”** for every category; the filtered Type list is sufficient.
-2. Account menu: rename **Fit Profile** to **My Measurements** after onboarding so the member-facing destination is clearly body-measurement focused.
-3. Keep **Profile Settings** as a separate destination.
-4. Fit Community Men / Women / Both is asked during first-time Fit Profile setup, then is removed from the later My Measurements screen and lives in Profile Settings only.
-5. Username follows the same setup-once / manage-in-Profile-Settings pattern.
+Draft PR #53: **Complete repair batch and Unconfirmed review flow** on `agent/current-repair-batch` → `main`.
 
-These items are not part of the completed PR #51 deployment. They belong to the next owner-reviewed repair batch and must not be pushed until the owner supplies/finishes that batch and authorizes deployment.
+Owner-approved frozen scope:
+1. New Fit Report: remove category helper sentences such as **“Only Bottoms options are shown here.”**; filtered Type lists are sufficient.
+2. Account menu: rename **Fit Profile** to **My Measurements** after onboarding.
+3. Keep **Profile Settings** separate.
+4. Fit Community Men / Women / Both is asked during first-time Fit Profile setup, then removed from later My Measurements and managed in Profile Settings only.
+5. Username follows setup-once / manage-in-Profile-Settings behavior.
+6. Scanner matched image is click/tap expandable in an accessible lightbox while preserving Product/catalog-photo → shared Fit Photo → placeholder priority.
+7. Manual Item suggestions render as the real dropdown immediately under Item / Style / Model rather than a separate row.
+8. Remove the Department helper about preselection; retain the approved Size System helper exactly.
+9. Existing Product copy uses **Matched with the LikeSized community** and compact **Change this** controls; corrections create evidence/review rather than direct Product-truth edits.
+10. Fit Notes allow 2,000 characters end-to-end, with form counter/validation aligned across initial and later observations.
+11. New Fit Report spacing is normalized locally rather than through broad global CSS changes.
+12. Homepage order is Hero → distinct **WHAT LIKESIZED DOES** feature band → **THE LOOP** → FAQ, with the three owner-approved selling-point cards.
+13. FAQ is cleaned up and includes the community-built catalog explanation plus a dedicated uncertainty explanation.
+14. Fit/model evidence supports separate **Front Fit Photo** and **Back Fit Photo** roles.
+15. Product identity evidence keeps **Product Photo** and **Product Label / Tag Photo** separate and presents them together in Optional Additional Information.
+16. Brand-new manual Item / Style / Model entry remains required. A member may check **I’m not completely sure this is the correct item/style name**; checking opens the identity-help modal for Retail Link, Product Label / Tag Photo and Product Photo. **Save & Continue** populates the same later fields; **I’ll Add This Later** does not create duplicate inputs.
+17. Explicit uncertainty creates a pre-publication **Unconfirmed** candidate state below Provisional. Unconfirmed is candidate-only and can never be a live Product status.
+18. While Unconfirmed is in active admin review, the member sees no warning/badge/abnormal state. Their Fit Report and Closet item work normally, and they may use the garment in Styles/Outfits. Hidden restriction: it is excluded from shared Product search, suggestions, discovery and unresolved barcode-match suggestions until admin resolution.
+19. Active Unconfirmed admin work is prioritized by useful requested identity evidence: Retail/Product webpage, Product Photo, Product Label / Tag Photo. More useful evidence raises the case; zero requested evidence may be impossible to solve and therefore remains low priority within this special queue.
+20. If admin cannot reasonably resolve the identity, move it to a separate **Needs More Evidence** bucket so impossible cases do not permanently occupy the active review queue.
+21. Only **Needs More Evidence** produces a member-facing notice, and that notice is private to the owner’s personal Closet view. It explains full Closet/Styles use remains available while the item stays absent from other members’ garment searches, and provides **Add More Information**.
+22. Add More Information reopens Retail/Product webpage, Product Photo and Product Label / Tag Photo evidence. Previously supplied evidence remains. New evidence automatically returns the candidate to active Needs Review and recalculates its priority.
+23. Other members never see the Unconfirmed/Needs More Evidence warning or admin-review state.
 
-The proposed new sex/body-specific measurement FAQ concept remains **PENDING OWNER COPY APPROVAL**. Do not publish wording until the exact text is reviewed.
+The proposed public sex/body-specific measurement FAQ wording remains **PENDING OWNER COPY APPROVAL** and is not part of PR #53 unless separately approved in a later batch.
+
+PR #53 verification status:
+- first PR run #672 passed canonical integrity, TypeScript and earlier focused tests but stopped on a stale homepage-order safeguard that still required THE LOOP before WHAT LIKESIZED DOES;
+- the product implementation was correct to the newer owner lock, so the safeguard was updated instead of reverting the homepage;
+- exact-head CI, migration replay, database behavior/privacy tests, production build, Supabase application, merge, Vercel readiness and live sanity sweep remain required before this batch is complete.
 
 # CANONICAL RECOVERY / LINEAGE STATUS
 The 2026-08-21 **CANONICAL RECOVERY** is complete. No recovery freeze is active. PR #43 promoted the verified recovery line to `main`. Normal development must still obey one-source/one-line/no-patch rules.
 
-A 2026-08-23 canonical audit found no alternate current-state schema file and no second live implementation on `main`, but it found stale post-PR-#51 documentation plus a large historical branch namespace. This reconciliation records the final status before branch cleanup.
+A 2026-08-23 canonical audit found no alternate current-state schema file and no second live implementation on `main`, but it found stale post-PR-#51 documentation plus a large historical branch namespace. PR #52 reconciled that status before the current repair batch.
 
 # BRANCH / PR CLEANUP LEDGER — AUDITED 2026-08-23
 ## Cleanup rule
@@ -79,22 +103,22 @@ The canonical recovery ledger already recovered/resequenced the Fit Match engine
 
 Previously deferred files are now resolved:
 - `app/closet/closet.module.css` — **SUPERSEDED**. It styles the old private/shared Closet row model. The owner-locked target is one unified public member Closet with owner-only controls layered on the same public content.
-- `app/closet/page.tsx` — **SUPERSEDED** as source. It explicitly renders legacy `visibility: private|shared` semantics and therefore cannot be reused as the future unified Closet implementation. The valid idea that bad fits remain useful evidence is already canonical elsewhere.
+- `app/closet/page.tsx` — **SUPERSEDED** as historical source. It explicitly rendered legacy `visibility: private|shared` semantics and therefore cannot override the future unified Closet target. Current repair work may edit the canonical current file without resurrecting that old ownership model.
 
-All remaining PR #36 product meaning is either recovered into `main`, superseded by later owner decisions, or represented as current roadmap work. PR #36 must be **closed, not merged**. Its branch may then be deleted.
+All remaining PR #36 product meaning is either recovered into `main`, superseded by later owner decisions, or represented as current roadmap work. PR #36 is historical and must not be merged.
 
 ## Phase 6.5 preserved branches — FULLY CLASSIFIED
 ### `phase-6-5-1-navigation-ia`
 - grouped navigation intent, persistent bell and useful IA decisions were recovered/adapted into later canonical source;
 - old saved-Fit-Twin/Style-Feed ownership semantics were superseded by Following + system-generated Fit Twin;
 - placeholder Help/Browse/LikeLocker code and branch-level canonical documents are obsolete/superseded;
-- safe to delete after this ledger is merged.
+- safe to delete after classification/recovery.
 
 ### `phase-6-5-2-browse-preview`
 - rejected synthetic preview implementation is **OBSOLETE/SUPERSEDED**;
 - durable Browse/Explore product decisions were recovered into current canonical docs/later implementation;
 - no preview source should be resurrected;
-- safe to delete after this ledger is merged.
+- safe to delete after classification/recovery.
 
 ## Retail decision branch — FULLY RECOVERED
 `owner-decision-retail-affiliate-plan` / closed unmerged PR #48 is docs-only historical work. Its valid owner decisions are already represented in current Product/Shop/retailer rules: zero/one/multiple retailer destinations, clean retailer labels, provider-independent canonical URLs, conditional cart/Shop actions, commission neutrality and the locked affiliate disclosure. Branch is **RECOVERED/SUPERSEDED AS A WHOLE** and safe to delete.
@@ -125,7 +149,8 @@ Safe to delete because the canonical result is already in `main`:
 - `canonical-recovery-2026-08-21` — PR #43 merged.
 - `agent/catalog-evidence-confidence` — PR #49 merged.
 - `agent/post-deploy-canonical-status` — PR #50 merged.
-- `agent/fit-report-review-purchase-context` — PR #51 merged; branch has no unique file difference from the merged source tree.
+- `agent/fit-report-review-purchase-context` — PR #51 merged.
+- the PR #52 reconciliation source is represented by merged `main` commit `05f496cbe6cb412681bcd2530f7748aca85db681`.
 
 ## Historical verification/checkpoint branches — OBSOLETE OR DUPLICATE
 These branches existed to trigger/check CI or preserve temporary verification markers. Their substantive product source is already in later `main`; marker-only/empty verification commits are not product source. Safe to delete:
@@ -183,7 +208,7 @@ These are not canonical and carry no current product authority. Their durable im
 - `phase-6-4-diagram-assets-check2`
 
 ## Cleanup target
-After this reconciliation is merged and PR #36 is closed, all historical non-`main` branches above are authorized for deletion. The temporary reconciliation branch itself is also disposable after merge. The desired repository branch state is one long-lived canonical branch: `main`.
+Historical non-`main` branches classified above have no current product authority. The desired repository branch state is one long-lived canonical branch: `main`; temporary active PR branches are disposable after verified merge.
 
 # OWNER-LOCKED LATEST PRODUCT DECISIONS
 
@@ -191,6 +216,8 @@ After this reconciliation is merged and PR #36 is closed, all historical non-`ma
 A direct Product search returns matching men's, women's and unisex Products without requiring the member to switch Fit Community or Department first.
 
 Fit Community affects people/wearer relevance. Product Department/taxonomy may narrow an explicit browse/filter context when intentionally selected, but it is not a hidden direct-search gate.
+
+Unresolved **Unconfirmed** and **Needs More Evidence** candidate identities are not live Products and therefore never appear in other members’ direct Product search, suggestions, browse/discovery or unresolved barcode-match suggestions before admin resolution.
 
 ## 2. Fit Community — Men / Women / Both
 - stored privately on Fit Profile;
@@ -201,14 +228,15 @@ Fit Community affects people/wearer relevance. Product Department/taxonomy may n
 
 A person remains in their saved Fit Community even when wearing/reviewing a garment sold in a different Department.
 
-Post-onboarding UI direction for the next repair batch: Fit Community is asked during initial setup, then managed only in Profile Settings; the later body-measurement destination is **My Measurements**.
+Post-onboarding behavior in PR #53: Fit Community is asked during initial setup, then managed only in Profile Settings; the later body-measurement destination is **My Measurements**.
 
 ## 3. Public measurement FAQ copy — PENDING OWNER APPROVAL
 The concept may later explain that more accurate measurements improve Match precision and that different body/garment contexts can make certain measurements especially informative. No exact sex/body-specific public wording is approved until owner review.
 
-## 4. Clean first-time items auto-post + four identity-trust tiers
-Routine unique new garments must not require admin approval. Publishing and trust strength are separate.
+## 4. Pre-publication Unconfirmed + live Product identity trust
+Publishing and trust strength are separate.
 
+- **Unconfirmed — pre-publication candidate only.** Explicit member uncertainty hard-gates automatic publication and requires admin identity resolution. It is below Provisional but can never be stored as a live Product status.
 - **Provisional — 1 distinct wearer.** A clean unique first member submission may immediately materialize/map a searchable Product.
 - **Corroborated — 2–4 distinct wearers.** Independent wearer evidence strengthens Product identity.
 - **Established — 5+ distinct wearers.** The five-wearer milestone remains the stronger community-evidence tier.
@@ -216,15 +244,29 @@ Routine unique new garments must not require admin approval. Publishing and trus
 
 Repeated reports by one member do not manufacture distinct-member identity trust. Wearer count does not silently verify unrelated Product facts such as material, description or Department.
 
-## 5. Blocking ambiguity stays reviewable
-Do not auto-post questionable Product truth when a real blocking signal already exists. Examples include multiple exact Products, identity conflict, credible duplicate evidence, barcode/identifier collision or retailer-link collision tied to another Product.
+Routine unique new garments without an uncertainty/blocking signal must not require admin approval. Unconfirmed is an explicit exception, not a new mandatory intake queue.
 
-Such cases remain unresolved/Needs Review. Clean candidates are normal auto-post; unresolved candidates are the exception.
+## 5. Blocking ambiguity / Unconfirmed stays reviewable
+Do not auto-post questionable Product truth when a real blocking signal already exists. Examples include explicit member identity uncertainty, multiple exact Products, identity conflict, credible duplicate evidence, barcode/identifier collision or retailer-link collision tied to another Product.
 
-## 6. Later reports do not automatically remove Products
+Explicitly uncertain items remain usable in the submitting member’s Closet and Styles/Outfits while hidden from the shared Product catalog. Admin may map them to an existing Product or create/map a new Product after review; a new Product created from an Unconfirmed candidate starts no stronger than Provisional unless separate authoritative evidence justifies a stronger state.
+
+If an Unconfirmed identity cannot reasonably be resolved, admin moves it to **Needs More Evidence**, outside the active review queue. That is a queue state, not Product truth and not publication.
+
+## 6. Needs More Evidence member follow-up — PRIVATE OWNER VIEW ONLY
+Active Unconfirmed review is intentionally invisible to the submitting member: no warning, badge or abnormal state.
+
+Only after admin moves an unresolved Unconfirmed candidate to **Needs More Evidence** does the member see a small disclaimer in their own personal Closet view. It must explain:
+- the garment remains fully usable in their Closet and Styles/Outfits;
+- it will not appear in garment searches for other members until LikeSized can verify its identity;
+- **Add More Information** lets them provide Retail/Product webpage, Product Photo and/or Product Label / Tag Photo evidence.
+
+Previously supplied evidence remains visible/preserved. New evidence automatically returns the candidate to active Needs Review and refreshes priority. This disclaimer/review status is never visible to other members.
+
+## 7. Later reports do not automatically remove Products
 An already-posted Product remains usable when later disagreement arrives. Preserve evidence and flag it. Do not automatically delete, unpublish or silently overwrite the Product because one later report conflicts.
 
-## 7. Every published Product has one Report feature
+## 8. Every published Product has one Report feature
 **Report this item** reasons:
 - Inappropriate content
 - Image doesn't match this Product
@@ -233,30 +275,33 @@ An already-posted Product remains usable when later disagreement arrives. Preser
 
 A member report creates review evidence; it does not grant direct edit authority.
 
-## 8. Four-tier trust controls initial flag urgency
+## 9. Trust/evidence controls flag urgency
+For published Products:
 - Provisional (1 wearer) flagged issue → **High**.
 - Corroborated (2–4 wearers) flagged issue → **High** because a genuine Product problem may still be undiscovered.
-- Established (5+ wearers) → one isolated ordinary disagreement starts **Low** because an individual entry error is more likely after substantial agreement; a second independent signal escalates **Medium**; three or more escalate **High**.
+- Established (5+ wearers) → one isolated ordinary disagreement starts **Low**; a second independent signal escalates **Medium**; three or more escalate **High**.
 - Verified → isolated ordinary report starts **Low**; repeated independent evidence may escalate Medium/High.
 - Strong barcode collisions, duplicate evidence or multiple identity conflicts may escalate regardless of tier.
 
+For explicit **Unconfirmed** intake review, requested identity evidence controls work ordering within that exception queue: Retail/Product webpage + Product Photo + Product Label/Tag Photo together are highest; partial evidence is intermediate; no requested evidence is lowest because it may be impossible to resolve. Moving to Needs More Evidence removes the case from the active queue until new member evidence arrives.
+
 Low priority means review later, never discard evidence.
 
-## 9. Internal review signals may find likely duplicates/reassignment
+## 10. Internal review signals may find likely duplicates/reassignment
 Conservative same-brand/type name similarity, barcodes, retailer links, reviewed aliases and other identity evidence may create review flags. They never authorize fuzzy automatic merge by themselves.
 
-## 10. Scanner confirmation image priority
+## 11. Scanner confirmation image priority
 For **Is this the item?**:
 1. Product/catalog photo first.
-2. Public/shared member Fit Photo second.
+2. Public/shared member Fit Photo second; Front preferred when front/back both exist.
 3. Default/placeholder if neither exists.
 
-A member Fit Photo used as scanner fallback is only identification display evidence; it never becomes canonical Product imagery or Product truth.
+A member Fit Photo used as scanner fallback is only identification display evidence; it never becomes canonical Product imagery or Product truth. Unconfirmed candidates are excluded from unresolved scanner suggestions until admin resolution.
 
 # NEW FIT REPORT — OWNER LOCKED
 Main form order:
 1. Brand / Make.
-2. Item / Model.
+2. Item / Style / Model.
 3. Overall Category.
 4. Specific Garment Type filtered by Category.
 5. optional Department.
@@ -265,11 +310,20 @@ Main form order:
 8. Size.
 9. Overall Fit Result.
 10. Condition.
-11. optional Fit Photo.
-12. optional Fit Notes.
+11. optional Front Fit Photo and optional Back Fit Photo.
+12. optional Fit Notes, up to 2,000 characters.
 13. optional Retail Link.
 
-Retail Link remains reusable Product/retailer evidence rather than purchase context.
+Item / Style / Model remains required for a new item. Do not provide a generic blank **No model** escape. Helper copy explains that the member should enter the specific item/style/model shown on the garment, tag, packaging or retailer listing; examples do not repeat the Brand field.
+
+For brand-new manual entry only, the member may check **I’m not completely sure this is the correct item/style name**. Checking opens the identity-help modal immediately with:
+- Retail Link;
+- Product Label / Tag Photo;
+- Product Photo.
+
+**Save & Continue** commits those values into the same underlying later form fields; it must never create duplicate evidence fields. **I’ll Add This Later** closes the modal while preserving the Unconfirmed signal.
+
+Retail Link remains reusable Product/retailer identity evidence rather than purchase context.
 
 ## Optional Additional Information
 Collapsed by default, exact order:
@@ -280,7 +334,9 @@ Collapsed by default, exact order:
 5. UPC / barcode when not already scanned.
 6. Manufacturer Style / Article Number.
 7. Material / Fabric Composition.
-8. Product Photo.
+8. Product Photo + Product Label / Tag Photo displayed together as separate evidence roles.
+
+Product Label / Tag Photo is identity-review evidence and never becomes Product-display imagery merely because it exists.
 
 Purchase context is one member's acquisition observation keyed to the Fit Report. It is not Product truth, does not inherit from another member, does not create retailer listings and does not affect Match/recommendation/Product identity trust.
 
@@ -299,18 +355,21 @@ Pajama set uses the printed whole-set size unless pieces are genuinely separate 
 # PRODUCT IDENTITY / BARCODE CONFIDENCE — OWNER LOCKED
 Product identity is centered on normalized Brand + Item + Garment Type. Size, Color, retailer link, legitimate alternate barcode, Fit Result, Material, Condition, Notes, purchase context and report-scoped physical questions do not independently define base Product identity.
 
+Unconfirmed does not change that base identity rule; it records that the member does not trust the Item / Style / Model text enough for automatic publication. The required typed text remains evidence while admin investigates.
+
 Barcode confidence remains separate:
 - first distinct member association to known Product = provisional Product→barcode evidence;
 - second distinct member with corresponding Product Fit Report evidence = corroborated relationship;
 - one Product may have multiple legitimate barcodes;
-- one barcode credibly supporting competing Products is flagged and never silently reassigned.
+- one barcode credibly supporting competing Products is flagged and never silently reassigned;
+- unresolved Unconfirmed/Needs More Evidence candidates are not offered as barcode matches to other members.
 
 Scanner recognition remains LikeSized-local and pauses on **Is this the item?** for a unique recognized identity. Physical questions stay in the Fit Report.
 
 # OWNER-LOCKED FIT REPORT EVIDENCE RULES
 For a resolved Product, one counted Fit Report represents Member + exact Product + normalized Size + objective physical-answer fingerprint + garment-relevant body state.
 
-Fit Result, Intended Fit, Condition, Color, Material, retailer URL, barcode, Department, Notes, Product Photo, Fit Photo and purchase context do not independently create another counted report.
+Fit Result, Intended Fit, Condition, Color, Material, retailer URL, barcode, Department, Notes, Product Photo, Product Label / Tag Photo, Fit Photo and purchase context do not independently create another counted report.
 
 Use `private.product_match_measurements(product_id)` as the shared Product relevance map. Established relevant measurement values split state at a symmetric 2% change threshold. Blank→filled can enrich; blanking a value does not erase established evidence. Original try-on Fit Profile version stays immutable.
 
@@ -363,6 +422,8 @@ Legacy `closet_items.visibility` and private/shared implementation are debt to r
 
 Original confirmed Fit Report evidence should not become an unrestricted rewrite surface. Closet audit must settle immutable fields, add-missing enrichment, preserved-history corrections and dated lifecycle observations. Kept / Returned / Exchanged and after-use shrink/stretch belong to later lifecycle observations rather than silent rewrites.
 
+The PR #53 Unconfirmed follow-up is a narrow owner-only exception layered onto the current Closet, not a second Closet system: active Unconfirmed review is invisible; Needs More Evidence shows only the private owner disclaimer and Add More Information evidence workflow. It must not expose admin state on another member’s view and must not block normal Closet/Style use.
+
 # FOLLOWING / FIT TWIN / NOTIFICATIONS — OWNER LOCKED
 - Following is member-controlled.
 - Fit Twin is **system-generated** from strong current-person Match among followed members.
@@ -387,50 +448,57 @@ SerpAPI is never ordinary member intake or Product authority. Admin research che
 A surface is not complete merely because code exists. Completion requires current/live inspection, owner interaction, corrections, production verification, owner confirmation and this master update.
 
 Current order:
-1. Homepage + FAQ — PR #51 routing/approved copy live; owner reviewing production; measurement-specific FAQ wording pending owner approval.
-2. Global header + member Menu + admin entry/navigation — owner review in progress; next repair batch includes **My Measurements** menu naming.
+1. Homepage + FAQ — PR #53 contains owner-approved selling-point copy/order and FAQ repair; verify production after merge. Measurement-specific sex/body FAQ wording remains pending owner approval.
+2. Global header + member Menu + admin entry/navigation — PR #53 contains **My Measurements** naming; broader audit remains.
 3. Auth — owner confirmed.
-4. Fit Profile / future My Measurements — PR #51 Fit Community + username/mobile corrections are live; owner review in progress; next repair batch moves post-onboarding Fit Community out of this surface.
-5. Profile Settings — Fit Community is live; next repair batch makes this the sole post-onboarding Fit Community editor and retains username management here.
-6. Notifications — unfinished audit.
-7. Unified Closet/member profile Closet — remove legacy private/shared meaning and settle mutation/lifecycle model.
-8. Update/Edit Fit Report only within settled Closet mutation model.
+4. Fit Profile / My Measurements — PR #53 keeps Fit Community in onboarding but removes post-onboarding editing from My Measurements; verify production.
+5. Profile Settings — PR #53 makes this the sole post-onboarding Fit Community editor and retains username management.
+6. Notifications — unfinished audit after Foundation Technical Audit.
+7. Unified Closet/member profile Closet — PR #53 adds the narrow private Needs More Evidence owner-only follow-up and front/back Fit Photo compatibility; full legacy private/shared cleanup and lifecycle model still remain for the ordered Closet audit.
+8. Update/Edit Fit Report only within settled Closet mutation model — PR #53 aligns later Fit Notes to 2,000 characters and preserves unresolved garment identity snapshots; full lifecycle/mutation audit remains.
 9. People My Size — Fit Community implemented; full audit remains.
 10. My Circle / Following / Fit Twin — Fit Community implemented; full audit remains.
-11. New Fit Report — PR #51 flow live and under owner review.
+11. New Fit Report — PR #53 contains the current approved repair, including Item / Style / Model uncertainty modal, front/back Fit Photos, Product/Label evidence separation and Unconfirmed creation.
 11A. **Garment-question variation classification audit** — classify every structured question as variation-defining / descriptive-only / cosmetic; Size and Color excluded absolutely. Do not implement Product Detail Exact Variation until this is settled.
-12. New Outfit.
-13. Outfits / Style Feed.
-14. Garment/Product detail — Report this item is live; full detail audit later must implement the locked Exact Variation / Body Match / Fit Result / lifecycle evidence presentation above.
+12. New Outfit — Unconfirmed/Needs More Evidence garments remain usable as owner garments; no special public review badge.
+13. Outfits / Style Feed — same rule: unresolved review state must not leak to viewers.
+14. Garment/Product detail — Report this item is live; full detail audit later must implement locked Exact Variation / Body Match / Fit Result / lifecycle evidence presentation above.
 15. Explore.
-16. Search + `/browse` compatibility — direct global Product search rule live/locked.
+16. Search + `/browse` compatibility — direct global Product search remains locked; PR #53 additionally enforces that unresolved Unconfirmed/Needs More Evidence candidates never leak into other members’ Product discovery or barcode suggestions.
 17. LikeLocker / Wish Locker.
-18. Full Admin Catalog + Moderation — priority/filter/queue UX still needs completion beyond backend scoring; future variation map must be inspectable without turning Size/Color into variation identity.
+18. Full Admin Catalog + Moderation — PR #53 adds evidence-prioritized active Unconfirmed review and a separate Needs More Evidence bucket; full all-Products/filter/merge/split tooling still remains for later ordered audit.
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
 
 # FOUNDATION TECHNICAL AUDIT — REQUIRED BEFORE ROADMAP RESUMES AFTER OWNER REPAIR BATCH
-After the owner finishes the current production review and the resulting repair batch is deployed/verified, conduct a dedicated technical audit before continuing normal roadmap implementation.
+After PR #53 is deployed and live-sanity-verified, conduct a dedicated technical audit before continuing normal roadmap implementation.
 
-Audit foundational systems touched by the recent changes:
+Audit foundational systems touched by recent changes:
 - Product identity boundaries and candidate→Product materialization;
+- Unconfirmed candidate-only gating and admin-reviewed transition to an existing Product or new Provisional Product;
+- Needs More Evidence parking/re-entry semantics and evidence-priority recalculation;
+- owner-only status projection and proof that review warnings cannot leak to other members;
 - Provisional / Corroborated / Established / Verified trust refresh;
 - Product reporting, conflict accumulation and priority recalculation;
-- Product-to-barcode confidence and scanner resolution/image fallback;
+- Product-to-barcode confidence and scanner resolution/image fallback, including Unconfirmed exclusion and Front Fit Photo preference;
+- Product Photo versus Product Label/Tag evidence privacy/storage/display boundaries;
 - Fit Report counted identity, objective fingerprints and body-state compatibility;
-- Exact Variant recommendation/evidence foundations versus the newly locked variation-definition rules;
+- front/back Fit Photo uniqueness and legacy-single-photo compatibility;
+- Exact Variant recommendation/evidence foundations versus the locked variation-definition rules;
 - garment taxonomy and attribute storage;
 - Fit Community filtering versus Match math and Product Department;
-- global direct Product search;
+- global direct Product search and candidate leakage boundaries;
 - purchase-context isolation;
 - migration replay, RLS, privacy and authorization boundaries;
-- any recommendation or admin behavior indirectly affected by PR #49/#51 foundation changes.
+- any recommendation or admin behavior indirectly affected by PR #49/#51/#53 foundation changes.
 
 This technical audit is not permission to jump ahead and build Product Detail. It is a foundation-integrity checkpoint.
 
 # ADMIN CATALOG / EVIDENCE TARGET
-Admin all-Products/candidate tooling must expose identity-trust tier, distinct confirming-member count, open flag count/reasons, priority, barcode confidence, retailer links, evidence history and resolution provenance.
+Admin all-Products/candidate tooling must expose identity-trust tier, distinct confirming-member count, open flag count/reasons, priority, barcode confidence, retailer links, Product Photo/Label evidence history and resolution provenance.
 
-Required views/filters include Needs Review, Provisional, Corroborated, Established, Verified, Has Conflicts and priority.
+Required views/filters ultimately include Needs Review, **Needs More Evidence**, Provisional, Corroborated, Established, Verified, Has Conflicts and priority.
+
+For Unconfirmed identity-review work, prioritize evidence-rich cases and allow unresolved impossible cases to be parked in Needs More Evidence. Member-added follow-up evidence must return the candidate to active review automatically.
 
 Admin workload is exception-driven. Do not recreate a mandatory review queue for every clean new garment.
 
@@ -447,21 +515,20 @@ Member-level Preferred Fit by garment type is not current V1 behavior. Legacy da
 # BETA / POST-BETA DIRECTION
 Before Beta finish ordered member-facing audits/reusable components, minimum exception-driven Admin Catalog/Moderation, useful starter catalog coverage, retailer/Shop behavior, denominator-aware purchase reporting, and mobile/desktop/browser/privacy/RLS/security/performance/spam/canonical-drift regression.
 
-During Beta watch direct Product hit rate/manual intake, Provisional→Corroborated→Established progression, Product-report/duplicate false-positive rates, barcode learning/conflicts, Fit Report friction, purchase response rates and People My Size usefulness.
+During Beta watch direct Product hit rate/manual intake, Unconfirmed resolution/Needs More Evidence re-entry rates, Provisional→Corroborated→Established progression, Product-report/duplicate false-positive rates, barcode learning/conflicts, Fit Report friction, purchase response rates and People My Size usefulness.
 
 Post-Beta: review Mobile App Options + AI Build Viability before approving a separate mobile codebase; expand Gift/public/email wishlist behavior; refine affiliate optimization without changing shopper relevance; expand admin research/catalog tooling where useful.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Owner is reviewing the live PR #51 batch and will supply the complete next repair list before another deployment.
-- Current next repair list already includes category-helper removal, My Measurements naming and post-onboarding Fit Community relocation to Profile Settings.
-- Exact measurement FAQ wording remains pending owner review.
-- Admin backend flag priority exists; full all-Products priority/filter presentation remains for Admin audit.
+- PR #53 is the frozen current repair batch and is not yet production-complete.
+- Exact public sex/body-specific measurement FAQ wording remains pending owner review and is not part of the frozen batch.
+- PR #53 adds practical Unconfirmed/Needs More Evidence queue behavior, but full Admin all-Products priority/filter/merge/split presentation remains for the ordered Admin audit.
 - Purchase-context aggregate/admin reporting UI remains open.
-- Unified public Closet legacy visibility cleanup remains open.
+- Unified public Closet legacy visibility cleanup remains open beyond the narrow owner-only Needs More Evidence follow-up.
 - Exact post-submit mutation/lifecycle schema remains open.
-- Product merge/split, richer alias management, spam handling, Product-photo workflow, field lock/reopen, external barcode-provider evaluation, SerpAPI admin UX, starter-catalog enrichment and browser regression remain open where previously scoped.
+- Product merge/split, richer alias management, spam handling, broader Product-photo moderation, field lock/reopen, external barcode-provider evaluation, SerpAPI admin UX, starter-catalog enrichment and browser regression remain open where previously scoped.
 - Variation-definition audit (#11A) must be completed before Product Detail Exact Variation UI uses controlled questions as tracked variations.
-- Branch cleanup is authorized by the classification ledger above; the desired long-lived branch state is `main` only.
+- Branch cleanup is authorized by the classification ledger above; the desired long-lived branch state is `main` only after active PR work is merged and verified.
 - `main` is currently not branch-protected. This is not a current repository-rule violation, but enabling required PR + CI protection is a separate owner decision and must not be changed silently.
 
 # CONDENSED DEPLOYMENT / RECOVERY LEDGER
@@ -473,14 +540,16 @@ Post-Beta: review Mobile App Options + AI Build Viability before approving a sep
 - PR #49 generalized catalog identity confidence; production migration `20260823054933` applied.
 - PR #50 recorded that production state at `9431366660f813bd2dda68ee5db9c6f4fdc5ddfa`.
 - PR #51 merged at `93d9414a29f81b5732c42bf277cc085db5e93998`; exact-head CI #668 passed; four ordered migrations were applied in production; Vercel `dpl_AXBaKS6TRWxUv81kKFYULYT22AFu` is READY on `likesized.com`.
-- 2026-08-23 canonical audit classified all historical branch families and completed PR #36 salvage disposition; destructive cleanup is authorized after this ledger is merged.
+- PR #52 merged documentation/status reconciliation to `main` at `05f496cbe6cb412681bcd2530f7748aca85db681`.
+- Draft PR #53 is the frozen current repair batch. Initial CI #672 exposed only a stale homepage-order safeguard before later tests/build/migration replay could run; safeguard was updated to the newer owner-locked order. PR #53 is **NOT DEPLOYED** until exact-head CI, DB rollout, merge, Vercel READY and production sanity are recorded.
 
 # EXACT NEXT ACTION — CURRENT
-1. Complete this **documentation/status/branch-ledger reconciliation only**; do not add product behavior.
-2. Run exact-head LikeSized CI on the reconciliation branch.
-3. After green CI, merge this owner-authorized reconciliation to `main` and verify the resulting Vercel docs-only deployment is READY.
-4. Close PR #36 **without merge**.
-5. Delete historical non-`main` branches classified above, including the merged reconciliation branch when possible; verify no stale open PR remains.
-6. Owner continues live production review and sends the complete repair list.
-7. Implement that repair list as the next isolated batch; freeze it when the owner says push/deploy.
-8. After owner review/repairs are complete, conduct the Foundation Technical Audit above before resuming Notifications or later roadmap work.
+1. Finish canonical reconciliation for PR #53 in this master, `docs/V1_PRODUCT_SPEC.md` and `supabase/schema_contract.md`; do not add post-freeze product scope.
+2. Run exact-head LikeSized CI until canonical integrity, TypeScript, all focused safeguards, production build, fresh migration replay and database behavior/privacy tests are green.
+3. Review PR #53 diff to confirm only the frozen owner-approved batch is present.
+4. Apply the new PR #53 Supabase migrations to production in backward-compatible database-first order and verify the hosted schema/functions/storage/RLS state.
+5. Mark PR #53 ready and merge only the exact tested head to `main`.
+6. Verify the corresponding Vercel production deployment is READY on `likesized.com`.
+7. Sanity-check homepage/FAQ, onboarding/My Measurements/Profile Settings, manual/known/new/Unconfirmed Fit Report paths, scanner, front/back Fit Photos, Product/Label photos, 2,000-character Fit Notes, active Unconfirmed invisibility, admin evidence ordering, Needs More Evidence parking, private owner disclaimer, evidence re-entry, search/barcode non-leakage, Closet/Styles use, moderation and major navigation/mobile paths.
+8. Record exact production commit, CI run, hosted migration versions, Vercel deployment and sanity results here; mark the repair batch COMPLETE/DEPLOYED/SANITY CHECKED.
+9. Conduct the Foundation Technical Audit above before resuming the ordered roadmap.

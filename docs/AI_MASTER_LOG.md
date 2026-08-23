@@ -12,38 +12,56 @@ Canonical ownership:
 
 GitHub `likesized/Likesized` is the source of truth. `main` is the single production line. Current files describe current truth; Git history preserves superseded attempts. Never create patch/fixed/v2/temp/backup implementations, parallel product systems or a second master plan.
 
+## Deployment-batch discipline — OWNER LOCKED 2026-08-23
+Once the owner says **push**, **deploy**, or otherwise authorizes a specific accumulated change list for production, that deployment batch is frozen. Do not add later requests into that batch. Any request made after the deployment authorization starts the next change list and waits for a separate deployment instruction.
+
+This rule exists to keep production batches small enough for owner review and to prevent unrelated late changes from breaking already-approved work.
+
 # CURRENT STATUS — 2026-08-23
 
 ## Canonical production line
 - `main` is the one production implementation line and is coupled to Vercel production.
-- Applied database migrations are immutable; corrections use later additive migrations.
+- Applied database migrations are immutable; corrections use later ordered migrations.
 - No paid Supabase branches.
 - PR #49 generalized community catalog confidence and is live production history.
 - PR #50 reconciled that production status to `main` commit `9431366660f813bd2dda68ee5db9c6f4fdc5ddfa`.
-- PR #51 / `agent/fit-report-review-purchase-context` is the one active implementation line.
+- PR #51 / `agent/fit-report-review-purchase-context` is the one active implementation/deployment line.
 
 ## Catalog-confidence production checkpoint — LIVE BEFORE PR #51
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-Latest confirmed catalog-confidence production record is `20260823054933 generalize_catalog_identity_confidence`, sourced from local canonical `supabase/migrations/20260823040000_generalize_catalog_identity_confidence.sql`. That production behavior still uses the older candidate-first confidence implementation until a later authorized migration is applied.
+Latest confirmed catalog-confidence production record before this batch is `20260823054933 generalize_catalog_identity_confidence`, sourced from local canonical `supabase/migrations/20260823040000_generalize_catalog_identity_confidence.sql`.
 
-The known Maidenform / Heirloom test artifact is preserved:
-- candidate `de34b6dd-47c9-4795-af77-5117e4f8b554`;
+Known production test evidence is preserved:
+- Maidenform / Heirloom / Bra candidate `de34b6dd-47c9-4795-af77-5117e4f8b554`;
 - UPC `196988323504`;
-- two-account production testing already proved distinct-member corroboration worked under the currently deployed model.
+- two distinct members already proved corroboration under the currently deployed candidate-first model;
+- a shared Fit Photo exists for this item and must remain preserved through backfill/materialization.
 
-Do not delete or manufacture evidence around this artifact. The new PR #51 backfill should preserve it and materialize it only according to the new canonical rules if/when deployment is authorized.
+# ACTIVE PR #51 — CURRENT FROZEN DEPLOYMENT BATCH, PRODUCTION AUTHORIZED
+The owner explicitly authorized getting this entire current batch **live and verified**. No later unrelated request may be added before deployment completes.
 
-# ACTIVE PR #51 — IMPLEMENTED BRANCH, NOT YET PRODUCTION
-PR #51 currently combines the owner-approved New Fit Report refinement, Sleepwear, purchase context, Fit Community and the latest exception-driven Product catalog decision.
-
-Pending ordered migrations on this branch:
+Pending ordered migrations:
 - `20260823130000_add_sleepwear_lingerie_category.sql`
 - `20260823130100_purchase_context_and_sleepwear_taxonomy.sql`
 - `20260823140000_add_fit_community_preference.sql`
 - `20260823150000_auto_post_provisional_products_and_item_reporting.sql`
 
-The owner had previously authorized the earlier New Fit Report/Sleepwear/Fit Community line for production. The later change that makes a first clean item auto-post as a Provisional Product materially changes catalog trust/promotion behavior. Treat that expanded scope as branch-only until full exact-head verification is green and the owner explicitly authorizes this expanded production deployment.
+Current frozen batch includes:
+- category-first New Fit Report intake;
+- Sleepwear & Lingerie taxonomy;
+- optional purchase/acquisition context + persistence;
+- final **Does this look right?** confirmation;
+- username-format guidance and compact mobile Fit Profile update hero;
+- Fit Community Men / Women / Both in onboarding/settings/social relevance;
+- global direct Product search independent of Fit Community/Department;
+- clean first-item Product auto-post with four identity-trust tiers;
+- Product **Report this item** and trust-aware flag urgency;
+- conservative possible-duplicate review signals;
+- scanner confirmation image priority Product/catalog photo → shared Fit Photo → placeholder;
+- signed-in `/` → My Circle and previously approved FAQ/product-differentiation copy.
+
+The proposed new sex/body-specific measurement FAQ wording is **not approved** and is intentionally excluded from this deployment. It may be revisited only after the owner reviews exact copy.
 
 # CANONICAL RECOVERY / LINEAGE STATUS
 The 2026-08-21 **CANONICAL RECOVERY** is complete. No recovery freeze is active. Normal development must still obey the one-source/one-line/no-patch rules.
@@ -51,7 +69,7 @@ The 2026-08-21 **CANONICAL RECOVERY** is complete. No recovery freeze is active.
 # OWNER-LOCKED LATEST PRODUCT DECISIONS
 
 ## 1. Direct Product search is global
-A direct Product search must return matching men's, women's and unisex Products without requiring the member to switch Fit Community or Department first.
+A direct Product search returns matching men's, women's and unisex Products without requiring the member to switch Fit Community or Department first.
 
 Fit Community affects people/wearer relevance. Product Department/taxonomy may narrow an explicit browse/filter context when intentionally selected, but it is not a hidden direct-search gate.
 
@@ -62,44 +80,31 @@ Fit Community affects people/wearer relevance. Product Department/taxonomy may n
 - never changes body Match %;
 - belongs to the person/wearer, not the garment Department.
 
-A woman wearing/reporting men's jeans remains Women-community evidence; a man wearing/reporting a women's item remains Men-community evidence if that is his saved community.
+A person remains in their saved Fit Community even when wearing/reviewing a garment sold in a different Department.
 
-## 3. Men/women measurement FAQ guidance
-Public FAQ explains LikeSized works for men and women and that every accurate measurement can improve precision. It may note that some measurements are often especially useful depending on body/garment, while making clear these are examples rather than rigid sex rules.
+## 3. Public measurement FAQ copy — PENDING OWNER APPROVAL
+The concept may later explain that more accurate measurements improve Match precision and that garment relevance determines which measurements matter. No new sex/body-specific measurement examples or wording are approved for the current production batch.
 
-Current examples:
-- many men's fits: chest, shoulders, sleeve length, upper arm/bicep, waist, rise, inseam;
-- many women's fits: full bust, high bust, underbust, waist, hip/seat, torso length and related shaping measurements.
+## 4. Clean first-time items auto-post + four identity-trust tiers
+Routine unique new garments must not require admin approval. Publishing and trust strength are separate.
 
-Exact measurements remain private and actual Match logic stays garment-relevant.
+- **Provisional — 1 distinct wearer.** A clean unique first member submission may immediately materialize/map a searchable Product.
+- **Corroborated — 2–4 distinct wearers.** Independent wearer evidence strengthens Product identity.
+- **Established — 5+ distinct wearers.** The five-wearer milestone remains the stronger community-evidence tier.
+- **Verified — authoritative/admin-reviewed only.** Never achieved merely from community count.
 
-## 4. Clean first-time items auto-post Provisional — NEW LOCK
-Routine unique new garments must not require admin approval.
-
-Current trust model:
-- **1 clean distinct member submission → system may immediately materialize/map a searchable canonical Provisional Product.**
-- **2 distinct member Product Fit Reports → Provisional may strengthen to Corroborated.**
-- **Verified remains authoritative/admin-reviewed only.**
-
-This supersedes the former current rule that held ordinary clean candidates out of the Product catalog until five members confirmed them.
-
-Members still do not directly write canonical Product truth. Auto-posting occurs through the controlled audited candidate→Product mapping boundary.
+Repeated reports by one member do not manufacture distinct-member identity trust. Wearer count does not silently verify unrelated Product facts such as material, description or Department.
 
 ## 5. Blocking ambiguity stays reviewable
-Do not auto-post questionable Product truth when a real blocking signal already exists. Examples:
-- multiple exact canonical Products share the normalized identity;
-- identity conflict;
-- credible possible duplicate;
-- identifier/barcode collision;
-- retailer-link collision tied to another canonical Product.
+Do not auto-post questionable Product truth when a real blocking signal already exists. Examples include multiple exact Products, identity conflict, credible duplicate evidence, barcode/identifier collision or retailer-link collision tied to another Product.
 
-Such cases remain unresolved/Needs Review. Clean candidates are the normal auto-post path; unresolved candidates are the exception.
+Such cases remain unresolved/Needs Review. Clean candidates are normal auto-post; unresolved candidates are the exception.
 
 ## 6. Later reports do not automatically remove Products
 An already-posted Product remains usable when later disagreement arrives. Preserve evidence and flag it. Do not automatically delete, unpublish or silently overwrite the Product because one later report conflicts.
 
 ## 7. Every published Product has one Report feature
-**Report this item** is available from Product detail. Initial reasons:
+**Report this item** reasons:
 - Inappropriate content
 - Image doesn't match this Product
 - Incorrect Product information
@@ -107,17 +112,25 @@ An already-posted Product remains usable when later disagreement arrives. Preser
 
 A member report creates review evidence; it does not grant direct edit authority.
 
-## 8. Trust-aware review priority
-Flag priority derives from Product/candidate trust plus independent evidence:
-- Provisional / uncorroborated flagged target → **High**;
-- Corroborated flagged target → normally **Medium**;
-- Verified target with one isolated ordinary member report → normally **Low**;
-- repeated independent reporters/conflicts, competing barcode/Product claims or stronger duplicate evidence escalate priority.
+## 8. Four-tier trust controls initial flag urgency
+- Provisional (1 wearer) flagged issue → **High**.
+- Corroborated (2–4 wearers) flagged issue → **High** because a genuine Product problem may still be undiscovered.
+- Established (5+ wearers) → one isolated ordinary disagreement starts **Low** because an individual entry error is more likely after substantial agreement; a second independent signal escalates **Medium**; three or more escalate **High**.
+- Verified → isolated ordinary report starts **Low**; repeated independent evidence may escalate Medium/High.
+- Strong barcode collisions, duplicate evidence or multiple identity conflicts may escalate regardless of tier.
 
-Low means safe to review later, not delete evidence.
+Low priority means review later, never discard evidence.
 
-## 9. Internal review signals may find likely reassignment/duplicates
-The system may generate conservative review flags from similar same-brand/type names, barcodes, retailer links, aliases and other identity evidence. These signals help find potential mistakes; they never authorize a fuzzy automatic merge by themselves.
+## 9. Internal review signals may find likely duplicates/reassignment
+Conservative same-brand/type name similarity, barcodes, retailer links, reviewed aliases and other identity evidence may create review flags. They never authorize fuzzy automatic merge by themselves.
+
+## 10. Scanner confirmation image priority
+For **Is this the item?**:
+1. Product/catalog photo first.
+2. Public/shared member Fit Photo second.
+3. Default/placeholder if neither exists.
+
+A member Fit Photo used as scanner fallback is only identification display evidence; it never becomes canonical Product imagery or Product truth.
 
 # NEW FIT REPORT — OWNER LOCKED
 Main form order:
@@ -148,7 +161,7 @@ Collapsed by default, exact order:
 7. Material / Fabric Composition.
 8. Product Photo.
 
-Purchase context is one member's acquisition observation keyed to the Fit Report. It is not Product truth, does not inherit from another member, does not create retailer listings and does not affect Match/recommendation/Product confidence.
+Purchase context is one member's acquisition observation keyed to the Fit Report. It is not Product truth, does not inherit from another member, does not create retailer listings and does not affect Match/recommendation/Product identity trust.
 
 ## Final confirmation
 Before any write, valid form data opens **Does this look right?**. It reviews main Fit Report details only and intentionally excludes Optional Additional Information.
@@ -156,26 +169,14 @@ Before any write, valid form data opens **Does this look right?**. It reviews ma
 Actions: **Go Back & Edit** and **Confirm Fit Report**.
 
 # SLEEPWEAR & LINGERIE — OWNER LOCKED
-Top-level category **Sleepwear & Lingerie** contains:
-- Pajama pants
-- Pajama shorts
-- Pajama set
-- Nightgown
-- Robe
-- Chemise
-- Babydoll
-- Teddy
-- Corset & bustier
-- Costume lingerie
+Top-level category **Sleepwear & Lingerie** contains Pajama pants, Pajama shorts, Pajama set, Nightgown, Robe, Chemise, Babydoll, Teddy, Corset & bustier and Costume lingerie.
 
 Sleep Shirt is intentionally absent. Sweatpants remains Bottoms. Bra, Bralette, Sports Bra, Underwear and Shapewear remain Intimates. Each controlled Type uses no more than four questions and automatic final Not sure.
 
-Pajama set uses the printed whole-set size unless pieces are genuinely separate Products. Costume lingerie uses Garment form, Top style, Bottom style and Structure / Support; Closure is intentionally omitted in favor of the more fit-relevant Structure / Support question.
+Pajama set uses the printed whole-set size unless pieces are genuinely separate Products. Costume lingerie uses Garment form, Top style, Bottom style and Structure / Support; Closure is intentionally omitted.
 
 # PRODUCT IDENTITY / BARCODE CONFIDENCE — OWNER LOCKED
-Product identity confidence is intake-method independent and centered on normalized Brand + Item + Garment Type.
-
-Size, Color, retailer link, legitimate alternate barcode, Fit Result, Material, Condition, Notes, purchase context and report-scoped physical questions do not independently define base Product identity.
+Product identity is centered on normalized Brand + Item + Garment Type. Size, Color, retailer link, legitimate alternate barcode, Fit Result, Material, Condition, Notes, purchase context and report-scoped physical questions do not independently define base Product identity.
 
 Barcode confidence remains separate:
 - first distinct member association to known Product = provisional Product→barcode evidence;
@@ -183,7 +184,7 @@ Barcode confidence remains separate:
 - one Product may have multiple legitimate barcodes;
 - one barcode credibly supporting competing Products is flagged and never silently reassigned.
 
-Scanner recognition remains LikeSized-local and pauses on **Is this the item?** for a unique recognized identity. Confirmation card shows only safe photo if available, Brand, Item, Category/Type and Yes/No actions. Physical questions stay in the Fit Report.
+Scanner recognition remains LikeSized-local and pauses on **Is this the item?** for a unique recognized identity. Physical questions stay in the Fit Report.
 
 # OWNER-LOCKED FIT REPORT EVIDENCE RULES
 For a resolved Product, one counted Fit Report represents Member + exact Product + normalized Size + objective physical-answer fingerprint + garment-relevant body state.
@@ -193,6 +194,11 @@ Fit Result, Intended Fit, Condition, Color, Material, retailer URL, barcode, Dep
 Use `private.product_match_measurements(product_id)` as the shared Product relevance map. Established relevant measurement values split state at a symmetric 2% change threshold. Blank→filled can enrich; blanking a value does not erase established evidence. Original try-on Fit Profile version stays immutable.
 
 There is **no current V1 1–5-star Fit Rating UI**. Fit Result remains Too Small / Snug / Just Right / Relaxed / Too Big.
+
+# PRODUCT DETAIL FIT-EVIDENCE QUESTION — ROADMAP LOCK FOR ITEM DETAIL AUDIT
+Do not jump ahead of audit order. When the Garment/Product Detail audit is reached, resolve how high body Match and poor physical Fit Result are presented separately, and how later lifecycle observations such as shrinkage/stretching affect recommendations without rewriting the original Fit Report.
+
+The intended principle is that Match % says how similar the wearer body was; Fit Result and later lifecycle evidence determine whether that size/garment outcome was actually good. Full design belongs to the Product Detail audit after Closet lifecycle storage is settled.
 
 # CLOSET / POST-SUBMIT MUTATION — OWNER DIRECTION
 Owner target is one public member Closet, not separate My Closet and Shared Closet systems. Self view adds owner-only controls to the same public garment/Fit Report content. Raw body data remains private.
@@ -225,32 +231,32 @@ SerpAPI is never ordinary member intake or Product authority. Admin research che
 A surface is not complete merely because code exists. Completion requires current/live inspection, owner interaction, corrections, production verification, owner confirmation and this master update.
 
 Current order:
-1. Homepage + FAQ — PR #51 includes approved FAQ/routing changes; latest men/women FAQ addition still needs production/live owner review if deployed.
+1. Homepage + FAQ — routing/approved copy in current batch; new measurement FAQ wording withheld pending owner approval.
 2. Global header + member Menu + admin entry/navigation — needs final re-confirmation.
 3. Auth — owner confirmed.
-4. Fit Profile — previously owner confirmed; PR #51 Fit Community addition requires owner review when live.
-5. Profile Settings — previously owner confirmed; Fit Community addition requires owner review when live.
+4. Fit Profile — previously owner confirmed; current batch adds Fit Community + username/mobile corrections, requiring live review.
+5. Profile Settings — Fit Community addition requires live review.
 6. Notifications — unfinished audit.
 7. Unified Closet/member profile Closet — remove legacy private/shared meaning and settle mutation/lifecycle model.
 8. Update/Edit Fit Report only within settled Closet mutation model.
-9. People My Size — Fit Community addition branch-implemented; full audit remains.
-10. My Circle / Following / Fit Twin — Fit Community branch-implemented; full page audit remains.
-11. New Fit Report — active PR #51 line, branch verification/deployment pending.
+9. People My Size — Fit Community implemented; full audit remains.
+10. My Circle / Following / Fit Twin — Fit Community implemented; full audit remains.
+11. New Fit Report — current frozen deployment batch; live owner interaction pending deployment.
 12. New Outfit.
 13. Outfits / Style Feed.
-14. Garment/Product detail — now includes Report this item on PR #51; full detail audit remains.
+14. Garment/Product detail — current batch adds Report this item; full detail audit later must handle poor-fit/lifecycle evidence presentation.
 15. Explore.
 16. Search + `/browse` compatibility — direct global Product search rule locked.
 17. LikeLocker / Wish Locker.
-18. Full Admin Catalog + Moderation — priority-filter/queue UX still needs completion beyond backend trust scoring.
+18. Full Admin Catalog + Moderation — priority/filter/queue UX still needs completion beyond backend scoring.
 19. Final mobile/desktop/nav/privacy/copy regression.
 
-Dependency after PR #51 verification: finish Notifications, then unified Closet/Update before People My Size and later social/product surfaces reuse those components.
+Dependency after current deployment/live review: finish Notifications, then unified Closet/Update before People My Size and later social/product surfaces reuse those components.
 
 # ADMIN CATALOG / EVIDENCE TARGET
-Admin all-Products/candidate tooling must expose trust status, distinct confirming-member count, open flag count/reasons, priority, barcode confidence, retailer links, evidence history and resolution provenance.
+Admin all-Products/candidate tooling must expose identity-trust tier, distinct confirming-member count, open flag count/reasons, priority, barcode confidence, retailer links, evidence history and resolution provenance.
 
-Required views/filters include Needs Review, Provisional, Corroborated, Verified, Has Conflicts and priority.
+Required views/filters include Needs Review, Provisional, Corroborated, Established, Verified, Has Conflicts and priority.
 
 Admin workload is exception-driven. Do not recreate a mandatory review queue for every clean new garment.
 
@@ -265,24 +271,15 @@ Locked disclosure when required: **“LikeSized may earn a commission from purch
 Member-level Preferred Fit by garment type is not current V1 behavior. Legacy database structures may remain inert. Per-report Intended Fit is separate metadata.
 
 # BETA / POST-BETA DIRECTION
-Before Beta:
-- finish ordered member-facing audits and reusable components;
-- finish minimum exception-driven Admin Catalog/Moderation tools;
-- expand/review starter catalog enough for useful Product hit rate;
-- confirm retailer/Shop behavior;
-- build denominator-aware purchase reporting before relying on it for decisions;
-- run mobile/desktop/browser, privacy/RLS/security, performance, spam/moderation and canonical-drift regression;
-- use controlled Beta behavior to tune catalog, Match, social and purchase priorities.
+Before Beta finish ordered member-facing audits/reusable components, minimum exception-driven Admin Catalog/Moderation, useful starter catalog coverage, retailer/Shop behavior, denominator-aware purchase reporting, and mobile/desktop/browser/privacy/RLS/security/performance/spam/canonical-drift regression.
 
-During Beta watch direct Product hit rate/manual intake, Provisional→Corroborated progression, Product-report/duplicate false-positive rates, barcode learning/conflicts, Fit Report friction, purchase response rates and People My Size usefulness.
-
-Early post-Beta review mobile app options and AI build viability before creating a second app codebase. Prefer reuse of Supabase/backend/domain logic and one canonical architecture.
+During Beta watch direct Product hit rate/manual intake, Provisional→Corroborated→Established progression, Product-report/duplicate false-positive rates, barcode learning/conflicts, Fit Report friction, purchase response rates and People My Size usefulness.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- PR #51 exact-head verification is not complete yet.
-- New migration `20260823150000_auto_post_provisional_products_and_item_reporting.sql` is not production-applied.
-- Existing production still displays old pending-candidate behavior for clean unique items until the new migration is deliberately deployed.
-- Admin backend flag priority exists on PR #51; full all-Products priority/filter presentation remains to build in the Admin audit.
+- PR #51 exact-head verification must be green before production apply/merge.
+- Four PR #51 migrations are not production-applied as of this pre-deployment status.
+- Existing production still displays old pending-candidate behavior for clean unique items until migration `20260823150000...` is deployed.
+- Admin backend flag priority exists in this batch; full all-Products priority/filter presentation remains for Admin audit.
 - Purchase-context aggregate/admin reporting UI remains open.
 - Unified public Closet legacy visibility cleanup remains open.
 - Exact post-submit mutation/lifecycle schema remains open.
@@ -292,15 +289,14 @@ Early post-Beta review mobile app options and AI build viability before creating
 - 2026-08-21 CANONICAL RECOVERY established one clean source-of-truth line.
 - PR #49 generalized catalog identity confidence and deployed as `0b569e4a25b7f75a313e57ca94d79286ec3df1df`; production migration `20260823054933` applied; Vercel deployment `dpl_AbdpdRMyvdJ3c7C1sKeDe3qbQK66` was READY.
 - PR #50 reconciled that production status at `9431366660f813bd2dda68ee5db9c6f4fdc5ddfa`.
-- PR #51 was created from that clean line and now includes New Fit Report category-first intake, Sleepwear, purchase persistence, final review, My Circle routing, Fit Community, inclusive FAQ guidance, global-search safeguard, first-clean-item Provisional auto-post, Product reporting and trust-aware review priority.
-- PR #51 remains unmerged/unapplied as of this status entry.
+- PR #51 is the current frozen owner-authorized deployment batch described above and remains unmerged/unapplied until exact-head verification passes.
 
 # EXACT NEXT ACTION — CURRENT
-1. Finish exact-head PR #51 CI after the latest catalog-trust changes: canonical check, TypeScript, all focused app safeguards, build, fresh migration replay and full pgTAP suite.
+1. Finish exact-head PR #51 CI: canonical check, TypeScript, all focused app safeguards, build, fresh migration replay and full pgTAP suite.
 2. Fix only canonical owning sources if CI finds an error; do not patch around tests.
-3. Confirm all current docs/tests contain the new 1-member Provisional / 2-member Corroborated model and no competing five-member current rule.
-4. Update PR #51 metadata to list all four pending migrations and latest Product-report/trust behavior.
-5. Confirm branch remains mergeable and 0 behind `main`.
-6. Stop before production merge/migration apply unless the owner explicitly authorizes deploying this materially expanded first-item auto-post behavior.
-7. If authorized later: merge PR #51, apply migrations in order, verify Supabase state/backfill, wait for Vercel READY, smoke direct search/FAQ/Product report/New Fit Report and read-only verify Maidenform/Heirloom preserved/materialized correctly.
-8. Record observed production IDs/timestamps in this master/schema after actual deployment.
+3. Confirm PR #51 remains mergeable and 0 behind `main`.
+4. Apply the four authorized migrations in canonical order, verify Supabase/backfill and preserve Maidenform/Heirloom evidence.
+5. Mark PR ready and merge the exact green head to `main`.
+6. Wait for Vercel production READY and verify likesized.com plus direct search, scanner fallback, New Fit Report/purchase context, Fit Community, Product reporting and no routine Pending Review for clean items.
+7. Record actual migration/deployment IDs and smoke results in this master/schema as the final status reconciliation for this frozen batch.
+8. Only after this batch is live/verified begin the owner's next requested change list.

@@ -78,7 +78,7 @@ When exact Product exists:
 ## 5.2 Unknown Product
 When Product is unresolved:
 - use short manual fallback;
-- persist Closet item/Fit Report immediately;
+- persist Closet item/Fit Report immediately after final confirmation;
 - preserve best-known identity/enrichment evidence;
 - create/associate pending catalog candidate;
 - keep member garment usable while review is pending;
@@ -109,33 +109,73 @@ Barcode confidence is separate from Product confidence:
 
 Product confidence itself does **not** require a barcode. Manual, barcode-assisted, and mixed submissions use the same distinct-member Product thresholds in Section 4.
 
-# 6. New Fit Report information structure — LOCKED
+# 6. New Fit Report information structure — OWNER LOCKED
 
 Main Fit Report flow, in order:
 1. Brand / Make — required.
 2. Item / Model — required.
-3. Garment Type — required; Category derives automatically.
-4. Department — optional, immediately after Garment Type.
-5. zero-to-four Type-specific controlled physical questions — each begins blank; **Not sure** is last and records no positive physical claim.
-6. Color family — required.
-7. Size — required structured size.
-8. Overall Fit Result — Too Small / Snug / Just Right / Relaxed / Too Big.
-9. Condition — New / Used / Altered.
-10. Fit Photo — optional.
-11. Fit notes — optional.
-12. Retail link — optional, immediately below Fit Notes.
+3. **Overall category** — required: Tops, Bottoms, Dresses & One-Pieces, Outerwear, Swimwear, Intimates, or Shoes.
+4. **Specific garment type** — required; only types belonging to the selected Overall category are offered.
+5. Department — optional, immediately after Specific garment type.
+6. zero-to-four Type-specific controlled physical questions — each begins blank; **Not sure** is last and records no positive physical claim.
+7. Color family — required.
+8. Size — required structured size.
+9. Overall Fit Result — Too Small / Snug / Just Right / Relaxed / Too Big.
+10. Condition — New / Used / Altered.
+11. Fit Photo — optional.
+12. Fit notes — optional.
+13. Retail link — optional, immediately below Fit Notes.
 
 Then show a clearly separated, collapsed-by-default **Optional Additional Information** section. When expanded, it introduces the fields with **Help us learn more about this item** and explains that extra details help LikeSized build a better garment listing.
 
-The collapsed optional area contains:
-- UPC / barcode when not already scanned;
-- Manufacturer Style / Article Number;
-- Material / Fabric Composition;
-- Product Photo.
+The collapsed optional area contains, in order:
+1. **Purchased From** — free-form, with typeahead suggestions from retailers already known to LikeSized.
+2. **Price Paid** — numeric-only with normal currency decimals.
+3. **Purchase Method** — controlled `Online` / `In Store` / `Received as a Gift`.
+4. **Approx. Purchase Date** — fixed Month + Year selections, not free text.
+5. UPC / barcode when not already scanned.
+6. Manufacturer Style / Article Number.
+7. Material / Fabric Composition.
+8. Product Photo.
 
-If a barcode was already captured by the scanner, retain it as evidence through submission and do not ask the member to enter it again. The Fit Report submit action stays outside/below the collapsed optional area so the normal required flow is visually complete before enrichment fields.
+If a barcode was already captured by the scanner, retain it as evidence through submission and do not ask the member to enter it again. The Fit Report submit action stays outside/below the collapsed optional area so the normal flow is visually complete before enrichment fields.
 
 Fit Photo is public member wear evidence attached to the member's garment/Fit Report. Product Photo is separate catalog/candidate evidence. Never repurpose another member's Fit Photo as generic Product imagery.
+
+## 6.1 Purchase context — OWNER LOCKED
+
+`Purchased From`, `Price Paid`, `Purchase Method`, and `Approx. Purchase Date` describe **that member's acquisition of that specific Closet/Fit Report entry**. They are not Product truth.
+
+- every new entry starts these fields blank;
+- another member's answers are never copied or prefilled merely because the Product matches;
+- one Closet/Fit Report entry contributes at most one acquisition observation to analytics;
+- revisiting/editing the same entry must not multiply the observation;
+- purchase context does not affect Product identity, Match, recommendation rank, Product confidence, or retailer ranking;
+- **Retail link** remains a separate reusable Product/catalog evidence concept answering where the Product can be bought, rather than where this member acquired their copy.
+
+Purchase-context persistence and reporting must exist before these inputs are shipped to production; LikeSized must not collect these answers and silently discard them.
+
+## 6.2 Final review before submission — OWNER LOCKED
+
+After the form is valid and before server submission, show a mobile-readable **Does this look right?** confirmation.
+
+The review intentionally shows **only the main/top Fit Report information**, not the collapsed Optional Additional Information fields. It may show, when present:
+- Brand / Item;
+- Overall category;
+- Specific garment type;
+- Department;
+- Type-specific item-detail answers;
+- Color;
+- Size;
+- Overall Fit Result;
+- Condition;
+- Fit Photo added-state;
+- Fit Notes;
+- Retail Link.
+
+Do not repeat Purchased From, Price Paid, Purchase Method, Approx. Purchase Date, UPC/barcode, Style/Article Number, Material, or Product Photo in this final review.
+
+Actions are **Go Back & Edit** and **Confirm Fit Report**. Nothing is submitted until confirmation.
 
 # 7. Size-system behavior — CURRENT
 
@@ -160,7 +200,7 @@ For a resolved Product, identity dimensions are:
 - objective physical garment-answer fingerprint
 - garment-relevant body-fit state
 
-Color/variant listing, retailer URL, UPC, Style/Article Number, Product Photo, material evidence, Department evidence, Fit Result, Condition, Fit notes, and Fit Photo do **not** independently create another counted Fit Report.
+Color/variant listing, retailer URL, UPC, Style/Article Number, Product Photo, material evidence, Department evidence, Fit Result, Condition, Fit notes, Fit Photo, and purchase/acquisition context do **not** independently create another counted Fit Report.
 
 ## 8.1 Objective garment-answer fingerprint
 - applicable physical controlled answers are included;
@@ -193,15 +233,25 @@ means materially different for report-state identity.
 ## 8.5 Rolling body-state baseline
 Accepted under-2% relevant values become the report's active comparison baseline. Original `fit_profile_version_id` remains immutable; `match_fit_profile_version_id` and private baseline may advance.
 
-# 9. Fit Report update behavior — LOCKED
+# 9. Fit Report mutation/update behavior — OWNER DIRECTION, CLOSET AUDIT REQUIRED
 
-A compatible existing report is updated in place. Latest report-scoped values replace/update prior values for that counted state, including Fit Result, Intended Fit metadata, Condition, notes, and Fit Photo.
+The current production save boundary may reuse/update a compatible counted Fit Report. That deployed behavior is not authorization for an unrestricted member-facing **Edit anything later** model.
 
-Catalog evidence may accumulate separately without forcing duplicate counted reports.
+The owner is leaning toward treating the original confirmed Fit Report as immutable historical evidence. The upcoming Closet audit must settle the field-by-field mutation contract before broad editing controls are finalized, including which fields are:
+- immutable historical evidence after confirmation;
+- add-missing-only enrichment;
+- narrowly correctable with preserved history where justified;
+- later dated lifecycle observations rather than rewrites.
 
-Member-facing states:
+The New Fit Report **Does this look right?** step exists specifically to give the member a clear chance to correct the main evidence before submission.
+
+Examples intended for later Closet lifecycle additions include Kept / Returned / Exchanged and after-use changes such as shrinkage. These are new observations about what happened after acquisition/use and should not silently rewrite the original try-on submission.
+
+Until the Closet audit locks the mutation contract, do not introduce an unrestricted Edit Item form as product meaning. Existing backend compatible-state reuse remains implementation behavior that must be reconciled with the final owner-approved mutation model.
+
+Member-facing result states currently remain:
 - **FIT REPORT ADDED** — genuinely new counted state;
-- **FIT REPORT UPDATED** — compatible existing state reused;
+- **FIT REPORT UPDATED** — compatible existing state reused under current backend behavior;
 - **FIT REPORT SAVED · ITEM UNDER REVIEW** — member work preserved while Product identity requires review.
 
 ## 9.1 Unified public Closet / member Closet — OWNER LOCKED
@@ -209,12 +259,13 @@ Member-facing states:
 LikeSized has one canonical Closet surface/data meaning rather than separate My Closet and Shared Closet systems.
 
 - Every member garment and every member Fit Report is public member-facing content all the time; there is no member garment Private / Shared visibility mode.
-- A member viewing their own Closet sees the same public garment/Fit Report content plus owner-only management controls such as Edit/Update where applicable.
+- A member viewing their own Closet sees the same public garment/Fit Report content plus owner-only management controls where applicable.
 - Another member viewing that Closet sees the same public garment/Fit Report content without owner-only controls.
 - Closet/member/profile views must reuse one canonical garment-card and Fit Report presentation foundation rather than maintaining parallel private/public component systems.
 - Those components should be reused where applicable by People My Size, My Circle, Style Feed, Product discovery, and shopping surfaces.
-- Retain garment/Fit Report fields only when they serve a real product, matching, catalog, social, moderation, or historical-integrity purpose; do not preserve hidden garment data merely because a legacy private state once existed.
+- Retain garment/Fit Report fields only when they serve a real product, matching, catalog, social, moderation, analytics, monetization, or historical-integrity purpose; do not preserve hidden garment data merely because a legacy private state once existed.
 - This public Closet rule does **not** expose raw Fit Profile measurements, historical body snapshots, or matching baselines. Exact body measurements remain private system data; other members receive only derived Match/context.
+- Closet must settle the immutable/add-missing/correction/lifecycle mutation model before owner controls are considered final.
 
 Legacy database/UI visibility fields may remain temporarily during migration/reconciliation, but they are implementation debt, not current product meaning.
 
@@ -234,7 +285,7 @@ When member-selected Type conflicts with a known Product:
 
 Shared Product facts resolve field by field; one Fit Report never wholesale-replaces another.
 
-Product identity confidence is separate from report-scoped Product facts. A Product becoming Corroborated or automatically canonical does not turn size, color, material, Fit Result, the controlled garment-question answers, condition, notes, or another member's photos into unquestioned Product truth.
+Product identity confidence is separate from report-scoped Product facts. A Product becoming Corroborated or automatically canonical does not turn size, color, material, Fit Result, the controlled garment-question answers, condition, notes, purchase context, or another member's photos into unquestioned Product truth.
 
 ## Material/Fabric Composition
 - member material default uses complete **exact submitted recipes/compositions**;
@@ -321,7 +372,7 @@ Top-level categories:
 - Intimates
 - Shoes
 
-Accessories are not V1. Specific definitions live in `lib/garment-taxonomy.ts` and must agree with database vocabulary.
+Accessories are not V1. Specific definitions live in `lib/garment-taxonomy.ts` and must agree with database vocabulary. New Fit Report asks for Overall category first, then filters the Specific garment type choices to that category; the selected specific type remains the canonical Product identity field.
 
 # 18. Fit Result — LOCKED
 
@@ -411,6 +462,10 @@ Retail behavior:
 - valid destinations append/dedupe, never overwrite each other;
 - commission never affects Match, recommendation, Product identity, search rank, or retailer choice.
 
+Purchase/acquisition observations are separate from retailer listings. A member saying they bought an item at Walmart is analytics about that member's acquisition; it does not by itself mean the Product currently has a valid Walmart Shop destination.
+
+Purchase-context reporting should preserve response denominators and support, when persistence exists: response coverage, retailer counts/share among responders, Online/In Store/Gift distribution, average/median price and useful distributions by Product/Brand/Garment Type/Retailer where sample size permits, month/year trends, retailer demand vs catalog/search gaps, and later comparisons with Shop/affiliate availability and click behavior. One Fit Report/entry may contribute at most one acquisition observation.
+
 Locked disclosure when required: **“LikeSized may earn a commission from purchases made through our shopping links.”**
 
 # 26. LikeLocker / Wish Locker / Gift Lists
@@ -422,7 +477,7 @@ Current intents remain separate:
 - Outfit likes;
 - Wish Locker purchase intent.
 
-Wish Locker is surfaced inside Like Locker and uses the shooting-star action language. Adding to Wish Locker never adds a Like or notification. Product Like never adds a Wish or notification.
+Wish Locker is surfaced inside LikeLocker and uses the shooting-star action language. Adding to Wish Locker never adds a Like or notification. Product Like never adds a Wish or notification.
 
 Gift Lists remain roadmap-locked after Product/retailer/save/recommendation foundations: owner-approved wanted Products, confidence-gated recommended size, no raw measurements, owner-controlled sharing, same retailer-shopping rules.
 
@@ -450,6 +505,6 @@ Homepage remains useful logged out and keeps FAQ inline. Before Beta, public sto
 
 **Controlled when possible. Normalize when necessary. Free text only when useful.**
 
-Search/autocomplete prefers canonical Brands/Products and reviewed aliases before fallback. Identifiers/URLs normalize for matching while useful originals/provenance remain preserved.
+Search/autocomplete prefers canonical Brands/Products and reviewed aliases before fallback. Identifiers/URLs normalize for matching while useful originals/provenance remain preserved. Purchase retailer entry is deliberately free-form with known-retailer suggestions because it records an individual acquisition observation; it must not silently create Product retailer truth.
 
 For implementation status, owner re-audit order, production checkpoints, and exact next work, read `docs/AI_MASTER_LOG.md`.

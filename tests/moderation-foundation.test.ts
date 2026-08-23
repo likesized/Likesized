@@ -12,6 +12,8 @@ const actions=readFileSync("app/moderation/actions.ts","utf8");
 const report=readFileSync("components/ReportContentForm.tsx","utf8");
 const itemPage=readFileSync("app/item/[slug]/page.tsx","utf8");
 const itemActions=readFileSync("app/item/[slug]/actions.ts","utf8");
+const catalogSearch=readFileSync("app/api/catalog/search/route.ts","utf8");
+const catalogFields=readFileSync("app/closet/add/CatalogGarmentFields.tsx","utf8");
 
 test("members report only supported photo content and admins retain an audit",()=>{
  assert.match(migration,/outfit_post.*fit_reference_photo/);
@@ -73,6 +75,16 @@ test("every Product has one multi-purpose report action and trust-aware review p
  assert.match(exceptionReviewMigration,/v_tier='established'[\s\S]*v_signal_count>=3 then 3[\s\S]*v_signal_count>=2 then 2[\s\S]*else 1/);
  assert.match(exceptionReviewMigration,/v_tier='verified'[\s\S]*v_signal_count>=5 then 3[\s\S]*v_signal_count>=3 then 2[\s\S]*else 1/);
  assert.match(exceptionReviewMigration,/prefix_name_similarity/);
+});
+
+test("barcode confirmation prioritizes Product imagery, then a shared Fit Photo, then a placeholder",()=>{
+ assert.match(exceptionReviewMigration,/get_scan_match_image_source/);
+ assert.match(exceptionReviewMigration,/product_photo_url text,product_photo_storage_path text,fit_photo_storage_path text/);
+ assert.match(catalogSearch,/if \(target\.preferredProductUrl\) return target\.preferredProductUrl/);
+ assert.ok(catalogSearch.indexOf("row.product_photo_storage_path") < catalogSearch.indexOf('"fit-reference-photos"'));
+ assert.match(catalogFields,/image_url: body\.barcode_match\.image_url/);
+ assert.match(catalogFields,/barcodeMatch\.candidate\.image_url/);
+ assert.match(catalogFields,/matchImage \? <img[^>]+> : <div className="garmentThumb"/);
 });
 
 test("reviewed alias, flag, and Product Photo controls stay behind the audited admin boundary",()=>{

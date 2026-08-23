@@ -35,6 +35,8 @@ Match % means **garment-relevant body similarity**, not probability a garment wi
 - public relationship count is Followers.
 - initial Fit Twin threshold is configurable and currently starts at 85% Overall Match.
 - My Circle and Style Feed are Following-driven; Fit Twin is designation/filter/context only.
+- `/following` is legacy compatibility only and resolves to My Circle.
+- the signed-in `/` destination is **My Circle**; logged-out `/` remains the public LikeSized homepage. My Circle itself is customized only through its scheduled owner audit rather than by creating a second signed-in-home implementation.
 
 # 4. Controlled community catalog — LOCKED
 
@@ -114,7 +116,7 @@ Product confidence itself does **not** require a barcode. Manual, barcode-assist
 Main Fit Report flow, in order:
 1. Brand / Make — required.
 2. Item / Model — required.
-3. **Overall category** — required: Tops, Bottoms, Dresses & One-Pieces, Outerwear, Swimwear, Intimates, or Shoes.
+3. **Overall category** — required: Tops, Bottoms, Dresses & One-Pieces, Outerwear, Swimwear, Intimates, Sleepwear & Lingerie, or Shoes.
 4. **Specific garment type** — required; only types belonging to the selected Overall category are offered.
 5. Department — optional, immediately after Specific garment type.
 6. zero-to-four Type-specific controlled physical questions — each begins blank; **Not sure** is last and records no positive physical claim.
@@ -149,11 +151,13 @@ Fit Photo is public member wear evidence attached to the member's garment/Fit Re
 - every new entry starts these fields blank;
 - another member's answers are never copied or prefilled merely because the Product matches;
 - one Closet/Fit Report entry contributes at most one acquisition observation to analytics;
-- revisiting/editing the same entry must not multiply the observation;
+- revisiting/reusing the same counted Fit Report must not multiply the observation;
+- blank optional purchase fields produce no invented observation;
+- free-form Purchased From may link to an already-known retailer when its normalized name matches, but it does not create a Product retailer listing and does not create a new retailer merely from that free-text answer;
 - purchase context does not affect Product identity, Match, recommendation rank, Product confidence, or retailer ranking;
 - **Retail link** remains a separate reusable Product/catalog evidence concept answering where the Product can be bought, rather than where this member acquired their copy.
 
-Purchase-context persistence and reporting must exist before these inputs are shipped to production; LikeSized must not collect these answers and silently discard them.
+Canonical persistence is one owner-scoped acquisition-context row keyed by Fit Report. Analytics must preserve response denominators so skipped fields are never counted as a retailer, price, method, or date response.
 
 ## 6.2 Final review before submission — OWNER LOCKED
 
@@ -370,9 +374,26 @@ Top-level categories:
 - Outerwear
 - Swimwear
 - Intimates
+- **Sleepwear & Lingerie**
 - Shoes
 
 Accessories are not V1. Specific definitions live in `lib/garment-taxonomy.ts` and must agree with database vocabulary. New Fit Report asks for Overall category first, then filters the Specific garment type choices to that category; the selected specific type remains the canonical Product identity field.
+
+## 17.1 Sleepwear & Lingerie — OWNER LOCKED
+
+Sleep Shirt is intentionally not included. Sweatpants remains a Bottoms garment. Bras, Bralettes, Sports Bras, Underwear, and Shapewear remain Intimates.
+
+Every controlled question below also offers **Not sure** as the final intake choice:
+- **Pajama pants:** Intended fit — Fitted / Regular / Relaxed; Rise — Low / Mid / High; Length — Cropped / Ankle / Full / Long; Waistband — Elastic / Drawstring / Button / fly.
+- **Pajama shorts:** Intended fit — Fitted / Regular / Relaxed; Rise — Low / Mid / High; Length — Short / Mid / Long; Waistband — Elastic / Drawstring / Button / fly.
+- **Pajama set:** Bottom style — Pants / Shorts; Top sleeve — Sleeveless / Short / Long; Intended fit — Fitted / Regular / Relaxed; Top closure — Pullover / Button / Zip. The reported size is the printed size for the set; do not invent separate top/bottom sizes unless they are genuinely separate Products.
+- **Nightgown:** Shape — Fitted / Regular / Flowy; Length — Mini / Knee / Midi / Maxi; Top / sleeve — Spaghetti strap / Sleeveless / Short / Long; Bust support — None / Light / Structured.
+- **Robe:** Intended fit — Regular / Relaxed / Oversized; Length — Short / Knee / Midi / Long; Sleeve — Short / 3/4 / Long; Closure — Tie / Button / Zip / Open Front.
+- **Chemise:** Shape — Fitted / Regular / Flowy; Length — Mini / Knee; Top / strap — Spaghetti strap / Halter / Sleeveless / Short sleeve; Bust support — None / Light / Structured.
+- **Babydoll:** Bust support — None / Light / Structured; Underbust fit — Loose / Elastic / Fitted; Length — Mini / Knee; Top / strap — Spaghetti strap / Halter / Sleeveless / Short sleeve.
+- **Teddy:** Top / sleeve — Strapless / Halter / Sleeveless / Short / Long; Neckline — High / Low; Bottom coverage — Thong / Brief / Full; Closure — Pull-on / Snap / Hook.
+- **Corset & bustier:** Style — Corset / Bustier / Longline bustier; Structure — Soft / Boned; Closure — Lace-up / Hook & eye / Front busk / Zip; Length — Waist / Hip / Longline.
+- **Costume lingerie:** Garment form — One-piece / Two-piece set / Multi-piece set; Top style — Bra / Bralette / Corset or bustier / Cami or top / Halter / Dress-style / No separate top; Bottom style — Thong / Brief / Shorts / Skirt / Garter-style / No separate bottom; Structure / Support — Soft / Stretchy / Light Support / Structured / Boned. Closure is intentionally not one of the four Costume Lingerie questions because Structure / Support is more fit-relevant.
 
 # 18. Fit Result — LOCKED
 
@@ -464,7 +485,7 @@ Retail behavior:
 
 Purchase/acquisition observations are separate from retailer listings. A member saying they bought an item at Walmart is analytics about that member's acquisition; it does not by itself mean the Product currently has a valid Walmart Shop destination.
 
-Purchase-context reporting should preserve response denominators and support, when persistence exists: response coverage, retailer counts/share among responders, Online/In Store/Gift distribution, average/median price and useful distributions by Product/Brand/Garment Type/Retailer where sample size permits, month/year trends, retailer demand vs catalog/search gaps, and later comparisons with Shop/affiliate availability and click behavior. One Fit Report/entry may contribute at most one acquisition observation.
+Purchase-context reporting should preserve response denominators and support: response coverage, retailer counts/share among responders, Online/In Store/Gift distribution, average/median price and useful distributions by Product/Brand/Garment Type/Retailer where sample size permits, month/year trends, retailer demand vs catalog/search gaps, and later comparisons with Shop/affiliate availability and click behavior. One Fit Report/entry may contribute at most one acquisition observation.
 
 Locked disclosure when required: **“LikeSized may earn a commission from purchases made through our shopping links.”**
 
@@ -499,7 +520,9 @@ Gift Lists remain roadmap-locked after Product/retailer/save/recommendation foun
 
 # 29. Public homepage / FAQ
 
-Homepage remains useful logged out and keeps FAQ inline. Before Beta, public story must accurately cover measurement privacy, Match %, current-person vs historical Match, People My Size, Following vs Fit Twin, Fit/Product Photo behavior, Fit Result/no stars, Help Me Size It, LikeLocker/Wish Locker, Outfits/Style Feed, controlled catalog/manual fallback, unresolved item review, admin-side SerpAPI role, shopping/affiliate behavior, immutable historical try-on state, and Gift Lists if implemented.
+Homepage remains useful logged out and keeps FAQ inline. Signed-in `/` enters My Circle rather than a separate Following or Outfit-feed homepage. The FAQ includes a plain-language explanation of the LikeSized difference: real Fit Reports from people built like the viewer, garment-relevant matching, item-level Product evidence when reports exist because two items from the same brand/printed size can fit differently, and exact measurement privacy. Avoid unverifiable claims that no competitor can offer a particular feature.
+
+Before Beta, public story must accurately cover measurement privacy, Match %, current-person vs historical Match, People My Size, Following vs Fit Twin, Fit/Product Photo behavior, Fit Result/no stars, Help Me Size It, LikeLocker/Wish Locker, Outfits/Style Feed, controlled catalog/manual fallback, unresolved item review, admin-side SerpAPI role, shopping/affiliate behavior, immutable historical try-on state, and Gift Lists if implemented.
 
 # 30. Data-quality rule
 

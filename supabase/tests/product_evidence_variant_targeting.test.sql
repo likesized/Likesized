@@ -53,7 +53,8 @@ values
   ('e4000000-0000-4000-8000-000000000002'::uuid,'e2000000-0000-4000-8000-000000000001'::uuid,'M','Black','e3000000-0000-4000-8000-000000000001'::uuid,'unisex','black'),
   ('e4000000-0000-4000-8000-000000000003'::uuid,'e2000000-0000-4000-8000-000000000002'::uuid,'M','Blue','e3000000-0000-4000-8000-000000000001'::uuid,'unisex','blue');
 
--- Exact wearer intentionally has two observations. The older Exact Variant must beat the newer Exact Product observation.
+-- One wearer intentionally has two legitimate observations. Both remain evidence; the
+-- Exact Variant observation still ranks above the Exact Product observation.
 set local role authenticated;
 set local request.jwt.claim.sub='e0000000-0000-4000-8000-000000000002';
 set local request.jwt.claim.role='authenticated';
@@ -91,11 +92,11 @@ set local request.jwt.claim.role='authenticated';
 create temporary table variant_target_results on commit drop as
 select * from public.get_product_evidence_candidates('e2000000-0000-4000-8000-000000000001'::uuid,'e4000000-0000-4000-8000-000000000001'::uuid,50);
 
-select is((select count(*) from variant_target_results),3::bigint,'one strongest observation is returned per unique wearer');
-select is((select count(*) from variant_target_results where user_id='e0000000-0000-4000-8000-000000000002'::uuid),1::bigint,'wearer with multiple observations still contributes only one evidence row');
-select is((select evidence_variant_id from variant_target_results where user_id='e0000000-0000-4000-8000-000000000002'::uuid),'e4000000-0000-4000-8000-000000000001'::uuid,'Exact Variant beats a newer Exact Product observation from the same wearer');
-select is((select evidence_level::text from variant_target_results where user_id='e0000000-0000-4000-8000-000000000002'::uuid),'exact_variant','matching target variant is labeled Exact Variant');
-select is((select evidence_rank from variant_target_results where user_id='e0000000-0000-4000-8000-000000000002'::uuid),1,'Exact Variant receives evidence rank 1');
+select is((select count(*) from variant_target_results),4::bigint,'every distinct valid Fit Report situation is returned as evidence');
+select is((select count(*) from variant_target_results where user_id='e0000000-0000-4000-8000-000000000002'::uuid),2::bigint,'one wearer may contribute multiple legitimate distinct evidence rows');
+select is((select evidence_variant_id from variant_target_results where fit_report_id='e6000000-0000-4000-8000-000000000001'::uuid),'e4000000-0000-4000-8000-000000000001'::uuid,'the matching observation retains its Exact Variant target');
+select is((select evidence_level::text from variant_target_results where fit_report_id='e6000000-0000-4000-8000-000000000001'::uuid),'exact_variant','matching target variant is labeled Exact Variant');
+select is((select evidence_rank from variant_target_results where fit_report_id='e6000000-0000-4000-8000-000000000001'::uuid),1,'Exact Variant receives evidence rank 1');
 select is((select evidence_level::text from variant_target_results where user_id='e0000000-0000-4000-8000-000000000003'::uuid),'exact_product','other variant of the target product remains Exact Product');
 select is((select evidence_rank from variant_target_results where user_id='e0000000-0000-4000-8000-000000000003'::uuid),2,'Exact Product remains rank 2');
 select is((select evidence_level::text from variant_target_results where user_id='e0000000-0000-4000-8000-000000000004'::uuid),'brand_garment_type','broader same-brand garment evidence remains available as fallback');
@@ -104,7 +105,7 @@ select is((select evidence_level::text from variant_target_results order by evid
 create temporary table foreign_variant_results on commit drop as
 select * from public.get_product_evidence_candidates('e2000000-0000-4000-8000-000000000001'::uuid,'e4000000-0000-4000-8000-000000000003'::uuid,50);
 select is((select count(*) from foreign_variant_results where evidence_level='exact_variant'::public.evidence_level),0::bigint,'foreign variant ID cannot receive Exact Variant rank for the target product');
-select is((select evidence_level::text from foreign_variant_results where user_id='e0000000-0000-4000-8000-000000000002'::uuid),'exact_product','foreign variant target safely falls back to Exact Product evidence');
+select ok((select count(*)=2 and bool_and(evidence_level='exact_product'::public.evidence_level) from foreign_variant_results where user_id='e0000000-0000-4000-8000-000000000002'::uuid),'foreign variant target safely falls both valid wearer observations back to Exact Product evidence');
 
 create temporary table product_target_results on commit drop as
 select * from public.get_product_evidence_candidates('e2000000-0000-4000-8000-000000000001'::uuid,null,50);

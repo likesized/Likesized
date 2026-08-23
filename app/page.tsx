@@ -1,4 +1,12 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+function first(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
 
 const capabilities = [
   {
@@ -59,7 +67,18 @@ const faqs = [
   },
 ];
 
-export default function Home() {
+export default async function Home({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams;
+  const showPublicInfo = first(params.view) === "info";
+
+  if (!showPublicInfo) {
+    const supabase = await createClient();
+    const { data: claimsData, error } = await supabase.auth.getClaims();
+    if (!error && claimsData?.claims?.sub) {
+      redirect("/outfits?feed=following");
+    }
+  }
+
   return (
     <main>
       <section className="hero">

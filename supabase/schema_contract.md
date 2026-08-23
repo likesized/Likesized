@@ -39,9 +39,9 @@ Local migration filenames remain the canonical replay history. Supabase-assigned
 
 ## Active branch change — NOT PRODUCTION
 
-`agent/catalog-evidence-confidence` contains owner-approved but not-yet-deployed migration `20260823040000_generalize_catalog_identity_confidence.sql`. Until that branch is verified and explicitly authorized for production, the production checkpoint above still reflects the older barcode-specific corroboration implementation.
+`agent/catalog-evidence-confidence` contains owner-approved but not-yet-deployed migration `20260823040000_generalize_catalog_identity_confidence.sql`. The prior branch head passed canonical integrity, TypeScript/application tests, production build, fresh migration replay, and the full pgTAP/database suite. The branch has since been reopened for owner-approved New Fit Report UI/canonical documentation changes and must be re-verified before production authorization.
 
-The branch migration replaces that product meaning with the generalized community-confidence model described below; it does not rewrite the already-applied barcode migrations.
+The branch migration replaces the older barcode-gated Product meaning with the generalized community-confidence model described below; it does not rewrite the already-applied barcode migrations.
 
 # 1. Privacy / body-state foundations
 
@@ -53,6 +53,19 @@ The branch migration replaces that product meaning with the generalized communit
 - `private.fit_report_body_identity_measurements` stores established Product-relevant comparison baselines.
 - raw current/historical body measurements and private size references are never exposed to other members.
 - current-person Match and historical-garment Match return derived scores/context only.
+
+## Public Closet target — OWNER LOCKED, LEGACY DB VISIBILITY STILL PRESENT
+
+Current owner-approved product meaning is one public member Closet:
+- every member garment and Fit Report is public member-facing content;
+- there is no intended Private / Shared garment visibility mode;
+- owner view differs only by owner-only management controls;
+- visitor view uses the same public garment/Fit Report data without those controls;
+- raw Fit Profile/body-state data remains private and must not be exposed by this change.
+
+The current executable schema still contains legacy `closet_items.visibility` and existing RLS/tests/query paths that distinguish private/shared Closet content. Until a later canonical migration/RLS cleanup removes or neutralizes that legacy state, this contract must distinguish **current database implementation** from **owner-locked product target**. Do not interpret the legacy visibility column as current product meaning, and do not build a second Shared Closet system around it.
+
+The Closet foundation audit must reconcile this canonically: preserve legitimate garment/Fit Report history, make member-facing garment/Fit Report reads consistently public, keep owner mutation boundaries intact, and continue protecting raw body/profile/private evidence tables.
 
 # 2. Controlled taxonomy foundations
 
@@ -355,8 +368,9 @@ Help Me Size It reuses the canonical recommendation architecture. `Would Buy Aga
 # 20. Current implementation debt / open verification
 
 Do not claim these complete merely because branch foundations exist:
-- `agent/catalog-evidence-confidence` migration/application changes require full canonical check, TypeScript, build, fresh migration replay, and focused pgTAP before any production authorization request;
+- latest `agent/catalog-evidence-confidence` head requires canonical check, TypeScript, focused application tests, production build, fresh migration replay, and full pgTAP after the owner-approved New Fit Report/canon changes;
 - the generalized community-confidence migration is **not deployed to production**;
+- current legacy `closet_items.visibility` / private-vs-shared Closet RLS and presentation semantics must be removed or neutralized canonically to implement the owner-locked single public Closet model without exposing raw body/private system evidence;
 - external barcode enrichment/provider experiment is not implemented;
 - full Product-to-Product merge tooling;
 - audited Product/candidate split tooling;
@@ -392,7 +406,8 @@ Before a surface/major DB behavior is called complete, prove as applicable:
 15. size/objective/body-state splitting obeys locked identity rules;
 16. admin/SerpAPI boundaries do not bypass Product review;
 17. retailer listings append/dedupe;
-18. owner interaction review for the actual surface.
+18. owner interaction review for the actual surface;
+19. when the unified public Closet migration is implemented, another authenticated member can read the intended garment/Fit Report public content while owner-only mutation controls and raw body/private evidence remain protected.
 
 # 22. Forbidden regressions
 
@@ -401,6 +416,8 @@ Do not:
 - blend current-person Match and historical garment Match;
 - expose raw body measurements through social/search/feed/notifications;
 - create a second follow/catalog/sizing/moderation system;
+- create separate My Closet and Shared Closet data/component systems or treat legacy Private / Shared garment visibility as current product meaning;
+- make raw body/profile/private evidence public while implementing the public Closet;
 - let one manual fallback submission directly create canonical Product;
 - require barcode presence for Product identity corroboration;
 - let unresolved/corroborated candidate assistance turn that candidate into an ordinary Product/search result before canonicalization;

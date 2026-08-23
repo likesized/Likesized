@@ -19,11 +19,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 function first(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
 
 export default async function AddGarmentPage({ searchParams }: { searchParams: SearchParams }) {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  if (!claimsData?.claims?.sub) redirect("/login?next=/closet/add");
   const params = await searchParams;
   const fixtureMode = allowExploreFixtures(first(params.preview) === "fixtures");
+  const supabase = await createClient();
+  const { data: claimsData } = await supabase.auth.getClaims();
+  if (!claimsData?.claims?.sub && !fixtureMode) redirect("/login?next=/closet/add");
+
   const addedRaw = first(params.added) ?? "";
   const updatedRaw = first(params.updated) ?? "";
   const addedClosetItemId = UUID.test(addedRaw) ? addedRaw : "";

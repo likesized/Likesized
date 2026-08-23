@@ -223,9 +223,17 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
       stopScanner();
       const video = scannerVideo.current;
       if (!video) throw new Error("Scanner is not ready");
-      const { BrowserMultiFormatReader } = await import("@zxing/browser");
-      const reader = new BrowserMultiFormatReader();
-      scannerControls.current = await reader.decodeFromConstraints({ video: { facingMode: { ideal: "environment" } } }, video, (result) => {
+      const { BrowserMultiFormatOneDReader } = await import("@zxing/browser");
+      const reader = new BrowserMultiFormatOneDReader(undefined, {
+        delayBetweenScanAttempts: 50,
+        delayBetweenScanSuccess: 250,
+      });
+      const videoConstraints: MediaTrackConstraints = {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+      };
+      scannerControls.current = await reader.decodeFromConstraints({ video: videoConstraints }, video, (result) => {
         const code = result?.getText();
         if (code) { stopScanner(); void lookupBarcode(code); }
       });

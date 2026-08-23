@@ -71,13 +71,15 @@ function reviewValue(field: HTMLInputElement | HTMLSelectElement | HTMLTextAreaE
 }
 
 function collectReviewRows(form: HTMLFormElement): ReviewRow[] {
-  const fields = Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("[data-review-label], input[name='size_normalized_label']"));
+  const fields = Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("[data-review-label], input[name='size_normalized_label'], input[name='product_url']"));
   return fields.flatMap((field) => {
     const value = reviewValue(field);
     if (!value) return [];
     const label = field.name === "size_normalized_label"
       ? "Size"
-      : field.dataset.reviewLabel?.trim() ?? "";
+      : field.name === "product_url"
+        ? "Retail link"
+        : field.dataset.reviewLabel?.trim() ?? "";
     return label ? [{ label, value }] : [];
   });
 }

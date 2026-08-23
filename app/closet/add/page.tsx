@@ -93,15 +93,20 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
     <FitReportForm action={fixtureMode ? undefined : addGarment}>
       {fixtureMode ? <div className="authMessage"><b>Owner-review test environment.</b> Temporary garment choices are labeled through the preview and this form cannot save or write to Supabase.</div> : null}
       {errorMessage ? <div className="authMessage error">{errorMessage}</div> : null}
-      <CatalogGarmentFields brands={brandOptions} fixtureProducts={fixtureProducts}>
+      <CatalogGarmentFields
+        brands={brandOptions}
+        fixtureProducts={fixtureProducts}
+        departments={adultDepartments.map((item) => ({ key: item.key, label: item.label }))}
+      >
         <CatalogColorField />
         <GarmentSizeFields />
         <label>Overall Fit Result<select name="fit" defaultValue="" required><option value="" disabled>Select physical fit</option><option value="too_small">Too small</option><option value="snug">Snug</option><option value="just_right">Just right</option><option value="relaxed">Relaxed</option><option value="too_big">Too big</option></select><span className="fieldHelp">Bad fits are useful evidence too.</span></label>
         <label>Condition<select name="reported_condition" defaultValue="" required><option value="" disabled>Select condition</option><option value="new">New</option><option value="used">Used</option><option value="altered">Altered</option></select><span className="fieldHelp">Altered items stay in Fit History but are not treated as normal sizing evidence for other people.</span></label>
         <label>Fit photo <span className="muted inlineMuted">optional</span><input name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><span className="fieldHelp"><b>Fit photos are shared with the LikeSized community. Don’t upload a photo you do not want other people to see.</b></span></label>
         <label>Fit notes <span className="muted inlineMuted">optional</span><textarea name="fit_notes" maxLength={1000} rows={5} placeholder="Tell us more about how it fits. You can also share styling tips, wash or dry advice, or anything else that might help someone considering this item." /></label>
+        <label>Retail link <span className="muted inlineMuted">optional</span><input name="product_url" type="url" maxLength={1000} placeholder="https://..." /></label>
 
-        <CatalogCommunityEnrichment materials={(materials ?? []).map((item) => ({ key: item.key, label: item.label }))} departments={adultDepartments.map((item) => ({ key: item.key, label: item.label }))} />
+        <CatalogCommunityEnrichment materials={(materials ?? []).map((item) => ({ key: item.key, label: item.label }))} />
 
         <button className="primaryButton fullButton" type="submit" disabled={fixtureMode}>{fixtureMode ? "Preview only — saving disabled" : "Add Fit Report →"}</button>
       </CatalogGarmentFields>

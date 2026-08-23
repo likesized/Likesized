@@ -4,7 +4,7 @@ import { followPerson, unfollowPerson } from "@/app/people/actions";
 import { createClient } from "@/lib/supabase/server";
 
 type Params=Promise<{username:string}>;
-type ProfileRecord={id:string;username:string;display_name:string|null;bio:string|null};
+type ProfileRecord={id:string;username:string;display_name:string|null;bio:string|null;avatar_url:string|null};
 type MatchRecord={user_id:string;match_score:number};
 type ReportRecord={id:string;closet_item_id:string;size_label:string;fit:string;would_buy_again:boolean|null;created_at:string;product:unknown};
 type ProductRecord={name:string;slug:string;category:string;garment_type_key:string|null;brand:unknown};
@@ -31,7 +31,7 @@ export default async function MemberProfilePage({params}:{params:Params}){
   const viewerId=claimsData?.claims?.sub;
   if(claimsError||!viewerId)redirect(`/login?next=${encodeURIComponent(`/people/${username}`)}`);
 
-  const {data:profileData,error:profileError}=await supabase.from("profiles").select("id,username,display_name,bio").eq("username",username).maybeSingle();
+  const {data:profileData,error:profileError}=await supabase.from("profiles").select("id,username,display_name,bio,avatar_url").eq("username",username).maybeSingle();
   if(profileError)throw new Error("Could not load member profile.");
   if(!profileData)notFound();
   const profile=profileData as ProfileRecord;
@@ -84,6 +84,12 @@ export default async function MemberProfilePage({params}:{params:Params}){
     if(signed?.signedUrl)photoUrlByCloset.set(row.closet_item_id,signed.signedUrl);
   }));
 
+  let profilePhotoUrl:string|null=null;
+  if(profile.avatar_url){
+    const {data:signed}=await supabase.storage.from("profile-photos").createSignedUrl(profile.avatar_url,60*30);
+    profilePhotoUrl=signed?.signedUrl??null;
+  }
+
   const dimensionName=new Map(dimensionLabels.map((row)=>[row.key,row.label]));
   const responseName=new Map(responseLabels.map((row)=>[`${row.dimension_key}:${row.response_key}`,row.label]));
   const dimsByReport=new Map<string,DimensionRow[]>();
@@ -94,7 +100,9 @@ export default async function MemberProfilePage({params}:{params:Params}){
   const returnTo=`/people/${profile.username}`;
 
   return <main className="pageShell">
-    <div className="pageTitle"><span className="eyebrow">MEMBER PROFILE</span><h1>{name}</h1><p>@{profile.username}{profile.bio?` · ${profile.bio}`:""}</p><p>Current Fit Match scores compare your current bodies. Shared Closet history below stays tied to the body state from each actual try-on. Raw measurements are never shown.</p>
+    <div className="pageTitle">
+      {profilePhotoUrl?<img className="avatar photoAvatar profileAvatar" src={profilePhotoUrl} alt={`${name} profile`}/>:<div className="avatar profileAvatar">{name.slice(0,1).toUpperCase()}</div>}
+      <span className="eyebrow">MEMBER PROFILE</span><h1>{name}</h1><p>@{profile.username}{profile.bio?` · ${profile.bio}`:""}</p><p>Current Fit Match scores compare your current bodies. Shared Closet history below stays tied to the body state from each actual try-on. Raw measurements are never shown.</p>
       {!isSelf?<div className="statsRow"><span><b>{typeof overall==="number"?`${overall}%`:"—"}</b> current overall</span><span><b>{typeof tops==="number"?`${tops}%`:"—"}</b> current tops</span><span><b>{typeof bottoms==="number"?`${bottoms}%`:"—"}</b> current bottoms</span></div>:null}
       {!isSelf?<div className="authActions"><form action={followed?unfollowPerson:followPerson}><input type="hidden" name="target_user_id" value={profile.id}/><input type="hidden" name="return_to" value={returnTo}/><button className={followed?"secondaryButton":"primaryButton"} type="submit">{followed?"Unfollow":"Follow"}</button></form><Link className="secondaryButton" href="/people">Back to matches</Link></div>:<div className="authActions"><Link className="secondaryButton" href="/settings">Profile & Privacy</Link><Link className="secondaryButton" href="/onboarding">Edit Fit Profile</Link><Link className="secondaryButton" href="/closet">My Closet</Link></div>}
     </div>

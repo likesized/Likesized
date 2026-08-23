@@ -334,11 +334,12 @@ A surface is not complete merely because code exists or automated tests pass. Co
 - PRs #44–#47 preserved/reconciled the major rework; PR #47 is merged/closed.
 - Canon reconciliation completed before the fresh owner site audit.
 - Subsequent `main` production work includes signed-in homepage routing, auth recovery fixes, menu/signout fixes, Settings/profile-photo/privacy changes, Notifications layout/person opt-in semantics, one-shot matched Product notifications, and barcode scanner tuning.
-- Scanner tuning commit `cd1b1f197e72affba88f767c02d6fc714a85ef6a` was deployed READY to production before the barcode confirmation/corroboration change set.
+- Scanner tuning commit `cd1b1f197e72affba88f767c02d6fc714a85ef6a` was deployed READY before the barcode confirmation work.
+- Barcode confirmation implementation commit `490e0da88bac562ac1c8230149000f9f7e509806` deployed to production as Vercel `dpl_3wtrHjFTPE4LdmPDvtyFmWZRJ84n`, **READY**. Production DB migrations `20260823031508` and `20260823031701` are applied. A rollback-only SQL verification proved UPC `196988323504` resolves to the pending Maidenform · Heirloom candidate, and one confirmed member alone remains provisional; the test transaction left confirmation count unchanged at zero.
 
 # EXACT NEXT ACTION — CURRENT
 
-Deploy and verify the canonical **Is this the item?** barcode confirmation flow against production migrations `20260823031508` and `20260823031701`, then have the owner re-scan UPC `196988323504`.
+Owner re-test the deployed **Is this the item?** barcode flow with UPC `196988323504`.
 
 Expected owner test:
 1. scan the same retail barcode;

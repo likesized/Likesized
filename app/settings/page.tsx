@@ -50,8 +50,8 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
     {usernameSaved?<div className="authMessage">Username updated.</div>:null}
     {photoState==="saved"?<div className="authMessage">Profile photo updated.</div>:null}
     {photoState==="removed"?<div className="authMessage">Profile photo removed.</div>:null}
-    {notificationState==="on"?<div className="authMessage">Following activity notifications turned on.</div>:null}
-    {notificationState==="off"?<div className="authMessage">Following activity notifications turned off. Your Following Feed is unchanged.</div>:null}
+    {notificationState==="on"?<div className="authMessage">Following notifications turned on.</div>:null}
+    {notificationState==="off"?<div className="authMessage">Following notifications turned off.</div>:null}
     {errorMessage?<div className="authMessage error">{errorMessage}</div>:null}
 
     <section className="section flush">
@@ -66,9 +66,9 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
     </section>
 
     <section className="section">
-      <div className="sectionHeading"><div><span className="eyebrow">NOTIFICATIONS</span><h2>Following activity alerts</h2></div></div>
+      <div className="sectionHeading"><div><span className="eyebrow">NOTIFICATIONS</span><h2>Following notifications</h2></div></div>
       <div className="evidenceList">
-        <div className={`evidence ${styles.settingsEvidence}`}><div><strong>{notificationsEnabled?"On":"Off"} by default for future activity</strong><span>Alerts cover new Shared Closet garments, new garment fit updates, and new outfits from people you follow. Following is separate from Fit Twin status. Likes never create alerts.</span></div><form action={saveFollowingNotificationSettings}><input type="hidden" name="enabled" value={notificationsEnabled?"false":"true"}/><button className={notificationsEnabled?"secondaryButton":"primaryButton"} type="submit">Turn {notificationsEnabled?"off":"on"}</button></form></div>
+        <div className={`evidence ${styles.settingsEvidence}`}><div><strong>Following notifications are {notificationsEnabled?"on":"off"}</strong><span>Get an in-app notification when someone you follow shares a new Closet item, updates a shared Fit Report, or posts a new outfit.</span></div><form action={saveFollowingNotificationSettings}><input type="hidden" name="enabled" value={notificationsEnabled?"false":"true"}/><button className={notificationsEnabled?"secondaryButton":"primaryButton"} type="submit">Turn notifications {notificationsEnabled?"off":"on"}</button></form></div>
       </div>
     </section>
 

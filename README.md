@@ -13,7 +13,7 @@ V1 application for **LikeSized — See what fits people built like you.**
 If canonical documents disagree, stop feature work and reconcile them. Do not resurrect superseded product meaning from Git history or another branch.
 
 ## Current implementation status
-Canonical recovery is complete. `main` is the one production line. The active owner-approved implementation line is PR #51 / `agent/fit-report-review-purchase-context`; exact verification/deployment state belongs in `docs/AI_MASTER_LOG.md`.
+Canonical recovery is complete. `main` is the one production line. The active owner-authorized deployment line is PR #51 / `agent/fit-report-review-purchase-context`; exact verification/deployment state belongs in `docs/AI_MASTER_LOG.md`.
 
 ## Current product meaning
 
@@ -22,20 +22,22 @@ Canonical recovery is complete. `main` is the one production line. The active ow
 
 - Ordinary member intake searches LikeSized's own Product catalog; it does not call SerpAPI.
 - A clean, unique first member submission may automatically become a searchable canonical **Provisional** Product. Routine new clothing should not require admin approval.
-- A second distinct member with a Product Fit Report may strengthen a Provisional Product to **Corroborated**.
-- **Verified** remains authoritative/admin-reviewed trust and is never granted merely from member count.
+- Product identity trust has four tiers: **Provisional = 1 distinct wearer; Corroborated = 2–4; Established = 5+; Verified = authoritative/admin-reviewed**.
+- The five-wearer milestone remains stronger community evidence; it is no longer a publishing gate.
+- Community wearer count does not silently verify unrelated Product facts such as material, description, Department or controlled attributes.
 - If a new submission already carries a real duplicate, conflicting identity, barcode/listing collision, or other blocking signal, it remains unresolved for review rather than creating questionable Product truth.
 - Later conflicts or member reports do not automatically delete or unpublish an existing Product. They create review evidence while the Product remains usable until an audited resolution changes it.
 - Product identity confidence and Product-to-barcode confidence are separate.
 
 ### Exception-driven catalog review
-Every published Product can be reported through one **Report this item** action for concerns such as inappropriate content, an image that does not match the Product, incorrect information, or another issue.
+Every published Product can be reported through one **Report this item** action for inappropriate content, an image that does not match the Product, incorrect information, or another concern.
 
 Catalog flags are prioritized by trust and independent evidence:
-- Provisional / uncorroborated target → high priority;
-- Corroborated target → normally medium;
-- Verified target with one isolated ordinary report → normally low;
-- repeated independent reports, identity conflicts, duplicate signals, or identifier/listing conflicts escalate priority.
+- Provisional (1 wearer) → high when flagged;
+- Corroborated (2–4 wearers) → high when flagged;
+- Established (5+ wearers) → one isolated ordinary disagreement starts low and repeated independent signals escalate medium/high;
+- Verified → isolated ordinary reports start low and repeated independent signals may escalate;
+- strong duplicate/identity/identifier conflicts can escalate regardless of tier.
 
 LikeSized may also generate conservative internal possible-duplicate/identity flags from evidence such as closely related names, barcodes, retailer links, aliases, or other Product signals. These are review signals, not permission to fuzzy-merge Products automatically.
 
@@ -44,12 +46,10 @@ Direct Product search is global. A member does **not** need to switch to Men or 
 
 **Fit Community — Men / Women / Both** is a private member relevance preference for social/matching discovery such as People My Size and My Circle. It filters the people/wearers being surfaced; it is not Product Department and it never changes body Match %.
 
-A member's Fit Community does not change because they wear a garment sold in another Department. For example, a woman reporting men's jeans remains Women-community social evidence.
+A member's Fit Community does not change because they wear a garment sold in another Department.
 
 ### Fit Profile and measurement privacy
-Exact current and historical body measurements remain private. LikeSized exposes safe derived Match/context, not raw measurements.
-
-All accurate measurements can improve precision. Depending on the body and garment, some measurements can be especially informative—for example chest, shoulders, sleeve length and upper arm/bicep in many men's fits, or full bust, high bust, underbust, waist and hip/seat in many women's fits. These are examples, not rules; garment-relevant measurements drive the actual Match logic.
+Exact current and historical body measurements remain private. LikeSized exposes safe derived Match/context, not raw measurements. Match logic remains garment-relevant. Any new public sex/body-specific measurement FAQ wording is pending owner review and is not part of the current deployment batch.
 
 ### Following vs Fit Twin
 **Following controls My Circle; Fit Twin is a designation inside it.**
@@ -67,11 +67,13 @@ A collapsed **Optional Additional Information** area collects Purchased From, Pr
 
 Before saving, **Does this look right?** reviews only the main Fit Report details. Optional additional information is not repeated there.
 
-### Barcode confidence
+### Barcode confidence and scanner confirmation
 - first distinct member supporting a new Product→barcode relationship = provisional barcode evidence;
 - second distinct member with corresponding Product Fit Report evidence = corroborated barcode relationship;
 - one Product may have multiple legitimate barcodes;
 - one barcode credibly supporting competing Products is flagged and never silently reassigned.
+
+On **Is this the item?**, scanner imagery prioritizes **Product/catalog photo → shared member Fit Photo → placeholder**. A Fit Photo fallback stays personal wear evidence and is never promoted into canonical Product imagery.
 
 ### Fit Result
 Fit Result is Too Small / Snug / Just Right / Relaxed / Too Big. There is **no current V1 1–5-star Fit Rating UI**.

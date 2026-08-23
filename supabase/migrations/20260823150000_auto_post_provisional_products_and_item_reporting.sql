@@ -30,6 +30,15 @@ alter table public.catalog_review_flags
     'retail_identifier_conflict','member_report'
   ));
 
+-- The original catalog foundation allowed only one open flag of each type per Product.
+-- Member reports must instead accumulate independently by reporter so repeated people
+-- can escalate review priority. Preserve single-open-flag behavior for system/catalog
+-- flag types while giving member_report its own per-reporter uniqueness boundary.
+drop index if exists public.catalog_review_flags_product_open_uq;
+create unique index catalog_review_flags_product_open_uq
+  on public.catalog_review_flags(product_id,flag_type)
+  where status='open' and product_id is not null and candidate_id is null and flag_type<>'member_report';
+
 create unique index if not exists catalog_review_member_report_open_uq
   on public.catalog_review_flags(product_id,created_by)
   where flag_type='member_report' and status='open' and product_id is not null and created_by is not null;

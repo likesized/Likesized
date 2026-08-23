@@ -83,86 +83,92 @@ export function CatalogColorField() {
   return <label>Color<select name="color_family" defaultValue="" required><option value="" disabled>Select a color</option>{colors.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>;
 }
 
-export function CatalogCommunityEnrichment({ materials, departments }: { materials: CatalogOption[]; departments: CatalogOption[] }) {
+function CatalogDepartmentField({ departments }: { departments: CatalogOption[] }) {
+  const { product } = useCatalogGarment();
+  const sortedDepartments = useMemo(() => [...departments].sort((a, b) => a.label.localeCompare(b.label)), [departments]);
+  const knownDepartment = product?.department_key ?? "";
+  const [department, setDepartment] = useState("");
+
+  useEffect(() => {
+    setDepartment(knownDepartment);
+  }, [product?.id, knownDepartment]);
+
+  return <label>Department <span className="muted inlineMuted">optional</span>
+    <select name="department" value={department} onChange={(event) => setDepartment(event.target.value)}>
+      <option value="">Choose a department</option>
+      {sortedDepartments.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
+      <option value="not_sure">Not sure</option>
+    </select>
+    {knownDepartment ? <span className="fieldHelp">Preselected from what LikeSized currently knows. Change it if your item says otherwise.</span> : null}
+  </label>;
+}
+
+export function CatalogCommunityEnrichment({ materials }: { materials: CatalogOption[] }) {
   const { product, scannedBarcode } = useCatalogGarment();
   const sortedMaterials = useMemo(() => [...materials]
     .filter((item) => item.key !== "other" && item.key !== "not_sure" && item.label.toLowerCase() !== "other")
     .sort((a, b) => a.label.localeCompare(b.label)), [materials]);
-  const sortedDepartments = useMemo(() => [...departments].sort((a, b) => a.label.localeCompare(b.label)), [departments]);
   const knownMaterials = useMemo(() => (product?.materials ?? []).filter((row) => row.source_status !== "rejected"), [product]);
-  const knownDepartment = product?.department_key ?? "";
-  const [department, setDepartment] = useState("");
   const [materialRows, setMaterialRows] = useState<Array<{ material_key: string; percentage: string }>>([{ material_key: "", percentage: "" }]);
 
   useEffect(() => {
-    setDepartment(knownDepartment);
     setMaterialRows(knownMaterials.length
       ? knownMaterials.map((row) => ({ material_key: row.material_key === "other" ? "not_sure" : row.material_key, percentage: row.percentage == null ? "" : String(row.percentage) }))
       : [{ material_key: "", percentage: "" }]);
-  }, [product?.id, knownDepartment, knownMaterials]);
+  }, [product?.id, knownMaterials]);
 
   const materialClaims = materialRows
     .filter((row) => row.material_key && row.material_key !== "not_sure")
     .map((row) => ({ material_key: row.material_key, percentage: row.percentage || null }));
 
-  return <section className="fitDimensionFields catalogOptionalSection">
-    <div className="privacyNote">
-      <b>Help us learn more about this item</b>
-      <div>Share any extra details you know. Every bit of information helps us build a better garment listing.</div>
-    </div>
-
-    <label>Retail link <span className="muted inlineMuted">optional</span>
-      <input name="product_url" type="url" maxLength={1000} placeholder="https://..." />
-    </label>
-
-    {scannedBarcode
-      ? <input type="hidden" name="scanned_barcode" value={scannedBarcode}/>
-      : <label>UPC / barcode <span className="muted inlineMuted">optional</span>
-          <input name="upc" inputMode="numeric" maxLength={32} placeholder="Enter the code if you have it" />
-        </label>}
-
-    <label>Manufacturer Style / Article Number <span className="muted inlineMuted">optional</span>
-      <input name="style_number" maxLength={100} placeholder="Style, article, or model number" />
-    </label>
-
-    <label>Department <span className="muted inlineMuted">optional</span>
-      <select name="department" value={department} onChange={(event) => setDepartment(event.target.value)}>
-        <option value="">Choose a department</option>
-        {sortedDepartments.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
-        <option value="not_sure">Not sure</option>
-      </select>
-      {knownDepartment ? <span className="fieldHelp">Preselected from what LikeSized currently knows. Change it if your item says otherwise.</span> : null}
-    </label>
-
-    <fieldset className="fitDimensionFields">
-      <legend>Material / Fabric Composition <span className="muted inlineMuted">optional</span></legend>
-      {knownMaterials.length ? <p className="fieldHelp">Preselected from what LikeSized currently knows. Change any material or percentage if your item says otherwise.</p> : null}
-      <div className="fitDimensionFields">
-        {materialRows.map((row, index) => <div className="fieldPair" key={index}>
-          <label>Material<select value={row.material_key} onChange={(event) => setMaterialRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, material_key: event.target.value, percentage: event.target.value === "not_sure" ? "" : item.percentage } : item))}>
-            <option value="">Choose a material</option>
-            {sortedMaterials.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
-            <option value="not_sure">Other / Not sure</option>
-          </select></label>
-          <label>Percentage <span className="muted inlineMuted">optional</span><select value={row.percentage} disabled={!row.material_key || row.material_key === "not_sure"} onChange={(event) => setMaterialRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, percentage: event.target.value } : item))}>
-            <option value="">Leave blank if unknown</option>
-            {PERCENTAGES.map((value) => <option value={value} key={value}>{value}%</option>)}
-          </select></label>
-          {materialRows.length > 1 ? <button className="catalogBackButton" type="button" onClick={() => setMaterialRows((current) => current.filter((_, rowIndex) => rowIndex !== index))}>Remove material</button> : null}
-        </div>)}
+  return <details className={styles.optionalDetails}>
+    <summary className={styles.optionalSummary}>Optional Additional Information</summary>
+    <div className={`fitDimensionFields ${styles.optionalDetailsBody}`}>
+      <div className="privacyNote">
+        <b>Help us learn more about this item</b>
+        <div>Share any extra details you know. Every bit of information helps LikeSized build a better garment listing.</div>
       </div>
-      <button className="catalogManualButton" type="button" onClick={() => setMaterialRows((current) => [...current, { material_key: "", percentage: "" }])}>Add another material</button>
-      <input type="hidden" name="materials_json" value={JSON.stringify(materialClaims)} />
-    </fieldset>
 
-    <label>Product photo <span className="muted inlineMuted">optional</span>
-      <input name="product_photo" type="file" accept="image/jpeg,image/png,image/webp" />
-      <span className="fieldHelp">A clear photo of the item by itself helps LikeSized identify the exact product.</span>
-    </label>
-  </section>;
+      {scannedBarcode
+        ? <input type="hidden" name="scanned_barcode" value={scannedBarcode}/>
+        : <label>UPC / barcode <span className="muted inlineMuted">optional</span>
+            <input name="upc" inputMode="numeric" maxLength={32} placeholder="Enter the code if you have it" />
+          </label>}
+
+      <label>Manufacturer Style / Article Number <span className="muted inlineMuted">optional</span>
+        <input name="style_number" maxLength={100} placeholder="Style, article, or model number" />
+      </label>
+
+      <fieldset className="fitDimensionFields">
+        <legend>Material / Fabric Composition <span className="muted inlineMuted">optional</span></legend>
+        {knownMaterials.length ? <p className="fieldHelp">Preselected from what LikeSized currently knows. Change any material or percentage if your item says otherwise.</p> : null}
+        <div className="fitDimensionFields">
+          {materialRows.map((row, index) => <div className="fieldPair" key={index}>
+            <label>Material<select value={row.material_key} onChange={(event) => setMaterialRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, material_key: event.target.value, percentage: event.target.value === "not_sure" ? "" : item.percentage } : item))}>
+              <option value="">Choose a material</option>
+              {sortedMaterials.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}
+              <option value="not_sure">Other / Not sure</option>
+            </select></label>
+            <label>Percentage <span className="muted inlineMuted">optional</span><select value={row.percentage} disabled={!row.material_key || row.material_key === "not_sure"} onChange={(event) => setMaterialRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, percentage: event.target.value } : item))}>
+              <option value="">Leave blank if unknown</option>
+              {PERCENTAGES.map((value) => <option value={value} key={value}>{value}%</option>)}
+            </select></label>
+            {materialRows.length > 1 ? <button className="catalogBackButton" type="button" onClick={() => setMaterialRows((current) => current.filter((_, rowIndex) => rowIndex !== index))}>Remove material</button> : null}
+          </div>)}
+        </div>
+        <button className="catalogManualButton" type="button" onClick={() => setMaterialRows((current) => [...current, { material_key: "", percentage: "" }])}>Add another material</button>
+        <input type="hidden" name="materials_json" value={JSON.stringify(materialClaims)} />
+      </fieldset>
+
+      <label>Product photo <span className="muted inlineMuted">optional</span>
+        <input name="product_photo" type="file" accept="image/jpeg,image/png,image/webp" />
+        <span className="fieldHelp">A clear photo of the item by itself helps LikeSized identify the exact product.</span>
+      </label>
+    </div>
+  </details>;
 }
 
-export function CatalogGarmentFields({ brands, fixtureProducts = [], children }: { brands: Brand[]; fixtureProducts?: CatalogProduct[]; children: ReactNode }) {
+export function CatalogGarmentFields({ brands, departments, fixtureProducts = [], children }: { brands: Brand[]; departments: CatalogOption[]; fixtureProducts?: CatalogProduct[]; children: ReactNode }) {
   const [step, setStep] = useState<"start" | "scan" | "confirm" | "details">("start");
   const [product, setProduct] = useState<CatalogProduct | null>(null);
   const [candidateDefaultSizeKind, setCandidateDefaultSizeKind] = useState<GarmentSizeKind | null>(null);
@@ -492,6 +498,8 @@ export function CatalogGarmentFields({ brands, fixtureProducts = [], children }:
           {product?.garment_type_key && !typeIssue ? <><input type="hidden" name="garment_type" value={type}/><button className="catalogBackButton" type="button" onClick={() => { setTypeIssue(true); setType(""); setCandidateDefaultSizeKind(null); setAnswers({}); }}>Report an issue</button></> : null}
           {selectedType ? <span className="fieldHelp">LikeSized files this under {GARMENT_CATEGORIES.find((item) => item.value === selectedType.category)?.label} automatically.</span> : null}
         </label>
+
+        <CatalogDepartmentField departments={departments} />
 
         {type ? <fieldset className="fitDimensionFields">
           <legend>Item details</legend>

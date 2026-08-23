@@ -25,7 +25,7 @@ export default async function OnboardingPage({searchParams}:{searchParams:Search
   const unitSystem=fitProfile?.preferred_unit_system==="metric"?"metric":"imperial";
   const isInitialSetup=!fitProfile?.completed_at;
 
-  return <main className="onboardingShell">
+  return <main className={`onboardingShell ${isInitialSetup?"":heroStyles.revisitShell}`}>
     <section className={`onboardingIntro ${isInitialSetup?"":heroStyles.revisit}`}>
       <span className="eyebrow">FIT PROFILE</span>
       <h1 className={isInitialSetup?undefined:heroStyles.desktopTitle}>Personalize LikeSized to fit your needs</h1>

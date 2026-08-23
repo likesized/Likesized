@@ -34,36 +34,48 @@ const capabilities = [
 
 const faqs = [
   {
-    question: "What is a Fit Twin?",
-    answer: "A Fit Twin is someone you follow whom LikeSized identifies as a strong current body match. Following adds someone to My Circle; LikeSized decides whether that followed person qualifies as a Fit Twin.",
+    question: "What does a Fit Report tell me, and what does Fit Result mean?",
+    answer: "A Fit Report tells you what happened when another person actually wore the garment. Body Match tells you how similar you are to that person. The Fit Report tells you what size they wore and how it fit them. Fit Result is the person’s description of that fit: Too Small, Snug, Just Right, Relaxed, or Too Big. You’ll see it alongside the size they wore when viewing Fit Reports for an item.",
   },
   {
-    question: "Can other members see my measurements?",
-    answer: "No. Your exact current and historical body measurements stay private. Other members see safe Match percentages and the fit information you intentionally share.",
+    question: "What does my Body Match percentage mean, and does a high match guarantee the same fit?",
+    answer: "Your Body Match shows how closely your body measurements match the person who submitted a Fit Report. For example, 92% Body Match means that person’s measurements are very similar to yours. It does not mean the garment has a 92% chance of fitting you or that the same size is guaranteed to fit you the same way. People with similar measurements can still experience fit differently because of garment construction, fabric, body shape, and personal fit preference. Body Match tells you how similar you are to the person. Their Fit Report tells you what happened when they actually wore the garment.",
   },
   {
     question: "Why can my Match change by clothing type?",
     answer: "Different garments depend on different measurements. LikeSized emphasizes the measurements that matter for tops, bottoms, and specific garment types instead of using one generic score for everything.",
   },
   {
+    question: "Does a low Body Match mean the item will not fit me?",
+    answer: "No. A lower Body Match may simply mean we do not yet have a Fit Report for that item from someone whose measurements are very close to yours. The garment may still fit you perfectly. As more people submit Fit Reports, LikeSized can show you evidence from people who are closer to your size and proportions.",
+  },
+  {
+    question: "Why am I seeing a lower Body Match before a stronger one?",
+    answer: "Because LikeSized shows evidence from the exact variation you are viewing first. Someone who wore a related version of the garment may be a much stronger Body Match, but they did not wear the exact same version. The exact-variation report tells you what happened with the same version you’re viewing. A related report can give you additional evidence from someone built more like you while clearly showing what was different about the garment they wore.",
+  },
+  {
+    question: "What are Strong Fit Reports?",
+    answer: "When multiple people with strong Body Matches have reported on the same garment variation, LikeSized may summarize those reports together. This helps you see whether several people built similarly to you had similar experiences with the garment. Different sizes or Fit Results do not necessarily mean one report is wrong—people with similar measurements can still experience or prefer fit differently. The closest individual Body Match is still shown first, while Strong Fit Reports show the broader pattern behind it.",
+  },
+  {
     question: "What makes LikeSized different from other sizing and fashion tools?",
-    answer: "Many sizing tools start with size charts, general reviews, or a predicted size. LikeSized starts with real Fit Reports from people whose bodies are similar to yours and uses the measurements that matter for the garment you’re looking at. LikeSized also tracks fit down to the individual item whenever real Fit Reports exist. Two pairs of pants from the same brand can fit completely differently, so we don’t treat a brand, clothing category, or printed size as if it fits the same across every product. Strong Product-specific evidence can therefore give you a more relevant answer than broader brand or category patterns, while your exact body measurements stay private.",
+    answer: "Many sizing tools start with size charts, general reviews, or a predicted size. LikeSized starts with real Fit Reports from people whose bodies are similar to yours and uses the measurements that matter for the garment you’re looking at. LikeSized also tracks fit down to the individual item whenever real Fit Reports exist. Two pairs of pants from the same brand can fit completely differently, so we don’t assume a brand, clothing category, or printed size fits the same across every product. If someone built like you has already worn the exact item, you can see what size they wore and how it actually fit them. That’s a lot more useful than assuming every item from the same brand fits the same.",
   },
   {
-    question: "What does Fit Result mean?",
-    answer: "Fit Result describes how a garment fits you: Too Small, Snug, Just Right, Relaxed, or Too Big. It is not a star rating.",
+    question: "Can other members see my measurements?",
+    answer: "No. Your exact current and historical body measurements stay private. Other members see safe Match percentages and the fit information you intentionally share.",
   },
   {
-    question: "Can I follow someone who is not my Fit Twin?",
-    answer: "Yes. Following is your choice and helps you keep up with someone’s shared style and fit activity. It is separate from system-generated Fit Twin status.",
+    question: "What is a Fit Twin, and do I have to be Fit Twins to follow someone?",
+    answer: "No. Following and Fit Twin status are different. You can follow anyone whose style or fit activity you want to keep up with. A Fit Twin is someone you follow whom LikeSized identifies as a strong current body match. Following adds someone to My Circle; LikeSized decides whether that followed person also qualifies as a Fit Twin.",
   },
   {
     question: "How does the community-built clothing catalog work?",
-    answer: "LikeSized’s clothing catalog is built from real Fit Reports shared by people who actually own and wear the clothes. Help us build the most accurate inventory possible by sharing what you know—and leaving anything you’re unsure about blank instead of guessing. Other members can help fill in missing details through their own Fit Reports. If you spot information that looks wrong or doesn’t match your item, you can flag it for review so the catalog keeps getting better over time.",
+    answer: "LikeSized’s catalog grows from real Fit Reports submitted by people who actually own the clothes. Add what you know and leave anything you’re unsure about blank rather than guessing. Other members can help fill in missing details, and incorrect information can be flagged for review.",
   },
   {
     question: "What if I’m not sure of the item, style, or model?",
-    answer: "Enter the best information you can find on the garment, tag, packaging, or retailer listing. If you’re not completely confident, check “I’m not completely sure this is the correct item/style name.” Don’t guess just to fill in the form. LikeSized will hold the item for review while still letting you save your Fit Report and use it in your Styles. Providing a retail link, a clear Product Photo, and especially a photo of the product or style label can help us identify it accurately.",
+    answer: "Enter the best information you can find and check “I’m not completely sure this is the correct item/style name.” You can still save your Fit Report and use the garment in your Styles while LikeSized reviews it. A retail link, Product Photo, or clear photo of the label/tag can help us identify it.",
   },
 ];
 
@@ -158,7 +170,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
       <section className="section faqSection" id="faq" aria-labelledby="faq-title">
         <span className="eyebrow">HELP / FAQ</span>
         <h2 className="sectionTitle" id="faq-title">Questions before you get started?</h2>
-        <p className="faqIntro">The basics about matching, privacy, Fit Results, Fit Twins, Following, and the community-built clothing catalog.</p>
+        <p className="faqIntro">The basics about Fit Reports, Body Match, privacy, Fit Twins, Following, and the community-built clothing catalog.</p>
         <div className="faqGrid">
           {faqs.map((faq) => (
             <details className="faqItem" key={faq.question}>

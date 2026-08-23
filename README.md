@@ -13,7 +13,9 @@ V1 application for **LikeSized — See what fits people built like you.**
 If canonical documents disagree, stop feature work and reconcile them. Do not resurrect superseded product meaning from Git history or another branch.
 
 ## Current implementation status
-Canonical recovery is complete. `main` is the one production line. The active owner-authorized deployment line is PR #51 / `agent/fit-report-review-purchase-context`; exact verification/deployment state belongs in `docs/AI_MASTER_LOG.md`.
+Canonical recovery is complete. `main` is the one production line. PR #51 is merged and live at `main` commit `93d9414a29f81b5732c42bf277cc085db5e93998`; exact deployment/audit/next-work state belongs in `docs/AI_MASTER_LOG.md`.
+
+A 2026-08-23 canonical audit found stale historical branch refs and pre-deployment documentation, not a second live implementation on `main`. The master owns the final branch-cleanup ledger and current owner review/repair sequence.
 
 ## Current product meaning
 
@@ -49,7 +51,7 @@ Direct Product search is global. A member does **not** need to switch to Men or 
 A member's Fit Community does not change because they wear a garment sold in another Department.
 
 ### Fit Profile and measurement privacy
-Exact current and historical body measurements remain private. LikeSized exposes safe derived Match/context, not raw measurements. Match logic remains garment-relevant. Any new public sex/body-specific measurement FAQ wording is pending owner review and is not part of the current deployment batch.
+Exact current and historical body measurements remain private. LikeSized exposes safe derived Match/context, not raw measurements. Match logic remains garment-relevant. Exact public sex/body-specific measurement FAQ wording remains pending owner review.
 
 ### Following vs Fit Twin
 **Following controls My Circle; Fit Twin is a designation inside it.**
@@ -78,10 +80,12 @@ On **Is this the item?**, scanner imagery prioritizes **Product/catalog photo �
 ### Fit Result
 Fit Result is Too Small / Snug / Just Right / Relaxed / Too Big. There is **no current V1 1–5-star Fit Rating UI**.
 
-### Matching and recommendations
+### Matching, tracked variation and recommendations
 Current-person Match and historical garment Match are separate. Match % means garment-relevant body similarity, not probability that an item will fit.
 
 Current recommendation hierarchy is **Exact Variant → Exact Product → Product Family → Similar Garments → Brand + Garment Type → Category Fit**.
+
+Tracked variation meaning is owner-locked but its question-by-question classification audit is intentionally deferred: only explicitly approved variation-defining structured garment questions may define a tracked variation; **Size and Color never do**. Product Detail must not implement Exact Variation ahead of that audit.
 
 Help Me Size It is fallback sizing assistance and reuses the canonical recommendation engine. It never creates a second sizing engine or invents a size when evidence is insufficient.
 

@@ -14,7 +14,12 @@ This file owns current database behavior/privacy plus explicit implementation de
 # Production checkpoint — 2026-08-23
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-PR #51 database behavior is live. Canonical local migration files remain the replay authority; Supabase production has recorded them under hosted ledger timestamps:
+PR #53 database behavior is live. Canonical local migration files remain the replay authority; Supabase production has recorded the PR #53 migrations under hosted ledger timestamps:
+- `supabase/migrations/20260823160000_add_unconfirmed_catalog_status.sql` → production `20260823205559 add_unconfirmed_catalog_status`.
+- `supabase/migrations/20260823160100_unconfirmed_identity_and_photo_roles.sql` → production `20260823205714 unconfirmed_identity_and_photo_roles`.
+- `supabase/migrations/20260823160200_needs_more_evidence_followup.sql` → production `20260823205746 needs_more_evidence_followup`.
+
+The immediately preceding PR #51 migrations remain immutable applied history:
 - `supabase/migrations/20260823130000_add_sleepwear_lingerie_category.sql` → production `20260823153830 add_sleepwear_lingerie_category`.
 - `supabase/migrations/20260823130100_purchase_context_and_sleepwear_taxonomy.sql` → production `20260823153856 purchase_context_and_sleepwear_taxonomy`.
 - `supabase/migrations/20260823140000_add_fit_community_preference.sql` → production `20260823153931 add_fit_community_preference`.
@@ -24,15 +29,11 @@ Earlier production catalog-confidence migration `20260823054933 generalize_catal
 
 Supabase-assigned production timestamps may differ from local canonical filenames; never rename applied local migration history to chase generated timestamps.
 
-PR #51 exact-head LikeSized CI run #668 passed the full canonical/type/application/build/fresh-migration/pgTAP suite before merge. Current production Product evidence confirms Maidenform / Heirloom Product `4086fdaa-172d-4a3f-b6c4-2c155094bb25` is Corroborated with 2 distinct wearers and does not require routine catalog review.
+PR #53 exact-head LikeSized CI run #684 (`32665608459`) on tested head `47f949d1b4ce057b54b38c4cc2ea00cb6ced94c2` passed canonical integrity, TypeScript, all focused safeguards, production build, fresh replay of every canonical migration and full database behavior/privacy tests before merge. The three PR #53 migrations were then applied database-first to production and verified directly against the hosted schema/functions/storage/RLS state before the exact tested tree was squash-merged to `main` as `c2fc26233cfbee961ff9e0ea95f4338d1ce641fc`.
 
-## PR #53 database changes — FROZEN / NOT YET PRODUCTION
-The current owner-authorized repair batch adds three ordered migrations that must replay successfully and then be applied database-first before the PR #53 application code is merged:
-- `20260823160000_add_unconfirmed_catalog_status.sql` — adds enum value `unconfirmed` below `provisional` for candidate-only identity confidence.
-- `20260823160100_unconfirmed_identity_and_photo_roles.sql` — implements Unconfirmed gating, front/back Fit Photo roles, Product Label/Tag evidence and related admin/scanner boundaries.
-- `20260823160200_needs_more_evidence_followup.sql` — adds Needs More Evidence queue state, evidence-aware Unconfirmed priority, owner-only follow-up status projection and evidence re-entry.
+Hosted post-migration verification confirmed the Unconfirmed enum ordering, candidate-only live-Product constraint, front/back Fit Photo role/index, Product Label/Tag evidence table + RLS, owner-scoped catalog-submission photo deletion, backward-compatible 19-argument pending-submission RPC, barcode lookup/confirmation gates, scanner-image source, admin resolution boundary, Needs More Evidence status/projection/re-entry RPCs, and zero live Products with `catalog_status='unconfirmed'`.
 
-These migrations are **not yet recorded as applied production history**. Do not write hosted versions here until they are actually applied and verified.
+Known production Product evidence remained intact after the rollout: Maidenform / Heirloom Product `4086fdaa-172d-4a3f-b6c4-2c155094bb25` remains Corroborated with 2 distinct wearers and 4 Fit Reports.
 
 # 1. Privacy / body-state foundations
 - `profiles` stores member identity under authenticated-member authorization boundaries.
@@ -364,18 +365,17 @@ Help Me Size It reuses this architecture. `Would Buy Again` does not affect size
 Before member-facing Product Detail uses `exact_variant`, the existing recommendation/variant foundation must be audited against the owner-locked tracked-variation definition. Size and Color must not become exact-variation key fields. Body Match remains body similarity and must not be collapsed with Fit Result into a synthetic garment-fit percentage.
 
 # 23. Current implementation debt / open verification
-- PR #51 behavior is complete/live; PR #52 reconciled docs/status on `main`.
-- PR #53 is the frozen current repair batch and is not yet production-complete.
+- PR #53 database/application rollout is complete and live on the production line; post-deploy repository reconciliation is documentation-only.
 - The proposed sex/body-specific public measurement FAQ wording remains pending owner copy approval.
 - Unified public Closet migration and mutation/lifecycle model remain future audit work beyond the narrow Needs More Evidence owner flow.
 - Complete all-Products admin priority/filter/merge/split UX remains to build beyond the PR #53 operational queue.
 - Purchase-context aggregate/admin analytics UI remains open.
 - Product merge/split, richer alias UX, spam moderation, broader Product-photo review, external barcode-provider feasibility, SerpAPI admin UX and browser-level regression remain open where previously scoped.
 - Tracked variation-definition audit is required before Product Detail Exact Variation behavior is treated as settled.
-- A Foundation Technical Audit is required after PR #53 deployment to re-check Product/candidate materialization, Unconfirmed gating, Needs More Evidence re-entry, owner-only privacy, Product/Label photo boundaries, trust refresh, report accumulation, barcode confidence, front/back Fit photos, Fit Report identity, exact-variant foundations, Fit Community/search, purchase isolation, migration/RLS/privacy and recommendation interactions.
+- The Foundation Technical Audit is now the required next integrity checkpoint before normal roadmap implementation resumes. It must re-check Product/candidate materialization, Unconfirmed gating, Needs More Evidence re-entry, owner-only privacy, Product/Label photo boundaries, trust refresh, report accumulation, barcode confidence, front/back Fit photos, Fit Report identity, exact-variant foundations, Fit Community/search, purchase isolation, migration/RLS/privacy and recommendation interactions.
 
 # 24. Verification contract
-For PR #53/future changes prove as applicable:
+For the current production foundation and future changes prove as applicable:
 1. canonical integrity/drift guard;
 2. TypeScript;
 3. focused application safeguards;

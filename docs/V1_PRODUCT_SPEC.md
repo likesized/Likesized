@@ -49,11 +49,16 @@ LikeSized uses one controlled community-built canonical Product catalog.
 
 A canonical Product is the normalized identity used for Product search, evidence, Product details, variants, identifiers, Product photos, retailer listings and reviewed shared facts.
 
-## Product trust levels
-- **First clean distinct member → Provisional Product may auto-post immediately.** Routine unique clothing should not wait for admin approval.
-- **2 distinct members with Product Fit Reports → Provisional may strengthen to Corroborated.**
-- **Verified → authoritative/admin-reviewed only.** It is never granted merely from community count.
+## Four Product identity-trust tiers
+Publishing and identity-trust strength are separate. A clean Product does not wait for five reports before it may appear.
+
+- **Provisional — 1 distinct wearer.** A clean unique first submission may auto-post immediately.
+- **Corroborated — 2–4 distinct wearers.** Independent wearer evidence strengthens the identity.
+- **Established — 5+ distinct wearers.** The five-wearer milestone remains the stronger community-evidence tier.
+- **Verified — authoritative/admin-reviewed.** It is never granted merely from community count.
 - Repeated reports from one member do not manufacture distinct-member Product identity confidence.
+
+The identity-trust tier is separate from field-level Product fact authority. Community wearer count does not silently verify Product description, material, Department, attributes or other facts.
 
 A candidate is a staging/audit object, not a second public catalog. A candidate remains unresolved when a blocking ambiguity already exists—for example conflicting identity, competing exact Products, barcode/listing collision or another genuine duplicate signal. Clean candidates are materialized/mapped automatically instead of creating a routine admin queue.
 
@@ -81,11 +86,12 @@ Barcode confidence is separate from Product confidence.
 - Supports normal retail UPC/EAN 1-D barcodes; QR is not required.
 - Lookup checks canonical identifiers, unique provisional Product→barcode evidence and unresolved candidate evidence.
 - Unique recognition pauses at **Is this the item?**.
-- Confirmation card shows safe Product photo if available, Brand, Item, Category/Type, **Yes — this is the item**, **No — enter manually**.
+- Confirmation card shows Brand, Item, Category/Type, **Yes — this is the item**, and **No — enter manually**.
+- Scanner confirmation image priority is: **Product/catalog photo first → public/shared member Fit Photo second → default/placeholder if neither exists**.
+- A member Fit Photo used as scanner fallback remains personal wear evidence only; it is not promoted into canonical Product imagery or Product truth.
 - Physical garment questions stay in the Fit Report, not the barcode identity card.
 - Unknown/no match continues manual fallback while retaining barcode evidence.
 - Ambiguous barcode identities are never auto-selected.
-- Never use another member's Fit Photo as generic Product imagery.
 
 # 6. New Fit Report intake — LOCKED
 Ordinary member flow:
@@ -140,14 +146,8 @@ Direct Product search is **global** across men's, women's and unisex Products. A
 
 Fit Community filters people/wearer relevance in social discovery. Product Department/taxonomy filters may narrow explicit browse/explore contexts when the user chooses them, but they do not silently suppress a direct textual Product search.
 
-# 8. Men/women measurement guidance — LOCKED PUBLIC EXPLANATION
-LikeSized works for men and women. Every accurate measurement can improve precision, and actual Match logic remains garment-relevant rather than sex-stereotype based.
-
-Public guidance may explain that some measurements are often especially informative depending on the person's body and clothing. Examples:
-- many men's fits: chest, shoulders, sleeve length, upper arm/bicep, waist, rise, inseam;
-- many women's fits: full bust, high bust, underbust, waist, hip/seat, torso length and related shaping measurements.
-
-These are examples, not rules. Any member may benefit from any applicable measurement. Exact measurements remain private.
+# 8. Public measurement FAQ copy — PENDING OWNER APPROVAL
+A future FAQ may explain that complete, accurate measurements improve Match precision and that different garments emphasize different measurements. The exact public wording and any sex/body-specific measurement examples are **not approved for this deployment** and must not be published until the owner reviews the copy.
 
 # 9. Product/item reporting and exception-driven review — LOCKED
 Every published Product must expose one **Report this item** action. Initial reasons:
@@ -161,9 +161,10 @@ A report creates/refreshes review evidence; it does not let the reporter directl
 LikeSized may also create review flags from conflicts and conservative internal signals such as possible duplicate names, competing identifiers/barcodes, reused retailer links, aliases or other identity evidence. Internal similarity is a flagging aid, never an automatic fuzzy merge.
 
 ## Review priority
-Priority derives from target trust plus independent evidence:
-- **Provisional / uncorroborated → High** when flagged.
-- **Corroborated → Medium** for one ordinary signal; repeated independent signals may escalate High.
+Priority derives from the four Product identity-trust tiers plus independent evidence:
+- **Provisional (1 wearer) → High** when a credible issue is flagged.
+- **Corroborated (2–4 wearers) → High** when a credible issue is flagged; at this evidence level the conflict may still reveal an undiscovered Product problem.
+- **Established (5+ wearers) → Low** for one isolated ordinary disagreement because a single entry error is more likely after substantial agreement; repeated independent signals escalate to Medium and then High.
 - **Verified → Low** for one isolated ordinary member report; multiple independent reports/conflicts may escalate Medium/High.
 - Competing barcode/Product claims, strong duplicate evidence or multiple identity conflicts may escalate regardless of current trust.
 
@@ -233,7 +234,7 @@ Key locked details:
 # 14. Product evidence boundaries — LOCKED
 Shared Product facts resolve field by field; one Fit Report never wholesale-replaces another.
 
-Product becoming Provisional, Corroborated or Verified does **not** turn another member's Size, Color, Material, Fit Result, physical answers, Condition, Notes, purchase context or Fit Photo into unquestioned Product truth.
+Product identity becoming Provisional, Corroborated, Established or Verified does **not** turn another member's Size, Color, Material, Fit Result, physical answers, Condition, Notes, purchase context or Fit Photo into unquestioned Product truth.
 
 Material default uses complete exact submitted recipes/compositions, never averaged recipes nobody submitted. Verified evidence outranks member-derived defaults.
 
@@ -289,7 +290,7 @@ Help Me Size It is fallback sizing assistance and reuses the canonical recommend
 - My Fit Matches eligibility begins at 75%+ relevant historical Match.
 - Strict explicit taxonomy filters do not silently relax.
 - Ordinary Product results dedupe to one canonical Product.
-- Provisional/Corroborated/Verified Products remain searchable unless rejected/otherwise explicitly moderated; unresolved candidates are not ordinary Product results.
+- Provisional/Corroborated/Established/Verified Products remain searchable unless rejected/otherwise explicitly moderated; unresolved candidates are not ordinary Product results.
 - Direct textual Product search remains global as defined in Section 7.
 - No blank image state and no star Fit Rating.
 
@@ -310,12 +311,13 @@ Outfits use owned Closet garments and the same Product/taxonomy system. Other-me
 # 24. Images — LOCKED
 - Fit Photo = member wear evidence attached to the Fit Report/garment.
 - Product Photo = separate catalog evidence.
-- Never use another member's Fit Photo as generic Product imagery.
+- Product/catalog imagery is preferred on Product-identification surfaces.
+- A public/shared member Fit Photo may be used only as the scanner **Is this the item?** fallback when no Product/catalog photo exists. That fallback never promotes the Fit Photo into generic/canonical Product imagery.
 
 # 25. Admin catalog target — LOCKED
-Admin must expose Products/candidates, trust status, distinct confirmation counts, open flags, flag priority, identifiers/barcode confidence, retailer links, evidence history and system-vs-admin resolution provenance.
+Admin must expose Products/candidates, identity-trust tier, distinct confirmation counts, open flags, flag priority, identifiers/barcode confidence, retailer links, evidence history and system-vs-admin resolution provenance.
 
-Required review views/filters include at least Needs Review, Provisional, Corroborated, Verified, Has Conflicts and priority.
+Required review views/filters include at least Needs Review, Provisional, Corroborated, Established, Verified, Has Conflicts and priority.
 
 Admin work is exception-driven: duplicate/identity conflict, incorrect information, member reports, content/photo problems, identifier/listing collisions and evidence disagreements—not mandatory approval of every clean new garment.
 
@@ -323,7 +325,7 @@ Admin work is exception-driven: duplicate/identity conflict, incorrect informati
 SerpAPI checks private cache first, dedupes queries, respects caps and requires explicit resolution. Raw results never write directly to Product truth. Ordinary member search/intake/scanner does not use it.
 
 # 27. Public homepage / FAQ — LOCKED
-Homepage remains useful logged out; signed-in `/` enters My Circle. FAQ accurately explains measurement privacy, garment-relevant Match, men/women usability, Product-level evidence, community catalog trust, Fit Results/no stars, Following vs Fit Twin and direct-search behavior without unverifiable competitor claims.
+Homepage remains useful logged out; signed-in `/` enters My Circle. Published FAQ copy must be owner-approved and accurately explain current behavior without unverifiable competitor claims. The proposed measurement-specific men/women FAQ wording is pending owner review and is not part of this deployment.
 
 # 28. Data-quality rule
 **Controlled when possible. Normalize when necessary. Free text only when useful.**

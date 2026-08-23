@@ -29,7 +29,7 @@ Match % means **garment-relevant body similarity**, not probability a garment wi
 # 3. Following vs Fit Twin — LOCKED
 
 - Following is member-controlled.
-- Fit Twin is system-derived among followed members from strong current-person Match quality.
+- Fit Twin is **system-generated** among followed members from strong current-person Match quality.
 - one canonical `follows` graph exists; there is no separate user-controlled Fit Twin graph.
 - member actions are Follow / Following / Unfollow.
 - public relationship count is Followers.

@@ -107,8 +107,8 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
         <fieldset className={styles.itemDetailsFieldset}>
           <legend>Fit photos <span className="muted inlineMuted">optional</span></legend>
           <div className={styles.photoEvidenceGrid}>
-            <label>Front photo<input name="photo_front" type="file" accept="image/jpeg,image/png,image/webp" /></label>
-            <label>Back photo<input name="photo_back" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+            <label>Front photo<input name="photo_front" type="file" accept="image/jpeg,image/png,image/webp" data-review-label="Front Fit Photo" /></label>
+            <label>Back photo<input name="photo_back" type="file" accept="image/jpeg,image/png,image/webp" data-review-label="Back Fit Photo" /></label>
           </div>
           <span className="fieldHelp"><b>Fit photos are shared with the LikeSized community. Don’t upload a photo you do not want other people to see.</b></span>
         </fieldset>

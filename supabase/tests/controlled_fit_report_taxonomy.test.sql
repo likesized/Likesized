@@ -9,7 +9,7 @@ select has_column('public','fit_reports','reported_condition','Fit Reports retai
 select is((select count(*) from public.color_families),16::bigint,'Only the sixteen owner-approved broad Color families are active');
 select ok(exists(select 1 from pg_enum e join pg_type t on t.oid=e.enumtypid where t.typname='garment_category' and e.enumlabel='swimwear'),'Swimwear is a broad Category');
 select ok(exists(select 1 from pg_enum e join pg_type t on t.oid=e.enumtypid where t.typname='garment_category' and e.enumlabel='intimates'),'Intimates is a broad Category');
-select is((select count(*) from public.garment_types where intake_active),56::bigint,'Only the approved specific physical garment Types are selectable in intake');
+select is((select count(*) from public.garment_types where intake_active),66::bigint,'Only the approved specific physical garment Types are selectable in intake');
 select ok((select not intake_active from public.garment_types where key='work_pants'),'Work pants is retired from intake in favor of Cargo pants');
 select ok((select active and intake_active and category='bottoms' from public.garment_types where key='cargo_pants'),'Cargo pants derives Bottoms');
 select ok((select active and intake_active and category='intimates' from public.garment_types where key='bra'),'Bra derives Intimates');

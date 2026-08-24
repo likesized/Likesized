@@ -115,6 +115,24 @@
   margin-bottom: 0;
 }
 
+.form > label,
+.form > :global(.garmentSizeFields),
+.catalogDetails > label,
+.categoryTypeGroup {
+  width: min(100%, 680px);
+}
+
+.categoryTypeGroup {
+  position: relative;
+  display: grid;
+  gap: 30px;
+  min-width: 0;
+}
+
+.categoryTypeGroup > label {
+  min-width: 0;
+}
+
 .editableField,
 .itemField {
   position: relative;
@@ -134,7 +152,7 @@
   right: 0;
   z-index: 2;
   width: auto;
-  max-width: 88px;
+  max-width: 170px;
   margin: 0;
   padding: 0;
   border: 0;
@@ -570,6 +588,10 @@
   }
 
   .catalogDetails {
+    gap: 34px;
+  }
+
+  .categoryTypeGroup {
     gap: 34px;
   }
 

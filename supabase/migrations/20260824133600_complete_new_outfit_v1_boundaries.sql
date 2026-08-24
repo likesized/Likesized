@@ -9,8 +9,7 @@ on public.outfit_comments
 for select
 to anon, authenticated
 using (
-  private.is_admin()
-  or exists (
+  exists (
     select 1
     from public.outfit_posts op
     where op.id=outfit_comments.post_id
@@ -22,6 +21,11 @@ using (
       )
   )
 );
+create policy "admins read all outfit comments"
+on public.outfit_comments
+for select
+to authenticated
+using (private.is_admin());
 grant select on public.outfit_comments to anon;
 
 -- Public garment teasers intentionally expose only already-resolved canonical Products.

@@ -13,7 +13,7 @@ import OutfitEngagementClient from "./OutfitEngagementClient";
 import OutfitGallery, { type GalleryGarment, type GalleryPhoto } from "./OutfitGallery";
 import OutfitTabs, { type OutfitTabKey } from "./OutfitTabs";
 import TaggedItemsPanel, { type TaggedItem } from "./TaggedItemsPanel";
-import styles from "../outfits.module.css";
+import styles from "./outfitDetail.module.css";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const FIT_LABELS: Record<string, string> = { too_small: "Too small", snug: "Snug", just_right: "Just right", relaxed: "Relaxed", too_big: "Too big" };

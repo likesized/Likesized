@@ -20,7 +20,7 @@ type Outfit = { id: string; user_id: string; headline: string | null; story: str
 type Photo = { id: string; bucket: "outfit-photos" | "outfit-draft-photos"; display_path: string; sort_order: number; is_main: boolean };
 type PhotoTag = { photo_id: string; closet_item_id: string; x: number; y: number };
 type FitReport = { closet_item_id: string; size_label: string; fit: string; created_at: string; product_id: string | null };
-type Product = { id: string; name: string; slug: string; image_url: string | null; retailer_url: string | null; brand_id: string };
+type Product = { id: string; name: string; slug: string; image_url: string | null; brand_id: string };
 type Brand = { id: string; name: string };
 type Comment = { id: string; user_id: string | null; body: string; created_at: string; profile: Profile | null };
 type PublicComment = { comment_id: string; body: string; created_at: string; username: string; display_name: string | null };
@@ -159,7 +159,7 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
   const productIds = [...new Set([...latestByCloset.values()].map((report) => report.product_id).filter((value): value is string => Boolean(value)))];
 
   if (viewerId && productIds.length) {
-    const { data: productRows, error: productError } = await supabase.from("products").select("id,name,slug,image_url,retailer_url,brand_id").in("id", productIds);
+    const { data: productRows, error: productError } = await supabase.from("products").select("id,name,slug,image_url,brand_id").in("id", productIds);
     if (productError) throw new Error(`Could not load Outfit Products: ${productError.message}`);
     for (const product of (productRows ?? []) as Product[]) productById.set(product.id, product);
     const brandIds = [...new Set([...productById.values()].map((product) => product.brand_id).filter(Boolean))];
@@ -180,7 +180,6 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
     for (const row of listingResult.data ?? []) if (!retailerByProduct.has(row.product_id) && row.product_url) retailerByProduct.set(row.product_id, row.product_url);
     for (const row of likeResult.data ?? []) productLiked.add(row.product_id);
     for (const row of wishResult.data ?? []) productWished.add(row.product_id);
-    for (const product of productById.values()) if (product.retailer_url && !retailerByProduct.has(product.id)) retailerByProduct.set(product.id, product.retailer_url);
   }
 
   const garments: GalleryGarment[] = garmentLinks.flatMap((link) => {

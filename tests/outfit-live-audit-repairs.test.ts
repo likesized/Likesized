@@ -12,14 +12,36 @@ const tagged=readFileSync(new URL("../app/outfits/[id]/TaggedItemsPanel.tsx",imp
 const actions=readFileSync(new URL("../app/outfits/actions.ts",import.meta.url),"utf8");
 const peopleActions=readFileSync(new URL("../app/people/actions.ts",import.meta.url),"utf8");
 const profile=readFileSync(new URL("../app/people/[username]/page.tsx",import.meta.url),"utf8");
-const feedCss=readFileSync(new URL("../app/outfits/outfits.module.css",import.meta.url),"utf8");
+const closetPage=readFileSync(new URL("../app/closet/page.tsx",import.meta.url),"utf8");
+const outfitsIndex=readFileSync(new URL("../app/outfits/page.tsx",import.meta.url),"utf8");
+const explore=readFileSync(new URL("../app/explore/page.tsx",import.meta.url),"utf8");
+const profilePhoto=readFileSync(new URL("../lib/profile-photo.ts",import.meta.url),"utf8");
+const liveIdentityMigration=readFileSync(new URL("../supabase/migrations/20260824234500_live_profile_identity.sql",import.meta.url),"utf8");
 const catalogFields=readFileSync(new URL("../app/closet/add/CatalogGarmentFields.tsx",import.meta.url),"utf8");
 const catalogRoute=readFileSync(new URL("../app/api/catalog/search/route.ts",import.meta.url),"utf8");
 
-test("Outfit feed uses available desktop width instead of one dead-space column",()=>{
- assert.match(feedCss,/\.feed\s*\{[^}]*column-count:\s*4/);
- assert.match(feedCss,/column-count:\s*3/);
- assert.match(feedCss,/column-count:\s*2/);
+test("My Closet owns member Garments, Outfits, and FITuition",()=>{
+ assert.match(closetPage,/My Closet sections/);
+ assert.match(closetPage,/>Garments<\/Link>/);
+ assert.match(closetPage,/>Outfits<\/Link>/);
+ assert.match(closetPage,/>FITuition<\/Link>/);
+ assert.match(closetPage,/\.eq\("user_id", userId\)/);
+ assert.match(closetPage,/Published looks and drafts/);
+ assert.match(outfitsIndex,/\/closet\?tab=outfits/);
+ assert.doesNotMatch(outfitsIndex,/outfit_posts|feed=following/);
+});
+
+test("current profile identity resolves live across owned, discovered, opened, and commented Outfits",()=>{
+ assert.match(profilePhoto,/current profiles\.avatar_url at render time/);
+ assert.match(closetPage,/currentProfilePhotoUrl/);
+ assert.match(explore,/profile:profiles\(username,display_name,avatar_url\)/);
+ assert.match(explore,/currentProfilePhotoUrl/);
+ assert.match(detail,/get_public_outfit_creator/);
+ assert.match(detail,/get_public_outfit_comments/);
+ assert.match(detail,/currentProfilePhotoUrl/);
+ assert.match(liveIdentityMigration,/p\.avatar_url/);
+ assert.match(liveIdentityMigration,/set public = true/);
+ assert.match(liveIdentityMigration,/never snapshotted onto the comment/);
 });
 
 test("New Outfit picker uses progressive filters and explicit Add",()=>{

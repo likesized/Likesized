@@ -76,3 +76,11 @@ test("Outfit feed and detail avoid fragile nested PostgREST relationship reads",
   assert.match(detailPage, /\.from\("brands"\)\.select\("id,name"\)/);
   assert.match(detailPage, /Could not load Outfit garment details:/);
 });
+
+test("opened Outfit shows viewer-specific Fit Match and qualified Twin designation", () => {
+  assert.match(detailPage, /fitTwinDesignation/);
+  assert.match(detailPage, /p_match_category: "tops"/);
+  assert.match(detailPage, /p_match_category: "bottoms"/);
+  assert.match(detailPage, /% Fit Match/);
+  assert.match(detailPage, /creatorTwinLabel/);
+});

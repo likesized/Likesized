@@ -6,10 +6,11 @@ import { publishOutfit, saveOutfitDraft, savePublishedOutfit, type OutfitSaveRes
 import { OUTFIT_OCCASIONS } from "@/lib/outfit-taxonomy";
 import styles from "../outfits.module.css";
 
-const MAX_INPUT_BYTES = 8 * 1024 * 1024;
+const MAX_INPUT_BYTES = 24 * 1024 * 1024;
 const DISPLAY_MAX_BYTES = 600 * 1024;
 const FEED_MAX_BYTES = 220 * 1024;
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const ALLOWED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"]);
+const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "heic", "heif"]);
 const CLOSET_PAGE_SIZE = 12;
 
 export type ClosetOption = {
@@ -48,17 +49,35 @@ type PhotoState = {
   tags: Hotspot[];
 };
 type Drawable = ImageBitmap | HTMLImageElement;
-
 type SaveKind = "draft" | "publish" | "update";
 
+function supportedPhoto(file: File) {
+  const type = file.type.toLowerCase();
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return (!type || ALLOWED_TYPES.has(type) || ALLOWED_EXTENSIONS.has(extension)) && file.size <= MAX_INPUT_BYTES;
+}
+
+function isBitmap(source: Drawable): source is ImageBitmap {
+  return typeof ImageBitmap !== "undefined" && source instanceof ImageBitmap;
+}
+
 async function loadImage(file: File): Promise<Drawable> {
-  if ("createImageBitmap" in window) return createImageBitmap(file);
+  if ("createImageBitmap" in window) {
+    try {
+      return await window.createImageBitmap(file);
+    } catch {
+      // Safari can expose createImageBitmap but still reject camera-roll HEIC/HEIF files.
+    }
+  }
   const url = URL.createObjectURL(file);
   try {
     const image = new Image();
     image.decoding = "async";
-    image.src = url;
-    await image.decode();
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("This photo could not be opened on this device."));
+      image.src = url;
+    });
     return image;
   } finally {
     URL.revokeObjectURL(url);
@@ -66,7 +85,7 @@ async function loadImage(file: File): Promise<Drawable> {
 }
 
 function dimensions(source: Drawable) {
-  return source instanceof ImageBitmap
+  return isBitmap(source)
     ? { width: source.width, height: source.height }
     : { width: source.naturalWidth, height: source.naturalHeight };
 }
@@ -74,7 +93,7 @@ function dimensions(source: Drawable) {
 function webpBlob(canvas: HTMLCanvasElement, quality: number) {
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
-      (blob) => blob ? resolve(blob) : reject(new Error("Photo conversion failed.")),
+      (blob) => blob && blob.type === "image/webp" ? resolve(blob) : reject(new Error("Photo conversion failed on this device.")),
       "image/webp",
       quality,
     );
@@ -83,35 +102,35 @@ function webpBlob(canvas: HTMLCanvasElement, quality: number) {
 
 async function optimize(source: Drawable, maxWidth: number, maxHeight: number, maxBytes: number) {
   const original = dimensions(source);
+  if (!original.width || !original.height) throw new Error("This photo has invalid dimensions.");
   const baseScale = Math.min(1, maxWidth / original.width, maxHeight / original.height);
-  for (const scaleStep of [1, 0.85, 0.7, 0.55]) {
+  for (const scaleStep of [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.42, 0.34, 0.28, 0.22]) {
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(original.width * baseScale * scaleStep));
     canvas.height = Math.max(1, Math.round(original.height * baseScale * scaleStep));
     const context = canvas.getContext("2d", { alpha: false });
     if (!context) throw new Error("Photo processing is unavailable.");
     context.drawImage(source, 0, 0, canvas.width, canvas.height);
-    for (const quality of [0.78, 0.68, 0.58, 0.48]) {
+    for (const quality of [0.82, 0.72, 0.62, 0.52, 0.44, 0.36, 0.3, 0.24]) {
       const blob = await webpBlob(canvas, quality);
       if (blob.size <= maxBytes) return blob;
     }
   }
-  throw new Error("This photo could not be reduced enough. Try a different photo.");
+  throw new Error("This photo could not be prepared. Try choosing it again.");
 }
 
 async function optimizeFile(file: File) {
-  if (!ALLOWED_TYPES.has(file.type) || file.size > MAX_INPUT_BYTES) {
-    throw new Error("Choose a JPEG, PNG, or WebP photo no larger than 8 MB.");
+  if (!supportedPhoto(file)) {
+    throw new Error("Choose a JPEG, PNG, WebP, HEIC, or HEIF photo no larger than 24 MB.");
   }
   const source = await loadImage(file);
   try {
-    const [display, feed] = await Promise.all([
-      optimize(source, 1600, 2000, DISPLAY_MAX_BYTES),
-      optimize(source, 800, 1000, FEED_MAX_BYTES),
-    ]);
+    // Keep mobile memory pressure lower by preparing one derivative at a time.
+    const display = await optimize(source, 1600, 2000, DISPLAY_MAX_BYTES);
+    const feed = await optimize(source, 800, 1000, FEED_MAX_BYTES);
     return { display, feed };
   } finally {
-    if (source instanceof ImageBitmap) source.close();
+    if (isBitmap(source)) source.close();
   }
 }
 
@@ -120,7 +139,8 @@ function normalizedStyle(value: string) {
 }
 
 function newKey() {
-  return crypto.randomUUID().replaceAll("-", "");
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID().replaceAll("-", "");
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
 }
 
 export default function OutfitComposer({
@@ -134,6 +154,7 @@ export default function OutfitComposer({
 }) {
   const router = useRouter();
   const garmentSectionRef = useRef<HTMLDivElement>(null);
+  const dirtyRef = useRef(false);
   const [postId, setPostId] = useState(initial?.id ?? "");
   const [headline, setHeadline] = useState(initial?.headline ?? "");
   const [story, setStory] = useState(initial?.story ?? "");
@@ -184,6 +205,7 @@ export default function OutfitComposer({
   const mainPhoto = photos.find((photo) => photo.isMain) ?? photos[0];
   const tagPhoto = photos.find((photo) => photo.key === tagPhotoKey) ?? photos[0] ?? null;
   const previewPhoto = photos[previewIndex] ?? photos[0] ?? null;
+  const hasClosetFilters = Boolean(closetSearch || closetCategory || closetType || closetBrand || closetSort !== "recent");
 
   const categoryOptions = useMemo(() => [...new Map(closet.map((item) => [item.category, item.categoryLabel])).entries()].sort((a, b) => a[1].localeCompare(b[1])), [closet]);
   const typeOptions = useMemo(() => [...new Map(closet.filter((item) => !closetCategory || item.category === closetCategory).map((item) => [item.garmentType, item.garmentTypeLabel])).entries()].sort((a, b) => a[1].localeCompare(b[1])), [closet, closetCategory]);
@@ -216,12 +238,12 @@ export default function OutfitComposer({
 
   useEffect(() => {
     const beforeUnload = (event: BeforeUnloadEvent) => {
-      if (!dirty) return;
+      if (!dirtyRef.current) return;
       event.preventDefault();
       event.returnValue = "";
     };
     const interceptLinks = (event: MouseEvent) => {
-      if (!dirty || event.defaultPrevented || event.button !== 0) return;
+      if (!dirtyRef.current || event.defaultPrevented || event.button !== 0) return;
       const anchor = (event.target as Element | null)?.closest("a[href]") as HTMLAnchorElement | null;
       if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download")) return;
       const url = new URL(anchor.href, window.location.href);
@@ -235,7 +257,7 @@ export default function OutfitComposer({
       window.removeEventListener("beforeunload", beforeUnload);
       document.removeEventListener("click", interceptLinks, true);
     };
-  }, [dirty]);
+  }, []);
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -253,6 +275,7 @@ export default function OutfitComposer({
         const next = new Set(current);
         next.add(payload.closetItemId!);
         setMessage("Garment added to this Outfit.");
+        dirtyRef.current = true;
         setDirty(true);
         return next;
       });
@@ -272,8 +295,18 @@ export default function OutfitComposer({
   }, [photos, previewIndex, tagPhotoKey]);
 
   function mark() {
+    dirtyRef.current = true;
     setDirty(true);
     setMessage(null);
+  }
+
+  function clearClosetFilters() {
+    setClosetSearch("");
+    setClosetCategory("");
+    setClosetType("");
+    setClosetBrand("");
+    setClosetSort("recent");
+    setClosetVisibleCount(CLOSET_PAGE_SIZE);
   }
 
   function updateSelected(id: string, checked: boolean) {
@@ -353,7 +386,7 @@ export default function OutfitComposer({
       const next = await makePhoto(file, true);
       setPhotos((current) => {
         const old = current.find((photo) => photo.isMain);
-        if (old && !old.existingId && old.previewUrl.startsWith("blob:")) URL.revokeObjectURL(old.previewUrl);
+        if (old?.previewUrl.startsWith("blob:")) URL.revokeObjectURL(old.previewUrl);
         return [next, ...current.filter((photo) => !photo.isMain).map((photo) => ({ ...photo, isMain: false }))].slice(0, 6);
       });
       setPhotoStatus("Cover photo ready.");
@@ -372,10 +405,14 @@ export default function OutfitComposer({
     try {
       const available = Math.max(0, 6 - photos.length);
       const chosen = [...files].slice(0, available);
-      const next = await Promise.all(chosen.map((file, index) => makePhoto(file, photos.length === 0 && index === 0)));
-      setPhotos((current) => [...current, ...next].slice(0, 6));
-      setPhotoStatus(`${next.length} additional ${next.length === 1 ? "photo" : "photos"} ready.`);
-      mark();
+      const settled = await Promise.allSettled(chosen.map((file, index) => makePhoto(file, photos.length === 0 && index === 0)));
+      const next = settled.flatMap((result) => result.status === "fulfilled" ? [result.value] : []);
+      const failed = settled.length - next.length;
+      if (next.length) {
+        setPhotos((current) => [...current, ...next].slice(0, 6));
+        mark();
+      }
+      setPhotoStatus(failed ? `${next.length} ${next.length === 1 ? "photo" : "photos"} ready. ${failed} could not be prepared.` : `${next.length} additional ${next.length === 1 ? "photo" : "photos"} ready.`);
     } catch (error) {
       setPhotoStatus(error instanceof Error ? error.message : "Photo preparation failed.");
     } finally {
@@ -386,7 +423,7 @@ export default function OutfitComposer({
   function removePhoto(key: string) {
     setPhotos((current) => {
       const removed = current.find((photo) => photo.key === key);
-      if (removed && !removed.existingId && removed.previewUrl.startsWith("blob:")) URL.revokeObjectURL(removed.previewUrl);
+      if (removed?.previewUrl.startsWith("blob:")) URL.revokeObjectURL(removed.previewUrl);
       const next = current.filter((photo) => photo.key !== key);
       if (removed?.isMain && next.length) next[0] = { ...next[0], isMain: true };
       return next;
@@ -403,20 +440,36 @@ export default function OutfitComposer({
     mark();
   }
 
-  function dropPhoto(targetKey: string) {
+  function reorderDraggedPhoto(targetKey: string) {
     if (!draggingPhotoKey || draggingPhotoKey === targetKey) return;
+    let changed = false;
     setPhotos((current) => {
       const main = current.find((photo) => photo.isMain);
       const extras = current.filter((photo) => !photo.isMain);
       const from = extras.findIndex((photo) => photo.key === draggingPhotoKey);
       const to = extras.findIndex((photo) => photo.key === targetKey);
-      if (from < 0 || to < 0) return current;
+      if (from < 0 || to < 0 || from === to) return current;
       const [moved] = extras.splice(from, 1);
       extras.splice(to, 0, moved);
+      changed = true;
       return main ? [main, ...extras] : extras;
     });
-    setDraggingPhotoKey(null);
-    mark();
+    if (changed) mark();
+  }
+
+  function movePhoto(key: string, direction: -1 | 1) {
+    let changed = false;
+    setPhotos((current) => {
+      const main = current.find((photo) => photo.isMain);
+      const extras = current.filter((photo) => !photo.isMain);
+      const from = extras.findIndex((photo) => photo.key === key);
+      const to = from + direction;
+      if (from < 0 || to < 0 || to >= extras.length) return current;
+      [extras[from], extras[to]] = [extras[to], extras[from]];
+      changed = true;
+      return main ? [main, ...extras] : extras;
+    });
+    if (changed) mark();
   }
 
   function setHotspot(photoKey: string, closetItemId: string, x: number, y: number) {
@@ -497,13 +550,26 @@ export default function OutfitComposer({
       return;
     }
     setPostId(result.postId);
+    const photoIds = result.photoIds ?? {};
+    setPhotos((current) => current.map((photo) => {
+      const existingId = photoIds[photo.key] ?? photo.existingId;
+      return existingId ? { ...photo, existingId, displayBlob: undefined, feedBlob: undefined } : photo;
+    }));
+    dirtyRef.current = false;
     setDirty(false);
+    setLeaveHref(null);
     if (destination) {
+      setSavingKind(null);
       window.location.assign(destination);
       return;
     }
-    if (kind === "draft") window.location.assign(`/outfits/new?draft=${result.postId}&saved=1`);
-    else window.location.assign(`/outfits/${result.postId}?${kind === "publish" ? "published" : "updated"}=1`);
+    if (kind === "draft") {
+      setSavingKind(null);
+      setMessage("Draft saved.");
+      window.history.replaceState(null, "", `/outfits/new?draft=${result.postId}&saved=1`);
+      return;
+    }
+    window.location.assign(`/outfits/${result.postId}?${kind === "publish" ? "published" : "updated"}=1`);
   }
 
   function save(kind: SaveKind, destination?: string) {
@@ -572,12 +638,12 @@ export default function OutfitComposer({
         <div className={styles.uploadGrid}>
           <label className={styles.uploadBox}>
             <strong>Cover photo (required)</strong>
-            <input type="file" accept="image/jpeg,image/png,image/webp" disabled={busyPhotos} onChange={(event) => { void chooseCover(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
+            <input type="file" accept="image/*" disabled={busyPhotos} onChange={(event) => { void chooseCover(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
           </label>
           <label className={styles.uploadBox}>
             <strong>Additional photos (optional)</strong>
             <span>Upload up to 5 additional photos.</span>
-            <input type="file" multiple accept="image/jpeg,image/png,image/webp" disabled={busyPhotos || photos.length >= 6} onChange={(event) => { void chooseAdditional(event.currentTarget.files); event.currentTarget.value = ""; }} />
+            <input type="file" multiple accept="image/*" disabled={busyPhotos || photos.length >= 6} onChange={(event) => { void chooseAdditional(event.currentTarget.files); event.currentTarget.value = ""; }} />
           </label>
         </div>
         {photoStatus ? <span className="fieldHelp" aria-live="polite">{photoStatus}</span> : null}
@@ -586,17 +652,22 @@ export default function OutfitComposer({
           key={photo.key}
           draggable={!photo.isMain}
           onDragStart={() => setDraggingPhotoKey(photo.key)}
+          onDragEnter={() => reorderDraggedPhoto(photo.key)}
           onDragOver={(event) => event.preventDefault()}
-          onDrop={() => dropPhoto(photo.key)}
+          onDrop={() => setDraggingPhotoKey(null)}
           onDragEnd={() => setDraggingPhotoKey(null)}
         >
           <img src={photo.previewUrl} alt={photo.isMain ? "Cover photo" : `Additional photo ${index}`} />
           <div className={styles.photoManagerMeta}>
             <strong>{photo.isMain ? "Cover photo" : `Additional photo ${index}`}</strong>
-            {!photo.isMain ? <span className={styles.dragHint}>↕ Drag to reorder</span> : null}
+            {!photo.isMain ? <span className={styles.dragHint}>Drag or use the arrows to reorder</span> : null}
           </div>
           <div className={styles.photoManagerActions}>
-            {!photo.isMain ? <button type="button" onClick={() => setCover(photo.key)}>Set as cover</button> : null}
+            {!photo.isMain ? <>
+              <button type="button" aria-label={`Move additional photo ${index} up`} disabled={index <= 1} onClick={() => movePhoto(photo.key, -1)}>↑</button>
+              <button type="button" aria-label={`Move additional photo ${index} down`} disabled={index >= photos.length - 1} onClick={() => movePhoto(photo.key, 1)}>↓</button>
+              <button type="button" onClick={() => setCover(photo.key)}>Set as cover</button>
+            </> : null}
             <button type="button" onClick={() => removePhoto(photo.key)}>Remove</button>
           </div>
         </article>)}</div> : null}
@@ -631,7 +702,7 @@ export default function OutfitComposer({
           <select aria-label="Filter by brand" value={closetBrand} onChange={(event) => { setClosetBrand(event.target.value); setClosetVisibleCount(CLOSET_PAGE_SIZE); }}><option value="">All brands</option>{brandOptions.map((brand) => <option value={brand} key={brand}>{brand}</option>)}</select>
           <select aria-label="Sort Closet" value={closetSort} onChange={(event) => setClosetSort(event.target.value as "recent" | "brand" | "type")}><option value="recent">Recently added</option><option value="brand">Brand A–Z</option><option value="type">Garment type</option></select>
         </div>
-        <div className={styles.closetPickerTopline}><span>{filteredCloset.length} {filteredCloset.length === 1 ? "item" : "items"}</span><button type="button" className={styles.quietAdd} onClick={() => setGarmentModal(true)}>+ Add a missing garment</button></div>
+        <div className={styles.closetPickerTopline}><span>{filteredCloset.length} {filteredCloset.length === 1 ? "item" : "items"}</span><div className={styles.closetPickerActions}>{hasClosetFilters ? <button type="button" className={styles.quietAdd} onClick={clearClosetFilters}>Clear filters</button> : null}<button type="button" className={styles.quietAdd} onClick={() => setGarmentModal(true)}>+ Add a new garment</button></div></div>
         {filteredCloset.length ? <div className={styles.choices}>{filteredCloset.slice(0, closetVisibleCount).map((item) => <label className={styles.choice} key={item.id}><input type="checkbox" checked={selected.has(item.id)} disabled={!selected.has(item.id) && selected.size >= 6} onChange={(event) => updateSelected(item.id, event.target.checked)} /><span><strong>{item.label}</strong><small>{item.detail} · {item.garmentTypeLabel}</small></span></label>)}</div> : <div className={styles.inlineEmpty}>No Closet items match those filters.</div>}
         {closetVisibleCount < filteredCloset.length ? <button type="button" className={styles.loadMore} onClick={() => setClosetVisibleCount((count) => count + CLOSET_PAGE_SIZE)}>Load more</button> : null}
       </div>
@@ -678,8 +749,8 @@ export default function OutfitComposer({
       </div>
     </section>
 
-    {garmentModal ? <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label="Add a missing Closet garment"><div className={styles.garmentModal}><div className={styles.modalHeader}><div><span className="eyebrow">ADD A GARMENT</span><strong>Add it without leaving your Outfit.</strong></div><button type="button" aria-label="Close" onClick={() => setGarmentModal(false)}>×</button></div><iframe src="/closet/add?embed=outfit" title="Add a Fit Report" /></div></div> : null}
+    {garmentModal ? <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label="Add a new Closet garment"><div className={styles.garmentModal}><div className={styles.modalHeader}><div><span className="eyebrow">ADD A GARMENT</span><strong>Add it without leaving your Outfit.</strong></div><button type="button" aria-label="Close" onClick={() => setGarmentModal(false)}>×</button></div><iframe src="/closet/add?embed=outfit" title="Add a Fit Report" /></div></div> : null}
 
-    {leaveHref ? <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label="Unsaved Outfit"><div className={styles.leaveModal}><h2>Save your work?</h2><p>You have unsaved changes to this Outfit.</p><div className={styles.leaveActions}><button type="button" className={styles.compactPrimary} disabled={isPending} onClick={() => save(isPublished ? "update" : "draft", leaveHref)}>{isPublished ? "Save Changes" : "Save Draft"}</button><button type="button" className={styles.compactSecondary} onClick={() => { setDirty(false); window.location.assign(leaveHref); }}>Leave Without Saving</button><button type="button" className={styles.quietButton} onClick={() => setLeaveHref(null)}>Keep Editing</button></div></div></div> : null}
+    {leaveHref ? <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label="Unsaved Outfit"><div className={styles.leaveModal}><h2>Save your work?</h2><p>You have unsaved changes to this Outfit.</p><div className={styles.leaveActions}><button type="button" className={styles.compactPrimary} disabled={isPending} onClick={() => save(isPublished ? "update" : "draft", leaveHref)}>{isPublished ? "Save Changes" : "Save Draft"}</button><button type="button" className={styles.compactSecondary} onClick={() => { dirtyRef.current = false; setDirty(false); window.location.assign(leaveHref); }}>Leave Without Saving</button><button type="button" className={styles.quietButton} onClick={() => setLeaveHref(null)}>Keep Editing</button></div></div></div> : null}
   </>;
 }

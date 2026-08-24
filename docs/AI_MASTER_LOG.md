@@ -28,6 +28,7 @@ LikeSized is not yet a public active service with an external audience. `likesiz
 - Production Vercel deployment `dpl_DCMbfcMyE23CDbMde4Fq2aoVLHru` for merge `0742b759c1b8a39baf0db0bf81d4eed6b7a4e214` reached READY and aliases `likesized.com`.
 - Deployment-scoped runtime-error inspection found no runtime errors in the checked post-cutover window.
 - PR #70 contains no database migration; production Supabase schema/migrations were unchanged by this repair batch.
+- PR #71 completed the docs-only canonical production reconciliation after full LikeSized CI #783; it changed no application, schema or product behavior.
 - Previous homepage-copy production merge remains `4fc64957809ee18a6c7c0ac203f29147ef2c8646` through PR #68.
 - Previous Roadmap 12 foundation merge remains `965274351a2f10f893631d769c9caeccdcc5e402` through PR #67.
 - Applied database migrations are immutable; future corrections use later ordered migrations.
@@ -215,7 +216,7 @@ Recent branch classification:
 - `agent/new-outfit-v1` — RECOVERED via PR #67 / DEPLOYED.
 - `agent/homepage-brand-copy` — RECOVERED via PR #68 / DEPLOYED.
 - `agent/outfit-live-audit-repairs` — RECOVERED via PR #70 / DEPLOYED; no longer active.
-- `agent/post-pr70-production-reconciliation` — current docs-only reconciliation line until this production record is merged.
+- `agent/post-pr70-production-reconciliation` — RECOVERED via PR #71 / docs-only; no longer active.
 
 # OWNER RE-AUDIT ORDER
 1. Homepage + FAQ — live; exact sex/body-specific measurement FAQ wording still pending owner approval.
@@ -263,8 +264,9 @@ Recent branch classification:
 - PR #67 built New Outfit V1; exact head `113e9d474afe19e82df154982d4d4ddd741ad67d` passed full CI #765, six Roadmap 12 migrations were applied database-first, squash merge `965274351a2f10f893631d769c9caeccdcc5e402`, production Vercel `dpl_H9MRX5S1Z1uc1w9UCTRBdFfSxvrK` reached READY.
 - PR #68 updated homepage brand copy; exact head `3193772517682ab2336f1cbc7368fe0236f8b93b` passed full CI #771, squash merge `4fc64957809ee18a6c7c0ac203f29147ef2c8646`, production Vercel `dpl_Hd1Ys6BfCEJxBERP4kNr2UQMdLp6` reached READY.
 - PR #70 repaired New Outfit live-audit issues; exact head `ab7277487a69de78369eba878005741f0846062f` passed full CI #781, owner authorized deployment, squash merge `0742b759c1b8a39baf0db0bf81d4eed6b7a4e214`, production Vercel `dpl_DCMbfcMyE23CDbMde4Fq2aoVLHru` reached READY and aliases `likesized.com`; post-cutover runtime-error inspection found none. No database migration was included.
+- PR #71 reconciled the PR #70 production record in canonical documentation after exact head `65b9938281ec40ed2c02a8ffe73aca21f2f054e1` passed full CI #783; docs-only, no application/schema behavior change.
 
 # EXACT NEXT ACTION — CURRENT
-1. Complete this docs-only PR #70 production reconciliation and keep the canonical master synchronized with the already-live application deployment.
-2. Resume the authenticated New Outfit owner audit on `likesized.com`: create, Save Draft/resume, Preview, Publish, opened Outfit/gallery/hotspots, edit, comments/social controls, and practical mobile/desktop layout.
-3. Record any further owner findings as the next repair batch; do not advance to Roadmap 13 until the owner completes this New Outfit live audit.
+1. Resume the authenticated New Outfit owner audit on `likesized.com`: create, Save Draft/resume, Preview, Publish, opened Outfit/gallery/hotspots, edit, comments/social controls, and practical mobile/desktop layout.
+2. Record any further owner findings as the next repair batch.
+3. Do not advance to Roadmap 13 until the owner completes this New Outfit live audit.

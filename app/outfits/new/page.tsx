@@ -35,6 +35,8 @@ export default async function NewOutfitPage({searchParams}:{searchParams:SearchP
   const styleSuggestions:string[]=[...new Set(((styleSuggestionResult.data??[]) as StyleSuggestionRow[]).map((row)=>String(row.display_tag??"").trim()).filter(Boolean))];
   const closetRows=(closetResult.data??[]) as ClosetRow[];
   const closetIds=closetRows.map((item)=>item.id);
+  const requestedPreselectedClosetItemId=first(params.closet_item_id)??"";
+  const preselectedClosetItemId=UUID.test(requestedPreselectedClosetItemId)&&closetIds.includes(requestedPreselectedClosetItemId)?requestedPreselectedClosetItemId:"";
   let reports:FitReport[]=[];
   if(closetIds.length){
     const {data,error}=await supabase.from("fit_reports").select("closet_item_id,fit,created_at").in("closet_item_id",closetIds).order("created_at",{ascending:false});
@@ -92,6 +94,8 @@ export default async function NewOutfitPage({searchParams}:{searchParams:SearchP
         return url?[{id:photo.id,url,isMain:photo.is_main,sortOrder:photo.sort_order,tags:photoTags.filter((tag)=>tag.photo_id===photo.id).map((tag)=>({closetItemId:tag.closet_item_id,x:Number(tag.x),y:Number(tag.y)}))}]:[];
       }),
     };
+  }else if(preselectedClosetItemId){
+    initial={id:"",status:"draft",headline:"",story:"",commentsEnabled:true,closetItemIds:[preselectedClosetItemId],occasions:[],styleTags:[],photos:[]};
   }
   const saved=first(params.saved)==="1";
   return <main className="pageShell"><div className="pageTitle rowTitle"><div><span className="eyebrow">{initial?.status==="published"?"EDIT OUTFIT":"NEW OUTFIT"}</span><h1>{initial?.status==="published"?"Keep the post current.":"Build the whole look."}</h1><p>Lead with the Outfit, then connect the garments back to real Fit Reports. Your body measurements stay private.</p></div><Link className="secondaryButton" href={initial?.status==="published"&&initial.id?`/outfits/${initial.id}`:"/outfits"}>Back to outfits</Link></div>{saved?<div className="authMessage">Draft saved.</div>:null}<OutfitComposer closet={closet} initial={initial} styleSuggestions={styleSuggestions}/></main>;

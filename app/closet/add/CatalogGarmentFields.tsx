@@ -58,6 +58,7 @@ type CandidateDefault = {
   default_size_kind: GarmentSizeKind | null;
   identity_confidence: string;
 };
+type IntakeSource = "barcode" | "tag_photo" | "manual" | null;
 
 type CatalogContextValue = {
   product: CatalogProduct | null;
@@ -255,6 +256,7 @@ export function CatalogCommunityEnrichment({ materials, retailers }: { materials
 
 export function CatalogGarmentFields({ brands, departments, fixtureProducts = [], children }: { brands: Brand[]; departments: CatalogOption[]; fixtureProducts?: CatalogProduct[]; children: ReactNode }) {
   const [step, setStep] = useState<"start" | "scan" | "confirm" | "details">("start");
+  const [intakeSource, setIntakeSource] = useState<IntakeSource>(null);
   const [product, setProduct] = useState<CatalogProduct | null>(null);
   const [candidateDefaultSizeKind, setCandidateDefaultSizeKind] = useState<GarmentSizeKind | null>(null);
   const [barcodeMatch, setBarcodeMatch] = useState<BarcodeMatch | null>(null);
@@ -307,6 +309,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
   }, [lightboxImage]);
 
   function resetDetails() {
+    setIntakeSource(null);
     setProduct(null);
     setCandidateDefaultSizeKind(null);
     setBrand("");
@@ -352,6 +355,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
 
   function showBarcodeMatch(match: BarcodeMatch, barcode: string) {
     stopScanner();
+    setIntakeSource("barcode");
     setBarcodeMatch(match);
     setScannedBarcode(barcode);
     setNotice("");
@@ -363,6 +367,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     const barcode = scannedBarcode;
     stopScanner();
     resetDetails();
+    setIntakeSource("barcode");
     setBarcodeMatch(null);
     setScannedBarcode(barcode);
     setNotice(message);
@@ -402,6 +407,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
       }
       stopScanner();
       resetDetails();
+      setIntakeSource("barcode");
       setBarcodeMatch(null);
       setScannedBarcode(barcode);
       setNotice("We don’t have this item yet, but no problem — you can help us add it with just a few quick questions.");
@@ -441,6 +447,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
       const barcode = scannedBarcode;
       stopScanner();
       resetDetails();
+      setIntakeSource("barcode");
       setBarcodeMatch(null);
       setBrand(candidate.brand_name);
       setItemName(candidate.product_name);
@@ -539,6 +546,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
   function beginManual() {
     stopScanner();
     resetDetails();
+    setIntakeSource("manual");
     setBarcodeMatch(null);
     setScannedBarcode("");
     setNotice("");
@@ -555,23 +563,46 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     setStep("start");
   }
 
-  if (step === "start") return <section className={`fitDimensionFields ${styles.catalogStart}`}>
-    <div className={styles.catalogStartActions}>
-      <button className="catalogSearchButton" type="button" onClick={() => { setBarcodeMatch(null); setError(""); setStep("scan"); }}>Scan barcode</button>
-      <span className="fieldHelp">or</span>
-      <button className="catalogManualButton" type="button" onClick={beginManual}>Enter item manually</button>
-    </div>
-    <p className={styles.catalogStartCopy}>Have the item with you? Scan the barcode. Otherwise, enter it manually and we’ll take it from there.</p>
-  </section>;
+  const evidenceInputs = <>
+    <input ref={productPhotoInput} className={styles.hiddenFileInput} name="product_photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setProductPhotoName(event.target.files?.[0]?.name ?? "")} />
+    <input ref={productLabelPhotoInput} className={styles.hiddenFileInput} name="product_label_photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => {
+      const nextName = event.target.files?.[0]?.name ?? "";
+      setProductLabelPhotoName(nextName);
+      if (step === "start" && nextName) {
+        setIntakeSource("tag_photo");
+        setBarcodeMatch(null);
+        setScannedBarcode("");
+        setNotice("Tag photo added. Enter the item details below and we’ll keep the photo with this Fit Report as private identity evidence.");
+        setError("");
+        setStep("details");
+      }
+    }} />
+  </>;
 
-  if (step === "scan") return <section className={`fitDimensionFields ${styles.scanSection}`}>
-    <button className="catalogBackButton" type="button" onClick={() => { stopScanner(); setBarcodeMatch(null); setError(""); setStep("start"); }}>← Back</button>
-    <p className="fieldHelp">Scan the barcode and we’ll check the LikeSized catalog.</p>
-    <video className="barcodeScanner" ref={scannerVideo} muted playsInline />
-    {loadingBarcode ? <p className="fieldHelp" role="status">Checking LikeSized…</p> : null}
-    {error ? <p className="fieldHelp" role="status">{error}</p> : null}
-    <button className="catalogManualButton" type="button" onClick={beginManual}>Enter item manually instead</button>
-  </section>;
+  if (step === "start") return <>
+    {evidenceInputs}
+    <section className={`fitDimensionFields ${styles.catalogStart}`}>
+      <strong className={styles.catalogStartTitle}>Identify your item</strong>
+      <p className={styles.catalogStartCopy}>Start with the barcode or a photo of the garment’s tag. Either gives LikeSized evidence we can use to verify the item.</p>
+      <div className={styles.identificationActions}>
+        <button className="catalogSearchButton" type="button" onClick={() => { setBarcodeMatch(null); setError(""); setStep("scan"); }}>Scan barcode</button>
+        <button className="catalogSearchButton" type="button" onClick={() => productLabelPhotoInput.current?.click()}>Take / upload tag photo</button>
+      </div>
+      <button className={styles.manualFallback} type="button" onClick={beginManual}>Cut the tags out? Enter item manually →</button>
+    </section>
+  </>;
+
+  if (step === "scan") return <>
+    {evidenceInputs}
+    <section className={`fitDimensionFields ${styles.scanSection}`}>
+      <button className="catalogBackButton" type="button" onClick={() => { stopScanner(); setBarcodeMatch(null); setError(""); setStep("start"); }}>← Back</button>
+      <p className="fieldHelp">Scan the barcode and we’ll check the LikeSized catalog.</p>
+      <video className="barcodeScanner" ref={scannerVideo} muted playsInline />
+      {loadingBarcode ? <p className="fieldHelp" role="status">Checking LikeSized…</p> : null}
+      {error ? <p className="fieldHelp" role="status">{error}</p> : null}
+      <button className="catalogManualButton" type="button" onClick={beginManual}>Enter item manually instead</button>
+    </section>
+  </>;
 
   if (step === "confirm" && barcodeMatch) {
     const matchBrand = barcodeMatch.kind === "product" ? barcodeMatch.product.brand_name : barcodeMatch.candidate.brand_name;
@@ -580,6 +611,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     const matchImage = barcodeMatch.kind === "product" ? barcodeMatch.product.image_url : barcodeMatch.candidate.image_url;
     const typeLabel = GARMENT_TYPES.find((item) => item.key === matchType)?.label;
     return <>
+      {evidenceInputs}
       <section className={`fitDimensionFields ${styles.scanSection}`}>
         <button className="catalogBackButton" type="button" onClick={() => { setBarcodeMatch(null); setError(""); setStep("scan"); }}>← Scan again</button>
         <div className="privacyNote"><b>Is this the item?</b><div>{barcodeMatch.kind === "product" ? "LikeSized found this Product for the barcode you scanned." : "LikeSized has seen this barcode before, but the Product is still being confirmed."}</div></div>
@@ -603,11 +635,11 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     : notice || "We don’t have this item yet, but no problem — you can help us add it with just a few quick questions.";
   const typeLocked = Boolean(product?.garment_type_key) && !typeIssue;
   const showItemSuggestions = (!product || itemIssue) && Boolean(brand.trim()) && normalizeCatalogText(itemName).length >= 2 && itemSuggestions.length > 0;
+  const showCompactTagUpload = intakeSource !== "tag_photo";
 
   return <>
+    {evidenceInputs}
     <input type="hidden" name="existing_product_id" value={product?.id ?? ""}/>
-    <input ref={productPhotoInput} className={styles.hiddenFileInput} name="product_photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setProductPhotoName(event.target.files?.[0]?.name ?? "")} />
-    <input ref={productLabelPhotoInput} className={styles.hiddenFileInput} name="product_label_photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setProductLabelPhotoName(event.target.files?.[0]?.name ?? "")} />
     <CatalogContext.Provider value={{
       product,
       candidateDefaultSizeKind,
@@ -644,12 +676,10 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
           </div>
         </div>
 
-        <div className={styles.photoEvidenceCard}>
-          <strong>Product Label / Tag Photo <span className="muted inlineMuted">optional</span></strong>
-          <span className="fieldHelp">Helps LikeSized verify the exact item you’re adding. Photograph the label or tag that shows the style, article, or identifying information.</span>
-          <button className="catalogManualButton" type="button" onClick={() => productLabelPhotoInput.current?.click()}>{productLabelPhotoName ? "Replace Label Photo" : "Add Label Photo"}</button>
-          {productLabelPhotoName ? <small>{productLabelPhotoName}</small> : null}
-        </div>
+        {showCompactTagUpload ? <div className={styles.compactTagEvidence}>
+          <span className={styles.compactTagCopy}><strong>Product Label / Tag Photo <span className="muted inlineMuted">optional</span></strong><small>{productLabelPhotoName ? `Added: ${productLabelPhotoName}` : "Helps LikeSized verify the exact item."}</small></span>
+          <button className="catalogManualButton" type="button" onClick={() => productLabelPhotoInput.current?.click()}>{productLabelPhotoName ? "Replace" : "Add tag photo"}</button>
+        </div> : null}
 
         <div className={styles.categoryTypeGroup}>
           <label>Overall category
@@ -697,11 +727,11 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     {identityHelpOpen ? <div className={styles.reviewOverlay} role="dialog" aria-modal="true" aria-labelledby="identity-help-title" onClick={() => setIdentityHelpOpen(false)}>
       <div className={styles.identityHelpCard} onClick={(event) => event.stopPropagation()}>
         <h2 id="identity-help-title">No problem — we’ll help verify it.</h2>
-        <p>Enter the best information you have and continue your Fit Report. We’ll flag this item for review. Please provide as much detail as possible—a retail link and clear photos of the garment or its tag/style label are especially helpful.</p>
-        <label>Retail Link <span className="muted inlineMuted">optional</span><input type="url" maxLength={1000} placeholder="https://..." value={modalRetailDraft} onChange={(event) => setModalRetailDraft(event.target.value)}/></label>
-        <div className={styles.identityEvidenceActions}>
-          <div><strong>Photo of Tag / Style Label</strong><button className="catalogManualButton" type="button" onClick={() => productLabelPhotoInput.current?.click()}>{productLabelPhotoName ? "Replace Photo" : "Add Photo"}</button>{productLabelPhotoName ? <small>{productLabelPhotoName}</small> : null}</div>
-          <div><strong>Product Photo</strong><button className="catalogManualButton" type="button" onClick={() => productPhotoInput.current?.click()}>{productPhotoName ? "Replace Photo" : "Add Photo"}</button>{productPhotoName ? <small>{productPhotoName}</small> : null}</div>
+        <p>Add whatever evidence you have and continue your Fit Report. Anything you already attached stays with this item, so we won’t ask you for the same tag photo twice.</p>
+        <label>Retail / Product URL <span className="muted inlineMuted">optional</span><input type="url" maxLength={1000} placeholder="https://..." value={modalRetailDraft} onChange={(event) => setModalRetailDraft(event.target.value)}/></label>
+        <div className={`${styles.identityEvidenceActions} ${productLabelPhotoName ? styles.identityEvidenceActionsSingle : ""}`}>
+          {!productLabelPhotoName ? <div><strong>Photo of Tag / Style Label</strong><button className="catalogManualButton" type="button" onClick={() => productLabelPhotoInput.current?.click()}>Add Photo</button></div> : null}
+          <div><strong>Product Photo</strong><span className="fieldHelp">A clear photo of the garment by itself.</span><button className="catalogManualButton" type="button" onClick={() => productPhotoInput.current?.click()}>{productPhotoName ? "Replace Photo" : "Add Photo"}</button>{productPhotoName ? <small>{productPhotoName}</small> : null}</div>
         </div>
         <div className={styles.reviewActions}>
           <button className="secondaryButton" type="button" onClick={() => setIdentityHelpOpen(false)}>I’ll Add This Later</button>

@@ -120,15 +120,29 @@ Barcode confidence is separate from Product confidence.
 - Ambiguous barcode identities are never auto-selected.
 
 # 6. New Fit Report intake — LOCKED
-Ordinary member flow:
-**Search LikeSized → select exact Product when available → otherwise add the garment quickly and continue.**
+Ordinary member intake begins with one simple **Identify your item** screen.
+
+Primary choices:
+1. **Scan barcode**.
+2. **Take / upload tag photo** — the device may offer camera capture or an existing photo. The image is private identity-review evidence; taking a tag photo does not imply LikeSized can automatically read or identify every field from it.
+
+A smaller fallback appears beneath those choices: **Cut the tags out? Enter item manually →**.
+
+The three paths converge on the same canonical Brand / Item / Product flow and the same Fit Report form. There is no second tag-photo evidence system and no parallel manual catalog.
 
 Ordinary member intake never calls SerpAPI.
+
+## Evidence-first behavior
+- Barcode evidence is retained when a barcode path continues into manual/new-item details.
+- A tag photo chosen from the opening screen is retained on the same Fit Report as private identity evidence and is not requested again later in that flow.
+- Barcode and manual-entry paths retain a small optional Product Label / Tag Photo control directly below Brand / Item so the member can still add that evidence.
+- When the member began with a tag photo, that compact in-form uploader is hidden because the evidence is already present.
+- Product Label / Tag Photo never becomes generic Product display imagery merely because it was supplied during intake.
 
 ## Main information order
 1. Brand / Make — required.
 2. Item / Style / Model — required.
-3. Product Label / Tag Photo — optional private identity-review evidence, shown directly under Brand / Item instead of inside collapsed Optional Additional Information.
+3. Product Label / Tag Photo — conditional compact optional control for barcode/manual paths when a tag photo was not already supplied at the opening step.
 4. **Overall Category** — required.
 5. **Specific Garment Type** — required and filtered to the selected category.
 6. Department — optional.
@@ -141,19 +155,21 @@ Ordinary member intake never calls SerpAPI.
 13. Fit Notes — optional, up to 2,000 characters.
 14. Retail Link — optional.
 
-Item / Style / Model stays required for new manual items. Do not offer a generic blank **No model** escape. Helper copy tells the member to enter the specific item, style or model shown on the garment, tag, packaging or retailer listing. Examples must not duplicate the separate Brand field.
+Item / Style / Model stays required for new unresolved/manual items. Do not offer a generic blank **No model** escape. Examples must not duplicate the separate Brand field.
 
 Manual Item suggestions render as the actual dropdown immediately under the Item / Style / Model field.
 
 ## Identity uncertainty checkbox/modal
-For a brand-new manually entered item, the member may check **I’m not sure this is the correct item/style name**.
+For a new or unresolved item, the member may check **I’m not sure this is the correct item/style name**.
 
-Checking opens the identity-help modal immediately with the same underlying evidence fields used elsewhere in the form:
-- Retail Link;
-- Product Label / Tag Photo;
-- Product Photo.
+The helper is evidence-aware and uses the same underlying evidence fields as the rest of intake:
+- Retail / Product URL;
+- Product Label / Tag Photo, only when one has not already been supplied;
+- Product Photo — a clear photo of the garment by itself.
 
-**Save & Continue** keeps those values and populates the same canonical form fields. **I’ll Add This Later** closes the modal without erasing the Unconfirmed signal. The form must never create duplicate copies of the same evidence values or a second Label/Tag upload path.
+If the member started with a tag photo, the helper does not ask for a second tag photo. If the member came through barcode/manual entry without a tag photo, the helper may offer one. Existing evidence is preserved; **Save & Continue** keeps the values and **I’ll Add This Later** closes the helper without erasing the Unconfirmed signal.
+
+The form must never create duplicate copies of the same evidence values or a second Label/Tag upload path.
 
 The checkbox creates the Unconfirmed pre-publication behavior in Section 4. It is not a way to leave Item / Style / Model blank.
 
@@ -168,7 +184,7 @@ Exact order:
 7. Material / Fabric Composition.
 8. Product Photo — optional catalog-display evidence at the bottom of the collapsed section.
 
-Product Photo is catalog-display evidence. Product Label / Tag Photo is private identity-review evidence and is intentionally kept in the main intake flow so members are more likely to provide it; it must never become Product display imagery merely because it exists.
+Product Photo is catalog-display evidence. Product Label / Tag Photo is private identity-review evidence and remains separate from Product Photo.
 
 If scanner already captured a barcode, retain it and do not ask again. Submit remains below/outside the optional area.
 

@@ -14,7 +14,7 @@ This file owns current database behavior/privacy plus explicit implementation de
 # Production checkpoint — 2026-08-23
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-PR #53 database behavior is live. Canonical local migration files remain the replay authority; Supabase production has recorded the PR #53 migrations under hosted ledger timestamps:
+PR #55 application/UI behavior is live on `main` at `0a972341212e245e9ad3d00263167e50818c6917`, but PR #55 contained no database migration. Production database behavior therefore remains on the applied PR #53 migration checkpoint. Canonical local migration files remain the replay authority; Supabase production has recorded the PR #53 migrations under hosted ledger timestamps:
 - `supabase/migrations/20260823160000_add_unconfirmed_catalog_status.sql` → production `20260823205559 add_unconfirmed_catalog_status`.
 - `supabase/migrations/20260823160100_unconfirmed_identity_and_photo_roles.sql` → production `20260823205714 unconfirmed_identity_and_photo_roles`.
 - `supabase/migrations/20260823160200_needs_more_evidence_followup.sql` → production `20260823205746 needs_more_evidence_followup`.
@@ -35,6 +35,34 @@ Hosted post-migration verification confirmed the Unconfirmed enum ordering, cand
 
 Known production Product evidence remained intact after the rollout: Maidenform / Heirloom Product `4086fdaa-172d-4a3f-b6c4-2c155094bb25` remains Corroborated with 2 distinct wearers and 4 Fit Reports.
 
+## Foundation Technical Audit — PR #56 VERIFIED / NOT DEPLOYED
+The post-PR-#53 Foundation audit found several authorization/history defects in the current production database that were not covered by the previous test suite. One additive migration, `supabase/migrations/20260824000500_foundation_audit_security_hardening.sql`, fixes them on draft PR #56 but is **not applied to production** until separate owner authorization.
+
+Current production defects identified by the audit:
+1. the Product Label / Tag insert policy can incorrectly correlate Product identity because the outer Product column was not explicitly qualified inside the Fit Report existence check;
+2. `catalog-submission-photos` currently has a bucket-wide authenticated SELECT even though the bucket stores both scanner-eligible pending Product Photos and private Label/Tag evidence;
+3. the direct candidate branch of `get_scan_match_image_source` does not independently enforce Unconfirmed / Needs More Evidence / explicit-uncertainty exclusion even though normal scanner lookup does;
+4. SECURITY DEFINER evidence writers accept storage-path strings without a database constraint proving the canonical member/Closet/Product/Fit Report path relationship;
+5. permanent `catalog_candidates.identity_key` uniqueness can cause a later uncertain submission to reuse a historical resolved/merged candidate instead of opening a fresh unresolved review case;
+6. `needs_more_evidence` works operationally but is logged as generic enrichment rather than its exact resolution action.
+
+PR #56 hardening contract:
+- pending Product Photo path = submitting member / `pending` / exact Closet item / `product-*`;
+- pending Product Label path = submitting member / `pending` / exact Closet item / `label-*`;
+- known Product Label path = submitting member / `labels` / exact Product / exact Fit Report / filename;
+- Product Label insertion requires the authenticated owner, exact Fit Report owner and exact Fit Report Product to agree;
+- private Label/Tag storage is never readable merely because another member is authenticated;
+- the only cross-member read from `catalog-submission-photos` is an exact pending Product Photo path proven scanner-eligible by a narrow SECURITY DEFINER boolean helper; the helper exposes no candidate row or review state;
+- direct scanner-image RPC calls enforce the same unresolved/non-Unconfirmed/non-Needs-More-Evidence/non-uncertain candidate boundary;
+- when a candidate becomes resolved, its internal unique identity key is archived with its candidate UUID while normalized Brand/Item/Type history remains unchanged, freeing the base key for at most one later unresolved candidate;
+- Needs More Evidence records `mark_needs_more_evidence` in the resolution ledger.
+
+Production-data compatibility inspection before the migration found zero current `product_label_photo_evidence` rows and zero current pending Product/Label storage paths, so the new path constraints do not conflict with existing production evidence.
+
+The PR #56 regression suite contains 17 focused pgTAP checks. CI #693 replayed the entire migration history and intentionally exposed an over-restrictive first-pass storage policy because the policy queried private candidate/submission tables as the requesting member. The test was not weakened. The policy was corrected with the narrow security-definer path helper. Exact security code/test head `b39297983396958105a1f64be1ac121af7ba8ff0` passed CI #694 (`32676273815`) through canonical integrity, TypeScript, all application safeguards, production build, fresh replay of every ordered migration including the Foundation migration, and the full database behavior/privacy suite.
+
+Until PR #56 is explicitly authorized/applied/merged, the defects above remain accurate descriptions of current production and the hardening rules remain verified branch state rather than live database claims.
+
 # 1. Privacy / body-state foundations
 - `profiles` stores member identity under authenticated-member authorization boundaries.
 - `fit_profiles` is a shell; raw body values live in normalized owner-private measurement structures.
@@ -50,7 +78,7 @@ Known production Product evidence remained intact after the rollout: Maidenform 
 
 Fit Community describes the person/wearer. It is not Product Department. A member reviewing clothing from a different Department remains in their saved community.
 
-PR #53 changes only control placement: first-time setup includes Fit Community; post-onboarding editing lives in Profile Settings rather than My Measurements. Database meaning remains unchanged.
+First-time setup includes Fit Community; post-onboarding editing lives in Profile Settings rather than My Measurements. Database meaning remains unchanged.
 
 # 2. Public Closet target — OWNER LOCKED, LEGACY VISIBILITY STILL PRESENT
 Owner-approved product meaning is one public member Closet:
@@ -62,7 +90,7 @@ Owner-approved product meaning is one public member Closet:
 
 Current executable production schema still contains legacy `closet_items.visibility` and RLS/query paths that distinguish private/shared content. This is implementation debt, not current product meaning. Closet audit must reconcile it canonically without exposing raw body/private system data.
 
-## PR #53 narrow owner-only unresolved-identity projection
+## Narrow owner-only unresolved-identity projection
 `public.get_own_unconfirmed_submission_status()` is a security-definer owner projection for the authenticated member's own unresolved Unconfirmed submissions. It returns only the minimum fields needed for owner UI: Closet item, candidate id/status, retained retailer URL and Product/Label photo-presence booleans.
 
 This RPC exists specifically so the member UI does **not** gain broad read access to `catalog_candidates` or admin review state.
@@ -86,7 +114,9 @@ Current taxonomy stores controlled questions/options and existing recommendation
 - **Color must never define tracked variation identity**;
 - do not assume every controlled question is variation-defining.
 
-Before Product Detail relies on Exact Variation, audit the existing attribute/variant schema and recommendation path and produce one canonical variation-definition map. Do not create a parallel variation table/system by assumption.
+Before Product Detail relies on Exact Variation, roadmap item 11A must audit every controlled question and produce one canonical variation-definition map shared by evidence/recommendation/Admin behavior. Do not create a parallel variation table/system by assumption.
+
+The Foundation audit confirms the current counted-report `objective_variant_key` is deliberately a separate, currently broader concept: application hashing excludes Intended Fit and Not sure, but otherwise includes objective structured answers. Do not silently narrow or repurpose that fingerprint during Foundation hardening. After 11A classification, the owner must decide whether descriptive-only answer changes still represent a distinct same-member counted Fit Report situation.
 
 # 4. Submission-first catalog architecture
 Database layers remain:
@@ -104,7 +134,7 @@ A **clean unique first real member submission** may be materialized/mapped immed
 - **Established — 5+ distinct wearers**;
 - **Verified — authoritative/admin-reviewed only**.
 
-`unconfirmed` is added to `public.product_data_status` for candidate identity-confidence storage, but PR #53 adds a database constraint that forbids live `products.catalog_status='unconfirmed'`. Unconfirmed is therefore not a fifth live Product state.
+`unconfirmed` is part of `public.product_data_status` for candidate identity-confidence storage, while a database constraint forbids live `products.catalog_status='unconfirmed'`. Unconfirmed is therefore not a fifth live Product state.
 
 Members still do not directly insert Product truth. Automatic posting runs through the audited candidate→Product mapping architecture and records a system action.
 
@@ -113,7 +143,7 @@ Members still do not directly insert Product truth. Automatic posting runs throu
 This identity tier is deliberately separate from `products.catalog_status`, which continues to carry broader field/catalog authority semantics. Wearer count must not silently promote description, material, Department, attributes or other Product facts.
 
 ## Explicit uncertainty hard-gate
-PR #53 adds `garment_submissions.identity_uncertain boolean not null default false`.
+`garment_submissions.identity_uncertain boolean not null default false` records explicit member uncertainty.
 
 When true:
 - the submission/Fit Report/Closet item remain stored normally as unresolved member evidence;
@@ -135,12 +165,17 @@ A candidate does not auto-post when blocking identity evidence already exists. E
 
 Such a candidate remains unresolved/reviewable. This exception path is why `catalog_candidates` remains necessary even though routine clean items no longer await admin approval.
 
+## Candidate identity-key history
+Production currently stores one globally unique `catalog_candidates.identity_key`, and the Foundation audit found that a resolved historical row can therefore occupy the normalized Brand+Item+Type key forever. Because `record_pending_garment_submission` upserts on that key, a later explicit-uncertain submission can attach to the historical resolved candidate instead of creating a fresh unresolved case.
+
+PR #56 fixes this without changing Product identity semantics: when a candidate transitions unresolved→resolved, a BEFORE trigger archives only the internal unique `identity_key` by appending the candidate UUID. The normalized Brand/Item/Type columns remain unchanged historical truth. Existing resolved candidates are backfilled the same way. The unsuffixed base key is therefore reserved for the single current unresolved candidate for that identity. This behavior is verified but not production until PR #56 is deployed.
+
 ## Needs More Evidence candidate status
-PR #53 extends `catalog_candidates.status` with `needs_more_evidence`.
+`catalog_candidates.status` includes `needs_more_evidence`.
 
 This is an admin queue state for an unresolved Unconfirmed identity that cannot reasonably be resolved with current evidence. It is not Product truth, does not map the Fit Report, and does not publish anything.
 
-`public.admin_set_catalog_candidate_status(...)` accepts `needs_more_evidence` only when the candidate remains unresolved and Unconfirmed/explicitly uncertain. The transition is audited through existing catalog-resolution history rather than a parallel queue system.
+`public.admin_set_catalog_candidate_status(...)` accepts `needs_more_evidence` only when the candidate remains unresolved and Unconfirmed/explicitly uncertain. The transition is audited through existing catalog-resolution history rather than a parallel queue system. Production currently records this state under the generic enrichment action; PR #56 adds the exact `mark_needs_more_evidence` action.
 
 When a member supplies new follow-up evidence through the authorized owner boundary, the candidate automatically returns to `needs_review` and review priority is recalculated.
 
@@ -159,7 +194,7 @@ Published Product trust-aware priority rules:
 - Verified Product → isolated ordinary reports start Low, with repeated independent signals escalating Medium/High;
 - strong competing identifiers/duplicate/identity evidence may escalate regardless of trust.
 
-PR #53 changes explicit Unconfirmed candidate work ordering so requested identity evidence drives usefulness:
+Explicit Unconfirmed candidate work ordering uses requested identity evidence:
 - Retail/Product webpage + Product Photo + Product Label / Tag Photo present → High;
 - one or two requested evidence types present → Medium;
 - none present → Low because the case may be impossible to identify;
@@ -201,17 +236,19 @@ Barcode confidence remains separate from Product confidence.
 
 `private.barcode_identity_confirmations` remains immutable historical scan-confirmation evidence but does not define Product-level confidence by itself.
 
-PR #53 requires `public.lookup_barcode_catalog_match(...)` and confirmation boundaries to exclude unresolved candidates whose identity confidence is `unconfirmed` or whose status is `needs_more_evidence`. Explicit uncertainty can never become another member's scanner suggestion before admin resolution.
+Barcode lookup/confirmation boundaries exclude unresolved candidates whose identity confidence is `unconfirmed` or whose status is `needs_more_evidence`. Explicit uncertainty can never become another member's normal scanner suggestion before admin resolution.
 
 `public.get_scan_match_image_source(product_id,candidate_id)` is the narrow authenticated scanner-identification boundary. Scanner image priority is:
 1. Product/catalog photo;
 2. public/shared member Fit Photo, preferring `photo_role='front'` when available;
 3. application placeholder/default when neither exists.
 
-The Fit Photo fallback never becomes canonical Product imagery or Product truth. Authenticated read policies permit scanner display of approved Product/catalog photo storage while shared Fit Photo access continues through its existing shared-photo boundary.
+Foundation audit caveat: production lookup/confirmation gating is correct, but the candidate branch of the direct image RPC does not itself repeat all candidate eligibility checks. PR #56 adds that defense-in-depth so a crafted direct RPC returns no path for Unconfirmed, Needs More Evidence or explicitly uncertain candidates. Until deployment, do not treat normal scanner lookup exclusion alone as proof the direct RPC is hardened.
 
-# 9. Fit Photo roles and Product/Label evidence — PR #53
-PR #53 changes Fit-photo and catalog-photo evidence without merging their meanings.
+The Fit Photo fallback never becomes canonical Product imagery or Product truth.
+
+# 9. Fit Photo roles and Product/Label evidence
+Fit-photo and catalog-photo evidence remain distinct.
 
 ## Front/back Fit Photos
 `fit_reference_photos.photo_role` is controlled to `front` / `back`. A Closet item may hold at most one of each role. Legacy single-photo rows are migrated/treated as Front so existing evidence remains readable.
@@ -221,10 +258,14 @@ Both roles are member wear evidence. They remain separate from Product imagery a
 ## Product Photo
 `garment_submissions.product_photo_storage_path` remains unresolved submission Product-display/identity evidence. Known Product photo evidence continues through `product_photo_evidence` and normal Product-photo moderation.
 
-## Product Label / Tag Photo
-PR #53 adds `garment_submissions.product_label_photo_storage_path` and `product_label_photo_evidence` for known Product label/tag evidence.
+Cross-member pending Product Photo read must exist only for scanner-eligible unresolved candidates. PR #56 implements the narrow exact-path helper described in the Foundation section; production currently still has the broader bucket policy and therefore requires that hardening.
 
-Label/tag photos are private identity-review evidence. They are admin-readable and owner-controlled through the intended evidence flow, but are not generic Product images and must not be surfaced as Product display photos.
+## Product Label / Tag Photo
+`garment_submissions.product_label_photo_storage_path` and `product_label_photo_evidence` store label/tag identity evidence.
+
+Label/tag photos are private identity-review evidence. They are not generic Product images and must not be surfaced as Product display photos.
+
+Foundation audit found two production defects in this boundary: the known-label insert RLS Product correlation is not explicitly bound to the outer Product, and the shared bucket SELECT is broad enough to expose Label objects to any authenticated member. PR #56 fixes both and adds canonical storage-path constraints. These are verified fixes, not production claims until the migration is deployed.
 
 # 10. Direct Product search
 `search_catalog_products` is the canonical broad textual Product search. Current direct Product search does not accept Fit Community or Department as a hidden gate.
@@ -250,9 +291,9 @@ Unresolved Unconfirmed reports preserve their original Fit Profile version/body/
 Later owner Fit observations on an unresolved garment must preserve its existing garment identity snapshot fields rather than dropping type/answer/fingerprint context merely because `product_id` is still null.
 
 ## Objective fingerprint
-`Not sure` and Intended Fit do not become positive physical-identity claims. Genuine objective controlled-answer changes may create distinct report states.
+`Not sure` and Intended Fit do not become positive physical-identity claims. Genuine objective controlled-answer changes currently may create distinct report states.
 
-The objective fingerprint is not automatically identical to the future tracked fit-variation key. The Product Spec owns that distinction. A future variation-definition audit must determine which structured answers define member-facing Exact Variation while preserving counted-report dedup/history semantics.
+The objective fingerprint is not automatically identical to the future tracked fit-variation key. Roadmap item 11A must classify each structured question before Exact Variation is implemented. After that classification, counted-report semantics must be reconciled explicitly: a descriptive-only question may be useful metadata without necessarily deserving another same-member counted Fit Report. Do not change this during Foundation security hardening.
 
 ## Body-state relevance
 `private.product_match_measurements(product_id)` is the shared Product-specific measurement source for Fit Match and report-state identity.
@@ -262,7 +303,7 @@ For established baseline values, a current relevant measurement is materially di
 
 Blank→filled can enrich. Missing current values do not erase established baseline evidence. Accepted under-2% values may roll the private comparison baseline while immutable original `fit_profile_version_id` remains unchanged.
 
-# 12. Owner follow-up evidence boundary — PR #53
+# 12. Owner follow-up evidence boundary
 `public.add_unconfirmed_catalog_evidence(...)` is the authorized owner-only re-entry boundary for an unresolved explicit-Unconfirmed garment.
 
 It may add/replace only the member's identity-support evidence:
@@ -277,6 +318,8 @@ At least one new piece of evidence is required. On success:
 - candidate moves to `needs_review`;
 - ambiguous-identity flag evidence metadata is refreshed/recreated if necessary;
 - priority recalculates.
+
+Foundation audit caveat: production currently trusts the storage-path strings after the owner/RPC checks. PR #56 adds database path constraints binding pending Product/Label evidence to the authenticated submission’s canonical member + Closet-item path. Known label evidence receives the stricter member + Product + Fit Report path constraint. Until PR #56 deploys, path integrity is an identified production debt.
 
 Storage upload/removal is handled by the authorized server action around this RPC so failed DB writes do not intentionally leave newly uploaded replacement evidence as the final state.
 
@@ -312,11 +355,13 @@ Material defaults use exact complete recipe signatures; they are never averaged 
 
 Admin review is exception-driven, not a manual approval queue for every clean first garment. Required operating visibility includes Product/candidate identity trust, confirmation counts, open flags, priority, barcode confidence, retailer links, Product/Label evidence history and system-vs-admin resolution provenance.
 
-PR #53 adds a dedicated operational split without creating a second catalog system:
+The current operational split remains:
 - active Unconfirmed review, ordered by requested evidence usefulness;
 - `needs_more_evidence` parked candidate bucket;
 - admin can return a parked item to Needs Review;
 - member follow-up does that automatically when new evidence is supplied.
+
+PR #56 adds only accurate audit naming for the Needs More Evidence transition; it does not create a second queue system.
 
 Existing `content_reports` moderation covers supported member-visible photo/post targets. Product-level `member_report` uses `catalog_review_flags`, keeping Product identity/content concerns inside the catalog review architecture rather than creating a parallel Product moderation system.
 
@@ -365,14 +410,14 @@ Help Me Size It reuses this architecture. `Would Buy Again` does not affect size
 Before member-facing Product Detail uses `exact_variant`, the existing recommendation/variant foundation must be audited against the owner-locked tracked-variation definition. Size and Color must not become exact-variation key fields. Body Match remains body similarity and must not be collapsed with Fit Result into a synthetic garment-fit percentage.
 
 # 23. Current implementation debt / open verification
-- PR #53 database/application rollout is complete and live on the production line; post-deploy repository reconciliation is documentation-only.
+- PR #55 application/UI rollout is complete and live on the production line; it changed no database migration state.
+- PR #56 Foundation security/history hardening is verified on a draft branch through CI #694 but **not deployed**; production defects/fixes are enumerated in the Foundation section above.
 - The proposed sex/body-specific public measurement FAQ wording remains pending owner copy approval.
 - Unified public Closet migration and mutation/lifecycle model remain future audit work beyond the narrow Needs More Evidence owner flow.
-- Complete all-Products admin priority/filter/merge/split UX remains to build beyond the PR #53 operational queue.
+- Complete all-Products admin priority/filter/merge/split UX remains to build beyond the current operational queue.
 - Purchase-context aggregate/admin analytics UI remains open.
 - Product merge/split, richer alias UX, spam moderation, broader Product-photo review, external barcode-provider feasibility, SerpAPI admin UX and browser-level regression remain open where previously scoped.
-- Tracked variation-definition audit is required before Product Detail Exact Variation behavior is treated as settled.
-- The Foundation Technical Audit is now the required next integrity checkpoint before normal roadmap implementation resumes. It must re-check Product/candidate materialization, Unconfirmed gating, Needs More Evidence re-entry, owner-only privacy, Product/Label photo boundaries, trust refresh, report accumulation, barcode confidence, front/back Fit photos, Fit Report identity, exact-variant foundations, Fit Community/search, purchase isolation, migration/RLS/privacy and recommendation interactions.
+- Tracked variation-definition audit #11A is required after Foundation production resolution and before Product Detail Exact Variation or counted-report fingerprint reconciliation.
 
 # 24. Verification contract
 For the current production foundation and future changes prove as applicable:
@@ -397,28 +442,36 @@ For the current production foundation and future changes prove as applicable:
 19. Front and Back Fit Photos may coexist exactly once per role; legacy single photos remain readable;
 20. scanner confirmation image priority is Product/catalog photo → Front/shared Fit Photo when available → other shared Fit Photo → placeholder;
 21. Product Label / Tag Photo remains separate/private identity evidence and never becomes generic Product imagery;
-22. Fit Notes validate at 2,000 characters on initial and later observation paths;
-23. second through fourth distinct Product wearers produce Corroborated identity trust;
-24. fifth distinct wearer produces Established identity trust without auto-verifying Product facts;
-25. Verified remains admin/authoritative only;
-26. later reports/conflicts do not silently rewrite/unpublish Product history;
-27. Product report reasons create trust-aware catalog flags;
-28. published Provisional/Corroborated issues start High while Established/Verified isolated ordinary disagreements start Low and repeated independent signals escalate;
-29. near-name/identifier/link signals create review evidence without automatic fuzzy merge;
-30. first Product/barcode evidence remains provisional and second distinct member corroborates it;
-31. multiple legitimate barcodes coexist under one Product;
-32. competing barcode/Product claims do not silently reassign;
-33. purchase context remains one owner-scoped observation per Fit Report;
-34. direct Product search is not gated by Fit Community/Department;
-35. Sleepwear app taxonomy matches replayed database vocabulary;
-36. owner interaction review occurs before a surface is marked owner-confirmed;
-37. when tracked-variation logic is implemented, Size and Color are excluded and only explicitly approved question keys participate.
+22. a known Product Label/Tag insert must bind the authenticated owner’s exact Fit Report to the same Product and canonical owner/Product/Fit Report path;
+23. another authenticated member may not read another member’s Label/Tag object merely because it shares the catalog-submission bucket;
+24. an eligible unresolved pending Product Photo remains readable for scanner confirmation without granting the member candidate/submission table visibility;
+25. Unconfirmed/Needs More Evidence/explicitly uncertain candidate paths are blocked both by normal scanner lookup and crafted direct scanner-image RPC calls;
+26. pending Product/Label SECURITY DEFINER writes reject cross-user/cross-Closet storage paths;
+27. a resolved candidate preserves historical normalized identity without permanently blocking a fresh later unresolved candidate for the same Brand+Item+Type;
+28. Needs More Evidence writes an exact accountable resolution action;
+29. Fit Notes validate at 2,000 characters on initial and later observation paths;
+30. second through fourth distinct Product wearers produce Corroborated identity trust;
+31. fifth distinct wearer produces Established identity trust without auto-verifying Product facts;
+32. Verified remains admin/authoritative only;
+33. later reports/conflicts do not silently rewrite/unpublish Product history;
+34. Product report reasons create trust-aware catalog flags;
+35. published Provisional/Corroborated issues start High while Established/Verified isolated ordinary disagreements start Low and repeated independent signals escalate;
+36. near-name/identifier/link signals create review evidence without automatic fuzzy merge;
+37. first Product/barcode evidence remains provisional and second distinct member corroborates it;
+38. multiple legitimate barcodes coexist under one Product;
+39. competing barcode/Product claims do not silently reassign;
+40. purchase context remains one owner-scoped observation per Fit Report;
+41. direct Product search is not gated by Fit Community/Department;
+42. Sleepwear app taxonomy matches replayed database vocabulary;
+43. owner interaction review occurs before a surface is marked owner-confirmed;
+44. when tracked-variation logic is implemented, Size and Color are excluded and only explicitly approved question keys participate;
+45. after 11A, counted-report fingerprint behavior is reconciled deliberately rather than assuming every structured question difference deserves another counted same-member report.
 
 # 25. Forbidden regressions
 Do not:
 - expose raw current/historical body measurements through social/search/feed/product pages;
 - expose another member's Unconfirmed/Needs More Evidence admin state or private owner disclaimer;
-- grant broad member read access to `catalog_candidates` merely to render the owner warning;
+- grant broad member read access to `catalog_candidates` merely to render the owner warning or authorize scanner photo access;
 - use Fit Community as Match math or Product Department;
 - require a Men/Women switch for direct Product search;
 - surface Unconfirmed/Needs More Evidence as Products in other-member search/suggestions/barcode recognition;
@@ -433,12 +486,17 @@ Do not:
 - auto-verify from member count;
 - use fuzzy similarity as automatic Product merge authority;
 - silently delete/unpublish an existing Product because one later report arrives;
+- allow a resolved historical candidate to absorb a new unresolved explicit-uncertain submission merely because its normalized identity matches;
 - promote a scanner fallback Fit Photo or Product Label / Tag Photo into canonical Product imagery;
+- make a private Product Label/Tag object readable through bucket-wide authenticated storage access;
+- allow a crafted direct scanner-image RPC to expose an Unconfirmed/Needs More Evidence candidate path;
+- accept arbitrary cross-user evidence storage paths through SECURITY DEFINER writers;
 - require barcode presence for Product identity;
 - silently reassign a barcode between competing Products;
 - treat purchase context as Product truth;
 - make Size or Color a tracked fit-variation key;
 - automatically treat every controlled garment question as variation-defining;
+- silently equate the current objective counted-report fingerprint with the future tracked-variation map;
 - create a second follow/catalog/sizing/moderation/variation system;
 - rewrite applied migrations;
 - reintroduce star Fit Rating UI;

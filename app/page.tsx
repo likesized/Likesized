@@ -98,8 +98,9 @@ const faqs = [
   {
     question: "What is a Fit Twin, and do I have to be Fit Twins to follow someone?",
     answer: <div className={styles.faqAnswer}>
-      <p><strong>No.</strong> Following and Fit Twin status are different. You can follow anyone whose style or fit activity you want to keep up with.</p>
-      <p>A Fit Twin is someone you follow whom LikeSized identifies as a strong current body match. Following adds someone to My Circle; LikeSized decides whether that followed person also qualifies as a Fit Twin.</p>
+      <p><strong>No.</strong> Following and Twin status are different. You can follow anyone whose style or fit activity you want to keep up with.</p>
+      <p>LikeSized compares your current <strong>Tops Match</strong> and <strong>Bottoms Match</strong> separately. When a person you follow clears the current strong-match threshold in both regions, they qualify as a <strong>Fit Twin</strong>. If only Tops clears it, they can be a <strong>Tops Twin</strong>; if only Bottoms clears it, they can be a <strong>Bottoms Twin</strong>.</p>
+      <p>Your <strong>Overall Match</strong> still shows your general body similarity. A high Overall Match by itself does not create a Fit Twin designation.</p>
     </div>,
   },
   {

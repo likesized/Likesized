@@ -6,6 +6,7 @@ import { ReportContentForm } from "@/components/ReportContentForm";
 import { fitTwinDesignation, fitTwinLabel } from "@/lib/fit-twin";
 import { GARMENT_TYPES } from "@/lib/garment-taxonomy";
 import { OUTFIT_OCCASION_LABELS } from "@/lib/outfit-taxonomy";
+import { currentProfilePhotoUrl } from "@/lib/profile-photo";
 import { createClient } from "@/lib/supabase/server";
 import CommentComposer from "./CommentComposer";
 import ConfirmDeleteOutfit from "./ConfirmDeleteOutfit";
@@ -27,7 +28,8 @@ type PhotoTag = { photo_id: string; closet_item_id: string; x: number; y: number
 type FitReport = { closet_item_id: string; size_label: string; fit: string; created_at: string; product_id: string | null };
 type Product = { id: string; name: string; slug: string; image_url: string | null; brand_id: string; garment_type_key: string | null };
 type Brand = { id: string; name: string };
-type Comment = { id: string; user_id: string; body: string; created_at: string; like_count: number; profile: Profile | null; avatarUrl: string | null };
+type Comment = { id: string; user_id: string | null; body: string; created_at: string; like_count: number; profile: Profile | null; avatarUrl: string | null };
+type PublicComment = { comment_id: string; body: string; created_at: string; username: string; display_name: string | null; avatar_url: string | null; like_count: number };
 type PublicTeaser = { product_id: string; product_slug: string; brand_name: string; product_name: string; image_url: string | null };
 type MatchRecord={user_id:string;match_score:number};
 function first(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
@@ -38,11 +40,6 @@ async function scoreFor(supabase:Awaited<ReturnType<typeof createClient>>,target
   const {data,error}=await supabase.rpc("get_fit_matches",{p_match_category:category,p_result_limit:100});
   if(error)return undefined;
   return ((data??[]) as MatchRecord[]).find((row)=>row.user_id===targetUserId)?.match_score;
-}
-async function signedProfilePhoto(supabase:Awaited<ReturnType<typeof createClient>>,path:string|null|undefined){
-  if(!path)return null;
-  const {data}=await supabase.storage.from("profile-photos").createSignedUrl(path,60*30);
-  return data?.signedUrl??null;
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
@@ -78,13 +75,19 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
     notFound();
   }
 
+  const commentsRequest = !outfit.comments_enabled
+    ? Promise.resolve({ data: [], error: null })
+    : viewerId
+      ? supabase.from("outfit_comments").select("id,user_id,body,created_at,like_count").eq("post_id",id).order("created_at",{ascending:true}).limit(200)
+      : supabase.rpc("get_public_outfit_comments", { p_post_id: id, p_result_limit: 200 });
+
   const [creatorResult, photosResult, occasionsResult, stylesResult, teaserResult,commentsResult] = await Promise.all([
     supabase.rpc("get_public_outfit_creator", { p_post_id: id }),
     supabase.from("outfit_photos").select("id,bucket,display_path,sort_order,is_main").eq("post_id", id).order("sort_order"),
     supabase.from("outfit_occasions").select("occasion,sort_order").eq("post_id", id).order("sort_order"),
     supabase.from("outfit_style_tags").select("display_tag,sort_order").eq("post_id", id).order("sort_order"),
     supabase.rpc("get_public_outfit_product_teasers", { p_post_id: id }),
-    outfit.comments_enabled?supabase.from("outfit_comments").select("id,user_id,body,created_at,like_count").eq("post_id",id).order("created_at",{ascending:true}).limit(200):Promise.resolve({data:[],error:null}),
+    commentsRequest,
   ]);
   if (creatorResult.error) throw new Error(`Could not load Outfit creator: ${creatorResult.error.message}`);
   if (photosResult.error) throw new Error(`Could not load Outfit photos: ${photosResult.error.message}`);
@@ -95,23 +98,34 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
 
   const profile = ((creatorResult.data ?? [])[0] as Profile | undefined) ?? null;
   const creatorName = profile?.display_name?.trim() || profile?.username || "LikeSized member";
-  const creatorAvatar=await signedProfilePhoto(supabase,profile?.avatar_url);
+  const creatorAvatar=currentProfilePhotoUrl(supabase,profile?.avatar_url);
   const photoRows = (photosResult.data ?? []) as Photo[];
   const publicTeasers = (teaserResult.data ?? []) as PublicTeaser[];
   const photoUrls = new Map<string, string>();
   for (const photo of photoRows) if (photo.bucket === "outfit-photos") photoUrls.set(photo.id, supabase.storage.from("outfit-photos").getPublicUrl(photo.display_path).data.publicUrl);
 
-  const rawComments=(commentsResult.data??[]) as {id:string;user_id:string;body:string;created_at:string;like_count:number}[];
-  const authorIds=[...new Set(rawComments.map((row)=>row.user_id))];
-  const profileById=new Map<string,Profile>();
-  if(authorIds.length){
-    const {data,error}=await supabase.from("profiles").select("id,username,display_name,avatar_url").in("id",authorIds);
-    if(error)throw new Error("Could not load comment authors.");
-    for(const author of (data??[]) as (Profile&{id:string})[])profileById.set(author.id,author);
+  let comments:Comment[]=[];
+  if(viewerId){
+    const rawComments=(commentsResult.data??[]) as {id:string;user_id:string;body:string;created_at:string;like_count:number}[];
+    const authorIds=[...new Set(rawComments.map((row)=>row.user_id))];
+    const profileById=new Map<string,Profile>();
+    if(authorIds.length){
+      const {data,error}=await supabase.from("profiles").select("id,username,display_name,avatar_url").in("id",authorIds);
+      if(error)throw new Error("Could not load comment authors.");
+      for(const author of (data??[]) as (Profile&{id:string})[])profileById.set(author.id,author);
+    }
+    comments=rawComments.map((row)=>{const author=profileById.get(row.user_id)??null;return {...row,profile:author,avatarUrl:currentProfilePhotoUrl(supabase,author?.avatar_url)};});
+  }else{
+    comments=((commentsResult.data??[]) as PublicComment[]).map((row)=>({
+      id:row.comment_id,
+      user_id:null,
+      body:row.body,
+      created_at:row.created_at,
+      like_count:Number(row.like_count)||0,
+      profile:{username:row.username,display_name:row.display_name,avatar_url:row.avatar_url},
+      avatarUrl:currentProfilePhotoUrl(supabase,row.avatar_url),
+    }));
   }
-  const avatarByAuthor=new Map<string,string>();
-  await Promise.all([...profileById.entries()].map(async([userId,author])=>{const url=await signedProfilePhoto(supabase,author.avatar_url);if(url)avatarByAuthor.set(userId,url);}));
-  const comments:Comment[]=rawComments.map((row)=>({...row,profile:profileById.get(row.user_id)??null,avatarUrl:avatarByAuthor.get(row.user_id)??null}));
 
   let garmentLinks: { post_id: string; closet_item_id: string }[] = [];
   let reports: FitReport[] = [];

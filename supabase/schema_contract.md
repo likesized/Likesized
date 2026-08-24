@@ -11,14 +11,15 @@ Ordered SQL files in `supabase/migrations/` are the executable database history 
 
 This file owns current database behavior/privacy plus explicit implementation debt. Product meaning lives in `docs/V1_PRODUCT_SPEC.md`; roadmap/status/audit order live in `docs/AI_MASTER_LOG.md`.
 
-# Production checkpoint — 2026-08-23
+# Production checkpoint — 2026-08-24
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-PR #56 Foundation hardening is live on `main` at `7bd1a1a6048bcc991ca6a55547e454b10feec832`. Canonical local migration files remain the replay authority; Supabase production has recorded:
+Current production `main` is PR #59 merge `b6de93464f55bb03d7c1c0be879c636141cceb40`, on top of PR #58 application/UI merge `d2b546e1ebac2ff537b1375bd9a8909a8cf51b62`. Canonical local migration files remain the replay authority; Supabase production has recorded:
 - `supabase/migrations/20260823160000_add_unconfirmed_catalog_status.sql` → production `20260823205533 add_unconfirmed_catalog_status`.
 - `supabase/migrations/20260823160100_unconfirmed_identity_and_photo_roles.sql` → production `20260823205642 unconfirmed_identity_and_photo_roles`.
 - `supabase/migrations/20260823160200_needs_more_evidence_followup.sql` → production `20260823205712 needs_more_evidence_followup`.
 - `supabase/migrations/20260824000500_foundation_audit_security_hardening.sql` → production `20260824003029 foundation_audit_security_hardening`.
+- `supabase/migrations/20260824015612_repair_known_product_identity_correction_rpc.sql` → production `20260824020058 repair_known_product_identity_correction_rpc`.
 
 The immediately preceding PR #51 migrations remain immutable applied history:
 - `supabase/migrations/20260823130000_add_sleepwear_lingerie_category.sql` → production `20260823153830 add_sleepwear_lingerie_category`.
@@ -30,16 +31,14 @@ Earlier production catalog-confidence migration `20260823054933 generalize_catal
 
 Supabase-assigned production timestamps may differ from local canonical filenames; never rename applied local migration history to chase generated timestamps.
 
-PR #56 final exact-head LikeSized CI run #696 (`32676618920`) on tested head `49293638d878a6b7c0e5b5ce07894653de4c3310` passed canonical integrity, exact dependencies, TypeScript, all focused safeguards, production build, pinned Supabase CLI, fresh replay of every canonical migration and the complete database behavior/privacy suite before merge.
+PR #56 final exact-head CI #696 established the Foundation hardening baseline. PR #58 final tested head `30034515c11fedfe8d776723957220e32f1bf3bb` passed full CI #702 before the UI cleanup was merged. Browser wiring Test #3 then exposed a separate correction-boundary defect; PR #59 exact repair head `046ccea8e4981a8cf8da3b9c84e1b7dc68ce69b4` passed full LikeSized CI #704 (`32681476875`), including fresh replay of every canonical migration and the complete database behavior/privacy suite.
 
-The Foundation migration was applied database-first and verified directly against hosted schema/functions/storage/RLS state before the exact tested tree was squash-merged as `7bd1a1a6048bcc991ca6a55547e454b10feec832`.
+PR #59 was applied database-first and verified directly on hosted production before squash merge. A live authenticated transaction proved `public.record_member_product_identity_issue(uuid,text,text)` now succeeds for known-Product Item correction evidence while authenticated direct EXECUTE on `public.normalize_identifier(text)` remains denied. The verification transaction was rolled back so no synthetic correction evidence persisted.
 
-Hosted PR #56 verification passed all 12 targeted hardening checks: canonical evidence path constraints, Product Label insertion policy, narrow scanner Product-photo storage helper/policy, hardened direct scanner-image candidate gates, candidate archive trigger/history state, Needs More Evidence audit action support and expected function presence. Security/performance advisors showed no new blocking schema/RLS failure from this migration.
-
-Known production Product evidence remained intact after the rollout: Maidenform / Heirloom Product `4086fdaa-172d-4a3f-b6c4-2c155094bb25` remains Corroborated with 2 distinct wearers and 4 Fit Reports, with UPC `196988323504` still present.
+Current controlled Product evidence remains intact: Maidenform / Heirloom Product `4086fdaa-172d-4a3f-b6c4-2c155094bb25` is Corroborated with 2 distinct wearers and currently 6 Fit Reports, with UPC `196988323504` still present. The single unreferenced Product variant left by the pre-fix failed browser attempt was removed only after proving zero Closet and zero Fit Report references.
 
 ## Foundation Technical Audit — PR #56 COMPLETE / DEPLOYED
-The post-PR-#53 Foundation audit found six authorization/history defects not covered by the previous test suite. The single additive migration `supabase/migrations/20260824000500_foundation_audit_security_hardening.sql` fixes them in production.
+The post-PR-#53 Foundation audit found six authorization/history defects not covered by the previous test suite. The single additive migration `supabase/migrations/20260824000500_foundation_audit_security_hardening.sql` fixed them in production.
 
 Live hardening contract:
 - pending Product Photo path = submitting member / `pending` / exact Closet item / `product-*`;
@@ -55,6 +54,19 @@ Live hardening contract:
 Production-data compatibility inspection before the migration found zero current `product_label_photo_evidence` rows and zero current pending Product/Label storage paths, so the new path constraints did not conflict with existing production evidence.
 
 The PR #56 regression suite contains 17 focused pgTAP checks. CI #693 replayed the entire migration history and exposed an over-restrictive first-pass storage policy because the policy queried private candidate/submission tables as the requesting member. The test was not weakened; the policy was corrected with the narrow security-definer path helper. Code/test head `b39297983396958105a1f64be1ac121af7ba8ff0` passed CI #694 (`32676273815`), and final reconciled head `49293638d878a6b7c0e5b5ce07894653de4c3310` passed CI #696 (`32676618920`) through the full required verification contract.
+
+## Known-Product member correction boundary — PR #59 COMPLETE / DEPLOYED
+`public.record_member_product_identity_issue(product_id, field_key, value)` is the authenticated member evidence boundary when a member keeps a known Product selected but uses **Change** to dispute Brand, Item, Manufacturer Style or Barcode identity.
+
+Contract:
+- the function remains SECURITY INVOKER and authenticated-callable;
+- it writes/updates only the member's provisional `product_identity_evidence` for the selected Product/field;
+- downstream identity-conflict review logic may mark the Product for review, but the RPC does not directly overwrite canonical Product/Brand identity;
+- `public.normalize_identifier(text)` remains intentionally unavailable to ordinary authenticated direct EXECUTE;
+- barcode normalization/validation is performed locally inside the correction RPC only for `field_key='barcode'`, so Item/Brand/Style corrections do not depend on permission to the restricted general helper;
+- unknown fields, blank/oversize values and malformed barcodes remain rejected.
+
+Permanent regression `supabase/tests/known_product_identity_correction_boundary.test.sql` proves direct normalize-helper access stays denied while Item, Brand and formatted Barcode correction evidence succeeds, separate evidence fields persist, canonical Product identity remains unchanged and a conflict marks the Product for review.
 
 # 1. Privacy / body-state foundations
 - `profiles` stores member identity under authenticated-member authorization boundaries.
@@ -175,6 +187,8 @@ When a member supplies new follow-up evidence through the authorized owner bound
 ## Existing Product + later conflict
 A later report/conflict does not automatically delete, unpublish or rewrite an existing Product. It sets review evidence/state while the Product remains usable until an audited resolution changes it.
 
+For a known Product identity correction, the application keeps the selected Product relationship and calls `record_member_product_identity_issue`. The resulting member evidence is provisional review input; it is not permission to rewrite the canonical Product name/Brand/Style/Barcode directly. PR #59 ensures this legitimate correction path does not require authenticated access to the general normalization helper.
+
 # 5. Catalog review flags and priority
 `catalog_review_flags` retains existing exception types and `member_report` plus:
 - `priority`: low / medium / high;
@@ -236,7 +250,7 @@ Barcode lookup/confirmation boundaries exclude unresolved candidates whose ident
 2. public/shared member Fit Photo, preferring `photo_role='front'` when available;
 3. application placeholder/default when neither exists.
 
-The direct candidate branch now independently enforces unresolved, non-Unconfirmed, non-Needs-More-Evidence and non-uncertain eligibility. A crafted direct RPC call cannot expose image paths for the private review states that normal scanner lookup excludes.
+The direct candidate branch independently enforces unresolved, non-Unconfirmed, non-Needs-More-Evidence and non-uncertain eligibility. A crafted direct RPC call cannot expose image paths for the private review states that normal scanner lookup excludes.
 
 The Fit Photo fallback never becomes canonical Product imagery or Product truth.
 
@@ -258,7 +272,7 @@ Cross-member pending Product Photo read exists only for scanner-eligible unresol
 
 Label/tag photos are private identity-review evidence. They are not generic Product images and must not be surfaced as Product display photos.
 
-Known-label insertion now explicitly binds the authenticated owner’s Fit Report to the same Product and canonical owner/Product/Fit Report storage path. The shared catalog-submission bucket no longer grants bucket-wide authenticated SELECT; another authenticated member cannot read another member’s Label/Tag object merely because it shares that bucket.
+Known-label insertion explicitly binds the authenticated owner’s Fit Report to the same Product and canonical owner/Product/Fit Report storage path. The shared catalog-submission bucket does not grant bucket-wide authenticated SELECT; another authenticated member cannot read another member’s Label/Tag object merely because it shares that bucket.
 
 # 10. Direct Product search
 `search_catalog_products` is the canonical broad textual Product search. Current direct Product search does not accept Fit Community or Department as a hidden gate.
@@ -312,7 +326,7 @@ At least one new piece of evidence is required. On success:
 - ambiguous-identity flag evidence metadata is refreshed/recreated if necessary;
 - priority recalculates.
 
-Database path constraints now bind pending Product/Label evidence to the submission’s canonical member + Closet-item path. Known label evidence uses the stricter member + Product + Fit Report path constraint.
+Database path constraints bind pending Product/Label evidence to the submission’s canonical member + Closet-item path. Known label evidence uses the stricter member + Product + Fit Report path constraint.
 
 Storage upload/removal is handled by the authorized server action around this RPC so failed DB writes do not intentionally leave newly uploaded replacement evidence as the final state.
 
@@ -403,14 +417,14 @@ Help Me Size It reuses this architecture. `Would Buy Again` does not affect size
 Before member-facing Product Detail uses `exact_variant`, the existing recommendation/variant foundation must be audited against the owner-locked tracked-variation definition. Size and Color must not become exact-variation key fields. Body Match remains body similarity and must not be collapsed with Fit Result into a synthetic garment-fit percentage.
 
 # 23. Current implementation debt / open verification
-- PR #55 application/UI rollout is complete and live on the production line; it changed no database migration state.
-- PR #56 Foundation security/history hardening is complete and live in production; its 17 targeted regressions and hosted verification are part of the current foundation contract.
+- PR #55 and PR #58 application/UI cleanup are live; PR #56 Foundation hardening and PR #59 correction-boundary repair are live in production.
+- Browser wiring remains incomplete at Test #3. The RPC/database defect is repaired and hosted verification passed, but the full browser→server-action→database Test #3 must be rerun before Test #4.
 - The proposed sex/body-specific public measurement FAQ wording remains pending owner copy approval.
 - Unified public Closet migration and mutation/lifecycle model remain future audit work beyond the narrow Needs More Evidence owner flow.
 - Complete all-Products admin priority/filter/merge/split UX remains to build beyond the current operational queue.
 - Purchase-context aggregate/admin analytics UI remains open.
-- Product merge/split, richer alias UX, spam moderation, broader Product-photo review, external barcode-provider feasibility, SerpAPI admin UX and browser-level regression remain open where previously scoped.
-- Tracked variation-definition audit #11A is now the next required logic audit before Product Detail Exact Variation or counted-report fingerprint reconciliation.
+- Product merge/split, richer alias UX, spam moderation, broader Product-photo review, external barcode-provider feasibility, SerpAPI admin UX and broader browser-level regression remain open where previously scoped.
+- Tracked variation-definition audit #11A is the next required logic audit after browser wiring and before Product Detail Exact Variation or counted-report fingerprint reconciliation.
 
 # 24. Verification contract
 For the current production foundation and future changes prove as applicable:
@@ -458,7 +472,11 @@ For the current production foundation and future changes prove as applicable:
 42. Sleepwear app taxonomy matches replayed database vocabulary;
 43. owner interaction review occurs before a surface is marked owner-confirmed;
 44. when tracked-variation logic is implemented, Size and Color are excluded and only explicitly approved question keys participate;
-45. after 11A, counted-report fingerprint behavior is reconciled deliberately rather than assuming every structured question difference deserves another counted same-member report.
+45. after 11A, counted-report fingerprint behavior is reconciled deliberately rather than assuming every structured question difference deserves another counted same-member report;
+46. authenticated members can record known-Product Item/Brand/Style correction evidence through `record_member_product_identity_issue` without direct EXECUTE on `normalize_identifier`;
+47. known-Product barcode correction validation accepts the controlled normalized format locally and rejects malformed values without widening general helper access;
+48. member correction evidence does not silently overwrite canonical Product or Brand identity;
+49. browser wiring Test #3 is not marked complete until the repaired production path succeeds end-to-end in an authenticated browser and backend inspection confirms the intended evidence/review state.
 
 # 25. Forbidden regressions
 Do not:
@@ -475,6 +493,8 @@ Do not:
 - let owner follow-up evidence directly create/rewrite canonical Product truth;
 - restore routine admin approval for every clean unique new garment;
 - let a member directly rewrite canonical Product fields;
+- grant ordinary authenticated direct EXECUTE on `public.normalize_identifier(text)` merely to make known-Product correction evidence work;
+- make known-Product Item/Brand/Style correction evidence depend on a restricted general helper that the authenticated caller cannot execute;
 - collapse Provisional/Corroborated/Established/Verified identity trust into unrelated Product-fact catalog status;
 - auto-verify from member count;
 - use fuzzy similarity as automatic Product merge authority;

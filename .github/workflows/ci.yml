@@ -55,6 +55,9 @@ jobs:
       - name: Controlled Fit Report and community catalog safeguards
         run: node --test tests/fit-report-taxonomy.test.ts
 
+      - name: Tracked variation-definition safeguards
+        run: node --test tests/variation-definition-map.test.ts
+
       - name: Fit Report UI regression safeguards
         run: node --test tests/fit-report-ui-regressions.test.ts
 

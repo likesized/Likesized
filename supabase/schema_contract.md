@@ -14,21 +14,19 @@ This file owns current database behavior/privacy plus explicit implementation de
 # Production checkpoint — 2026-08-24
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-Current production application `main` is `921383ac10ecf63ecbf35743caa366c4b635dd1b`, the post-PR-#66 Roadmap 11A reconciliation head. The latest database-changing production work remains PR #59 merge `b6de93464f55bb03d7c1c0be879c636141cceb40`; PR #60 through PR #66 added no production schema migration.
+Current Roadmap 12 application behavior is production-live through PR #67 squash merge `965274351a2f10f893631d769c9caeccdcc5e402`. Exact PR head `113e9d474afe19e82df154982d4d4ddd741ad67d` passed full LikeSized CI #765 (`32751821261`) before merge: canonical integrity, TypeScript, all focused application safeguards, production build, fresh replay of every canonical migration and the complete database behavior/privacy suite all passed. Later documentation-only reconciliation commits do not change application/database behavior.
 
-Roadmap 12 / PR #67 is **branch-only and not deployed**. Its additive canonical migrations are:
-- `supabase/migrations/20260824133400_add_outfit_comment_moderation_target.sql`;
-- `supabase/migrations/20260824133500_new_outfit_v1_social_foundation.sql`;
-- `supabase/migrations/20260824133600_complete_new_outfit_v1_boundaries.sql`;
-- `supabase/migrations/20260824133700_harden_new_outfit_v1_social_controls.sql`;
-- `supabase/migrations/20260824133800_canonical_public_closet_and_outfit_public_identity.sql`;
-- `supabase/migrations/20260824133900_fix_outfit_compatibility_photo_registration.sql`.
+Roadmap 12 / PR #67 is **DEPLOYED**. Its six additive canonical migrations are production-live:
+- `supabase/migrations/20260824133400_add_outfit_comment_moderation_target.sql` → production `20260824164156 add_outfit_comment_moderation_target`;
+- `supabase/migrations/20260824133500_new_outfit_v1_social_foundation.sql` → production `20260824164328 new_outfit_v1_social_foundation`;
+- `supabase/migrations/20260824133600_complete_new_outfit_v1_boundaries.sql` → production `20260824164410 complete_new_outfit_v1_boundaries`;
+- `supabase/migrations/20260824133700_harden_new_outfit_v1_social_controls.sql` → production `20260824164420 harden_new_outfit_v1_social_controls`;
+- `supabase/migrations/20260824133800_canonical_public_closet_and_outfit_public_identity.sql` → production `20260824164452 canonical_public_closet_and_outfit_public_identity`;
+- `supabase/migrations/20260824133900_fix_outfit_compatibility_photo_registration.sql` → production `20260824164507 fix_outfit_compatibility_photo_registration`.
 
-Roadmap 12 implementation head `73ea76f27448f3ce2ae17b8d7575f0977bc830e1` passed full LikeSized CI #759 (`32748872705`), including canonical integrity, TypeScript, all focused application safeguards, production build, fresh replay of every canonical migration and the complete database behavior/privacy suite. The later documentation reconciliation head must preserve that same green contract before merge.
+The six migrations were applied database-first before the PR #67 application cutover. Hosted verification after application confirmed zero non-`shared` Closet rows, the new Outfit tables and safe public projection RPCs present, the shared-only Closet constraint present, `outfit-photos` public, and `outfit-draft-photos` private. Production Vercel deployment `dpl_H9MRX5S1Z1uc1w9UCTRBdFfSxvrK` for the application merge reached READY and the checked post-cutover runtime-error window was clean.
 
-Until PR #67 receives explicit owner merge/deployment authorization and the database-first production step completes, hosted production still reflects the pre-Roadmap-12 physical Closet/Outfit schema even though the owner-approved product meaning is already locked in `docs/V1_PRODUCT_SPEC.md`.
-
-Canonical local migration files remain the replay authority; Supabase production has recorded:
+Canonical local migration files remain the replay authority; Supabase production also has recorded:
 - `supabase/migrations/20260823160000_add_unconfirmed_catalog_status.sql` → production `20260823205533 add_unconfirmed_catalog_status`.
 - `supabase/migrations/20260823160100_unconfirmed_identity_and_photo_roles.sql` → production `20260823205642 unconfirmed_identity_and_photo_roles`.
 - `supabase/migrations/20260823160200_needs_more_evidence_followup.sql` → production `20260823205712 needs_more_evidence_followup`.
@@ -99,14 +97,14 @@ Fit Community describes the person/wearer. It is not Product Department. A membe
 
 First-time setup includes Fit Community; post-onboarding editing lives in Profile Settings rather than My Measurements. Database meaning remains unchanged.
 
-# 2. Unified member-visible Closet — OWNER LOCKED / ROADMAP 12 BRANCH IMPLEMENTED
+# 2. Unified member-visible Closet — OWNER LOCKED / DEPLOYED
 Owner-approved current V1 meaning is one authenticated-member-visible Closet:
 - no member-controlled per-garment Private / Shared product mode;
 - owner view adds owner-only controls to the same canonical garment/Fit Report content;
 - authenticated member reads use that same Closet/Fit evidence foundation;
 - raw Fit Profile/body state, private size references, private catalog/label evidence and admin candidate/review state remain separately protected.
 
-PR #67 branch migration `20260824133800_canonical_public_closet_and_outfit_public_identity.sql` reconciles the old physical visibility model without rewriting immutable migration history:
+Production migration `20260824133800_canonical_public_closet_and_outfit_public_identity.sql` reconciled the old physical visibility model without rewriting immutable migration history:
 - existing `closet_items.visibility` values are backfilled to `shared`;
 - default is `shared`;
 - `closet_items_shared_only_current_v1` prevents creating or changing a current V1 garment to Private;
@@ -116,7 +114,7 @@ PR #67 branch migration `20260824133800_canonical_public_closet_and_outfit_publi
 - old shared-only photo/visibility coupling triggers are retired and replaced by one owner-integrity trigger;
 - scanner Fit-photo fallback no longer depends on a retired per-garment visibility choice.
 
-The physical `closet_items.visibility` column remains solely for replay compatibility. It is not a current product setting and must not reappear in member UI. This branch migration is **not production-live until PR #67 is explicitly authorized and deployed**.
+The physical `closet_items.visibility` column remains solely for replay compatibility. It is not a current product setting and must not reappear in member UI. Hosted post-migration verification found zero current Closet rows outside the compatibility `shared` value.
 
 ## Narrow owner-only unresolved-identity projection
 `public.get_own_unconfirmed_submission_status()` is a security-definer owner projection for the authenticated member's own unresolved Unconfirmed submissions. It returns only the minimum fields needed for owner UI: Closet item, candidate id/status, retained retailer URL and Product/Label photo-presence booleans.
@@ -417,10 +415,10 @@ Existing `content_reports` moderation covers supported member-visible photo/post
 - global Following-notification preference is a master switch.
 - Product notification watch is separate from people, Like and Wish state and is a one-shot future qualifying exact-Product alert.
 
-# 20. LikeLocker / Wish Locker / Outfit foundations — ROADMAP 12 BRANCH IMPLEMENTED
+# 20. LikeLocker / Wish Locker / Outfit foundations — ROADMAP 12 DEPLOYED
 Product likes, Outfit likes and Wish Locker purchase intent remain separate states. Outfits reuse canonical Closet/Product/taxonomy foundations; no second garment or shopping system is introduced.
 
-PR #67 additive schema establishes:
+PR #67 production schema establishes:
 - `outfit_posts` draft/published lifecycle with Headline, Outfit Story, comment toggle, publish timestamp and creator analytics counters;
 - `outfit_photos` canonical 1–6 gallery rows with Main/order and display/feed paths;
 - owner-private `outfit-draft-photos` storage before publish and public `outfit-photos` storage for published editorial imagery;
@@ -469,10 +467,10 @@ Help Me Size It reuses this architecture. `Would Buy Again` does not affect size
 Before member-facing Product Detail uses `exact_variant`, recommendation/evidence and Admin behavior must consume `GARMENT_VARIATION_DEFINITION_MAP` from `lib/garment-taxonomy.ts`. Size and Color must not become exact-variation key fields. Body Match remains body similarity and must not be collapsed with Fit Result into a synthetic garment-fit percentage.
 
 # 23. Current implementation debt / open verification
-- Production application `main` is the Roadmap 11A baseline at `921383ac10ecf63ecbf35743caa366c4b635dd1b`.
-- PR #56 Foundation hardening and PR #59 correction-boundary repair remain the latest database-changing production work; PR #60 through PR #66 added no migration.
-- Roadmap 12 / PR #67 is implementation-verified but branch-only until explicit owner merge/deployment authorization. Exact implementation head `73ea76f27448f3ce2ae17b8d7575f0977bc830e1` passed full CI #759, including fresh replay and complete pgTAP. After authorization, its six migrations must be applied database-first and verified before application production cutover.
-- The legacy physical `closet_items.visibility` column remains intentionally in replay history; Roadmap 12 locks it to the compatibility `shared` value rather than rewriting old migrations. Broader Closet lifecycle/mutation rules remain future audit work and must not recreate visibility state.
+- Roadmap 12 / PR #67 is production-live through application merge `965274351a2f10f893631d769c9caeccdcc5e402`; exact tested PR head `113e9d474afe19e82df154982d4d4ddd741ad67d` passed full CI #765.
+- All six Roadmap 12 migrations are production-live with the hosted mappings recorded in the Production checkpoint above; database-first hosted boundary verification passed before application cutover.
+- First authenticated live owner create/draft/preview/publish/detail/edit/social browser audit remains the Roadmap 12 owner-verification gate because production contained no published Outfit before cutover.
+- The legacy physical `closet_items.visibility` column remains intentionally in replay history and is locked to compatibility `shared`; broader Closet lifecycle/mutation rules remain future audit work and must not recreate visibility state.
 - Full My Circle Following / Fit Twins / Discover ranking and richer Outfit discovery/search remain later roadmap work; Roadmap 12 establishes the content/data/social foundation only.
 - Historical counted-report fingerprint reconciliation for retired questions remains separate and must not be smuggled into variation/Outfit work.
 - The proposed sex/body-specific public measurement FAQ wording remains pending owner copy approval.

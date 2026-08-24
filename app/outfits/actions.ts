@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { canonicalOutfitWebp } from "@/lib/outfit-photo-server";
 import { createClient } from "@/lib/supabase/server";
 
 const DISPLAY_MAX_BYTES = 600 * 1024;
@@ -78,7 +79,10 @@ async function uploadPair(
   displayPhoto: File,
   feedPhoto: File,
 ) {
-  const [displayBuffer, feedBuffer] = await Promise.all([displayPhoto.arrayBuffer(), feedPhoto.arrayBuffer()]);
+  const [displayBuffer, feedBuffer] = await Promise.all([
+    canonicalOutfitWebp(displayPhoto, DISPLAY_MAX_BYTES),
+    canonicalOutfitWebp(feedPhoto, FEED_MAX_BYTES),
+  ]);
   const [displayResult, feedResult] = await Promise.all([
     supabase.storage.from(bucket).upload(displayPath, displayBuffer, { contentType: "image/webp", upsert: false }),
     supabase.storage.from(bucket).upload(feedPath, feedBuffer, { contentType: "image/webp", upsert: false }),

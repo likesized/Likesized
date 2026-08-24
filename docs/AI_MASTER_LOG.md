@@ -22,22 +22,17 @@ LikeSized is not yet a public active service with an external audience. For the 
 
 ## Canonical production line — LIVE
 - `main` is the one production implementation line and is coupled to Vercel production.
-- Current canonical production head: `921383ac10ecf63ecbf35743caa366c4b635dd1b`, the post-PR-#66 documentation reconciliation head.
-- Roadmap 11A application merge: `00b6245325bad003e9a82bed438930fd91e13dff` — squash merge of PR #66, **Lock tracked garment variation definitions**.
-- PR #66 exact tested head `d585d7df34a5f6370cdd242afcee2ebd5fd6f1c4` passed full LikeSized CI #727 (`32694226884`) before merge.
-- Owner explicitly authorized deployment of PR #66 on 2026-08-24.
-- Current final production Vercel deployment `dpl_BdpDbpMEGWwLhqrzWqzZrWr393Bk` reached READY for the post-merge reconciliation head and aliases `likesized.com`; initial PR #66 application deployment `dpl_BtWuyaxVRFRGChT25Qn7oLDGXf4w` was superseded by that reconciliation deployment.
-- PR #65 exact tested head `f9d49a9ad66a11183dcbf5086e706be5b3c8d8a7` passed full LikeSized CI #723 before merge; merge `f75acec9bea0af8a6e8b1b691942f080f9668ea5`; production Vercel `dpl_FdQSyuvSBTDrpEnK4hThiAMdjQ1E` reached READY before PR #66 superseded it.
-- PR #64 exact tested head `63fb7698c8338e729cf71495c9b4abac10c6b4a9` passed full LikeSized CI #721 and merged as `97fb30aeee6b08c08f90a369438c85f6be7a5e11`; production Vercel deployment `dpl_CV2dFjk4wim1gfatEtdsEpNwgU1q` reached READY before being superseded by later production.
-- PR #63 exact tested head `2f086f73d6784fb5f78f2d2f6fcd85109ee245d0` passed full LikeSized CI #716 before merge; squash merge `25ffa95b15295d2138fae1e476d28c392c4d45f1`; production Vercel deployment `dpl_BQxgW1vq2UrqfVJagWf7FeGcVGB` reached READY before later production updates.
-- PR #62 merge `245bfab0d0d918671cfce3856b78e57525867df2` and production `dpl_3DXrLcVy13gwc4L8CSLtvspFLc9G` are superseded by later production.
-- PR #61 exact tested head `d4c84b9926ed3b2b53666a399b131e6e14cedfa3` passed full LikeSized CI #708 and was squash-merged as `24fb0e42b6e05d42a10b1912a5493367975952da`; Vercel production `dpl_J9cnoV8VxewwZDZfbjpusi3Gx4RG` reached READY.
-- No database/schema migration was part of PR #61 through PR #66.
+- Current Roadmap 12 application production merge: `965274351a2f10f893631d769c9caeccdcc5e402`, squash merge of PR #67 **Roadmap 12: New Outfit V1**.
+- PR #67 exact tested head `113e9d474afe19e82df154982d4d4ddd741ad67d` passed full LikeSized CI #765 (`32751821261`) before merge.
+- Owner explicitly authorized deployment of PR #67 on 2026-08-24.
+- Production Supabase received the six verified Roadmap 12 migrations database-first, and hosted boundary checks passed before application cutover.
+- Production Vercel deployment `dpl_H9MRX5S1Z1uc1w9UCTRBdFfSxvrK` for merge `965274351a2f10f893631d769c9caeccdcc5e402` reached READY and aliases `likesized.com`; checked runtime errors after cutover returned none.
+- Roadmap 11A application merge remains `00b6245325bad003e9a82bed438930fd91e13dff` through PR #66; its last post-merge reconciliation production head was `921383ac10ecf63ecbf35743caa366c4b635dd1b` before Roadmap 12 superseded it.
 - Applied database migrations are immutable; corrections use later ordered migrations.
 - No paid Supabase branches.
 
-## Roadmap 12 — New Outfit — VERIFIED / AWAITING DEPLOYMENT AUTHORIZATION
-Single active implementation line: `agent/new-outfit-v1`, draft PR #67 **Roadmap 12: New Outfit V1**. Nothing from PR #67 is merged to `main` or deployed to production. Owner deployment authorization has not been given.
+## Roadmap 12 — New Outfit — COMPLETE / DEPLOYED / OWNER LIVE AUDIT NEXT
+PR #67 **Roadmap 12: New Outfit V1** is merged to `main` and live on `likesized.com`. The implementation/schema/docs verification and production cutover are complete. The required next product step is the owner's first live browser audit of the working page; do not silently advance to Roadmap 13 before that audit is handled.
 
 Owner-approved Roadmap 12 product state:
 - photo-only V1: 1 required Main Photo + up to 5 Additional Photos; reorder and Set as Main; no video;
@@ -55,17 +50,17 @@ Owner-approved Roadmap 12 product state:
 - Outfit browsing is image-first with a Pinterest-like masonry/pinboard rhythm, natural Main Photo proportions, staggered columns, minimal card chrome and a compact two-column feed on normal mobile widths; this is a visual direction, not copied Pinterest product behavior;
 - accessories outside current garment taxonomy may appear in photos/Story but are not canonical Closet/Product tags;
 - Unconfirmed/Needs More Evidence owner garments may be styled, but private candidate/review state does not leak and unresolved identity does not create public Product truth;
-- current V1 has **no per-garment Private / Shared product mode**. The Roadmap 12 branch reconciles stale Closet visibility UI/RLS by retaining the historical physical column only for immutable replay compatibility and locking its current value to `shared`.
+- current V1 has **no per-garment Private / Shared product mode**. The production database retains the historical physical `closet_items.visibility` column only for immutable replay compatibility and locks its current value to `shared`.
 
-Roadmap 12 branch migrations are additive/immutable:
-- `20260824133400_add_outfit_comment_moderation_target.sql`;
-- `20260824133500_new_outfit_v1_social_foundation.sql`;
-- `20260824133600_complete_new_outfit_v1_boundaries.sql`;
-- `20260824133700_harden_new_outfit_v1_social_controls.sql`;
-- `20260824133800_canonical_public_closet_and_outfit_public_identity.sql`;
-- `20260824133900_fix_outfit_compatibility_photo_registration.sql`.
+Roadmap 12 canonical migrations and hosted production mappings:
+- `20260824133400_add_outfit_comment_moderation_target.sql` → hosted `20260824164156 add_outfit_comment_moderation_target`;
+- `20260824133500_new_outfit_v1_social_foundation.sql` → hosted `20260824164328 new_outfit_v1_social_foundation`;
+- `20260824133600_complete_new_outfit_v1_boundaries.sql` → hosted `20260824164410 complete_new_outfit_v1_boundaries`;
+- `20260824133700_harden_new_outfit_v1_social_controls.sql` → hosted `20260824164420 harden_new_outfit_v1_social_controls`;
+- `20260824133800_canonical_public_closet_and_outfit_public_identity.sql` → hosted `20260824164452 canonical_public_closet_and_outfit_public_identity`;
+- `20260824133900_fix_outfit_compatibility_photo_registration.sql` → hosted `20260824164507 fix_outfit_compatibility_photo_registration`.
 
-Exact implementation + canonical Product Spec / Schema Contract head `35e3ad191db08d83eccbd02129732f8b1895ea11` passed full LikeSized CI #760 (`32749668258`). Status-only master reconciliation heads `0399dafd74bdab9d12dda63fa304d6c5edaec687`, `155bb2875f1292b028b17e06233eb46b2260743e`, and `48e04ba325ac236948153645a754151eac754ee2` passed full CI #761–#763 respectively. Final verified branch head before this ledger-only recording commit is `5c681e1a2e710061beb40bd7170101e3dd953d31`, which passed full LikeSized CI #764 (`32751463784`): canonical integrity, TypeScript, all focused application safeguards, production build, fresh replay of every canonical migration and the complete pgTAP database behavior/privacy suite all passed. No application or database behavior changed after the fully verified implementation/docs head.
+Exact PR head `113e9d474afe19e82df154982d4d4ddd741ad67d` passed full LikeSized CI #765 (`32751821261`): canonical integrity, TypeScript, every focused application safeguard, production build, fresh replay of every canonical migration and the complete pgTAP database behavior/privacy suite all passed. Production database inspection after the database-first migration found zero non-shared Closet rows, the new Outfit tables/functions present, the shared-only Closet constraint present, published Outfit storage public and draft Outfit storage private. The live `/outfits/new` route resolves through the production deployment and correctly sends a logged-out visitor to sign-in. No published Outfit existed yet for a logged-out detail-page smoke test; the first real create/publish flow is therefore part of the owner live audit.
 
 ## Authenticated browser → backend wiring — COMPLETE
 The six ordered browser-to-backend checks are complete:
@@ -123,17 +118,24 @@ Production reconciliation after PR #58/#59. Exact head `f28d988ca7018653ae82d641
 ## PR #66 — COMPLETE / DEPLOYED
 **Lock tracked garment variation definitions.** Exact head `d585d7df34a5f6370cdd242afcee2ebd5fd6f1c4` passed full LikeSized CI #727; squash merge `00b6245325bad003e9a82bed438930fd91e13dff`; production Vercel `dpl_BtWuyaxVRFRGChT25Qn7oLDGXf4w` reached READY. Retired current Intended Fit and Sneakers Use questions, made every remaining current structured Type question explicitly variation-defining, added the one canonical derived variation-definition map and regression coverage, and left historical counted-report fingerprint semantics unchanged. No database change.
 
+## PR #67 — COMPLETE / DEPLOYED
+**Build New Outfit V1.** Exact tested head `113e9d474afe19e82df154982d4d4ddd741ad67d` passed full CI #765 (`32751821261`); squash merge `965274351a2f10f893631d769c9caeccdcc5e402`. Six verified migrations were applied database-first to production Supabase and passed hosted boundary checks. Production Vercel `dpl_H9MRX5S1Z1uc1w9UCTRBdFfSxvrK` reached READY, aliases `likesized.com`, and the checked runtime-error window was clean. Delivered multi-photo editorial Outfits, drafts/preview/publish/edit/delete, fixed Occasion + community Style Tags, owned-Closet garment tagging and hotspots, public limited detail pages, member Fit layer, social/moderation/block controls, creator analytics, internal Shop attribution, canonical member-visible Closet semantics, and the Pinterest-like image-first masonry browsing direction. Owner live browser audit is the next gate.
+
 # FOUNDATION / DATABASE STATUS — VERIFIED PRODUCTION BASELINE
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
 Relevant immutable production migration mappings:
-- `supabase/migrations/20260823160000_add_unconfirmed_catalog_status.sql` → hosted `20260823205533 add_unconfirmed_catalog_status`.
-- `supabase/migrations/20260823160100_unconfirmed_identity_and_photo_roles.sql` → hosted `20260823205642 unconfirmed_identity_and_photo_roles`.
-- `supabase/migrations/20260823160200_needs_more_evidence_followup.sql` → hosted `20260823205712 needs_more_evidence_followup`.
-- `supabase/migrations/20260824000500_foundation_audit_security_hardening.sql` → hosted `20260824003029 foundation_audit_security_hardening`.
-- `supabase/migrations/20260824015612_repair_known_product_identity_correction_rpc.sql` → hosted `20260824020058 repair_known_product_identity_correction_rpc`.
-
-PR #67 migrations are not included in this hosted production list until explicitly deployed.
+- `supabase/migrations/20260823160000_add_unconfirmed_catalog_status.sql` → production `20260823205533 add_unconfirmed_catalog_status`.
+- `supabase/migrations/20260823160100_unconfirmed_identity_and_photo_roles.sql` → production `20260823205642 unconfirmed_identity_and_photo_roles`.
+- `supabase/migrations/20260823160200_needs_more_evidence_followup.sql` → production `20260823205712 needs_more_evidence_followup`.
+- `supabase/migrations/20260824000500_foundation_audit_security_hardening.sql` → production `20260824003029 foundation_audit_security_hardening`.
+- `supabase/migrations/20260824015612_repair_known_product_identity_correction_rpc.sql` → production `20260824020058 repair_known_product_identity_correction_rpc`.
+- `supabase/migrations/20260824133400_add_outfit_comment_moderation_target.sql` → production `20260824164156 add_outfit_comment_moderation_target`.
+- `supabase/migrations/20260824133500_new_outfit_v1_social_foundation.sql` → production `20260824164328 new_outfit_v1_social_foundation`.
+- `supabase/migrations/20260824133600_complete_new_outfit_v1_boundaries.sql` → production `20260824164410 complete_new_outfit_v1_boundaries`.
+- `supabase/migrations/20260824133700_harden_new_outfit_v1_social_controls.sql` → production `20260824164420 harden_new_outfit_v1_social_controls`.
+- `supabase/migrations/20260824133800_canonical_public_closet_and_outfit_public_identity.sql` → production `20260824164452 canonical_public_closet_and_outfit_public_identity`.
+- `supabase/migrations/20260824133900_fix_outfit_compatibility_photo_registration.sql` → production `20260824164507 fix_outfit_compatibility_photo_registration`.
 
 Verified-good production foundations include:
 - clean candidate→Product materialization and Product trust progression from distinct wearers;
@@ -151,6 +153,8 @@ Verified-good production foundations include:
 - hardened direct scanner-image candidate eligibility;
 - canonical evidence-path constraints and resolved-candidate history handling;
 - known-Product member correction RPC least-privilege boundary;
+- canonical member-visible Closet with no per-garment Private/Shared product setting;
+- New Outfit V1 draft/public/social/privacy/storage boundaries;
 - full fresh migration replay and database behavior/privacy suites.
 
 # OWNER-LOCKED CURRENT PRODUCT DECISIONS
@@ -259,7 +263,7 @@ Recent branch classification:
 - `agent/fit-report-intake-ux-cleanup` — RECOVERED via PR #64; no longer active.
 - `agent/faster-item-suggestions` — RECOVERED via PR #65; no longer active.
 - `agent/variation-definition-map` — RECOVERED via PR #66; no longer active.
-- `agent/new-outfit-v1` — **ACTIVE / VERIFIED**, sole Roadmap 12 implementation line, draft PR #67; awaiting explicit production authorization.
+- `agent/new-outfit-v1` — **RECOVERED via PR #67 / DEPLOYED**; no longer the active implementation line.
 
 Older recovery/feature/verification branches classified in Git history remain RECOVERED, SUPERSEDED, OBSOLETE or DUPLICATE; none overrides current `main`.
 
@@ -270,14 +274,14 @@ Older recovery/feature/verification branches classified in Git history remain RE
 4. Fit Profile / My Measurements — broader audit remains.
 5. Profile Settings — Fit Community editor live.
 6. Notifications — audit remains.
-7. Unified Closet/member profile Closet — per-garment visibility product mode is reconciled on the verified Roadmap 12 branch; broader lifecycle/mutation audit remains.
+7. Unified Closet/member profile Closet — per-garment visibility product mode is now reconciled in production; broader lifecycle/mutation audit remains.
 8. Post-submit Fit Report mutation/lifecycle model — remains.
 9. People My Size — audit remains.
 10. My Circle / Following / system-generated Fit Twin — audit remains; future Outfit view direction is Following / Fit Twins / Discover.
 11. New Fit Report — six browser/backend wiring checks complete; cleanup through PR #65 is deployed.
 11A. **Garment-question variation classification — COMPLETE / DEPLOYED through PR #66.**
-12. **New Outfit — VERIFIED on PR #67 / AWAITING DEPLOYMENT AUTHORIZATION; not deployed.**
-13. Outfits / Style Feed — follows Roadmap 12 foundation; full discovery/ranking audit remains.
+12. **New Outfit — COMPLETE / DEPLOYED through PR #67; first live owner browser audit is the current gate.**
+13. Outfits / Style Feed — follows Roadmap 12 foundation; full discovery/ranking audit remains after the owner finishes the New Outfit live audit.
 14. Garment/Product detail — Exact Variation may now consume the canonical 11A map when this audit item is reached.
 15. Explore.
 16. Search + `/browse` compatibility.
@@ -286,12 +290,12 @@ Older recovery/feature/verification branches classified in Git history remain RE
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Roadmap 12 PR #67 is implementation/schema/docs verified and awaits explicit owner deployment authorization. No production database, merge or Vercel action is permitted before that authorization.
+- Roadmap 12 is production-live; the owner must perform the first authenticated live create/draft/preview/publish/detail/edit/social browser audit before the roadmap advances or any discovered correction is classified complete.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification; do not silently rekey/collapse historical reports.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
 - Full Admin all-Products priority/filter/merge/split presentation remains.
 - Purchase-context aggregate/admin reporting UI remains open.
-- Broader Closet mutation/lifecycle semantics remain open; the Roadmap 12 branch eliminates the obsolete per-garment visibility product mode without settling lifecycle edits.
+- Broader Closet mutation/lifecycle semantics remain open; Roadmap 12 eliminated the obsolete per-garment visibility product mode without settling lifecycle edits.
 - Exact post-submit mutation/lifecycle schema remains open.
 - Full My Circle Outfit Following / Fit Twins / Discover ranking and richer Outfit discovery/search are later roadmap work, not hidden Roadmap 12 scope.
 - Product merge/split, richer alias management, spam handling, broader Product-photo moderation, field lock/reopen, external barcode-provider evaluation, SerpAPI admin UX and starter-catalog enrichment remain open where previously scoped.
@@ -320,10 +324,9 @@ Older recovery/feature/verification branches classified in Git history remain RE
 - PR #64 exact head `63fb7698c8338e729cf71495c9b4abac10c6b4a9` passed full CI #721; merge `97fb30aeee6b08c08f90a369438c85f6be7a5e11`; Vercel `dpl_CV2dFjk4wim1gfatEtdsEpNwgU1q` reached READY.
 - PR #65 exact head `f9d49a9ad66a11183dcbf5086e706be5b3c8d8a7` passed full CI #723; merge `f75acec9bea0af8a6e8b1b691942f080f9668ea5`; Vercel `dpl_FdQSyuvSBTDrpEnK4hThiAMdjQ1E` reached READY.
 - PR #66 exact head `d585d7df34a5f6370cdd242afcee2ebd5fd6f1c4` passed full CI #727; squash merge `00b6245325bad003e9a82bed438930fd91e13dff`; final post-merge reconciliation production head `921383ac10ecf63ecbf35743caa366c4b635dd1b`; final Vercel `dpl_BdpDbpMEGWwLhqrzWqzZrWr393Bk` reached READY.
-- PR #67 — **VERIFIED / NOT DEPLOYED / AWAITING AUTHORIZATION**. Final verified branch head before the ledger-only recording commit is `5c681e1a2e710061beb40bd7170101e3dd953d31`, full CI #764 (`32751463784`). Six additive migrations and canonical app/docs changes are ready on the single active branch. No production merge/database/Vercel action is authorized yet.
+- PR #67 exact tested head `113e9d474afe19e82df154982d4d4ddd741ad67d` passed full CI #765; six migrations were applied database-first; squash merge `965274351a2f10f893631d769c9caeccdcc5e402`; production Vercel `dpl_H9MRX5S1Z1uc1w9UCTRBdFfSxvrK` reached READY and aliases `likesized.com`; no runtime errors were found in the checked post-cutover window. First live owner browser audit remains.
 
 # EXACT NEXT ACTION — CURRENT
-1. Hold PR #67 unmerged and production untouched until the owner explicitly authorizes the frozen Roadmap 12 production batch.
-2. On explicit authorization, apply the six verified Roadmap 12 migrations database-first to production Supabase and verify the hosted database boundaries before application cutover.
-3. Merge the frozen verified PR to `main`, wait for the coupled Vercel production deployment to reach READY, then have the owner perform the required live-site browser verification on `likesized.com`.
-4. Record the production migration mappings, merge SHA, Vercel deployment and owner verification result canonically before moving the roadmap forward.
+1. Owner performs the first authenticated live New Outfit audit on `likesized.com`: create an Outfit, exercise Save Draft/resume, Preview, Publish, opened Outfit/gallery/hotspots, edit, comments/social controls and mobile/desktop visual layout as practical.
+2. Record the owner audit result in this master. Any discovered correction becomes the next frozen change list on one new temporary branch; do not patch production or start a parallel feature line.
+3. After Roadmap 12 live audit is accepted or its corrections are deployed, continue with Roadmap 13 Outfits / Style Feed audit.

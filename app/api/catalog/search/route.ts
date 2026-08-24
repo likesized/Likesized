@@ -49,6 +49,38 @@ type DetailedProduct = {
   identifiers: unknown;
   listings: unknown;
 };
+type BriefProduct = {
+  id: string;
+  name: string;
+  brand: unknown;
+  garment_type_key: string | null;
+  manufacturer_style_number: string | null;
+  market_segment: string;
+  department_key: string | null;
+  image_url: string | null;
+};
+
+function joinedBrandName(joinedBrand: unknown) {
+  const brand = Array.isArray(joinedBrand) ? joinedBrand[0] : joinedBrand;
+  return brand && typeof brand === "object" && "name" in brand && typeof brand.name === "string" ? brand.name : "";
+}
+
+async function briefProducts(supabase: Awaited<ReturnType<typeof createClient>>, ids: string[]) {
+  if (!ids.length) return [];
+  const { data, error } = await supabase
+    .from("products")
+    .select("id,name,garment_type_key,manufacturer_style_number,market_segment,department_key,image_url,brand:brands(name)")
+    .in("id", ids)
+    .neq("catalog_status", "rejected");
+  if (error) throw error;
+  const byId = new Map((data ?? []).map((item) => [item.id, item as BriefProduct]));
+  return ids.flatMap((id) => {
+    const product = byId.get(id);
+    if (!product) return [];
+    const brandName = joinedBrandName(product.brand);
+    return brandName ? [{ ...product, brand_name: brandName, brand: undefined, default_size_kind: null }] : [];
+  });
+}
 
 async function detailedProducts(supabase: Awaited<ReturnType<typeof createClient>>, ids: string[]) {
   if (!ids.length) return [];
@@ -67,9 +99,7 @@ async function detailedProducts(supabase: Awaited<ReturnType<typeof createClient
   return ids.flatMap((id) => {
     const product = byId.get(id);
     if (!product) return [];
-    const joinedBrand = product.brand;
-    const brand = Array.isArray(joinedBrand) ? joinedBrand[0] : joinedBrand;
-    const brandName = brand && typeof brand === "object" && "name" in brand && typeof brand.name === "string" ? brand.name : "";
+    const brandName = joinedBrandName(product.brand);
     return brandName ? [{ ...product, default_size_kind: sizeKindById.get(id) ?? null, brand_name: brandName, brand: undefined }] : [];
   });
 }
@@ -134,6 +164,7 @@ export async function GET(request: Request) {
   const brandQuery = clean(url.searchParams.get("brand") ?? "", 120);
   const candidateType = clean(url.searchParams.get("candidate_type") ?? "", 80);
   const barcode = normalizeIdentifier(url.searchParams.get("barcode") ?? "");
+  const brief = url.searchParams.get("brief") === "1";
 
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
@@ -149,10 +180,7 @@ export async function GET(request: Request) {
       if (match.match_kind === "product" && match.product_id) {
         let local = await detailedProducts(supabase, [match.product_id]);
         if (local[0]) {
-          const imageUrl = await scanMatchImage(supabase, {
-            productId: match.product_id,
-            preferredProductUrl: local[0].image_url,
-          });
+          const imageUrl = await scanMatchImage(supabase, { productId: match.product_id, preferredProductUrl: local[0].image_url });
           local = [{ ...local[0], image_url: imageUrl }];
           match.image_url = imageUrl;
         }
@@ -167,11 +195,7 @@ export async function GET(request: Request) {
 
     let candidateDefault: CandidateDefaultRow | null = null;
     if (brandQuery && query && candidateType) {
-      const { data, error: candidateDefaultError } = await supabase.rpc("lookup_corroborated_candidate_defaults", {
-        p_brand: brandQuery,
-        p_model: query,
-        p_garment_type_key: candidateType,
-      });
+      const { data, error: candidateDefaultError } = await supabase.rpc("lookup_corroborated_candidate_defaults", { p_brand: brandQuery, p_model: query, p_garment_type_key: candidateType });
       if (candidateDefaultError) throw candidateDefaultError;
       candidateDefault = ((Array.isArray(data) ? data[0] : data) ?? null) as CandidateDefaultRow | null;
     }
@@ -193,18 +217,18 @@ export async function GET(request: Request) {
         .eq("brand_id", brandId)
         .neq("catalog_status", "rejected")
         .order("name")
-        .limit(100);
+        .limit(brief ? 60 : 100);
       if (candidateError) throw candidateError;
       const normalizedQuery = normalizeSearchText(query);
       const productIds = (candidates ?? []).map((item) => item.id);
-      const aliasIds = await matchingProductAliasIds(supabase, normalizedQuery, productIds);
+      const aliasIds = normalizedQuery ? await matchingProductAliasIds(supabase, normalizedQuery, productIds) : [];
       const aliasSet = new Set(aliasIds);
       const ids = (candidates ?? [])
         .filter((item) => !normalizedQuery || normalizeSearchText(item.name).includes(normalizedQuery) || aliasSet.has(item.id))
         .sort((a, b) => Number(aliasSet.has(b.id)) - Number(aliasSet.has(a.id)) || a.name.localeCompare(b.name))
-        .slice(0, 12)
+        .slice(0, brief ? 24 : 12)
         .map((item) => item.id);
-      return NextResponse.json({ local: await detailedProducts(supabase, ids), candidate_default: candidateDefault });
+      return NextResponse.json({ local: brief ? await briefProducts(supabase, ids) : await detailedProducts(supabase, ids), candidate_default: candidateDefault });
     }
 
     if (query.length < 2) return NextResponse.json({ local: [] });
@@ -214,10 +238,8 @@ export async function GET(request: Request) {
       matchingProductAliasIds(supabase, normalizedQuery),
     ]);
     if (error) throw error;
-    const ids = [...aliasIds, ...((ranked ?? []) as LocalSearchRow[]).map((item) => item.id)]
-      .filter((id, index, all) => all.indexOf(id) === index)
-      .slice(0, 8);
-    return NextResponse.json({ local: await detailedProducts(supabase, ids) });
+    const ids = [...aliasIds, ...((ranked ?? []) as LocalSearchRow[]).map((item) => item.id)].filter((id, index, all) => all.indexOf(id) === index).slice(0, 8);
+    return NextResponse.json({ local: brief ? await briefProducts(supabase, ids) : await detailedProducts(supabase, ids) });
   } catch {
     return NextResponse.json({ error: "LikeSized catalog search is temporarily unavailable." }, { status: 500 });
   }
@@ -236,11 +258,7 @@ export async function POST(request: Request) {
     if (!/^\d{8}$|^\d{12,14}$/.test(barcode) || (productId === null) === (candidateId === null)) {
       return NextResponse.json({ error: "Invalid barcode confirmation." }, { status: 400 });
     }
-    const { data: status, error } = await supabase.rpc("confirm_barcode_catalog_match", {
-      p_barcode: barcode,
-      p_product_id: productId,
-      p_candidate_id: candidateId,
-    });
+    const { data: status, error } = await supabase.rpc("confirm_barcode_catalog_match", { p_barcode: barcode, p_product_id: productId, p_candidate_id: candidateId });
     if (error) throw error;
     return NextResponse.json({ ok: true, status });
   } catch {

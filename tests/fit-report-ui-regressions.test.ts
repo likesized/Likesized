@@ -9,10 +9,10 @@ const fitCss = readFileSync("app/closet/add/fitReport.module.css", "utf8");
 const settings = readFileSync("app/settings/page.tsx", "utf8");
 const settingsCss = readFileSync("app/settings/settings.module.css", "utf8");
 
-test("Item suggestions wait for typed search text, reuse recent results, and overlay the form", () => {
+test("Item suggestions fire immediately after typed search text, reuse recent results, and overlay the form", () => {
   assert.match(catalog, /normalizedItem\.length < 2/);
   assert.match(catalog, /\(product && !itemIssue\)/);
-  assert.match(catalog, /const ITEM_SEARCH_DEBOUNCE_MS = 100;/);
+  assert.match(catalog, /const ITEM_SEARCH_DEBOUNCE_MS = 0;/);
   assert.match(catalog, /itemSuggestionCache = useRef\(new Map<string, CatalogProduct>\(\)\)/);
   assert.match(catalog, /setItemSuggestions\(cached\)/);
   assert.match(catalog, /itemSuggestionCache\.current\.set\(item\.id, item\)/);
@@ -97,14 +97,14 @@ test("barcode and manual detail paths keep the compact optional tag-photo contro
   assert.match(catalog, /productLabelPhotoName \? "Replace" : "Add tag photo"/);
 });
 
-test("uncertain identity helper restores the prior copy and does not duplicate an existing tag photo", () => {
+test("uncertain identity helper keeps the approved copy, aligns Retail Link optional, and visibly confirms Product Photo", () => {
   assert.match(catalog, /No problem — we’ll help verify it\./);
   assert.match(catalog, /Enter the best information you have and continue your Fit Report\. We’ll flag this item for review\. Please provide as much detail as possible—a retail link and clear photos of the garment or its tag\/style label are especially helpful\./);
-  assert.match(catalog, /<label>Retail Link <span className="muted inlineMuted">optional<\/span>/);
+  assert.match(catalog, /<label><b>Retail Link <span className="muted inlineMuted">optional<\/span><\/b><input/);
   assert.match(catalog, /\{!productLabelPhotoName \? <div><strong>Photo of Tag \/ Style Label<\/strong>/);
-  assert.match(catalog, /<div><strong>Product Photo<\/strong><button/);
+  assert.match(catalog, /<div><strong>Product Photo<\/strong><span className="fieldHelp">Upload a clear photo of the garment itself\. This helps us verify that we have the correct item\.<\/span>/);
+  assert.match(catalog, /<small role="status">Photo added: \{productPhotoName\}<\/small>/);
   assert.doesNotMatch(catalog, /Anything you already attached stays with this item/);
-  assert.doesNotMatch(catalog, /<strong>Product Photo<\/strong><span className="fieldHelp">A clear photo of the garment by itself\.<\/span>/);
   assert.match(catalog, /productLabelPhotoName \? styles\.identityEvidenceActionsSingle : ""/);
   assert.match(fitCss, /\.identityEvidenceActionsSingle\s*\{\s*grid-template-columns: 1fr;/);
 });

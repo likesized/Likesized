@@ -15,6 +15,9 @@ GitHub `likesized/Likesized` is the source of truth. `main` is the single produc
 ## Deployment-batch discipline — OWNER LOCKED 2026-08-23
 Once the owner says **push**, **deploy**, or otherwise authorizes a specific accumulated change list for production, that deployment batch is frozen. Do not add later requests into that batch. Any request made after deployment authorization starts the next change list and waits for a separate deployment instruction.
 
+## Live owner-testing workflow — OWNER LOCKED 2026-08-24
+LikeSized is not yet a public active service with an external audience. For the owner's current build/test workflow, the live `likesized.com` site is the owner verification environment. Do not stop an owner-authorized straight-through batch at a Vercel branch preview or send preview links as a required review gate. After the owner authorizes deployment, finish exact-head CI, merge the frozen branch to `main`, wait for the live Vercel deployment to reach READY, and have the owner verify the change on the live site. This does not remove the requirement for explicit owner deployment authorization.
+
 # CURRENT STATUS — 2026-08-24
 
 ## Canonical production line — LIVE
@@ -40,10 +43,10 @@ The six ordered browser-to-backend checks are complete:
 
 Controlled production test identity remains Maidenform / Heirloom / Bra Product `4086fdaa-172d-4a3f-b6c4-2c155094bb25`, UPC `196988323504`. Its deliberate `catalog_review_needed` state came from the controlled correction test, not barcode corruption.
 
-## Fit Report intake UX cleanup — ACTIVE / NOT DEPLOYMENT-AUTHORIZED
+## Fit Report intake UX cleanup — ACTIVE / OWNER AUTHORIZED THROUGH LIVE DEPLOYMENT
 Primary active implementation line: `agent/fit-report-intake-ux-cleanup`, based directly on production PR #63 merge `25ffa95b15295d2138fae1e476d28c392c4d45f1`.
 
-The owner approved implementation of this cleanup but has **not** authorized this branch for production deployment. Full verification and a preview/PR are allowed; merge to `main` and production deployment must wait for a separate explicit **deploy/push** instruction.
+The owner has authorized this cleanup to proceed through merge and live deployment. The implementation head `84bc7066819e3daca1623dabb4eba331f2a8e0f5` passed full LikeSized CI #718 before this documentation-only workflow reconciliation. Because this workflow note changes the branch head, the final exact head must pass CI again before merge. Do not stop at or require a Vercel preview; owner verification happens on the live site after deployment.
 
 Frozen scope:
 - tighten the **Identify your item** spacing/presentation;
@@ -205,7 +208,7 @@ Recent branch classification:
 - `agent/promote-label-photo` — RECOVERED/SUPERSEDED via PR #62/PR #63.
 - accidental duplicate refs created during PR #62 work contained no unique product work and were reset to production; they have no authority.
 - `agent/evidence-first-fit-report-intake` — RECOVERED via PR #63; no longer active.
-- `agent/fit-report-intake-ux-cleanup` — **ACTIVE PRIMARY LINE**, based on current production PR #63. It is not production-authorized yet. Do not start a second product-decision branch while it is active.
+- `agent/fit-report-intake-ux-cleanup` — **ACTIVE PRIMARY LINE**, based on current production PR #63 and owner-authorized through live deployment. Do not start a second product-decision branch while it is active.
 
 Older recovery/feature/verification branches classified in Git history remain RECOVERED, SUPERSEDED, OBSOLETE or DUPLICATE; none overrides current `main` or this one active line.
 
@@ -220,7 +223,7 @@ Older recovery/feature/verification branches classified in Git history remain RE
 8. Post-submit Fit Report mutation/lifecycle model — remains.
 9. People My Size — audit remains.
 10. My Circle / Following / system-generated Fit Twin — audit remains.
-11. New Fit Report — six browser/backend wiring checks complete and PR #63 is deployed. Current narrow intake UX/match-reset cleanup is active; if/when the owner separately authorizes deployment, visually verify the tightened opening/modal and Brand/Item reset behavior afterward.
+11. New Fit Report — six browser/backend wiring checks complete and PR #63 is deployed. Current narrow intake UX/match-reset cleanup is owner-authorized through live deployment; visually verify the tightened opening/modal and Brand/Item reset behavior on `likesized.com` after rollout.
 11A. **Garment-question variation classification audit — NEXT PRODUCT-LOGIC AUDIT after the current cleanup rollout.**
 12. New Outfit.
 13. Outfits / Style Feed.
@@ -232,8 +235,8 @@ Older recovery/feature/verification branches classified in Git history remain RE
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Finish `agent/fit-report-intake-ux-cleanup` through full CI and owner review; do not merge/deploy without separate explicit production authorization.
-- After any authorized deployment, owner visually verifies opening spacing/copy, uncertainty modal spacing/copy, unmatched guidance, compact tag uploader, Change Brand full reset, Change Item Product reset and barcode non-reattachment behavior.
+- Finish `agent/fit-report-intake-ux-cleanup` through exact-head CI, expected-head merge and live production sanity; do not stop at a separate Vercel preview gate.
+- After deployment, owner visually verifies opening spacing/copy, uncertainty modal spacing/copy, unmatched guidance, compact tag uploader, Change Brand full reset, Change Item Product reset and barcode non-reattachment behavior on the live site.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
 - Full Admin all-Products priority/filter/merge/split presentation remains.
 - Purchase-context aggregate/admin reporting UI remains open.
@@ -265,10 +268,8 @@ Older recovery/feature/verification branches classified in Git history remain RE
 - PR #63 exact head `2f086f73d6784fb5f78f2d2f6fcd85109ee245d0` passed full CI #716; squash merge `25ffa95b15295d2138fae1e476d28c392c4d45f1`; Vercel `dpl_BQxgW1vq2UrqfVJagWf7FeGcVGB`.
 
 # EXACT NEXT ACTION — CURRENT
-1. Finish the single active `agent/fit-report-intake-ux-cleanup` branch with only the frozen owner-approved cleanup scope.
-2. Audit the branch diff against current production `25ffa95b15295d2138fae1e476d28c392c4d45f1`; no unrelated scanner, schema, trust, Match, recommendation, RLS or copy changes may enter.
-3. Run full LikeSized CI on the exact final head: canonical integrity, exact dependencies, TypeScript, focused application safeguards, production build, pinned Supabase CLI, complete fresh migration replay and full database behavior/privacy suite.
-4. If green, freeze that exact head and keep the PR ready for owner review. **Do not merge or deploy without a separate explicit owner production instruction.**
-5. If the owner says deploy/push, squash-merge only the frozen expected head, then follow the Git-triggered Vercel production deployment until READY on `likesized.com` and verify merge SHA, protected-route behavior and runtime errors.
-6. Owner visually verifies the tightened opening, standard unmatched guidance, compact in-form tag control, restored uncertainty modal and matched Brand/Item reset behavior.
-7. Then conduct roadmap item **11A Garment-question variation classification** before any Product Detail Exact Variation work.
+1. Run full LikeSized CI on the new exact head after this owner workflow reconciliation.
+2. If green, freeze that exact head and squash-merge PR #64 with expected-head protection under the owner's current production authorization.
+3. Follow the Git-triggered Vercel production deployment until READY on `likesized.com`; verify merge SHA, protected-route behavior and runtime errors.
+4. Owner visually verifies the tightened opening, standard unmatched guidance, compact in-form tag control, restored uncertainty modal and matched Brand/Item reset behavior on the live site.
+5. Then conduct roadmap item **11A Garment-question variation classification** before any Product Detail Exact Variation work.

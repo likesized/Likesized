@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const catalog = readFileSync("app/closet/add/CatalogGarmentFields.tsx", "utf8");
+const actions = readFileSync("app/closet/actions.ts", "utf8");
 const form = readFileSync("app/closet/add/FitReportForm.tsx", "utf8");
 const fitCss = readFileSync("app/closet/add/fitReport.module.css", "utf8");
 const settings = readFileSync("app/settings/page.tsx", "utf8");
@@ -20,11 +21,21 @@ test("Item suggestions wait for typed search text, reuse recent results, and ove
   assert.match(fitCss, /top: calc\(100% \+ 4px\);/);
 });
 
-test("known-item Change controls unlock and focus editable fields on mobile", () => {
-  assert.match(catalog, /window\.requestAnimationFrame\(\(\) => itemNameInput\.current\?\.focus\(\)\)/);
-  assert.match(catalog, /window\.requestAnimationFrame\(\(\) => brandInput\.current\?\.focus\(\)\)/);
+test("known-item Change controls invalidate matched identity instead of editing inside the old match", () => {
+  assert.match(catalog, /function clearMatchedProductIdentity\(keepBrand: boolean\)/);
+  assert.match(catalog, /function changeMatchedBrand\(\) \{[\s\S]*?clearMatchedProductIdentity\(false\);[\s\S]*?brandInput\.current\?\.focus\(\)/);
+  assert.match(catalog, /function changeMatchedItem\(\) \{[\s\S]*?clearMatchedProductIdentity\(true\);[\s\S]*?itemNameInput\.current\?\.focus\(\)/);
+  assert.match(catalog, /clearMatchedProductIdentity\(keepBrand: boolean\)[\s\S]*?setProduct\(null\);[\s\S]*?setItemName\(""\);[\s\S]*?setCategory\(""\);[\s\S]*?setType\(""\);[\s\S]*?setAnswers\(\{\}\);/);
   assert.doesNotMatch(catalog, />Change this<\/button>/);
   assert.match(fitCss, /\.changeThis\s*\{[\s\S]*?white-space: nowrap;/);
+});
+
+test("rejected barcode-resolved identity cannot silently reattach when Brand or Item no longer agrees", () => {
+  assert.match(actions, /const resolvedIdentityMatchesSubmitted = !resolvedKnown \|\| Boolean\(existingProductId\) \|\| !identifier \|\| \(/);
+  assert.match(actions, /normalizeSearchText\(brandName\) === resolvedKnown\.brand\.normalized_name/);
+  assert.match(actions, /normalizeSearchText\(productName\) === normalizeSearchText\(resolvedKnown\.product\.name\)/);
+  assert.match(actions, /const known = identityUncertain \|\| !resolvedIdentityMatchesSubmitted \? null : resolvedKnown;/);
+  assert.match(catalog, /setScannedBarcode\(barcode\);/);
 });
 
 test("Category and garment type use one clearly shared Change control", () => {
@@ -40,22 +51,30 @@ test("desktop single-field controls are capped while grouped sections keep the w
   assert.doesNotMatch(fitCss, /\.optionalDetails\s*\{[\s\S]*?max-width: 680px;/);
 });
 
-test("manual item uncertainty is prominent and does not sit under redundant helper copy", () => {
+test("unmatched Fit Report details use one standard guidance message", () => {
+  assert.match(catalog, /const UNMATCHED_GUIDANCE = "Enter as much information as you can about the item\. If you’re unsure about something, just leave it blank\.";/);
+  assert.match(catalog, /const guidance = product[\s\S]*?: UNMATCHED_GUIDANCE;/);
+  assert.doesNotMatch(catalog, /Tag photo added\. Enter the item details below/);
+});
+
+test("manual item uncertainty is prominent and returns whenever no Product is matched", () => {
   assert.match(catalog, /I’m not sure this is the correct item\/style name/);
+  assert.match(catalog, /\{!product \? <label className=\{styles\.uncertaintyCheck\}>/);
   assert.doesNotMatch(catalog, /I’m not completely sure this is the correct item\/style name/);
   assert.doesNotMatch(catalog, /Enter the specific item, style, or model shown on the garment/);
   assert.match(fitCss, /\.uncertaintyCheck\s*\{[\s\S]*?padding: 12px 14px;[\s\S]*?border: 1px solid var\(--line\);/);
 });
 
-test("Fit Report opens with barcode and tag-photo evidence choices plus a smaller manual fallback", () => {
+test("Fit Report opens with approved barcode and tag-photo choices plus smaller manual fallback", () => {
   const startIndex = catalog.indexOf('if (step === "start")');
   const scanIndex = catalog.indexOf('if (step === "scan")');
   const start = catalog.slice(startIndex, scanIndex);
 
   assert.match(start, />Identify your item</);
+  assert.match(start, /Scan the barcode or add a photo of the tag so we can verify the exact item\./);
   assert.match(start, />Scan barcode<\/button>/);
-  assert.match(start, />Take \/ upload tag photo<\/button>/);
-  assert.match(start, /Cut the tags out\? Enter item manually →/);
+  assert.match(start, />Add tag photo<\/button>/);
+  assert.match(start, /Tags missing\? Enter item manually →/);
   assert.match(start, /productLabelPhotoInput\.current\?\.click\(\)/);
   assert.match(fitCss, /\.identificationActions\s*\{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
   assert.match(fitCss, /\.manualFallback\s*\{[\s\S]*?background: transparent;[\s\S]*?font-size: 13px;/);
@@ -78,13 +97,23 @@ test("barcode and manual detail paths keep the compact optional tag-photo contro
   assert.match(catalog, /productLabelPhotoName \? "Replace" : "Add tag photo"/);
 });
 
-test("uncertain identity helper does not ask for a second tag photo when one already exists", () => {
-  assert.match(catalog, /Anything you already attached stays with this item, so we won’t ask you for the same tag photo twice\./);
-  assert.match(catalog, /Retail \/ Product URL/);
+test("uncertain identity helper restores the prior copy and does not duplicate an existing tag photo", () => {
+  assert.match(catalog, /No problem — we’ll help verify it\./);
+  assert.match(catalog, /Enter the best information you have and continue your Fit Report\. We’ll flag this item for review\. Please provide as much detail as possible—a retail link and clear photos of the garment or its tag\/style label are especially helpful\./);
+  assert.match(catalog, /<label>Retail Link <span className="muted inlineMuted">optional<\/span>/);
   assert.match(catalog, /\{!productLabelPhotoName \? <div><strong>Photo of Tag \/ Style Label<\/strong>/);
-  assert.match(catalog, /<strong>Product Photo<\/strong><span className="fieldHelp">A clear photo of the garment by itself\.<\/span>/);
+  assert.match(catalog, /<div><strong>Product Photo<\/strong><button/);
+  assert.doesNotMatch(catalog, /Anything you already attached stays with this item/);
+  assert.doesNotMatch(catalog, /<strong>Product Photo<\/strong><span className="fieldHelp">A clear photo of the garment by itself\.<\/span>/);
   assert.match(catalog, /productLabelPhotoName \? styles\.identityEvidenceActionsSingle : ""/);
   assert.match(fitCss, /\.identityEvidenceActionsSingle\s*\{\s*grid-template-columns: 1fr;/);
+});
+
+test("uncertainty modal heading and spacing are locally constrained", () => {
+  assert.match(fitCss, /\.identityHelpCard\s*\{[\s\S]*?padding: 24px;/);
+  assert.match(fitCss, /\.identityHelpCard h2\s*\{[\s\S]*?font-size: 30px;[\s\S]*?line-height: 1\.08;/);
+  assert.match(fitCss, /\.identityHelpCard > p\s*\{[\s\S]*?margin: 0 0 16px;/);
+  assert.match(fitCss, /@media \(max-width: 640px\)[\s\S]*?\.identityHelpCard h2\s*\{[\s\S]*?font-size: 26px;/);
 });
 
 test("Product Photo remains at the bottom of Optional Additional Information", () => {

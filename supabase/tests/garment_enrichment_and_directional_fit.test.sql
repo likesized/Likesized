@@ -48,20 +48,20 @@ values('b2000000-0000-4000-8000-000000000003'::uuid,'upc','012345678905','012345
 insert into public.retailer_listings(product_id,product_url,normalized_url)
 values('b2000000-0000-4000-8000-000000000003'::uuid,'https://example.test/verified-tee','https://example.test/verified-tee');
 
--- Member evidence is report-scoped. These private reports are only provenance anchors and
--- therefore do not participate in the later Shared recommendation/fit-distribution checks.
-insert into public.closet_items(id,user_id,product_id,size_label,visibility) values
-('b3000000-0000-4000-8000-000000000101','b0000000-0000-4000-8000-000000000001','b2000000-0000-4000-8000-000000000001','M','private'),
-('b3000000-0000-4000-8000-000000000102','b0000000-0000-4000-8000-000000000002','b2000000-0000-4000-8000-000000000002','M','private'),
-('b3000000-0000-4000-8000-000000000103','b0000000-0000-4000-8000-000000000003','b2000000-0000-4000-8000-000000000001','M','private'),
-('b3000000-0000-4000-8000-000000000203','b0000000-0000-4000-8000-000000000003','b2000000-0000-4000-8000-000000000002','M','private'),
-('b3000000-0000-4000-8000-000000000104','b0000000-0000-4000-8000-000000000004','b2000000-0000-4000-8000-000000000001','M','private');
-insert into public.fit_reports(id,user_id,closet_item_id,product_id,size_label,fit,would_buy_again) values
-('b4000000-0000-4000-8000-000000000101','b0000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000101','b2000000-0000-4000-8000-000000000001','M','just_right',true),
-('b4000000-0000-4000-8000-000000000102','b0000000-0000-4000-8000-000000000002','b3000000-0000-4000-8000-000000000102','b2000000-0000-4000-8000-000000000002','M','just_right',true),
-('b4000000-0000-4000-8000-000000000103','b0000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000103','b2000000-0000-4000-8000-000000000001','M','just_right',true),
-('b4000000-0000-4000-8000-000000000203','b0000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000203','b2000000-0000-4000-8000-000000000002','M','just_right',true),
-('b4000000-0000-4000-8000-000000000104','b0000000-0000-4000-8000-000000000004','b3000000-0000-4000-8000-000000000104','b2000000-0000-4000-8000-000000000001','M','just_right',true);
+-- Member evidence is report-scoped. These Altered reports are provenance anchors and
+-- therefore remain member-visible without participating in normal recommendation/fit-distribution checks.
+insert into public.closet_items(id,user_id,product_id,size_label) values
+('b3000000-0000-4000-8000-000000000101','b0000000-0000-4000-8000-000000000001','b2000000-0000-4000-8000-000000000001','M'),
+('b3000000-0000-4000-8000-000000000102','b0000000-0000-4000-8000-000000000002','b2000000-0000-4000-8000-000000000002','M'),
+('b3000000-0000-4000-8000-000000000103','b0000000-0000-4000-8000-000000000003','b2000000-0000-4000-8000-000000000001','M'),
+('b3000000-0000-4000-8000-000000000203','b0000000-0000-4000-8000-000000000003','b2000000-0000-4000-8000-000000000002','M'),
+('b3000000-0000-4000-8000-000000000104','b0000000-0000-4000-8000-000000000004','b2000000-0000-4000-8000-000000000001','M');
+insert into public.fit_reports(id,user_id,closet_item_id,product_id,size_label,fit,would_buy_again,garment_condition) values
+('b4000000-0000-4000-8000-000000000101','b0000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000101','b2000000-0000-4000-8000-000000000001','M','just_right',true,'altered'),
+('b4000000-0000-4000-8000-000000000102','b0000000-0000-4000-8000-000000000002','b3000000-0000-4000-8000-000000000102','b2000000-0000-4000-8000-000000000002','M','just_right',true,'altered'),
+('b4000000-0000-4000-8000-000000000103','b0000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000103','b2000000-0000-4000-8000-000000000001','M','just_right',true,'altered'),
+('b4000000-0000-4000-8000-000000000203','b0000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000203','b2000000-0000-4000-8000-000000000002','M','just_right',true,'altered'),
+('b4000000-0000-4000-8000-000000000104','b0000000-0000-4000-8000-000000000004','b3000000-0000-4000-8000-000000000104','b2000000-0000-4000-8000-000000000001','M','just_right',true,'altered');
 
 -- A member cannot masquerade as a trusted manufacturer source.
 set local role authenticated;
@@ -81,7 +81,6 @@ select public.record_member_product_evidence(
  p_materials := '[{"material_key":"cotton","percentage":100}]'::jsonb,
  p_source_reference := 'member-label'
 );
--- Updating the same counted Fit Report replaces its prior evidence instead of adding a vote.
 select public.record_member_product_evidence(
  p_product_id := 'b2000000-0000-4000-8000-000000000001'::uuid,
  p_fit_report_id := 'b4000000-0000-4000-8000-000000000101'::uuid,
@@ -102,7 +101,7 @@ create temporary table provisional_wrist on commit drop as
 select weight from private.product_match_measurements('b2000000-0000-4000-8000-000000000001'::uuid) where measurement_type_key='wrist_circumference';
 select is((select count(*) from provisional_wrist),0::bigint,'report-scoped long-sleeve evidence does not rewrite the canonical Product match-measurement map');
 
--- Give the peer Product one matching report-scoped physical answer and a Shared bad Fit Report.
+-- Give the peer Product one matching report-scoped physical answer and a normal member-visible bad Fit Report.
 set local role authenticated;
 set local request.jwt.claim.role='authenticated';
 set local request.jwt.claim.sub='b0000000-0000-4000-8000-000000000002';
@@ -115,8 +114,8 @@ select public.record_member_product_evidence(
  p_materials := '[{"material_key":"cotton","percentage":100}]'::jsonb,
  p_source_reference := 'peer-label'
 );
-insert into public.closet_items(id,user_id,product_id,size_label,visibility)
-values('b3000000-0000-4000-8000-000000000002'::uuid,'b0000000-0000-4000-8000-000000000002'::uuid,'b2000000-0000-4000-8000-000000000002'::uuid,'M','shared');
+insert into public.closet_items(id,user_id,product_id,size_label)
+values('b3000000-0000-4000-8000-000000000002'::uuid,'b0000000-0000-4000-8000-000000000002'::uuid,'b2000000-0000-4000-8000-000000000002'::uuid,'M');
 insert into public.fit_reports(id,user_id,closet_item_id,product_id,size_label,fit,would_buy_again,created_at)
 values('b4000000-0000-4000-8000-000000000021'::uuid,'b0000000-0000-4000-8000-000000000002'::uuid,'b3000000-0000-4000-8000-000000000002'::uuid,'b2000000-0000-4000-8000-000000000002'::uuid,'M','too_small',false,now()-interval '1 day');
 reset role;
@@ -217,13 +216,13 @@ select ok(
  'Too Big is stronger negative evidence when the viewer is smaller than the wearer'
 );
 
--- Add more Shared exact-product reports plus a Private report. Every distinct Shared Fit
--- Report situation counts; the earlier Shared Too Small report remains valid evidence.
+-- Add more normal exact-product reports plus one Altered report. Every distinct normal Fit
+-- Report situation counts; the earlier Too Small report remains valid evidence.
 set local role authenticated;
 set local request.jwt.claim.role='authenticated';
 set local request.jwt.claim.sub='b0000000-0000-4000-8000-000000000001';
-insert into public.closet_items(id,user_id,product_id,size_label,visibility)
-values('b3000000-0000-4000-8000-000000000001'::uuid,'b0000000-0000-4000-8000-000000000001'::uuid,'b2000000-0000-4000-8000-000000000002'::uuid,'M','shared');
+insert into public.closet_items(id,user_id,product_id,size_label)
+values('b3000000-0000-4000-8000-000000000001'::uuid,'b0000000-0000-4000-8000-000000000001'::uuid,'b2000000-0000-4000-8000-000000000002'::uuid,'M');
 insert into public.fit_reports(id,user_id,closet_item_id,product_id,size_label,fit,would_buy_again,created_at)
 values('b4000000-0000-4000-8000-000000000011'::uuid,'b0000000-0000-4000-8000-000000000001'::uuid,'b3000000-0000-4000-8000-000000000001'::uuid,'b2000000-0000-4000-8000-000000000002'::uuid,'M','just_right',true,now());
 reset role;
@@ -238,10 +237,10 @@ reset role;
 set local role authenticated;
 set local request.jwt.claim.role='authenticated';
 set local request.jwt.claim.sub='b0000000-0000-4000-8000-000000000004';
-insert into public.closet_items(id,user_id,product_id,size_label,visibility)
-values('b3000000-0000-4000-8000-000000000004'::uuid,'b0000000-0000-4000-8000-000000000004'::uuid,'b2000000-0000-4000-8000-000000000002'::uuid,'M','private');
-insert into public.fit_reports(id,user_id,closet_item_id,product_id,size_label,fit,would_buy_again,created_at)
-values('b4000000-0000-4000-8000-000000000041'::uuid,'b0000000-0000-4000-8000-000000000004'::uuid,'b3000000-0000-4000-8000-000000000004'::uuid,'b2000000-0000-4000-8000-000000000002'::uuid,'M','too_big',false,now());
+insert into public.closet_items(id,user_id,product_id,size_label)
+values('b3000000-0000-4000-8000-000000000004'::uuid,'b0000000-0000-4000-8000-000000000004'::uuid,'b2000000-0000-4000-8000-000000000002'::uuid,'M');
+insert into public.fit_reports(id,user_id,closet_item_id,product_id,size_label,fit,would_buy_again,created_at,garment_condition)
+values('b4000000-0000-4000-8000-000000000041'::uuid,'b0000000-0000-4000-8000-000000000004'::uuid,'b3000000-0000-4000-8000-000000000004'::uuid,'b2000000-0000-4000-8000-000000000002'::uuid,'M','too_big',false,now(),'altered');
 reset role;
 
 set local role authenticated;
@@ -249,7 +248,7 @@ set local request.jwt.claim.role='authenticated';
 set local request.jwt.claim.sub='b0000000-0000-4000-8000-000000000003';
 create temporary table fit_summary on commit drop as select * from public.get_product_fit_summary('b2000000-0000-4000-8000-000000000002'::uuid);
 reset role;
-select is((select total_fit_count from fit_summary),3,'physical fit distribution counts every distinct Shared Fit Report situation');
+select is((select total_fit_count from fit_summary),3,'physical fit distribution counts every distinct normal Fit Report situation and excludes Altered evidence');
 select is((select just_right_count from fit_summary),1,'distinct-situation distribution counts Just right');
 select is((select snug_count from fit_summary),1,'distinct-situation distribution counts Snug');
 

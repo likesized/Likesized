@@ -26,6 +26,9 @@ begin
   if p_post_id is null or nullif(btrim(coalesce(p_photo_url,'')),'') is null then
     raise exception 'Invalid outfit post';
   end if;
+  if p_photo_url !~ ('^' || v_user_id::text || '/' || p_post_id::text || '/outfit\.(jpg|png|webp)$') then
+    raise exception 'Invalid outfit photo path';
+  end if;
 
   v_count:=coalesce(cardinality(p_closet_item_ids),0);
   if v_count not between 1 and 6 then
@@ -81,4 +84,4 @@ revoke all on function public.create_outfit_post(uuid,text,text,uuid[]) from pub
 grant execute on function public.create_outfit_post(uuid,text,text,uuid[]) to authenticated;
 
 comment on function public.create_outfit_post(uuid,text,text,uuid[]) is
-  'Retired one-photo Outfit compatibility RPC. Reuses canonical Outfit content/gallery state, never changes Closet visibility, and remains for historical feed/integration compatibility only.';
+  'Retired one-photo Outfit compatibility RPC. Reuses canonical Outfit content/gallery state, preserves the legacy owner-scoped photo-path guard, never changes Closet visibility, and remains for historical feed/integration compatibility only.';

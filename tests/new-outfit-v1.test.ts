@@ -91,9 +91,9 @@ test("successful draft saves clear dirty state and stay in the editor without a 
 
 test("draft hydration and preview size reflect the live-audit performance fixes", () => {
   assert.match(newPage, /Promise\.all/);
-  assert.match(outfitStyles, /\.previewShell\{max-width:940px\}/);
-  assert.match(outfitStyles, /\.previewGallery\{min-width:0;max-width:540px\}/);
-  assert.match(outfitStyles, /\.previewMain\{[^}]*max-height:480px/);
+  assert.match(outfitStyles, /\.previewShell\{max-width:920px\}/);
+  assert.match(outfitStyles, /\.previewGallery\{min-width:0;max-width:520px\}/);
+  assert.match(outfitStyles, /\.previewMain\{[^}]*max-height:460px/);
 });
 
 test("Occasion is a fixed shared vocabulary and Style Tags remain community-created", () => {

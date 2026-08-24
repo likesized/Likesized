@@ -89,7 +89,7 @@ const PURCHASE_MONTHS = [
 ];
 const CURRENT_YEAR = new Date().getFullYear();
 const PURCHASE_YEARS = Array.from({ length: CURRENT_YEAR - 1899 }, (_, index) => String(CURRENT_YEAR - index));
-const ITEM_SEARCH_DEBOUNCE_MS = 100;
+const ITEM_SEARCH_DEBOUNCE_MS = 0;
 const UNMATCHED_GUIDANCE = "Enter as much information as you can about the item. If you’re unsure about something, just leave it blank.";
 
 export function useCatalogGarment() {
@@ -746,10 +746,10 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
       <div className={styles.identityHelpCard} onClick={(event) => event.stopPropagation()}>
         <h2 id="identity-help-title">No problem — we’ll help verify it.</h2>
         <p>Enter the best information you have and continue your Fit Report. We’ll flag this item for review. Please provide as much detail as possible—a retail link and clear photos of the garment or its tag/style label are especially helpful.</p>
-        <label>Retail Link <span className="muted inlineMuted">optional</span><input type="url" maxLength={1000} placeholder="https://..." value={modalRetailDraft} onChange={(event) => setModalRetailDraft(event.target.value)}/></label>
+        <label><b>Retail Link <span className="muted inlineMuted">optional</span></b><input type="url" maxLength={1000} placeholder="https://..." value={modalRetailDraft} onChange={(event) => setModalRetailDraft(event.target.value)}/></label>
         <div className={`${styles.identityEvidenceActions} ${productLabelPhotoName ? styles.identityEvidenceActionsSingle : ""}`}>
           {!productLabelPhotoName ? <div><strong>Photo of Tag / Style Label</strong><button className="catalogManualButton" type="button" onClick={() => productLabelPhotoInput.current?.click()}>Add Photo</button></div> : null}
-          <div><strong>Product Photo</strong><button className="catalogManualButton" type="button" onClick={() => productPhotoInput.current?.click()}>{productPhotoName ? "Replace Photo" : "Add Photo"}</button>{productPhotoName ? <small>{productPhotoName}</small> : null}</div>
+          <div><strong>Product Photo</strong><span className="fieldHelp">Upload a clear photo of the garment itself. This helps us verify that we have the correct item.</span><button className="catalogManualButton" type="button" onClick={() => productPhotoInput.current?.click()}>{productPhotoName ? "Replace Photo" : "Add Photo"}</button>{productPhotoName ? <small role="status">Photo added: {productPhotoName}</small> : null}</div>
         </div>
         <div className={styles.reviewActions}>
           <button className="secondaryButton" type="button" onClick={() => setIdentityHelpOpen(false)}>I’ll Add This Later</button>

@@ -65,7 +65,7 @@ The identity-trust tier is separate from field-level Product fact authority. Com
 A candidate is a staging/audit object, not a second public catalog. A candidate remains unresolved when a blocking ambiguity already exists—for example explicit member identity uncertainty, conflicting identity, competing exact Products, barcode/listing collision or another genuine duplicate signal. Clean candidates are materialized/mapped automatically instead of creating a routine admin queue.
 
 ## Unconfirmed active review — invisible to the member
-When a member checks **I’m not completely sure this is the correct item/style name**:
+When a member checks **I’m not sure this is the correct item/style name**:
 - the Fit Report and Closet garment save normally;
 - the garment remains fully usable in the member's Closet and in Styles/Outfits;
 - active admin review creates no member-facing warning, badge or abnormal state;
@@ -128,31 +128,32 @@ Ordinary member intake never calls SerpAPI.
 ## Main information order
 1. Brand / Make — required.
 2. Item / Style / Model — required.
-3. **Overall Category** — required.
-4. **Specific Garment Type** — required and filtered to the selected category.
-5. Department — optional.
-6. Zero-to-four Type-specific controlled physical questions; **Not sure** is final and records no positive physical claim.
-7. Color family — required.
-8. Size — required structured size.
-9. Overall Fit Result — Too Small / Snug / Just Right / Relaxed / Too Big.
-10. Condition — New / Used / Altered.
-11. Front Fit Photo and Back Fit Photo — each optional, separate roles.
-12. Fit Notes — optional, up to 2,000 characters.
-13. Retail Link — optional.
+3. Product Label / Tag Photo — optional private identity-review evidence, shown directly under Brand / Item instead of inside collapsed Optional Additional Information.
+4. **Overall Category** — required.
+5. **Specific Garment Type** — required and filtered to the selected category.
+6. Department — optional.
+7. Zero-to-four Type-specific controlled physical questions; **Not sure** is final and records no positive physical claim.
+8. Color family — required.
+9. Size — required structured size.
+10. Overall Fit Result — Too Small / Snug / Just Right / Relaxed / Too Big.
+11. Condition — New / Used / Altered.
+12. Front Fit Photo and Back Fit Photo — each optional, separate roles.
+13. Fit Notes — optional, up to 2,000 characters.
+14. Retail Link — optional.
 
 Item / Style / Model stays required for new manual items. Do not offer a generic blank **No model** escape. Helper copy tells the member to enter the specific item, style or model shown on the garment, tag, packaging or retailer listing. Examples must not duplicate the separate Brand field.
 
 Manual Item suggestions render as the actual dropdown immediately under the Item / Style / Model field.
 
 ## Identity uncertainty checkbox/modal
-For a brand-new manually entered item, the member may check **I’m not completely sure this is the correct item/style name**.
+For a brand-new manually entered item, the member may check **I’m not sure this is the correct item/style name**.
 
-Checking opens the identity-help modal immediately with the same underlying evidence fields used later in the form:
+Checking opens the identity-help modal immediately with the same underlying evidence fields used elsewhere in the form:
 - Retail Link;
 - Product Label / Tag Photo;
 - Product Photo.
 
-**Save & Continue** keeps those values and auto-populates the later form fields. **I’ll Add This Later** closes the modal without erasing the Unconfirmed signal. The form must never create duplicate copies of the same evidence values.
+**Save & Continue** keeps those values and populates the same canonical form fields. **I’ll Add This Later** closes the modal without erasing the Unconfirmed signal. The form must never create duplicate copies of the same evidence values or a second Label/Tag upload path.
 
 The checkbox creates the Unconfirmed pre-publication behavior in Section 4. It is not a way to leave Item / Style / Model blank.
 
@@ -165,9 +166,9 @@ Exact order:
 5. UPC / barcode when not already scanned.
 6. Manufacturer Style / Article Number.
 7. Material / Fabric Composition.
-8. Product Photo + Product Label / Tag Photo shown together as separate evidence roles.
+8. Product Photo — optional catalog-display evidence at the bottom of the collapsed section.
 
-Product Photo is catalog-display evidence. Product Label / Tag Photo is private identity-review evidence and must never become Product display imagery merely because it exists.
+Product Photo is catalog-display evidence. Product Label / Tag Photo is private identity-review evidence and is intentionally kept in the main intake flow so members are more likely to provide it; it must never become Product display imagery merely because it exists.
 
 If scanner already captured a barcode, retain it and do not ask again. Submit remains below/outside the optional area.
 

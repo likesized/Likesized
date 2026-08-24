@@ -147,7 +147,7 @@ function CatalogDepartmentField({ departments }: { departments: CatalogOption[] 
 }
 
 export function CatalogCommunityEnrichment({ materials, retailers }: { materials: CatalogOption[]; retailers: CatalogRetailerOption[] }) {
-  const { product, scannedBarcode, productPhotoName, productLabelPhotoName, chooseProductPhoto, chooseProductLabelPhoto } = useCatalogGarment();
+  const { product, scannedBarcode, productPhotoName, chooseProductPhoto } = useCatalogGarment();
   const sortedMaterials = useMemo(() => [...materials]
     .filter((item) => item.key !== "other" && item.key !== "not_sure" && item.label.toLowerCase() !== "other")
     .sort((a, b) => a.label.localeCompare(b.label)), [materials]);
@@ -243,19 +243,11 @@ export function CatalogCommunityEnrichment({ materials, retailers }: { materials
         <input type="hidden" name="materials_json" value={JSON.stringify(materialClaims)} />
       </fieldset>
 
-      <div className={styles.photoEvidenceGrid}>
-        <div className={styles.photoEvidenceCard}>
-          <strong>Product Photo <span className="muted inlineMuted">optional</span></strong>
-          <span className="fieldHelp">A clear photo of the item by itself helps LikeSized identify the exact product.</span>
-          <button className="catalogManualButton" type="button" onClick={chooseProductPhoto}>{productPhotoName ? "Replace Product Photo" : "Add Product Photo"}</button>
-          {productPhotoName ? <small>{productPhotoName}</small> : null}
-        </div>
-        <div className={styles.photoEvidenceCard}>
-          <strong>Product Label / Tag Photo <span className="muted inlineMuted">optional</span></strong>
-          <span className="fieldHelp">Photograph the label or tag that shows the style, article, or identifying information.</span>
-          <button className="catalogManualButton" type="button" onClick={chooseProductLabelPhoto}>{productLabelPhotoName ? "Replace Label Photo" : "Add Label Photo"}</button>
-          {productLabelPhotoName ? <small>{productLabelPhotoName}</small> : null}
-        </div>
+      <div className={styles.photoEvidenceCard}>
+        <strong>Product Photo <span className="muted inlineMuted">optional</span></strong>
+        <span className="fieldHelp">A clear photo of the item by itself helps LikeSized identify the exact product.</span>
+        <button className="catalogManualButton" type="button" onClick={chooseProductPhoto}>{productPhotoName ? "Replace Product Photo" : "Add Product Photo"}</button>
+        {productPhotoName ? <small>{productPhotoName}</small> : null}
       </div>
     </div>
   </details>;
@@ -650,6 +642,13 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
             {product && !itemIssue ? <button className={styles.changeThis} type="button" onClick={() => { setItemIssue(true); setItemName(""); setItemSuggestions([]); window.requestAnimationFrame(() => itemNameInput.current?.focus()); }}>Change</button> : null}
             {!product ? <label className={styles.uncertaintyCheck}><input name="item_identity_uncertain" type="checkbox" value="1" checked={identityUncertain} onChange={(event) => { const checked = event.target.checked; setIdentityUncertain(checked); if (checked) openIdentityHelp(); else setIdentityHelpOpen(false); }}/><span>I’m not sure this is the correct item/style name</span></label> : null}
           </div>
+        </div>
+
+        <div className={styles.photoEvidenceCard}>
+          <strong>Product Label / Tag Photo <span className="muted inlineMuted">optional</span></strong>
+          <span className="fieldHelp">Helps LikeSized verify the exact item you’re adding. Photograph the label or tag that shows the style, article, or identifying information.</span>
+          <button className="catalogManualButton" type="button" onClick={() => productLabelPhotoInput.current?.click()}>{productLabelPhotoName ? "Replace Label Photo" : "Add Label Photo"}</button>
+          {productLabelPhotoName ? <small>{productLabelPhotoName}</small> : null}
         </div>
 
         <div className={styles.categoryTypeGroup}>

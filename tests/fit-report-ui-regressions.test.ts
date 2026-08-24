@@ -47,6 +47,22 @@ test("manual item uncertainty is prominent and does not sit under redundant help
   assert.match(fitCss, /\.uncertaintyCheck\s*\{[\s\S]*?padding: 12px 14px;[\s\S]*?border: 1px solid var\(--line\);/);
 });
 
+test("Product Label photo is visible after Item and uses the same evidence input as the uncertainty helper", () => {
+  const enrichmentStart = catalog.indexOf("export function CatalogCommunityEnrichment");
+  const garmentStart = catalog.indexOf("export function CatalogGarmentFields");
+  const enrichment = catalog.slice(enrichmentStart, garmentStart);
+  const itemIndex = catalog.indexOf("Item / Style / Model", garmentStart);
+  const labelIndex = catalog.indexOf("Product Label / Tag Photo", garmentStart);
+  const categoryIndex = catalog.indexOf("categoryTypeGroup", garmentStart);
+
+  assert.ok(itemIndex >= 0 && labelIndex > itemIndex && categoryIndex > labelIndex);
+  assert.equal(catalog.match(/name="product_label_photo"/g)?.length, 1);
+  assert.match(catalog, /productLabelPhotoInput\.current\?\.click\(\)/);
+  assert.match(catalog, /Photo of Tag \/ Style Label/);
+  assert.doesNotMatch(enrichment, /Product Label \/ Tag Photo/);
+  assert.match(enrichment, /Product Photo/);
+});
+
 test("Fit Report confirmation uses actual form pending state instead of disabling itself on click", () => {
   assert.match(form, /useFormStatus/);
   assert.match(form, /const \{ pending \} = useFormStatus\(\)/);

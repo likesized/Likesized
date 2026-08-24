@@ -11,17 +11,6 @@ values
   ('fb400000-0000-4000-8000-000000000003'::uuid,'authenticated','authenticated','social-other@likesized.test',now(),now());
 
 set local role authenticated;
-set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000001';
-set local request.jwt.claim.role='authenticated';
-select public.save_fit_profile('social_viewer','metric','[{"measurement_type_key":"height","entered_value":170,"entered_unit":"cm","source":"manual","method":"tape"},{"measurement_type_key":"natural_waist","entered_value":80,"entered_unit":"cm","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
-insert into public.follows(follower_id,followed_id)
-values('fb400000-0000-4000-8000-000000000001'::uuid,'fb400000-0000-4000-8000-000000000002'::uuid);
-select is((select count(*) from public.get_following_notification_subscriptions()),0::bigint,'ordinary Follow does not silently opt into notifications');
-select is(public.set_following_notification_subscription('fb400000-0000-4000-8000-000000000002'::uuid,true),true,'viewer can explicitly turn the followed-member bell on');
-select is((select count(*) from public.get_following_notification_subscriptions()),1::bigint,'explicit bell stores one per-person subscription');
-reset role;
-
-set local role authenticated;
 set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000002';
 set local request.jwt.claim.role='authenticated';
 select public.save_fit_profile('social_followed','metric','[{"measurement_type_key":"height","entered_value":171,"entered_unit":"cm","source":"manual","method":"tape"},{"measurement_type_key":"natural_waist","entered_value":81,"entered_unit":"cm","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
@@ -31,6 +20,17 @@ set local role authenticated;
 set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000003';
 set local request.jwt.claim.role='authenticated';
 select public.save_fit_profile('social_other','metric','[{"measurement_type_key":"height","entered_value":178,"entered_unit":"cm","source":"manual","method":"tape"},{"measurement_type_key":"natural_waist","entered_value":88,"entered_unit":"cm","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
+reset role;
+
+set local role authenticated;
+set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000001';
+set local request.jwt.claim.role='authenticated';
+select public.save_fit_profile('social_viewer','metric','[{"measurement_type_key":"height","entered_value":170,"entered_unit":"cm","source":"manual","method":"tape"},{"measurement_type_key":"natural_waist","entered_value":80,"entered_unit":"cm","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
+insert into public.follows(follower_id,followed_id)
+values('fb400000-0000-4000-8000-000000000001'::uuid,'fb400000-0000-4000-8000-000000000002'::uuid);
+select is((select count(*) from public.get_following_notification_subscriptions()),0::bigint,'ordinary Follow does not silently opt into notifications');
+select is(public.set_following_notification_subscription('fb400000-0000-4000-8000-000000000002'::uuid,true),true,'viewer can explicitly turn the followed-member bell on');
+select is((select count(*) from public.get_following_notification_subscriptions()),1::bigint,'explicit bell stores one per-person subscription');
 reset role;
 
 insert into public.brands(id,name,slug,normalized_name)

@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, auth;
 
-select plan(30);
+select plan(33);
 
 insert into auth.users (id,aud,role,email,created_at,updated_at)
 values
@@ -176,6 +176,8 @@ select throws_like(
 );
 reset role;
 
+update public.profiles set avatar_url='e0000000-0000-4000-8000-000000000002/profile-old.webp' where id='e0000000-0000-4000-8000-000000000002'::uuid;
+
 set local request.jwt.claim.sub='';
 set local request.jwt.claim.role='anon';
 set local role anon;
@@ -202,6 +204,11 @@ select is(
   'public comment projection exposes display identity without exposing profile-table access'
 );
 select is(
+  (select avatar_url from public.get_public_outfit_comments('e5000000-0000-4000-8000-000000000001'::uuid,200) limit 1),
+  'e0000000-0000-4000-8000-000000000002/profile-old.webp',
+  'old comments resolve the commenter current profile photo instead of a comment snapshot'
+);
+select is(
   (select product_name from public.get_public_outfit_product_teasers('e5000000-0000-4000-8000-000000000001'::uuid) limit 1),
   'Integration Jeans',
   'logged-out garment teaser exposes canonical Product identity without Fit details'
@@ -210,6 +217,18 @@ select is(has_table_privilege('anon','public.outfit_post_items','SELECT'),false,
 select public.record_outfit_view('e5000000-0000-4000-8000-000000000001'::uuid);
 select public.record_outfit_share('e5000000-0000-4000-8000-000000000001'::uuid);
 reset role;
+
+update public.profiles set avatar_url='e0000000-0000-4000-8000-000000000002/profile-new.webp' where id='e0000000-0000-4000-8000-000000000002'::uuid;
+select is(
+  (select avatar_url from public.get_public_outfit_comments('e5000000-0000-4000-8000-000000000001'::uuid,200) limit 1),
+  'e0000000-0000-4000-8000-000000000002/profile-new.webp',
+  'changing a profile photo updates existing comment identity without changing the comment'
+);
+select is(
+  (select public from storage.buckets where id='profile-photos'),
+  true,
+  'uploaded profile photos are public identity objects'
+);
 
 select is(
   (select view_count from public.outfit_posts where id='e5000000-0000-4000-8000-000000000001'::uuid),

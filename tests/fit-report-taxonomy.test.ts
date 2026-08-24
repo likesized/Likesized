@@ -40,11 +40,11 @@ test("owner-approved intake copy and layout stay on the canonical New Fit Report
  assert.match(intake,/Tell us a little about the garment so we can make your Fit Report useful to others\./);
  assert.doesNotMatch(intake,/Back to My Closet/);
  assert.match(catalog,/Identify your item/);
- assert.match(catalog,/Start with the barcode or a photo of the garment’s tag\. Either gives LikeSized evidence we can use to verify the item\./);
- assert.match(catalog,/Take \/ upload tag photo/);
- assert.match(catalog,/Cut the tags out\? Enter item manually →/);
+ assert.match(catalog,/Scan the barcode or add a photo of the tag so we can verify the exact item\./);
+ assert.match(catalog,/>Add tag photo<\/button>/);
+ assert.match(catalog,/Tags missing\? Enter item manually →/);
  assert.match(catalog,/Scan the barcode and we’ll check the LikeSized catalog\./);
- assert.match(catalog,/We don’t have this item yet, but no problem — you can help us add it with just a few quick questions\./);
+ assert.match(catalog,/Enter as much information as you can about the item\. If you’re unsure about something, just leave it blank\./);
  assert.match(form,/Tell us more about how it fits\. You can also share styling tips, wash or dry advice, or anything else that might help someone considering this item\./);
 });
 

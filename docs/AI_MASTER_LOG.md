@@ -31,6 +31,21 @@ LikeSized is not yet a public active service with an external audience. For the 
 - Applied database migrations are immutable; corrections use later ordered migrations.
 - No paid Supabase branches.
 
+## Homepage brand copy — OWNER LOCKED / BRANCH IN PROGRESS
+Owner-approved homepage copy work is isolated on `agent/homepage-brand-copy`, based directly on the latest reconciled production `main` head `0ce928546ef40aafa720aa124bac5edbadab4409`. This branch is not production and has no deployment authorization yet.
+
+Locked scope for this batch:
+- hero eyebrow: **YOUR BODY ISN’T A SIZE CHART.**
+- hero headline: **Billions of bodies. A handful of sizes.**
+- hero supporting line: **Yeah, we thought that sounded ridiculous too.**
+- hero body: **A size label was never going to tell the whole story. LikeSized adds what’s been missing: measurements, firsthand Fit Reports, and a better way to compare the information that actually matters.**
+- hero closing brand line: **LikeSized. Because not all sizes are alike.**
+- the first What LikeSized Does card keeps the title **FIND PEOPLE MY SIZE**; only its CTA changes from **Find My Matches →** to **Find My Fit Twin →**;
+- the Build Your Circle description becomes **See what they wear, how they style it, what they recommend, and how they put it all together.**
+- no other homepage copy, layout, behavior, FAQ, schema or product semantics are part of this batch.
+
+Implementation must remain on the one canonical homepage source, pass relevant verification, and stay off `main` until the owner explicitly authorizes deployment.
+
 ## Roadmap 12 — New Outfit — COMPLETE / DEPLOYED / OWNER LIVE AUDIT NEXT
 PR #67 **Roadmap 12: New Outfit V1** is merged to `main` and live on `likesized.com`. The implementation/schema/docs verification and production cutover are complete. The required next product step is the owner's first live browser audit of the working page; do not silently advance to Roadmap 13 before that audit is handled.
 
@@ -264,6 +279,7 @@ Recent branch classification:
 - `agent/faster-item-suggestions` — RECOVERED via PR #65; no longer active.
 - `agent/variation-definition-map` — RECOVERED via PR #66; no longer active.
 - `agent/new-outfit-v1` — **RECOVERED via PR #67 / DEPLOYED**; no longer the active implementation line.
+- `agent/homepage-brand-copy` — **ACTIVE** owner-approved homepage copy line based on reconciled production `main` head `0ce928546ef40aafa720aa124bac5edbadab4409`; not production and not deployment-authorized.
 
 Older recovery/feature/verification branches classified in Git history remain RECOVERED, SUPERSEDED, OBSOLETE or DUPLICATE; none overrides current `main`.
 
@@ -290,6 +306,7 @@ Older recovery/feature/verification branches classified in Git history remain RE
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
+- Owner-approved homepage brand/capability copy is currently branch-only on `agent/homepage-brand-copy`; it must be verified and must not be described as live until owner-authorized deployment completes.
 - Roadmap 12 is production-live; the owner must perform the first authenticated live create/draft/preview/publish/detail/edit/social browser audit before the roadmap advances or any discovered correction is classified complete.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification; do not silently rekey/collapse historical reports.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
@@ -327,6 +344,6 @@ Older recovery/feature/verification branches classified in Git history remain RE
 - PR #67 exact tested head `113e9d474afe19e82df154982d4d4ddd741ad67d` passed full CI #765; six migrations were applied database-first; squash merge `965274351a2f10f893631d769c9caeccdcc5e402`; production Vercel `dpl_H9MRX5S1Z1uc1w9UCTRBdFfSxvrK` reached READY and aliases `likesized.com`; no runtime errors were found in the checked post-cutover window. First live owner browser audit remains.
 
 # EXACT NEXT ACTION — CURRENT
-1. Owner performs the first authenticated live New Outfit audit on `likesized.com`: create an Outfit, exercise Save Draft/resume, Preview, Publish, opened Outfit/gallery/hotspots, edit, comments/social controls and mobile/desktop visual layout as practical.
-2. Record the owner audit result in this master. Any discovered correction becomes the next frozen change list on one new temporary branch; do not patch production or start a parallel feature line.
-3. After Roadmap 12 live audit is accepted or its corrections are deployed, continue with Roadmap 13 Outfits / Style Feed audit.
+1. Verify the owner-approved homepage copy on `agent/homepage-brand-copy` with canonical integrity, TypeScript and production build checks; keep scope limited to the locked homepage copy batch.
+2. Open/maintain one PR from `agent/homepage-brand-copy` to `main` and wait for exact-head CI. Do not merge or deploy without explicit owner authorization.
+3. After the homepage copy batch is owner-authorized, deployed and live-verified, resume the Roadmap 12 first authenticated New Outfit browser audit before advancing to Roadmap 13.

@@ -21,7 +21,10 @@ Roadmap 12 / PR #67 is **branch-only and not deployed**. Its additive canonical 
 - `supabase/migrations/20260824133500_new_outfit_v1_social_foundation.sql`;
 - `supabase/migrations/20260824133600_complete_new_outfit_v1_boundaries.sql`;
 - `supabase/migrations/20260824133700_harden_new_outfit_v1_social_controls.sql`;
-- `supabase/migrations/20260824133800_canonical_public_closet_and_outfit_public_identity.sql`.
+- `supabase/migrations/20260824133800_canonical_public_closet_and_outfit_public_identity.sql`;
+- `supabase/migrations/20260824133900_fix_outfit_compatibility_photo_registration.sql`.
+
+Roadmap 12 implementation head `73ea76f27448f3ce2ae17b8d7575f0977bc830e1` passed full LikeSized CI #759 (`32748872705`), including canonical integrity, TypeScript, all focused application safeguards, production build, fresh replay of every canonical migration and the complete database behavior/privacy suite. The later documentation reconciliation head must preserve that same green contract before merge.
 
 Until PR #67 receives explicit owner merge/deployment authorization and the database-first production step completes, hosted production still reflects the pre-Roadmap-12 physical Closet/Outfit schema even though the owner-approved product meaning is already locked in `docs/V1_PRODUCT_SPEC.md`.
 
@@ -442,6 +445,8 @@ Signed-in members may read the detailed tagged garment/Fit layer through normal 
 
 Blocking removes follow relationships in both directions and suppresses signed-in Outfit/feed interaction between the members. A block cannot make an otherwise public Outfit URL disappear from anonymous web access.
 
+`20260824133900_fix_outfit_compatibility_photo_registration.sql` keeps the retired one-photo `public.create_outfit_post(uuid,text,text,uuid[])` RPC only as a historical/integration compatibility boundary. It reuses the canonical Outfit content/gallery tables, preserves the legacy owner-scoped `user/post/outfit.(jpg|png|webp)` storage-path guard, does not mutate Closet visibility, and registers the compatibility gallery photo with an existence check rather than a bare `ON CONFLICT` that cannot target the gallery's DEFERRABLE uniqueness constraint. New creator UI does not use this one-photo path.
+
 # 21. Search foundations
 - direct Product search is global as defined above;
 - exact Brand/Product aliases and canonical identifiers/listings can aid resolution;
@@ -466,7 +471,7 @@ Before member-facing Product Detail uses `exact_variant`, recommendation/evidenc
 # 23. Current implementation debt / open verification
 - Production application `main` is the Roadmap 11A baseline at `921383ac10ecf63ecbf35743caa366c4b635dd1b`.
 - PR #56 Foundation hardening and PR #59 correction-boundary repair remain the latest database-changing production work; PR #60 through PR #66 added no migration.
-- Roadmap 12 / PR #67 is branch-only until explicit owner merge/deployment authorization. Its Outfit/public-Closet migrations must pass exact-head full CI, then be applied database-first and verified before application production cutover.
+- Roadmap 12 / PR #67 is implementation-verified but branch-only until explicit owner merge/deployment authorization. Exact implementation head `73ea76f27448f3ce2ae17b8d7575f0977bc830e1` passed full CI #759, including fresh replay and complete pgTAP. After authorization, its six migrations must be applied database-first and verified before application production cutover.
 - The legacy physical `closet_items.visibility` column remains intentionally in replay history; Roadmap 12 locks it to the compatibility `shared` value rather than rewriting old migrations. Broader Closet lifecycle/mutation rules remain future audit work and must not recreate visibility state.
 - Full My Circle Following / Fit Twins / Discover ranking and richer Outfit discovery/search remain later roadmap work; Roadmap 12 establishes the content/data/social foundation only.
 - Historical counted-report fingerprint reconciliation for retired questions remains separate and must not be smuggled into variation/Outfit work.

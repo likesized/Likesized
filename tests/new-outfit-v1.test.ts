@@ -24,7 +24,7 @@ test("New Outfit has one canonical creator and reuses the canonical Fit Report i
   assert.doesNotMatch(newPage, /visibility|Private\s*→\s*will share|become Shared/i);
   assert.doesNotMatch(actions, /visibility|closet_visibility|update\([^)]*shared/i);
   assert.match(composer, /Add a missing garment/);
-  assert.match(composer, /iframe[^>]+src="\/closet\/add"/s);
+  assert.match(composer, /iframe[^>]+[\s\S]*?src="\/closet\/add"/);
 });
 
 test("current V1 Closet UI has no per-garment Private / Shared control", () => {
@@ -67,7 +67,7 @@ test("published Outfit detail keeps anonymous editorial view separate from membe
   assert.match(detail, /get_public_outfit_creator/);
   assert.match(detail, /get_public_outfit_comments/);
   assert.match(detail, /get_public_outfit_product_teasers/);
-  assert.doesNotMatch(detail, /outfit_posts[^\n]*profile:profiles/s);
+  assert.doesNotMatch(detail, /outfit_posts[^\n]*[\s\S]*?profile:profiles/);
   assert.match(detail, /Sign in to see size worn and reported fit/);
   assert.match(detail, /Size \$\{report\.size_label\}/);
   assert.match(gallery, /View tagged items/);

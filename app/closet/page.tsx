@@ -34,7 +34,7 @@ export default async function ClosetPage({ searchParams }: { searchParams: Searc
   if (error || unconfirmedError) throw new Error("Could not load Closet.");
 
   const items = (data ?? []) as ClosetRow[];
-  const followupByItem = new Map(((unconfirmedData ?? []) as UnconfirmedStatus[]).filter((row) => row.candidate_status === "needs_more_evidence").map((row) => [row.closet_item_id, row]));
+  const followupByItem = new Map(((unconfirmedData ?? []) as UnconfirmedStatus[]).filter((row) => row.candidate_status==="needs_more_evidence").map((row) => [row.closet_item_id, row]));
   const ids = items.map((item) => item.id);
   let reports: FitReport[] = [];
   let photos: FitPhoto[] = [];

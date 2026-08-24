@@ -17,7 +17,7 @@ type OutfitPhotoTag = { photo_id: string; closet_item_id: string; x: number; y: 
 const FIT_LABELS: Record<string, string> = { too_small: "Too small", snug: "Snug", just_right: "Just right", relaxed: "Relaxed", too_big: "Too big" };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const TYPE_LABELS = new Map(GARMENT_TYPES.map((item) => [item.key, item.label]));
-const CATEGORY_LABELS = new Map(GARMENT_CATEGORIES.map((item) => [item.value, item.label]));
+const CATEGORY_LABELS: ReadonlyMap<string, string> = new Map(GARMENT_CATEGORIES.map((item) => [item.value, item.label]));
 function first(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
 function one<T>(value: unknown): T | null { return Array.isArray(value) ? ((value[0] as T | undefined) ?? null) : ((value as T | null) ?? null); }
 
@@ -67,7 +67,7 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
       garmentType,
       garmentTypeLabel: TYPE_LABELS.get(garmentType) ?? garmentType.replaceAll("_", " "),
       category,
-      categoryLabel: CATEGORY_LABELS.get(category as Parameters<typeof CATEGORY_LABELS.get>[0]) ?? category.replaceAll("_", " "),
+      categoryLabel: CATEGORY_LABELS.get(category) ?? category.replaceAll("_", " "),
       createdAt: item.created_at,
     };
   });

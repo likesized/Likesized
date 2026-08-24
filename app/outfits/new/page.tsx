@@ -23,19 +23,28 @@ function one<T>(value: unknown): T | null { return Array.isArray(value) ? ((valu
 
 export default async function NewOutfitPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
+  const requestedId = first(params.draft) || first(params.edit) || "";
+  if (requestedId && !UUID.test(requestedId)) redirect("/outfits/new");
+
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const userId = claimsData?.claims?.sub;
   if (claimsError || !userId) redirect("/login?next=/outfits/new");
 
-  const [profileResult, closetResult, styleSuggestionResult] = await Promise.all([
+  const outfitRequest = requestedId
+    ? supabase.from("outfit_posts").select("id,status,headline,story,comments_enabled").eq("id", requestedId).eq("user_id", userId).maybeSingle()
+    : Promise.resolve({ data: null, error: null });
+
+  const [profileResult, closetResult, styleSuggestionResult, outfitResult] = await Promise.all([
     supabase.from("profiles").select("username").eq("id", userId).maybeSingle(),
     supabase.from("closet_items").select("id,size_label,created_at,product:products(name,garment_type_key,category,brand:brands(name))").eq("user_id", userId).order("created_at", { ascending: false }),
     supabase.rpc("get_outfit_style_tag_suggestions", { p_query: null, p_result_limit: 50 }),
+    outfitRequest,
   ]);
   if (profileResult.error || !profileResult.data?.username) redirect("/onboarding");
   if (closetResult.error) throw new Error(`Could not load your Closet: ${closetResult.error.message}`);
   if (styleSuggestionResult.error) throw new Error(`Could not load Style Tag suggestions: ${styleSuggestionResult.error.message}`);
+  if (requestedId && (outfitResult.error || !outfitResult.data)) redirect("/outfits/new");
 
   const styleSuggestions: string[] = [...new Set(((styleSuggestionResult.data ?? []) as StyleSuggestionRow[]).map((row) => String(row.display_tag ?? "").trim()).filter(Boolean))];
   const closetRows = (closetResult.data ?? []) as ClosetRow[];
@@ -43,12 +52,21 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
   const requestedPreselectedClosetItemId = first(params.closet_item_id) ?? "";
   const preselectedClosetItemId = UUID.test(requestedPreselectedClosetItemId) && closetIds.includes(requestedPreselectedClosetItemId) ? requestedPreselectedClosetItemId : "";
 
-  let reports: FitReport[] = [];
-  if (closetIds.length) {
-    const { data, error } = await supabase.from("fit_reports").select("closet_item_id,fit,created_at").in("closet_item_id", closetIds).order("created_at", { ascending: false });
-    if (error) throw new Error(`Could not load Closet fit evidence: ${error.message}`);
-    reports = (data ?? []) as FitReport[];
-  }
+  const reportsRequest = closetIds.length
+    ? supabase.from("fit_reports").select("closet_item_id,fit,created_at").in("closet_item_id", closetIds).order("created_at", { ascending: false })
+    : Promise.resolve({ data: [], error: null });
+  const outfitPartsRequest = requestedId
+    ? Promise.all([
+      supabase.from("outfit_post_items").select("closet_item_id").eq("post_id", requestedId),
+      supabase.from("outfit_occasions").select("occasion,sort_order").eq("post_id", requestedId).order("sort_order"),
+      supabase.from("outfit_style_tags").select("display_tag,sort_order").eq("post_id", requestedId).order("sort_order"),
+      supabase.from("outfit_photos").select("id,bucket,display_path,sort_order,is_main").eq("post_id", requestedId).order("sort_order"),
+    ])
+    : Promise.resolve(null);
+
+  const [reportsResult, outfitParts] = await Promise.all([reportsRequest, outfitPartsRequest]);
+  if (reportsResult.error) throw new Error(`Could not load Closet fit evidence: ${reportsResult.error.message}`);
+  const reports = (reportsResult.data ?? []) as FitReport[];
   const reportByItem = new Map<string, FitReport>();
   for (const report of reports) if (!reportByItem.has(report.closet_item_id)) reportByItem.set(report.closet_item_id, report);
 
@@ -72,36 +90,30 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
     };
   });
 
-  const requestedId = first(params.draft) || first(params.edit) || "";
   let initial: InitialOutfit | null = null;
-  if (requestedId) {
-    if (!UUID.test(requestedId)) redirect("/outfits/new");
-    const { data: outfit, error: outfitError } = await supabase.from("outfit_posts").select("id,status,headline,story,comments_enabled").eq("id", requestedId).eq("user_id", userId).maybeSingle();
-    if (outfitError || !outfit) redirect("/outfits/new");
-    const row = outfit as OutfitRow;
-    const [itemsResult, occasionsResult, stylesResult, photosResult] = await Promise.all([
-      supabase.from("outfit_post_items").select("closet_item_id").eq("post_id", requestedId),
-      supabase.from("outfit_occasions").select("occasion,sort_order").eq("post_id", requestedId).order("sort_order"),
-      supabase.from("outfit_style_tags").select("display_tag,sort_order").eq("post_id", requestedId).order("sort_order"),
-      supabase.from("outfit_photos").select("id,bucket,display_path,sort_order,is_main").eq("post_id", requestedId).order("sort_order"),
-    ]);
+  if (requestedId && outfitParts) {
+    const row = outfitResult.data as OutfitRow;
+    const [itemsResult, occasionsResult, stylesResult, photosResult] = outfitParts;
     if (itemsResult.error || occasionsResult.error || stylesResult.error || photosResult.error) throw new Error("Could not load this Outfit.");
     const photoRows = (photosResult.data ?? []) as OutfitPhotoRow[];
     const photoIds = photoRows.map((photo) => photo.id);
-    let photoTags: OutfitPhotoTag[] = [];
-    if (photoIds.length) {
-      const { data, error } = await supabase.from("outfit_photo_tags").select("photo_id,closet_item_id,x,y").in("photo_id", photoIds);
-      if (error) throw new Error(`Could not load Outfit photo tags: ${error.message}`);
-      photoTags = (data ?? []) as OutfitPhotoTag[];
-    }
-    const urlByPhoto = new Map<string, string>();
-    await Promise.all(photoRows.map(async (photo) => {
-      if (photo.bucket === "outfit-photos") urlByPhoto.set(photo.id, supabase.storage.from("outfit-photos").getPublicUrl(photo.display_path).data.publicUrl);
-      else {
-        const { data } = await supabase.storage.from("outfit-draft-photos").createSignedUrl(photo.display_path, 60 * 60);
-        if (data?.signedUrl) urlByPhoto.set(photo.id, data.signedUrl);
+
+    const tagsRequest = photoIds.length
+      ? supabase.from("outfit_photo_tags").select("photo_id,closet_item_id,x,y").in("photo_id", photoIds)
+      : Promise.resolve({ data: [], error: null });
+    const urlsRequest = Promise.all(photoRows.map(async (photo) => {
+      if (photo.bucket === "outfit-photos") {
+        return [photo.id, supabase.storage.from("outfit-photos").getPublicUrl(photo.display_path).data.publicUrl] as const;
       }
+      const { data, error } = await supabase.storage.from("outfit-draft-photos").createSignedUrl(photo.display_path, 60 * 60);
+      if (error) throw new Error(`Could not load an Outfit draft photo: ${error.message}`);
+      return [photo.id, data.signedUrl] as const;
     }));
+    const [photoTagsResult, photoUrls] = await Promise.all([tagsRequest, urlsRequest]);
+    if (photoTagsResult.error) throw new Error(`Could not load Outfit photo tags: ${photoTagsResult.error.message}`);
+    const photoTags = (photoTagsResult.data ?? []) as OutfitPhotoTag[];
+    const urlByPhoto = new Map<string, string>(photoUrls);
+
     initial = {
       id: row.id,
       status: row.status,

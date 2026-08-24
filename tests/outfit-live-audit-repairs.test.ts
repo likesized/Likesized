@@ -33,6 +33,8 @@ test("Outfit flow selects master items before optional photo hotspots", () => {
   assert.match(composer, /All garment types/);
   assert.match(composer, /All brands/);
   assert.match(composer, /Recently added/);
+  assert.match(composer, /Clear filters/);
+  assert.match(composer, /\+ Add a new garment/);
   assert.match(composer, /Load more/);
   assert.match(composer, /Selected for this Outfit/);
   assert.match(composer, /Select the items in this Outfit first\./);
@@ -68,7 +70,9 @@ test("Outfit feed and detail avoid fragile nested PostgREST relationship reads",
   assert.doesNotMatch(feedPage, /profile:profiles/);
   assert.doesNotMatch(detailPage, /product:products/);
   assert.doesNotMatch(detailPage, /profile:profiles/);
-  assert.match(detailPage, /\.from\("products"\)\.select\("id,name,slug,image_url,retailer_url,brand_id"\)/);
+  assert.doesNotMatch(detailPage, /retailer_url/);
+  assert.match(detailPage, /\.from\("products"\)\.select\("id,name,slug,image_url,brand_id"\)/);
+  assert.match(detailPage, /\.from\("retailer_listings"\)\.select\("product_id,product_url"\)/);
   assert.match(detailPage, /\.from\("brands"\)\.select\("id,name"\)/);
   assert.match(detailPage, /Could not load Outfit garment details:/);
 });

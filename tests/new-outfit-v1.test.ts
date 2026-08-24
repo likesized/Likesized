@@ -25,7 +25,8 @@ test("New Outfit has one canonical creator and reuses the canonical Fit Report i
   assert.equal(existsSync(new URL("../app/outfits/new/OutfitPhotoInput.tsx", import.meta.url)), false);
   assert.doesNotMatch(newPage, /visibility|Private\s*→\s*will share|become Shared/i);
   assert.doesNotMatch(actions, /visibility|closet_visibility|update\([^)]*shared/i);
-  assert.match(composer, /Add a missing garment/);
+  assert.match(composer, /Add a new garment/);
+  assert.doesNotMatch(composer, /Add a missing garment/);
   assert.match(composer, /iframe[^>]+[\s\S]*?src="\/closet\/add\?embed=outfit"/);
 });
 
@@ -45,7 +46,10 @@ test("creator supports the locked editorial, gallery, hotspot, draft and preview
   assert.match(composer, /Additional photos/);
   assert.match(composer, /multiple/);
   assert.match(composer, /Set as cover/);
-  assert.match(composer, /Drag to reorder/);
+  assert.match(composer, /Drag or use the arrows to reorder/);
+  assert.match(composer, /Move additional photo \$\{index\} up/);
+  assert.match(composer, /Move additional photo \$\{index\} down/);
+  assert.match(composer, /onDragEnter=\{\(\) => reorderDraggedPhoto\(photo\.key\)\}/);
   assert.match(composer, /Drag a dot to move it/);
   assert.match(composer, /Save Draft/);
   assert.match(composer, /Preview Outfit/);
@@ -53,6 +57,43 @@ test("creator supports the locked editorial, gallery, hotspot, draft and preview
   assert.match(composer, /Leave Without Saving/);
   assert.match(composer, /Keep Editing/);
   assert.match(composer, /beforeunload/);
+});
+
+test("mobile photo preparation accepts normal phone formats and keeps reducing instead of failing early", () => {
+  assert.match(composer, /24 \* 1024 \* 1024/);
+  assert.match(composer, /image\/heic/);
+  assert.match(composer, /image\/heif/);
+  assert.match(composer, /accept="image\/\*"/);
+  assert.match(composer, /0\.34, 0\.28, 0\.22/);
+  assert.match(composer, /0\.36, 0\.3, 0\.24/);
+  assert.match(composer, /Promise\.allSettled/);
+  assert.doesNotMatch(composer, /This photo could not be reduced enough/);
+});
+
+test("Outfit Closet filters have a contextual reset", () => {
+  assert.match(composer, /hasClosetFilters/);
+  assert.match(composer, /Clear filters/);
+  assert.match(composer, /setClosetSearch\(""\)/);
+  assert.match(composer, /setClosetCategory\(""\)/);
+  assert.match(composer, /setClosetType\(""\)/);
+  assert.match(composer, /setClosetBrand\(""\)/);
+  assert.match(composer, /setClosetSort\("recent"\)/);
+});
+
+test("successful draft saves clear dirty state and stay in the editor without a full reload", () => {
+  assert.match(actions, /photoIds\?: Record<string, string>/);
+  assert.match(composer, /dirtyRef\.current = false/);
+  assert.match(composer, /setDirty\(false\)/);
+  assert.match(composer, /setLeaveHref\(null\)/);
+  assert.match(composer, /window\.history\.replaceState/);
+  assert.match(composer, /Draft saved\./);
+});
+
+test("draft hydration and preview size reflect the live-audit performance fixes", () => {
+  assert.match(newPage, /Promise\.all/);
+  assert.match(outfitStyles, /\.previewShell\{max-width:920px\}/);
+  assert.match(outfitStyles, /\.previewGallery\{min-width:0;max-width:520px\}/);
+  assert.match(outfitStyles, /\.previewMain\{[^}]*max-height:460px/);
 });
 
 test("Occasion is a fixed shared vocabulary and Style Tags remain community-created", () => {

@@ -9,13 +9,15 @@ const fitCss = readFileSync("app/closet/add/fitReport.module.css", "utf8");
 const settings = readFileSync("app/settings/page.tsx", "utf8");
 const settingsCss = readFileSync("app/settings/settings.module.css", "utf8");
 
-test("Item suggestions fire immediately after typed search text, reuse recent results, and overlay the form", () => {
+test("Item suggestions show cached results immediately while the brief network search stays lightly debounced", () => {
   assert.match(catalog, /normalizedItem\.length < 2/);
   assert.match(catalog, /\(product && !itemIssue\)/);
-  assert.match(catalog, /const ITEM_SEARCH_DEBOUNCE_MS = 0;/);
+  assert.match(catalog, /const ITEM_SEARCH_DEBOUNCE_MS = 60;/);
   assert.match(catalog, /itemSuggestionCache = useRef\(new Map<string, CatalogProduct>\(\)\)/);
+  assert.match(catalog, /prefetchedBrandNames = useRef\(new Set<string>\(\)\)/);
   assert.match(catalog, /setItemSuggestions\(cached\)/);
   assert.match(catalog, /itemSuggestionCache\.current\.set\(item\.id, item\)/);
+  assert.match(catalog, /brief=1/);
   assert.match(catalog, /showItemSuggestions/);
   assert.match(fitCss, /\.itemSuggestionDropdown\s*\{[\s\S]*?position: absolute;/);
   assert.match(fitCss, /top: calc\(100% \+ 4px\);/);

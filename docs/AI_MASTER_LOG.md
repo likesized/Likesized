@@ -307,6 +307,10 @@ Review logging rule:
 
 Current issues after PR #76 deployment:
 - **RECORDED — New Outfit / Photo Tags:** **Use Cover Photo Tags** needs to read much more obviously as a button/action; its current presentation is too easy to mistake for non-interactive text or a passive control.
+- **RECORDED — New Outfit / Items in this Outfit filters:** The picker must use progressive/dynamic filtering rather than showing every narrowing control up front. Initial state should be **All garments** with only the sort choices **Recently added** and **A–Z** visible. Additional narrowing filters should appear only as the user drills down and they become relevant. **Garment Type is a filter, not a sort choice, and must not appear in the same control/list as Recently added and A–Z.**
+- **RECORDED — New Outfit / Garment picker selection:** Clicking a garment card must **not** immediately add/select it. Clicking the card should open a compact detail preview so the user can verify they have the right garment. Actual selection should require an explicit **Add** action or checkmark.
+- **RECORDED — New Outfit embedded Add Garment / Brand suggestions:** Brand suggestions currently open over the active Brand input and cover the text being typed. The suggestion panel must anchor below the field and never obscure the active input.
+- **RECORDED — New Outfit embedded Add Garment / Item-Style-Model suggestions performance:** Item / Style / Model suggestions are still taking far too long to populate in live use. This remains unresolved despite the earlier PR #65 suggestion-speed work and despite a prior commitment to address it; do not treat the historical speed improvement as closure for this embedded-flow latency.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
 - PR #76 is production-live. The owner's first retest is the same normal iPhone photo that previously produced **“Photo conversion failed on this device.”**

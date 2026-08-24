@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import styles from "@/app/home.module.css";
 import { createClient } from "@/lib/supabase/server";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -35,47 +36,85 @@ const capabilities = [
 const faqs = [
   {
     question: "What does a Fit Report tell me, and what does Fit Result mean?",
-    answer: "A Fit Report tells you what happened when another person actually wore the garment. Body Match tells you how similar you are to that person. The Fit Report tells you what size they wore and how it fit them. Fit Result is the person’s description of that fit: Too Small, Snug, Just Right, Relaxed, or Too Big. You’ll see it alongside the size they wore when viewing Fit Reports for an item.",
+    answer: <div className={styles.faqAnswer}>
+      <p className={styles.faqLead}>A Fit Report tells you what happened when another person actually wore the garment.</p>
+      <p><strong>Body Match</strong> tells you how similar you are to that person.</p>
+      <p><strong>Fit Report</strong> tells you what size they wore and how it fit them.</p>
+      <p><strong>Fit Result</strong> is the person’s description of that fit:</p>
+      <div className={styles.faqTerms}>Too Small <span>·</span> Snug <span>·</span> Just Right <span>·</span> Relaxed <span>·</span> Too Big</div>
+      <p>You’ll see it alongside the size they wore when viewing Fit Reports for an item.</p>
+    </div>,
   },
   {
     question: "What does my Body Match percentage mean, and does a high match guarantee the same fit?",
-    answer: "Your Body Match shows how closely your body measurements match the person who submitted a Fit Report. For example, 92% Body Match means that person’s measurements are very similar to yours. It does not mean the garment has a 92% chance of fitting you or that the same size is guaranteed to fit you the same way. People with similar measurements can still experience fit differently because of garment construction, fabric, body shape, and personal fit preference. Body Match tells you how similar you are to the person. Their Fit Report tells you what happened when they actually wore the garment.",
+    answer: <div className={styles.faqAnswer}>
+      <p className={styles.faqLead}>Your <strong>Body Match</strong> shows how closely your body measurements match the person who submitted a Fit Report.</p>
+      <p>For example, <strong>92% Body Match</strong> means that person’s measurements are very similar to yours. It does not mean the garment has a 92% chance of fitting you or that the same size is guaranteed to fit you the same way.</p>
+      <p>People with similar measurements can still experience fit differently because of garment construction, fabric, body shape, and personal fit preference.</p>
+      <p className={styles.faqTakeaway}><strong>Body Match</strong> tells you how similar you are to the person. Their <strong>Fit Report</strong> tells you what happened when they actually wore the garment.</p>
+    </div>,
   },
   {
     question: "Why can my Match change by clothing type?",
-    answer: "Different garments depend on different measurements. LikeSized emphasizes the measurements that matter for tops, bottoms, and specific garment types instead of using one generic score for everything.",
+    answer: <div className={styles.faqAnswer}><p>Different garments depend on different measurements. LikeSized emphasizes the measurements that matter for tops, bottoms, and specific garment types instead of using one generic score for everything.</p></div>,
   },
   {
     question: "Does a low Body Match mean the item will not fit me?",
-    answer: "No. A lower Body Match may simply mean we do not yet have a Fit Report for that item from someone whose measurements are very close to yours. The garment may still fit you perfectly. As more people submit Fit Reports, LikeSized can show you evidence from people who are closer to your size and proportions.",
+    answer: <div className={styles.faqAnswer}>
+      <p className={styles.faqLead}><strong>No.</strong></p>
+      <p>A lower Body Match may simply mean we do not yet have a Fit Report for that item from someone whose measurements are very close to yours.</p>
+      <p>The garment may still fit you perfectly. As more people submit Fit Reports, LikeSized can show you evidence from people who are closer to your size and proportions.</p>
+    </div>,
   },
   {
     question: "Why am I seeing a lower Body Match before a stronger one?",
-    answer: "Because LikeSized shows evidence from the exact variation you are viewing first. Someone who wore a related version of the garment may be a much stronger Body Match, but they did not wear the exact same version. The exact-variation report tells you what happened with the same version you’re viewing. A related report can give you additional evidence from someone built more like you while clearly showing what was different about the garment they wore.",
+    answer: <div className={styles.faqAnswer}>
+      <p className={styles.faqLead}>Because LikeSized shows evidence from the <strong>exact variation</strong> you are viewing first.</p>
+      <p>Someone who wore a related version of the garment may be a much stronger Body Match, but they did not wear the exact same version.</p>
+      <p className={styles.faqTakeaway}>The exact-variation report tells you what happened with the same version you’re viewing. A related report can give you additional evidence from someone built more like you while clearly showing what was different about the garment they wore.</p>
+    </div>,
   },
   {
     question: "What are Strong Fit Reports?",
-    answer: "When multiple people with strong Body Matches have reported on the same garment variation, LikeSized may summarize those reports together. This helps you see whether several people built similarly to you had similar experiences with the garment. Different sizes or Fit Results do not necessarily mean one report is wrong—people with similar measurements can still experience or prefer fit differently. The closest individual Body Match is still shown first, while Strong Fit Reports show the broader pattern behind it.",
+    answer: <div className={styles.faqAnswer}>
+      <p className={styles.faqLead}>When multiple people with strong Body Matches have reported on the <strong>same garment variation</strong>, LikeSized may summarize those reports together.</p>
+      <p>This helps you see whether several people built similarly to you had similar experiences with the garment.</p>
+      <p>Different sizes or Fit Results do not necessarily mean one report is wrong—people with similar measurements can still experience or prefer fit differently.</p>
+      <p className={styles.faqTakeaway}>The closest individual Body Match is still shown first, while <strong>Strong Fit Reports</strong> show the broader pattern behind it.</p>
+    </div>,
   },
   {
     question: "What makes LikeSized different from other sizing and fashion tools?",
-    answer: "Many sizing tools start with size charts, general reviews, or a predicted size. LikeSized starts with real Fit Reports from people whose bodies are similar to yours and uses the measurements that matter for the garment you’re looking at. LikeSized also tracks fit down to the individual item whenever real Fit Reports exist. Two pairs of pants from the same brand can fit completely differently, so we don’t assume a brand, clothing category, or printed size fits the same across every product. If someone built like you has already worn the exact item, you can see what size they wore and how it actually fit them. That’s a lot more useful than assuming every item from the same brand fits the same.",
+    answer: <div className={styles.faqAnswer}>
+      <p className={styles.faqLead}>Many sizing tools start with size charts, general reviews, or a predicted size. LikeSized starts with real Fit Reports from people whose bodies are similar to yours and uses the measurements that matter for the garment you’re looking at.</p>
+      <p>LikeSized also tracks fit down to the individual item whenever real Fit Reports exist. Two pairs of pants from the same brand can fit completely differently, so we don’t assume a brand, clothing category, or printed size fits the same across every product.</p>
+      <p className={styles.faqTakeaway}>If someone built like you has already worn the exact item, you can see what size they wore and how it actually fit them. That’s a lot more useful than assuming every item from the same brand fits the same.</p>
+    </div>,
   },
   {
     question: "Can other members see my measurements?",
-    answer: "No. Your exact current and historical body measurements stay private. Other members see safe Match percentages and the fit information you intentionally share.",
+    answer: <div className={styles.faqAnswer}><p><strong>No.</strong> Your exact current and historical body measurements stay private. Other members see safe Match percentages and the fit information you intentionally share.</p></div>,
   },
   {
     question: "What is a Fit Twin, and do I have to be Fit Twins to follow someone?",
-    answer: "No. Following and Fit Twin status are different. You can follow anyone whose style or fit activity you want to keep up with. A Fit Twin is someone you follow whom LikeSized identifies as a strong current body match. Following adds someone to My Circle; LikeSized decides whether that followed person also qualifies as a Fit Twin.",
+    answer: <div className={styles.faqAnswer}>
+      <p><strong>No.</strong> Following and Fit Twin status are different. You can follow anyone whose style or fit activity you want to keep up with.</p>
+      <p>A Fit Twin is someone you follow whom LikeSized identifies as a strong current body match. Following adds someone to My Circle; LikeSized decides whether that followed person also qualifies as a Fit Twin.</p>
+    </div>,
   },
   {
     question: "How does the community-built clothing catalog work?",
-    answer: "LikeSized’s catalog grows from real Fit Reports submitted by people who actually own the clothes. Add what you know and leave anything you’re unsure about blank rather than guessing. Other members can help fill in missing details, and incorrect information can be flagged for review.",
+    answer: <div className={styles.faqAnswer}>
+      <p>LikeSized’s catalog grows from real Fit Reports submitted by people who actually own the clothes.</p>
+      <p>Add what you know and leave anything you’re unsure about blank rather than guessing. Other members can help fill in missing details, and incorrect information can be flagged for review.</p>
+    </div>,
   },
   {
     question: "What if I’m not sure of the item, style, or model?",
-    answer: "Enter the best information you can find and check “I’m not completely sure this is the correct item/style name.” You can still save your Fit Report and use the garment in your Styles while LikeSized reviews it. A retail link, Product Photo, or clear photo of the label/tag can help us identify it.",
+    answer: <div className={styles.faqAnswer}>
+      <p>Enter the best information you can find and check <strong>“I’m not sure this is the correct item/style name.”</strong></p>
+      <p>You can still save your Fit Report and use the garment in your Styles while LikeSized reviews it. A retail link, Product Photo, or clear photo of the label/tag can help us identify it.</p>
+    </div>,
   },
 ];
 
@@ -175,7 +214,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           {faqs.map((faq) => (
             <details className="faqItem" key={faq.question}>
               <summary>{faq.question}</summary>
-              <p>{faq.answer}</p>
+              {faq.answer}
             </details>
           ))}
         </div>

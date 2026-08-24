@@ -42,12 +42,15 @@ test("Safari JPEG transport fallback is normalized to real WebP before storage",
   assert.ok(normalized.byteLength <= 600 * 1024);
 });
 
-test("new Outfit feed serves feed derivatives while legacy circle compatibility remains", () => {
-  const outfits = readFileSync(new URL("../app/outfits/page.tsx", import.meta.url), "utf8");
+test("discovered Outfits and Style Feed serve feed derivatives while owned Outfits stay in My Closet", () => {
+  const explore = readFileSync(new URL("../app/explore/page.tsx", import.meta.url), "utf8");
+  const outfitsIndex = readFileSync(new URL("../app/outfits/page.tsx", import.meta.url), "utf8");
   const circle = readFileSync(new URL("../app/circle/page.tsx", import.meta.url), "utf8");
-  assert.match(outfits, /replace\(\/\\\/display\\\.webp\$\/,\s*"\/feed\.webp"\)/);
-  assert.match(outfits, /getPublicUrl\(feedPath\)/);
+  assert.match(explore, /outfitFeedPhotoPath\(post\.photo_url\)/);
+  assert.match(explore, /storage\.from\("outfit-photos"\)\.createSignedUrl\(feedPath/);
   assert.match(circle, /outfitFeedPhotoPath\(row\.outfit_photo_path!\)/);
+  assert.match(outfitsIndex, /\/closet\?tab=outfits/);
+  assert.doesNotMatch(outfitsIndex, /outfitFeedPhotoPath|feedPath/);
 });
 
 test("retired one-photo creator is not left beside the canonical gallery composer", () => {

@@ -97,3 +97,13 @@ export async function setFollowingNotificationSubscription(formData: FormData) {
   revalidatePath("/notifications");
   redirect(returnTo);
 }
+
+export async function blockPerson(formData: FormData) {
+  const targetUserId = String(formData.get("target_user_id") ?? "");
+  const { supabase, userId } = await authenticatedUserId();
+  if (!targetUserId || targetUserId === userId) redirect("/people");
+  const { error } = await supabase.rpc("block_member", { p_blocked_id: targetUserId });
+  if (error) throw new Error("Could not block this member.");
+  for (const path of ["/people","/circle","/outfits","/explore","/notifications"]) revalidatePath(path);
+  redirect("/people?blocked=1");
+}

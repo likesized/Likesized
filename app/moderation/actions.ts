@@ -43,12 +43,17 @@ export async function resolveReport(formData: FormData) {
     if (report.target_type === "outfit_post") {
       const { data: photos, error: photoError } = await supabase.from("outfit_photos").select("bucket,display_path,feed_path").eq("post_id", report.target_id);
       if (photoError) throw new Error("Could not load Outfit photo files.");
+      const publicPaths = (photos ?? []).filter((photo) => photo.bucket === "outfit-photos").flatMap((photo) => [photo.display_path, photo.feed_path]).filter((path): path is string => Boolean(path));
+      const draftPaths = (photos ?? []).filter((photo) => photo.bucket === "outfit-draft-photos").flatMap((photo) => [photo.display_path, photo.feed_path]).filter((path): path is string => Boolean(path));
       const { error: deleteError } = await supabase.from("outfit_posts").delete().eq("id", report.target_id);
       if (deleteError) throw new Error("Could not remove Outfit post.");
-      for (const photo of photos ?? []) {
-        const bucket = photo.bucket === "outfit-draft-photos" ? "outfit-draft-photos" : "outfit-photos";
-        const { error: storageError } = await supabase.storage.from(bucket).remove([photo.display_path, photo.feed_path]);
-        if (storageError) throw new Error("Outfit was removed, but a photo file still needs storage cleanup.");
+      if (publicPaths.length) {
+        const { error: storageError } = await supabase.storage.from("outfit-photos").remove(publicPaths);
+        if (storageError) throw new Error("Outfit was removed, but a public photo file still needs storage cleanup.");
+      }
+      if (draftPaths.length) {
+        const { error: storageError } = await supabase.storage.from("outfit-draft-photos").remove(draftPaths);
+        if (storageError) throw new Error("Outfit was removed, but a draft photo file still needs storage cleanup.");
       }
     } else if (report.target_type === "outfit_comment") {
       const { error: deleteError } = await supabase.from("outfit_comments").delete().eq("id", report.target_id);

@@ -291,17 +291,15 @@ PR #53's **Add More Information** flow is a narrow unresolved-identity evidence 
 
 Do not introduce unrestricted Edit Item product meaning before the broader mutation contract is settled.
 
-# 12. Unified public Closet target — LOCKED
+# 12. Unified member-visible Closet — LOCKED
 LikeSized has one canonical member Closet meaning, not separate My Closet and Shared Closet systems.
-- Garments and Fit Reports are intended public member-facing content.
-- Self view adds owner-only management controls to the same public content.
-- Visitor view uses the same canonical garment/Fit Report foundation without owner controls.
-- Raw body measurements, historical snapshots and private matching baselines remain protected.
-- Active Unconfirmed review is invisible even to the owner; the garment looks and works normally.
-- Only Needs More Evidence shows a small private owner-only disclaimer and **Add More Information** action.
-- Other members never see Unconfirmed/Needs More Evidence status or the private disclaimer.
-- Unconfirmed/Needs More Evidence garments remain usable by the owner in Styles/Outfits even though they are not shared catalog Products.
-- Legacy `closet_items.visibility` and private/shared RLS/UI are implementation debt to reconcile during Closet audit.
+- Current V1 has **no member-controlled per-garment Private / Shared state**. Garments and Fit Reports are authenticated-member-visible content; self view adds owner-only management controls to the same canonical content.
+- The historical physical `closet_items.visibility` column remains only so immutable migration history can replay. Current V1 locks that compatibility value to `shared`; it is not a product setting or UI choice.
+- Raw body measurements, historical body snapshots, owner size references, private catalog/label evidence and admin review state remain protected by their separate privacy boundaries.
+- Fit/reference photos are member-visible wear evidence and do not require a visibility transition.
+- Active Unconfirmed review remains invisible to other members and creates no searchable Product identity. Only Needs More Evidence shows a small private owner-only disclaimer and **Add More Information** action.
+- Unconfirmed/Needs More Evidence garments remain usable by the owner in Styles/Outfits while unresolved identity/review state stays private.
+- Broader Closet lifecycle/mutation behavior remains a later Closet audit; it must not reintroduce a second visibility system.
 
 # 13. Controlled taxonomy — LOCKED
 Top-level categories:
@@ -443,10 +441,42 @@ No action silently performs another. Product bell is separate from person bell. 
 
 Locked disclosure when required: **“LikeSized may earn a commission from purchases made through our shopping links.”**
 
-# 23. Outfits / Style Feed — V1 RETAINED
-Outfits use owned Closet garments and the same Product/taxonomy system. Other-member Outfit discovery lives in Explore; followed-person activity lives in Style Feed. Outfit likes and Product likes remain separate.
+# 23. Outfits / Style Feed — V1 LOCKED
+Outfits are member-created mini editorial posts built from owned Closet garments and the same canonical Product/Fit system. Outfit likes and Product likes remain separate.
 
-An owner may use an Unconfirmed or Needs More Evidence garment in their own Styles/Outfits. The garment's admin-review status/private disclaimer must not leak to other viewers and does not create a searchable Product identity until resolved.
+## Creator model
+- V1 is photo-only: **1 required Main Photo + up to 5 optional Additional Photos**; no video and no scheduled publishing.
+- Main Photo is the cover/feed image. Additional photos may be reordered, and any photo may later be made Main without delete/re-upload.
+- **Headline** is required, maximum 100 characters. **Outfit Story** is optional, maximum 5,000 characters.
+- **Occasion** is required: choose 1–2 from the fixed LikeSized Occasion vocabulary. **Style Tags** are optional: up to 3 community-created tags, normalized behind the scenes and suggested from existing vocabulary without silently rewriting the creator's display text.
+- A published Outfit tags **1–6 owned Closet garments**. If a garment is missing, the creator reuses the canonical `/closet/add` Fit Report intake inside the Outfit flow; there is no simplified second garment-intake system.
+- Accessories outside the V1 garment taxonomy may appear in photos and Outfit Story but are not separate Product/Closet tags.
+- Each photo may optionally map one or more master tagged garments to on-image hotspots. Normal gallery display stays clean until the viewer chooses **View tagged items**.
+
+## Draft / preview / publish
+- Drafts are unpublished owner-only work and are not private published Outfits.
+- First publication requires **Preview Outfit** before **Publish Outfit**. The same draft becomes the published Outfit; publishing does not create a duplicate post.
+- Unsaved creator navigation offers Save Draft / Leave Without Saving / Keep Editing; browser refresh/close uses the standard unsaved-changes warning.
+- Published Outfits may later be edited in place—Headline, Story, photos/order/Main, garments, Occasion and Style Tags—and may be deleted by the creator.
+
+## Published Outfit detail and public sharing
+- Every published Outfit has one canonical shareable detail URL at `/outfits/[id]` with social-preview metadata using the Main Photo, Headline, creator identity and LikeSized branding.
+- Logged-out visitors may read the published editorial layer: gallery, Headline, creator display identity/handle, Occasion, Style Tags, Outfit Story, social counts, readable comments, and teasers for already-resolved canonical tagged Products.
+- Logged-out visitors do **not** receive Size Worn, Fit Result, Fit Report/body-match evidence, Closet linkage, unresolved candidate/review state, LikeLocker/Product-like state or authenticated shopping actions.
+- Signed-in members may receive the detailed garment layer: Product link/image, Size Worn, Fit Result, photo hotspots and normal Product Like/Wishlist/Shop actions when valid retailer destinations exist.
+- An Unconfirmed or Needs More Evidence garment may be used by its owner in an Outfit, but unresolved identity/admin-review state never leaks and never creates a public/searchable Product teaser until resolved.
+- Raw body measurements remain private in every Outfit context.
+
+## Social controls
+- V1 Outfit actions are **Like · Comment · Follow · Share**. Follow reuses the one canonical `follows` graph.
+- Comments are flat plain-text threads in V1; no nested replies. Logged-out visitors may read visible comments but must sign in to comment.
+- Members may delete their own comments; an Outfit creator may remove comments on their Outfit. Outfit posts/comments support reporting; signed-in members may block another member.
+- Creators may turn comments off and back on without deleting the preserved thread.
+- Creator-only V1 analytics show **Views · Likes · Comments · Shares · Follows generated**. Shop clicks are tracked internally for commerce attribution and are not creator-facing V1 analytics.
+
+## Feed/discovery boundary
+- Following activity may surface published Outfits in My Circle/Style Feed; drafts never create activity.
+- General Outfit discovery/search may use Occasion, normalized Style Tags, Headline/Story relevance, engagement and recency in the dedicated discovery work. Full Following / Fit Twin / Discover ranking behavior remains a later My Circle/Style Feed roadmap audit rather than being silently invented inside New Outfit.
 
 # 24. Images — LOCKED
 - Front Fit Photo and Back Fit Photo = separate optional member wear-evidence roles attached to the Closet/Fit Report garment; either may exist independently.

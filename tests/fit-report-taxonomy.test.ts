@@ -39,7 +39,10 @@ test("owner-approved intake copy and layout stay on the canonical New Fit Report
  assert.match(intake,/Share how an item actually fits\./);
  assert.match(intake,/Tell us a little about the garment so we can make your Fit Report useful to others\./);
  assert.doesNotMatch(intake,/Back to My Closet/);
- assert.match(catalog,/Have the item with you\? Scan the barcode\. Otherwise, enter it manually and we’ll take it from there\./);
+ assert.match(catalog,/Identify your item/);
+ assert.match(catalog,/Start with the barcode or a photo of the garment’s tag\. Either gives LikeSized evidence we can use to verify the item\./);
+ assert.match(catalog,/Take \/ upload tag photo/);
+ assert.match(catalog,/Cut the tags out\? Enter item manually →/);
  assert.match(catalog,/Scan the barcode and we’ll check the LikeSized catalog\./);
  assert.match(catalog,/We don’t have this item yet, but no problem — you can help us add it with just a few quick questions\./);
  assert.match(form,/Tell us more about how it fits\. You can also share styling tips, wash or dry advice, or anything else that might help someone considering this item\./);
@@ -66,7 +69,8 @@ test("final intake order keeps the normal Fit Report clear and collapses additio
  assert.match(catalog,/<summary className=\{styles\.optionalSummary\}>Optional Additional Information<\/summary>/);
  assert.match(catalog,/Help us learn more about this item/);
  assert.match(catalog,/Every bit of information helps LikeSized build a better garment listing/);
- for(const optional of ["Purchased From","Price Paid","Purchase Method","Approx. Purchase Date","UPC / barcode","Manufacturer Style / Article Number","Material / Fabric Composition","Product Photo","Product Label / Tag Photo"])assert.match(catalog,new RegExp(optional));
+ for(const optional of ["Purchased From","Price Paid","Purchase Method","Approx. Purchase Date","UPC / barcode","Manufacturer Style / Article Number","Material / Fabric Composition","Product Photo"])assert.match(catalog,new RegExp(optional));
+ assert.match(catalog,/Product Label \/ Tag Photo/);
  assert.match(catalog,/type="number" inputMode="decimal" min="0" max="999999\.99" step="0\.01"/);
  assert.match(catalog,/<option value="online">Online<\/option>/);
  assert.match(catalog,/<option value="in_store">In Store<\/option>/);
@@ -88,7 +92,8 @@ test("final intake order keeps the normal Fit Report clear and collapses additio
  assert.ok(catalog.indexOf("UPC / barcode") < catalog.indexOf("Manufacturer Style / Article Number"));
  assert.ok(catalog.indexOf("Manufacturer Style / Article Number") < catalog.indexOf("Material / Fabric Composition"));
  assert.ok(catalog.indexOf("Material / Fabric Composition") < catalog.indexOf("Product Photo"));
- assert.ok(catalog.indexOf("Product Photo") < catalog.indexOf("Product Label / Tag Photo"));
+ assert.ok(catalog.indexOf("Item / Style / Model") < catalog.indexOf("Product Label / Tag Photo"));
+ assert.ok(catalog.indexOf("Product Label / Tag Photo") < catalog.indexOf("Overall category"));
  assert.match(catalog,/scannedBarcode[\s\S]*<input type="hidden" name="scanned_barcode" value=\{scannedBarcode\}/);
  assert.doesNotMatch(catalog,/Search retail catalog|Imported from retail catalog|catalog_source_provider|catalog_source_record/);
  assert.doesNotMatch(actions,/record_catalog_source_selection|catalog_source_provider|importedColorLabels/);

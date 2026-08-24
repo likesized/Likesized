@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-const TARGETS = new Set(["outfit_post", "fit_reference_photo"]);
+const TARGETS = new Set(["outfit_post", "outfit_comment", "fit_reference_photo"]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 async function requireAdmin() {
@@ -41,13 +41,18 @@ export async function resolveReport(formData: FormData) {
   if (reportError || !report || report.status !== "open") throw new Error("This report is no longer open.");
   if (action === "remove_content") {
     if (report.target_type === "outfit_post") {
-      const { data: post, error } = await supabase.from("outfit_posts").select("photo_url").eq("id", report.target_id).single();
-      if (error || !post) throw new Error("Outfit post not found.");
-      const paths = [post.photo_url, post.photo_url.replace(/\/display\.webp$/, "/feed.webp")];
-      const { error: storageError } = await supabase.storage.from("outfit-photos").remove([...new Set(paths)]);
-      if (storageError) throw new Error("Could not remove outfit photo files.");
+      const { data: photos, error: photoError } = await supabase.from("outfit_photos").select("bucket,display_path,feed_path").eq("post_id", report.target_id);
+      if (photoError) throw new Error("Could not load Outfit photo files.");
       const { error: deleteError } = await supabase.from("outfit_posts").delete().eq("id", report.target_id);
-      if (deleteError) throw new Error("Could not remove outfit post.");
+      if (deleteError) throw new Error("Could not remove Outfit post.");
+      for (const photo of photos ?? []) {
+        const bucket = photo.bucket === "outfit-draft-photos" ? "outfit-draft-photos" : "outfit-photos";
+        const { error: storageError } = await supabase.storage.from(bucket).remove([photo.display_path, photo.feed_path]);
+        if (storageError) throw new Error("Outfit was removed, but a photo file still needs storage cleanup.");
+      }
+    } else if (report.target_type === "outfit_comment") {
+      const { error: deleteError } = await supabase.from("outfit_comments").delete().eq("id", report.target_id);
+      if (deleteError) throw new Error("Could not remove Outfit comment.");
     } else {
       const { data: photo, error } = await supabase.from("fit_reference_photos").select("storage_path").eq("id", report.target_id).single();
       if (error || !photo) throw new Error("Fit Report photo not found.");
@@ -66,7 +71,7 @@ export async function resolveReport(formData: FormData) {
   if (updateError) throw new Error("Could not close the report.");
   const { error: auditError } = await supabase.from("moderation_actions").insert({ report_id: reportId, admin_user_id: userId, action, target_type: report.target_type, target_id: report.target_id, reported_user_id: report.reported_user_id, reason });
   if (auditError) throw new Error("Could not record the moderation audit.");
-  revalidatePath("/moderation"); revalidatePath("/explore"); revalidatePath("/circle");
+  revalidatePath("/moderation"); revalidatePath("/explore"); revalidatePath("/circle"); revalidatePath("/outfits");
 }
 
 export async function lockCatalogField(formData: FormData) {

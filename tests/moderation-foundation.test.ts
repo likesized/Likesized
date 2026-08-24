@@ -105,7 +105,7 @@ test("Unconfirmed review prioritizes useful evidence and can park impossible cas
  assert.match(page,/Needs More Evidence/);
  assert.match(page,/candidate\.status !== "needs_more_evidence"/);
  assert.match(page,/evidenceScore\(b\.id\) - evidenceScore\(a\.id\)/);
- assert.match(closet,/candidate_status==="needs_more_evidence"/);
+ assert.match(closet,/row\.candidate_status\s*===\s*"needs_more_evidence"/);
  assert.match(closet,/More information needed\./);
  assert.match(closet,/full use of it in your Closet and Styles/);
  assert.match(closet,/Add More Information →/);

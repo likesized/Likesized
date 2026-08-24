@@ -269,9 +269,9 @@ test("invalid submit is explicit and successful submit offers working Closet, st
  assert.match(success,/window\.history\.replaceState\(null, "", "\/closet\/add"\)/);
  assert.match(success,/window\.location\.assign/);
  assert.match(actions,/redirect\(`\/closet\/add\?\$\{updatedExisting \? "updated" : "added"\}=/);
- assert.match(outfits,/const requestedPreselectedClosetItemId=first\(params\.closet_item_id\)\?\?""/);
+ assert.match(outfits,/const requestedPreselectedClosetItemId\s*=\s*first\(params\.closet_item_id\)\s*\?\?\s*""/);
  assert.match(outfits,/closetIds\.includes\(requestedPreselectedClosetItemId\)/);
- assert.match(outfits,/closetItemIds:\[preselectedClosetItemId\]/);
+ assert.match(outfits,/closetItemIds:\s*\[preselectedClosetItemId\]/);
 });
 
 test("fixture-mode intake can sanity-check the full review without writing preview data",()=>{

@@ -82,10 +82,11 @@ test("explicit uncertainty hard-gates Product publication until admin resolution
  assert.match(catalogFields,/I’m not sure this is the correct item\/style name/);
  assert.doesNotMatch(catalogFields,/I’m not completely sure this is the correct item\/style name/);
  assert.match(catalogFields,/No problem — we’ll help verify it\./);
- assert.match(catalogFields,/Retail \/ Product URL/);
+ assert.match(catalogFields,/Enter the best information you have and continue your Fit Report\. We’ll flag this item for review\./);
+ assert.match(catalogFields,/Retail Link/);
  assert.match(catalogFields,/\{!productLabelPhotoName \? <div><strong>Photo of Tag \/ Style Label<\/strong>/);
  assert.match(catalogFields,/Product Photo/);
- assert.match(catalogFields,/Anything you already attached stays with this item, so we won’t ask you for the same tag photo twice\./);
+ assert.doesNotMatch(catalogFields,/Anything you already attached stays with this item/);
  assert.match(catalogFields,/Save & Continue/);
  assert.match(catalogFields,/I’ll Add This Later/);
 });

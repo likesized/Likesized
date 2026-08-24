@@ -79,7 +79,8 @@ test("explicit uncertainty hard-gates Product publication until admin resolution
  assert.match(unconfirmedMigration,/coalesce\(bool_or\(gs\.identity_uncertain\),false\)/);
  assert.match(unconfirmedMigration,/if v_uncertain then[\s\S]*return null/);
  assert.match(unconfirmedMigration,/v_catalog_status:=case when v_candidate\.identity_confidence='unconfirmed'::public\.product_data_status[\s\S]*or exists\(select 1 from public\.garment_submissions gs where gs\.candidate_id=p_candidate_id and gs\.identity_uncertain\)[\s\S]*then 'provisional'::public\.product_data_status else 'verified'::public\.product_data_status end/);
- assert.match(catalogFields,/I’m not completely sure this is the correct item\/style name/);
+ assert.match(catalogFields,/I’m not sure this is the correct item\/style name/);
+ assert.doesNotMatch(catalogFields,/I’m not completely sure this is the correct item\/style name/);
  assert.match(catalogFields,/No problem — we’ll help verify it\./);
  assert.match(catalogFields,/Retail Link/);
  assert.match(catalogFields,/Photo of Tag \/ Style Label/);

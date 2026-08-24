@@ -594,7 +594,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
           <button className="catalogManualButton" type="button" disabled={loadingBarcode} onClick={() => enterManualAfterScan("Enter the item details manually. We’ll keep the scanned barcode with your Fit Report as evidence.")}>No — enter manually</button>
         </div>
       </section>
-      {lightboxImage ? <ImageLightbox src={matchImage} alt={`${matchBrand} ${matchName}`} onClose={() => setLightboxImage(null)}/> : null}
+      {lightboxImage ? <ImageLightbox src={lightboxImage} alt={`${matchBrand} ${matchName}`} onClose={() => setLightboxImage(null)}/> : null}
     </>;
   }
 

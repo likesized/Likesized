@@ -12,6 +12,7 @@ const FEED_MAX_BYTES = 220 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"]);
 const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "heic", "heif"]);
 const CLOSET_PAGE_SIZE = 12;
+let canvasWebpSupported: boolean | null = null;
 
 export type ClosetOption = {
   id: string;
@@ -90,14 +91,29 @@ function dimensions(source: Drawable) {
     : { width: source.naturalWidth, height: source.naturalHeight };
 }
 
-function webpBlob(canvas: HTMLCanvasElement, quality: number) {
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => blob && blob.type === "image/webp" ? resolve(blob) : reject(new Error("Photo conversion failed on this device.")),
-      "image/webp",
-      quality,
-    );
-  });
+function canvasBlob(canvas: HTMLCanvasElement, type: string, quality: number) {
+  return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
+}
+
+async function webpBlob(canvas: HTMLCanvasElement, quality: number) {
+  if (canvasWebpSupported !== false) {
+    const webp = await canvasBlob(canvas, "image/webp", quality);
+    if (webp?.type === "image/webp") {
+      canvasWebpSupported = true;
+      return webp;
+    }
+    canvasWebpSupported = false;
+  }
+
+  // Some Safari/iOS versions can decode camera photos but cannot encode canvas WebP.
+  // Use a bounded JPEG transport fallback; the server validates the actual bytes and
+  // converts it back to the canonical WebP storage format before persistence.
+  const jpeg = await canvasBlob(canvas, "image/jpeg", quality);
+  if (jpeg && (jpeg.type === "image/jpeg" || jpeg.type === "image/jpg")) {
+    return new Blob([jpeg], { type: "image/webp" });
+  }
+
+  throw new Error("Photo conversion failed on this device.");
 }
 
 async function optimize(source: Drawable, maxWidth: number, maxHeight: number, maxBytes: number) {

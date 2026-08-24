@@ -57,10 +57,14 @@ test("Explore retains fit evidence, batching, mini-browser, and preview safeguar
  assert.doesNotMatch(explore,/\bstar(?:s)?\b/i);
 });
 
-test("My Circle starts with configurable Fit Twins then following",()=>{
+test("My Circle ranks full and regional Twin designations before ordinary following",()=>{
  assert.match(circle,/fit_twin_settings/);
- assert.match(circle,/bTwin\s*-\s*aTwin/);
- assert.match(circle,/Fit Twins first/);
+ assert.match(circle,/p_match_category: "overall"/);
+ assert.match(circle,/p_match_category: "tops"/);
+ assert.match(circle,/p_match_category: "bottoms"/);
+ assert.match(circle,/fitTwinPriority\(designationFor/);
+ assert.match(circle,/full Fit Twins first/);
+ assert.match(circle,/Tops Twins and Bottoms Twins/);
  assert.match(circle,/without duplicates/);
 });
 

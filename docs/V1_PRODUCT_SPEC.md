@@ -475,6 +475,7 @@ Outfits are member-created mini editorial posts built from owned Closet garments
 - Creator-only V1 analytics show **Views · Likes · Comments · Shares · Follows generated**. Shop clicks are tracked internally for commerce attribution and are not creator-facing V1 analytics.
 
 ## Feed/discovery boundary
+- Outfit browsing is **image-first with a Pinterest-like masonry/pinboard rhythm**: natural Main Photo proportions, staggered columns, minimal card chrome and lightweight Headline/creator/Occasion/Style/social metadata beneath the image. Normal mobile widths keep a compact two-column visual feed. This is a visual direction, not a copy of Pinterest product behavior.
 - Following activity may surface published Outfits in My Circle/Style Feed; drafts never create activity.
 - General Outfit discovery/search may use Occasion, normalized Style Tags, Headline/Story relevance, engagement and recency in the dedicated discovery work. Full Following / Fit Twin / Discover ranking behavior remains a later My Circle/Style Feed roadmap audit rather than being silently invented inside New Outfit.
 

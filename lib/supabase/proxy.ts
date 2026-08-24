@@ -9,9 +9,13 @@ const PUBLIC_ROUTES = new Set([
   "/forgot-password",
   "/reset-password",
 ]);
+const PUBLIC_OUTFIT=/^\/outfits\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function isPublicRoute(pathname: string) {
-  return PUBLIC_ROUTES.has(pathname) || pathname.startsWith("/auth/");
+  return PUBLIC_ROUTES.has(pathname)
+    || pathname.startsWith("/auth/")
+    || PUBLIC_OUTFIT.test(pathname)
+    || pathname.startsWith("/api/outfits/");
 }
 
 export async function updateSession(request: NextRequest) {

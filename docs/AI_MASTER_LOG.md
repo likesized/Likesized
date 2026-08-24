@@ -36,8 +36,8 @@ LikeSized is not yet a public active service with an external audience. For the 
 - Applied database migrations are immutable; corrections use later ordered migrations.
 - No paid Supabase branches.
 
-## Roadmap 12 — New Outfit — ACTIVE / BRANCH-ONLY / NOT DEPLOYED
-Single active implementation line: `agent/new-outfit-v1`, draft PR #67 **Roadmap 12: New Outfit V1**. Nothing from PR #67 is merged to `main` or deployed to production yet. Exact final verified head will be recorded only after canonical docs and the complete exact-head CI contract are green.
+## Roadmap 12 — New Outfit — VERIFIED / AWAITING DEPLOYMENT AUTHORIZATION
+Single active implementation line: `agent/new-outfit-v1`, draft PR #67 **Roadmap 12: New Outfit V1**. Nothing from PR #67 is merged to `main` or deployed to production. Owner deployment authorization has not been given.
 
 Owner-approved Roadmap 12 product state:
 - photo-only V1: 1 required Main Photo + up to 5 Additional Photos; reorder and Set as Main; no video;
@@ -52,6 +52,7 @@ Owner-approved Roadmap 12 product state:
 - social controls are Like / Comment / Follow / Share; comments are flat V1 text; creator/member/admin delete/report boundaries exist; member blocking reuses/removes the canonical follow graph;
 - creator-only analytics are Views / Likes / Comments / Shares / Follows generated; Shop clicks remain internal-only V1 attribution;
 - Outfit likes remain separate from Product likes;
+- Outfit browsing is image-first with a Pinterest-like masonry/pinboard rhythm, natural Main Photo proportions, staggered columns, minimal card chrome and a compact two-column feed on normal mobile widths; this is a visual direction, not copied Pinterest product behavior;
 - accessories outside current garment taxonomy may appear in photos/Story but are not canonical Closet/Product tags;
 - Unconfirmed/Needs More Evidence owner garments may be styled, but private candidate/review state does not leak and unresolved identity does not create public Product truth;
 - current V1 has **no per-garment Private / Shared product mode**. The Roadmap 12 branch reconciles stale Closet visibility UI/RLS by retaining the historical physical column only for immutable replay compatibility and locking its current value to `shared`.
@@ -61,9 +62,10 @@ Roadmap 12 branch migrations are additive/immutable:
 - `20260824133500_new_outfit_v1_social_foundation.sql`;
 - `20260824133600_complete_new_outfit_v1_boundaries.sql`;
 - `20260824133700_harden_new_outfit_v1_social_controls.sql`;
-- `20260824133800_canonical_public_closet_and_outfit_public_identity.sql`.
+- `20260824133800_canonical_public_closet_and_outfit_public_identity.sql`;
+- `20260824133900_fix_outfit_compatibility_photo_registration.sql`.
 
-Verification is being run on the exact PR head through the canonical CI pipeline. A prior exact-head run reached and passed canonical integrity, TypeScript, all focused application safeguards and production build; migration replay/database tests are the remaining hard gate before final branch verification. Any failure is fixed at source rather than weakening product safeguards.
+Exact implementation + canonical Product Spec / Schema Contract head `35e3ad191db08d83eccbd02129732f8b1895ea11` passed full LikeSized CI #760 (`32749668258`): canonical integrity, TypeScript, all focused application safeguards, production build, fresh replay of every canonical migration and the complete pgTAP database behavior/privacy suite all passed. The preceding implementation head `73ea76f27448f3ce2ae17b8d7575f0977bc830e1` also passed full CI #759 after the final database-test plan corrections. This master reconciliation is status/documentation only and does not add application or database behavior.
 
 ## Authenticated browser → backend wiring — COMPLETE
 The six ordered browser-to-backend checks are complete:
@@ -257,7 +259,7 @@ Recent branch classification:
 - `agent/fit-report-intake-ux-cleanup` — RECOVERED via PR #64; no longer active.
 - `agent/faster-item-suggestions` — RECOVERED via PR #65; no longer active.
 - `agent/variation-definition-map` — RECOVERED via PR #66; no longer active.
-- `agent/new-outfit-v1` — **ACTIVE**, sole Roadmap 12 implementation line, draft PR #67; not production-authorized.
+- `agent/new-outfit-v1` — **ACTIVE / VERIFIED**, sole Roadmap 12 implementation line, draft PR #67; awaiting explicit production authorization.
 
 Older recovery/feature/verification branches classified in Git history remain RECOVERED, SUPERSEDED, OBSOLETE or DUPLICATE; none overrides current `main`.
 
@@ -268,13 +270,13 @@ Older recovery/feature/verification branches classified in Git history remain RE
 4. Fit Profile / My Measurements — broader audit remains.
 5. Profile Settings — Fit Community editor live.
 6. Notifications — audit remains.
-7. Unified Closet/member profile Closet — per-garment visibility product mode is reconciled on the active Roadmap 12 branch; broader lifecycle/mutation audit remains.
+7. Unified Closet/member profile Closet — per-garment visibility product mode is reconciled on the verified Roadmap 12 branch; broader lifecycle/mutation audit remains.
 8. Post-submit Fit Report mutation/lifecycle model — remains.
 9. People My Size — audit remains.
 10. My Circle / Following / system-generated Fit Twin — audit remains; future Outfit view direction is Following / Fit Twins / Discover.
 11. New Fit Report — six browser/backend wiring checks complete; cleanup through PR #65 is deployed.
 11A. **Garment-question variation classification — COMPLETE / DEPLOYED through PR #66.**
-12. **New Outfit — ACTIVE on PR #67; implementation/doc/verification pass in progress, not deployed.**
+12. **New Outfit — VERIFIED on PR #67 / AWAITING DEPLOYMENT AUTHORIZATION; not deployed.**
 13. Outfits / Style Feed — follows Roadmap 12 foundation; full discovery/ranking audit remains.
 14. Garment/Product detail — Exact Variation may now consume the canonical 11A map when this audit item is reached.
 15. Explore.
@@ -284,7 +286,7 @@ Older recovery/feature/verification branches classified in Git history remain RE
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Roadmap 12 PR #67 must complete final exact-head migration replay/database behavior tests and a final canonical-doc synchronized CI pass before it can be marked verified/awaiting deployment authorization.
+- Roadmap 12 PR #67 is implementation/schema/docs verified and awaits explicit owner deployment authorization. No production database, merge or Vercel action is permitted before that authorization.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification; do not silently rekey/collapse historical reports.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
 - Full Admin all-Products priority/filter/merge/split presentation remains.
@@ -318,10 +320,10 @@ Older recovery/feature/verification branches classified in Git history remain RE
 - PR #64 exact head `63fb7698c8338e729cf71495c9b4abac10c6b4a9` passed full CI #721; merge `97fb30aeee6b08c08f90a369438c85f6be7a5e11`; Vercel `dpl_CV2dFjk4wim1gfatEtdsEpNwgU1q` reached READY.
 - PR #65 exact head `f9d49a9ad66a11183dcbf5086e706be5b3c8d8a7` passed full CI #723; merge `f75acec9bea0af8a6e8b1b691942f080f9668ea5`; Vercel `dpl_FdQSyuvSBTDrpEnK4hThiAMdjQ1E` reached READY.
 - PR #66 exact head `d585d7df34a5f6370cdd242afcee2ebd5fd6f1c4` passed full CI #727; squash merge `00b6245325bad003e9a82bed438930fd91e13dff`; final post-merge reconciliation production head `921383ac10ecf63ecbf35743caa366c4b635dd1b`; final Vercel `dpl_BdpDbpMEGWwLhqrzWqzZrWr393Bk` reached READY.
-- PR #67 — **ACTIVE / NOT DEPLOYED**. Draft Roadmap 12 New Outfit V1 branch. Five additive migrations and canonical app/docs changes are under exact-head verification. No production merge/database/Vercel action is authorized yet.
+- PR #67 — **VERIFIED / NOT DEPLOYED / AWAITING AUTHORIZATION**. Exact implementation + canonical Product Spec / Schema Contract head `35e3ad191db08d83eccbd02129732f8b1895ea11` passed full CI #760 (`32749668258`). Six additive migrations and canonical app/docs changes are ready on the single active branch. No production merge/database/Vercel action is authorized yet.
 
 # EXACT NEXT ACTION — CURRENT
-1. Finish exact-head CI for PR #67 after canonical Product Spec / Schema Contract / Master Log synchronization, including fresh migration replay and the full pgTAP behavior/privacy suite.
-2. Fix any remaining failure at canonical source; do not weaken safeguards or create parallel implementations.
-3. When the exact final PR head is fully green, record that head/CI run here and mark Roadmap 12 **VERIFIED / AWAITING DEPLOYMENT AUTHORIZATION**.
-4. Do **not** merge PR #67, apply its migrations to production, or deploy Vercel until the owner explicitly authorizes that frozen production batch.
+1. Hold PR #67 unmerged and production untouched until the owner explicitly authorizes the frozen Roadmap 12 production batch.
+2. On explicit authorization, apply the six verified Roadmap 12 migrations database-first to production Supabase and verify the hosted database boundaries before application cutover.
+3. Merge the frozen verified PR to `main`, wait for the coupled Vercel production deployment to reach READY, then have the owner perform the required live-site browser verification on `likesized.com`.
+4. Record the production migration mappings, merge SHA, Vercel deployment and owner verification result canonically before moving the roadmap forward.

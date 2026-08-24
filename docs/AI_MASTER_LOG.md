@@ -19,13 +19,13 @@ Once the owner says **push**, **deploy**, or otherwise authorizes a specific acc
 
 ## Canonical production line — LIVE
 - `main` is the one production implementation line and is coupled to Vercel production.
-- Current production commit before the active evidence-first intake batch: `245bfab0d0d918671cfce3856b78e57525867df2` — squash merge of PR #62, **Promote Product Label photo in Fit Report**.
-- Production Vercel deployment `dpl_3DXrLcVy13gwc4L8CSLtvspFLc9G` is READY and aliases `likesized.com`.
-- PR #62 exact tested head `39684abed6312f5d317697f58454b7bd1a6c7572` passed full LikeSized CI #712 before merge.
+- Current production commit: `25ffa95b15295d2138fae1e476d28c392c4d45f1` — squash merge of PR #63, **Make Fit Report intake evidence-first**.
+- PR #63 exact tested head `2f086f73d6784fb5f78f2d2f6fcd85109ee245d0` passed full LikeSized CI #716 before merge.
+- Production Vercel deployment `dpl_BQxgW1vq2UrqfVJagWf7FeGcVGB` is READY and aliases `likesized.com`.
+- PR #63 introduced the evidence-first **Identify your item** entry, one canonical tag-photo input, compact in-form tag upload for barcode/manual paths, and evidence-aware uncertainty behavior. Owner visual review then identified copy/spacing and matched-identity reset defects; those are the only purpose of the active cleanup branch below.
+- PR #62 merge `245bfab0d0d918671cfce3856b78e57525867df2` and production `dpl_3DXrLcVy13gwc4L8CSLtvspFLc9G` are superseded by PR #63 production.
 - PR #61 exact tested head `d4c84b9926ed3b2b53666a399b131e6e14cedfa3` passed full LikeSized CI #708 and was squash-merged as `24fb0e42b6e05d42a10b1912a5493367975952da`; Vercel production `dpl_J9cnoV8VxewwZDZfbjpusi3Gx4RG` reached READY.
-- PR #61 delivered the final desktop Fit Report width correction, one shared **Change category / type** control, and faster Item suggestions using a 100 ms lookup delay plus in-session reuse.
-- PR #62 moved Product Label / Tag Photo out of collapsed Optional Additional Information while preserving Product Photo at the bottom and preserving one canonical `product_label_photo` evidence input. The owner then rejected the oversized card presentation, which is superseded by the active evidence-first intake batch below.
-- No database/schema change was part of PR #61 or PR #62.
+- No database/schema migration was part of PR #61, PR #62 or PR #63.
 - Applied database migrations are immutable; corrections use later ordered migrations.
 - No paid Supabase branches.
 
@@ -40,26 +40,25 @@ The six ordered browser-to-backend checks are complete:
 
 Controlled production test identity remains Maidenform / Heirloom / Bra Product `4086fdaa-172d-4a3f-b6c4-2c155094bb25`, UPC `196988323504`. Its deliberate `catalog_review_needed` state came from the controlled correction test, not barcode corruption.
 
-## Evidence-first Fit Report intake — ACTIVE OWNER-AUTHORIZED BATCH
-Primary active implementation line: `agent/evidence-first-fit-report-intake`, based directly on production PR #62 merge `245bfab0d0d918671cfce3856b78e57525867df2`.
+## Fit Report intake UX cleanup — ACTIVE / NOT DEPLOYMENT-AUTHORIZED
+Primary active implementation line: `agent/fit-report-intake-ux-cleanup`, based directly on production PR #63 merge `25ffa95b15295d2138fae1e476d28c392c4d45f1`.
 
-The owner explicitly authorized this batch to proceed straight through production. The frozen scope is:
-- replace the old opening choice with **Identify your item**;
-- primary choice **Scan barcode**;
-- primary choice **Take / upload tag photo**;
-- smaller fallback beneath them: **Cut the tags out? Enter item manually →**;
-- tag photos are physical/private identity evidence for later verification; selecting a photo does **not** claim LikeSized can automatically read or identify every Product field from the image;
-- all paths converge on the same canonical Brand / Item / Product and Fit Report flow;
-- one underlying `product_label_photo` input/evidence path only;
-- a tag photo selected at the opening is retained and is not asked for again later in that flow;
-- barcode/manual paths keep a small compact optional Product Label / Tag Photo row directly below Brand / Item;
-- if a tag photo already exists from the opening, that compact uploader is hidden rather than duplicated;
-- **I’m not sure this is the correct item/style name** remains available for new/unresolved identity and becomes evidence-aware: Retail / Product URL + Product Photo always remain useful; Tag/Style Label is offered only when a tag photo has not already been supplied;
-- Product Photo remains optional catalog-display evidence at the bottom of Optional Additional Information;
-- Product Label / Tag Photo remains private identity-review evidence and never becomes generic Product imagery merely because it exists;
-- no schema, migration, Product-trust formula, Match formula, recommendation formula or RLS relaxation is part of this batch.
+The owner approved implementation of this cleanup but has **not** authorized this branch for production deployment. Full verification and a preview/PR are allowed; merge to `main` and production deployment must wait for a separate explicit **deploy/push** instruction.
 
-This batch is not complete until its exact final head passes full CI, the PR is merged with expected-head protection, the Git-triggered Vercel production deployment reaches READY on `likesized.com`, runtime/protected-route sanity passes and the owner can visually verify the new flow.
+Frozen scope:
+- tighten the **Identify your item** spacing/presentation;
+- opening helper copy: **“Scan the barcode or add a photo of the tag so we can verify the exact item.”**;
+- opening actions: **Scan barcode**, **Add tag photo**, and smaller **Tags missing? Enter item manually →**;
+- whenever no canonical Product match is active, show the standard top-of-form guidance: **“Enter as much information as you can about the item. If you’re unsure about something, just leave it blank.”**;
+- matched Products keep the existing prefilled/community-match message instead;
+- preserve the compact optional Product Label / Tag Photo row on barcode/manual paths and do not duplicate it when the opening tag photo is already present;
+- restore the pre-redesign uncertainty-modal wording and field labels rather than invent new descriptions; keep the tag-photo prompt conditional on whether that evidence already exists;
+- constrain the uncertainty modal heading and tighten its spacing without redesigning unrelated UI;
+- **Change Brand** invalidates the entire matched Product identity and clears matched Item, Category, Garment Type, structured Product answers/image/message/defaults while preserving unrelated member-entered Fit Report information/evidence;
+- **Change Item** invalidates the matched Product while keeping Brand, then restores the unresolved/manual path and uncertainty control;
+- if the rejected match came from a scanned barcode, keep the barcode as evidence but do not silently reattach the old Product when submitted Brand or Item no longer agrees;
+- selecting a new real LikeSized Product suggestion establishes that new Product match normally;
+- no schema, migration, RLS, Product-trust formula, Match formula or recommendation formula change is part of this cleanup.
 
 # RECENT PRODUCTION HISTORY
 
@@ -73,7 +72,10 @@ Production reconciliation after PR #58/#59. Exact head `f28d988ca7018653ae82d641
 **Polish final Fit Report desktop and item-search UX.** Exact head `d4c84b9926ed3b2b53666a399b131e6e14cedfa3` passed CI #708; squash merge `24fb0e42b6e05d42a10b1912a5493367975952da`; production Vercel `dpl_J9cnoV8VxewwZDZfbjpusi3Gx4RG`. Delivered 680px desktop single-field cap, shared Category/Type Change control and faster/cached Item suggestions. No database change.
 
 ## PR #62 — COMPLETE / DEPLOYED
-**Promote Product Label photo in Fit Report.** Exact head `39684abed6312f5d317697f58454b7bd1a6c7572` passed CI #712; squash merge `245bfab0d0d918671cfce3856b78e57525867df2`; production Vercel `dpl_3DXrLcVy13gwc4L8CSLtvspFLc9G`. It correctly preserved one private Label/Tag evidence input and kept Product Photo in Optional Additional Information, but its large in-form Label/Tag card presentation is now superseded by the owner-approved evidence-first intake design.
+**Promote Product Label photo in Fit Report.** Exact head `39684abed6312f5d317697f58454b7bd1a6c7572` passed CI #712; squash merge `245bfab0d0d918671cfce3856b78e57525867df2`; production Vercel `dpl_3DXrLcVy13gwc4L8CSLtvspFLc9G`. It preserved one Label/Tag evidence input and kept Product Photo in Optional Additional Information, but its large in-form Label/Tag card presentation was superseded by PR #63.
+
+## PR #63 — COMPLETE / DEPLOYED
+**Make Fit Report intake evidence-first.** Exact head `2f086f73d6784fb5f78f2d2f6fcd85109ee245d0` passed full CI #716; squash merge `25ffa95b15295d2138fae1e476d28c392c4d45f1`; production Vercel `dpl_BQxgW1vq2UrqfVJagWf7FeGcVGB`. Delivered the evidence-first opening, one canonical tag-photo input, compact conditional tag control and evidence-aware uncertainty path. Owner visual verification exposed the copy/spacing and match-reset defects now isolated to `agent/fit-report-intake-ux-cleanup`.
 
 # FOUNDATION / DATABASE STATUS — VERIFIED
 Production Supabase project: `rlksidwniuoxoacumyaf`.
@@ -129,10 +131,10 @@ Base Product identity centers on normalized Brand + Item + Garment Type. Size, C
 ## New Fit Report — evidence-first normal flow
 Opening:
 1. **Scan barcode**.
-2. **Take / upload tag photo**.
-3. Smaller fallback: **Cut the tags out? Enter item manually →**.
+2. **Add tag photo**.
+3. Smaller fallback: **Tags missing? Enter item manually →**.
 
-Tag photo is private identity evidence. It is useful because LikeSized can inspect/verify the physical label later; it does not eliminate typing mistakes and does not guarantee automatic identification/OCR.
+Approved opening helper: **“Scan the barcode or add a photo of the tag so we can verify the exact item.”**
 
 Main form order after identification:
 1. Brand / Make.
@@ -150,7 +152,11 @@ Main form order after identification:
 13. optional Fit Notes up to 2,000 characters.
 14. optional Retail Link.
 
-A new/unresolved garment retains **I’m not sure this is the correct item/style name**. The helper is evidence-aware: Retail/Product URL and Product Photo are offered; Product Label / Tag Photo is offered only when not already present. One canonical evidence value exists per role; no duplicate Tag/Label input.
+When no Product match is active, standard guidance is **“Enter as much information as you can about the item. If you’re unsure about something, just leave it blank.”** A matched Product instead shows the existing prefilled/community-match message.
+
+A new/unresolved garment retains **I’m not sure this is the correct item/style name**. The uncertainty helper reuses the same underlying Retail Link, Product Photo and conditional Product Label / Tag Photo fields rather than creating duplicate evidence inputs. The pre-redesign explanatory wording is retained; the intake entry-point redesign does not authorize unrelated copy rewrites.
+
+Changing Brand invalidates the entire previous Product match. Changing Item invalidates the Product match while preserving Brand. A scanned barcode may remain evidence after either reset, but it may not silently reattach a Product whose Brand or Item no longer agrees with the member submission.
 
 Optional Additional Information remains collapsed by default:
 1. Purchased From.
@@ -162,7 +168,7 @@ Optional Additional Information remains collapsed by default:
 7. Material / Fabric Composition.
 8. Product Photo at the bottom.
 
-Product Photo is catalog-display evidence. Product Label / Tag Photo is private identity-review evidence.
+Product Photo and Product Label / Tag Photo remain separate evidence roles. This cleanup does not change their existing database/storage access controls.
 
 ## Fit Result / Fit Rating
 Fit Result remains Too Small / Snug / Just Right / Relaxed / Too Big. There is **no current V1 1–5-star Fit Rating UI**.
@@ -196,9 +202,10 @@ Historical branches have no current authority. Merged PR branches are RECOVERED 
 Recent branch classification:
 - `agent/post-pr59-production-reconciliation` — RECOVERED via PR #60.
 - `agent/final-fit-report-ux-polish` — RECOVERED via PR #61.
-- `agent/promote-label-photo` — RECOVERED/SUPERSEDED via PR #62 and the current intake redesign.
+- `agent/promote-label-photo` — RECOVERED/SUPERSEDED via PR #62/PR #63.
 - accidental duplicate refs created during PR #62 work contained no unique product work and were reset to production; they have no authority.
-- `agent/evidence-first-fit-report-intake` — **ACTIVE PRIMARY LINE** for the owner-authorized current batch. Do not start a second product-decision branch until it is reconciled into `main`.
+- `agent/evidence-first-fit-report-intake` — RECOVERED via PR #63; no longer active.
+- `agent/fit-report-intake-ux-cleanup` — **ACTIVE PRIMARY LINE**, based on current production PR #63. It is not production-authorized yet. Do not start a second product-decision branch while it is active.
 
 Older recovery/feature/verification branches classified in Git history remain RECOVERED, SUPERSEDED, OBSOLETE or DUPLICATE; none overrides current `main` or this one active line.
 
@@ -213,8 +220,8 @@ Older recovery/feature/verification branches classified in Git history remain RE
 8. Post-submit Fit Report mutation/lifecycle model — remains.
 9. People My Size — audit remains.
 10. My Circle / Following / system-generated Fit Twin — audit remains.
-11. New Fit Report — all six browser/backend wiring checks complete. Current evidence-first intake batch is owner-authorized through deployment; after rollout the owner should visually verify opening hierarchy, compact tag row and evidence-aware uncertainty helper.
-11A. **Garment-question variation classification audit — NEXT PRODUCT-LOGIC AUDIT after the current intake rollout.**
+11. New Fit Report — six browser/backend wiring checks complete and PR #63 is deployed. Current narrow intake UX/match-reset cleanup is active; if/when the owner separately authorizes deployment, visually verify the tightened opening/modal and Brand/Item reset behavior afterward.
+11A. **Garment-question variation classification audit — NEXT PRODUCT-LOGIC AUDIT after the current cleanup rollout.**
 12. New Outfit.
 13. Outfits / Style Feed.
 14. Garment/Product detail — Exact Variation behavior only after 11A.
@@ -225,15 +232,15 @@ Older recovery/feature/verification branches classified in Git history remain RE
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Finish the active evidence-first intake batch through full CI, exact-head merge and production sanity.
-- Owner visual verification of the new opening screen, compact tag uploader and uncertainty helper after deployment.
+- Finish `agent/fit-report-intake-ux-cleanup` through full CI and owner review; do not merge/deploy without separate explicit production authorization.
+- After any authorized deployment, owner visually verifies opening spacing/copy, uncertainty modal spacing/copy, unmatched guidance, compact tag uploader, Change Brand full reset, Change Item Product reset and barcode non-reattachment behavior.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
 - Full Admin all-Products priority/filter/merge/split presentation remains.
 - Purchase-context aggregate/admin reporting UI remains open.
 - Unified public Closet legacy visibility cleanup remains open.
 - Exact post-submit mutation/lifecycle schema remains open.
 - Product merge/split, richer alias management, spam handling, broader Product-photo moderation, field lock/reopen, external barcode-provider evaluation, SerpAPI admin UX and starter-catalog enrichment remain open where previously scoped.
-- 11A variation-definition audit is the next logic audit after this rollout and before Product Detail Exact Variation or counted-report fingerprint reconciliation.
+- 11A variation-definition audit is the next logic audit after this cleanup rollout and before Product Detail Exact Variation or counted-report fingerprint reconciliation.
 - `main` is currently not branch-protected; enabling required PR + CI protection remains a separate owner decision and must not be changed silently.
 
 # CONDENSED DEPLOYMENT LEDGER
@@ -255,12 +262,13 @@ Older recovery/feature/verification branches classified in Git history remain RE
 - PR #60 exact head `f28d988ca7018653ae82d641b758fc4f4c020481` passed CI #706; docs-only squash merge `c6e643f707bf5f0c44cb26a5cd5fa7f903bbca28`.
 - PR #61 exact head `d4c84b9926ed3b2b53666a399b131e6e14cedfa3` passed CI #708; squash merge `24fb0e42b6e05d42a10b1912a5493367975952da`; Vercel `dpl_J9cnoV8VxewwZDZfbjpusi3Gx4RG`.
 - PR #62 exact head `39684abed6312f5d317697f58454b7bd1a6c7572` passed CI #712; squash merge `245bfab0d0d918671cfce3856b78e57525867df2`; Vercel `dpl_3DXrLcVy13gwc4L8CSLtvspFLc9G`.
+- PR #63 exact head `2f086f73d6784fb5f78f2d2f6fcd85109ee245d0` passed full CI #716; squash merge `25ffa95b15295d2138fae1e476d28c392c4d45f1`; Vercel `dpl_BQxgW1vq2UrqfVJagWf7FeGcVGB`.
 
 # EXACT NEXT ACTION — CURRENT
-1. Finish the single active `agent/evidence-first-fit-report-intake` branch with only the frozen owner-approved scope.
-2. Audit the PR diff against production `245bfab0d0d918671cfce3856b78e57525867df2`; no unrelated scanner, backend, schema, trust, Match or recommendation changes may enter.
+1. Finish the single active `agent/fit-report-intake-ux-cleanup` branch with only the frozen owner-approved cleanup scope.
+2. Audit the branch diff against current production `25ffa95b15295d2138fae1e476d28c392c4d45f1`; no unrelated scanner, schema, trust, Match, recommendation, RLS or copy changes may enter.
 3. Run full LikeSized CI on the exact final head: canonical integrity, exact dependencies, TypeScript, focused application safeguards, production build, pinned Supabase CLI, complete fresh migration replay and full database behavior/privacy suite.
-4. If green, freeze that exact head, mark the PR ready and squash-merge with expected-head protection under the owner’s explicit production authorization.
-5. Follow the Git-triggered Vercel production deployment until READY on `likesized.com`, verify the merge SHA, protected-route behavior and runtime errors.
-6. Owner visually verifies the evidence-first opening, compact in-form tag control for barcode/manual paths and evidence-aware uncertainty helper.
+4. If green, freeze that exact head and keep the PR ready for owner review. **Do not merge or deploy without a separate explicit owner production instruction.**
+5. If the owner says deploy/push, squash-merge only the frozen expected head, then follow the Git-triggered Vercel production deployment until READY on `likesized.com` and verify merge SHA, protected-route behavior and runtime errors.
+6. Owner visually verifies the tightened opening, standard unmatched guidance, compact in-form tag control, restored uncertainty modal and matched Brand/Item reset behavior.
 7. Then conduct roadmap item **11A Garment-question variation classification** before any Product Detail Exact Variation work.

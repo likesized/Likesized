@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import styles from "../outfits.module.css";
+import styles from "./outfitDetail.module.css";
 
 export type GalleryGarment = { id: string; label: string; detail: string; href: string; imageUrl?: string | null };
 export type GalleryPhoto = { id: string; url: string; tags: { closetItemId: string; x: number; y: number }[] };

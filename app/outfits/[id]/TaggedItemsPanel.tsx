@@ -17,7 +17,7 @@ export type TaggedItem={
   canShop:boolean;
 };
 
-export default function TaggedItemsPanel({items,postId}:{items:TaggedItem[];postId:string}){
+export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedItem[];postId:string;signedIn:boolean}){
   const [selectedId,setSelectedId]=useState<string|null>(null);
   const selected=items.find((item)=>item.closetItemId===selectedId)??null;
   const returnTo=`/outfits/${postId}?tab=tagged`;
@@ -32,11 +32,11 @@ export default function TaggedItemsPanel({items,postId}:{items:TaggedItem[];post
         <button className={styles.itemPreviewClose} type="button" aria-label="Close item preview" onClick={()=>setSelectedId(null)}>×</button>
         {selected.imageUrl?<img className={styles.itemPreviewImage} src={selected.imageUrl} alt=""/>:<div className={styles.itemPreviewFallback}>{selected.label.slice(0,1).toUpperCase()}</div>}
         <div className={styles.itemPreviewInfo}><strong>{selected.label}</strong><span>{selected.detail}</span><Link className="textLink" href={selected.href}>Full details →</Link></div>
-        <div className={styles.itemPreviewActions}>
+        {signedIn?<div className={styles.itemPreviewActions}>
           <form action={selected.liked?unlikeProduct:likeProduct}><input type="hidden" name="product_id" value={selected.productId}/><input type="hidden" name="return_to" value={returnTo}/><button type="submit" aria-label={selected.liked?"Unlike item":"Like item"} title={selected.liked?"Unlike item":"Like item"}>{selected.liked?"♥":"♡"}</button></form>
           <form action={selected.wished?removeFromWishLocker:addToWishLocker}><input type="hidden" name="product_id" value={selected.productId}/><input type="hidden" name="return_to" value={returnTo}/><button type="submit">{selected.wished?"✓ Wish Locker":"+ Wish Locker"}</button></form>
           {selected.canShop?<Link className={styles.cartAction} href={`/api/outfits/${postId}/shop?product_id=${selected.productId}`} aria-label="Open shopping link" title="Open shopping link">🛒</Link>:null}
-        </div>
+        </div>:<Link className={styles.compactSecondary} href={`/login?next=${encodeURIComponent(returnTo)}`}>Sign in for Like / Wish Locker / shopping</Link>}
       </div>
     </div>:null}
   </div>;

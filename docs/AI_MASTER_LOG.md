@@ -257,7 +257,7 @@ Verified-good production foundations include:
 - full fresh migration replay and database behavior/privacy suites.
 
 # CANONICAL RECOVERY / BRANCH LINEAGE
-The 2026-08-21 **CANONICAL RECOVERY** is complete. No recovery freeze is active. PR #43 promoted the verified recovery line to `main`.
+The 2026-08-21 **CANONICAL RECOVERY** is complete. No recovery freeze is active. PR #43 promoted it.
 
 Historical branches have no current authority. Git history preserves superseded implementations; current files define current truth.
 
@@ -314,6 +314,8 @@ Current issues after PR #76 deployment:
 - **RECORDED — New Outfit / Save Draft performance:** Saving a draft is still noticeably slow in live use and briefly makes the editor appear frozen before the save completes. Previous draft-save optimization does not count as closure while this pause remains visible.
 - **RECORDED — New Outfit / Preview scroll position:** Entering **Preview Publish** currently opens near the bottom of the preview around the **Publish Outfit** button. Preview must start at the top of the page/content instead of inheriting or landing on the bottom scroll position.
 - **RECORDED — Published/opened Outfit / photo gallery navigation:** When viewing an Outfit, photo navigation should be direct and touch-friendly: **swipe** between photos on touch devices and **tap/click the displayed photo** to advance to the next image. The viewer should not require clicking a row of image-preview thumbnails underneath as the primary way to move through the gallery.
+- **RECORDED — Published/opened Outfit / tagged garment details:** Tagged garment details need to include the garment category/type so the item is immediately identifiable. Example: a detail currently reading **Maidenform Heirloom · 38D · Snug** must also identify that the garment is a **Bra**.
+- **RECORDED — New Outfit / creator analytics:** Remove redundant creator-facing analytics that simply repeat visible social counts. **Likes, Comments and Shares should not be duplicated in a separate analytics block when those counts are already visible on the Outfit.** The useful additional creator metrics are **Views** and **Follows generated**. Internal Shop-click attribution may remain tracked by LikeSized, but neither the Shop-click metric nor explanatory internal tracking copy belongs in the creator-facing V1 analytics UI.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
 - PR #76 is production-live. The owner's first retest is the same normal iPhone photo that previously produced **“Photo conversion failed on this device.”**

@@ -54,25 +54,49 @@ create policy "Members add own Product label photos"
   );
 
 -- The catalog-submission bucket contains both member-shareable pending Product Photos
--- and private Product Label / Tag Photos. Do not grant bucket-wide SELECT. Other signed-
--- in members may read only a Product Photo that belongs to an unresolved candidate that
--- is actually eligible for member scanner confirmation. Owners/admins retain their
--- separate owner/admin policy.
+-- and private Product Label / Tag Photos. A storage RLS policy cannot safely query the
+-- private candidate/submission tables as the requesting member because those tables are
+-- intentionally hidden. This narrow SECURITY DEFINER helper returns only one boolean for
+-- an exact storage path; it never exposes candidate rows or review state.
+create or replace function private.can_read_catalog_submission_product_photo(p_storage_path text)
+returns boolean
+language sql
+stable
+security definer
+set search_path=''
+as $$
+  select
+    (select auth.uid()) is not null
+    and exists (
+      select 1
+      from public.garment_submissions gs
+      join public.catalog_candidates c on c.id = gs.candidate_id
+      where gs.product_photo_storage_path = p_storage_path
+        and not gs.identity_uncertain
+        and c.resolved_product_id is null
+        and c.status not in ('merged','needs_more_evidence')
+        and c.identity_confidence <> 'unconfirmed'::public.product_data_status
+        and not exists (
+          select 1
+          from public.garment_submissions uncertain
+          where uncertain.candidate_id = c.id
+            and uncertain.identity_uncertain
+        )
+    );
+$$;
+revoke all on function private.can_read_catalog_submission_product_photo(text) from public,anon,authenticated;
+grant execute on function private.can_read_catalog_submission_product_photo(text) to authenticated;
+
+-- Do not grant bucket-wide SELECT. Other signed-in members may read only the exact
+-- pending Product Photo that the helper proves is eligible for scanner confirmation.
+-- Owners/admins retain their separate owner/admin policy, including private Label/Tag
+-- evidence belonging to the owner.
 drop policy if exists "Members read catalog submission product photos" on storage.objects;
 create policy "Members read catalog submission product photos"
   on storage.objects for select to authenticated
   using (
     bucket_id = 'catalog-submission-photos'
-    and exists (
-      select 1
-      from public.garment_submissions gs
-      join public.catalog_candidates c on c.id = gs.candidate_id
-      where gs.product_photo_storage_path = storage.objects.name
-        and not gs.identity_uncertain
-        and c.resolved_product_id is null
-        and c.status not in ('merged','needs_more_evidence')
-        and c.identity_confidence <> 'unconfirmed'::public.product_data_status
-    )
+    and private.can_read_catalog_submission_product_photo(storage.objects.name)
   );
 
 -- Direct calls to the scanner image RPC must enforce the same candidate eligibility as

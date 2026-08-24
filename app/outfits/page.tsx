@@ -35,7 +35,7 @@ export default async function OutfitsPage({ searchParams }: { searchParams: Sear
   const params = await searchParams;
   const feed = first(params.feed) === "following" ? "following" : "all";
   let followedIds: string[] = [];
-  if (feed==="following") {
+  if (feed === "following") {
     const { data, error } = await supabase.from("follows").select("followed_id").eq("follower_id", viewerId);
     if (error) throw new Error("Could not load people you follow.");
     followedIds = (data ?? []).map((row) => row.followed_id);
@@ -55,15 +55,13 @@ export default async function OutfitsPage({ searchParams }: { searchParams: Sear
     posts = (data ?? []) as OutfitPost[];
   }
 
-  const [{ data: draftData, error: draftError }] = await Promise.all([
-    supabase
-      .from("outfit_posts")
-      .select("id,headline,updated_at")
-      .eq("user_id", viewerId)
-      .eq("status", "draft")
-      .order("updated_at", { ascending: false })
-      .limit(6),
-  ]);
+  const { data: draftData, error: draftError } = await supabase
+    .from("outfit_posts")
+    .select("id,headline,updated_at")
+    .eq("user_id", viewerId)
+    .eq("status", "draft")
+    .order("updated_at", { ascending: false })
+    .limit(6);
   if (draftError) throw new Error("Could not load your Outfit drafts.");
   const drafts = (draftData ?? []) as DraftPost[];
 
@@ -82,6 +80,7 @@ export default async function OutfitsPage({ searchParams }: { searchParams: Sear
     occasions = (occasionResult.data ?? []) as OccasionRow[];
     styleTags = (styleResult.data ?? []) as StyleRow[];
   }
+
   const liked = new Set(viewerLikes.map((row) => row.post_id));
   const occasionByPost = new Map<string, OccasionRow[]>();
   for (const row of occasions) occasionByPost.set(row.post_id, [...(occasionByPost.get(row.post_id) ?? []), row]);
@@ -94,13 +93,14 @@ export default async function OutfitsPage({ searchParams }: { searchParams: Sear
     const feedPath = post.photo_url.endsWith("/display.webp") ? post.photo_url.replace(/\/display\.webp$/, "/feed.webp") : post.photo_url;
     feedPhotoUrl.set(post.id, supabase.storage.from("outfit-photos").getPublicUrl(feedPath).data.publicUrl);
   }
+
   const returnTo = feed === "following" ? "/outfits?feed=following" : "/outfits";
   const deleted = first(params.deleted) === "1";
   const blocked = first(params.blocked) === "1";
 
   return <main className="pageShell">
     <div className="pageTitle rowTitle">
-      <div><span className="eyebrow">OUTFITS</span><h1>Looks worth sharing.</h1><p>See how members put real Closet garments together, then open the Outfit for the full story and fit details.</p></div>
+      <div><span className="eyebrow">OUTFITS</span><h1>Looks worth saving.</h1><p>Browse real outfits first. Open anything that catches your eye for the story, tagged garments, and fit details.</p></div>
       <Link className="primaryButton" href="/outfits/new">+ New Outfit</Link>
     </div>
     {deleted ? <div className="authMessage">Outfit deleted.</div> : blocked ? <div className="authMessage">Member blocked.</div> : null}
@@ -125,21 +125,28 @@ export default async function OutfitsPage({ searchParams }: { searchParams: Sear
       const postStyles = stylesByPost.get(post.id) ?? [];
       const hasLiked = liked.has(post.id);
       return <article className={styles.post} key={post.id}>
-        <div className={styles.postHeader}>
-          <div className="avatar small">{name.slice(0, 1).toUpperCase()}</div>
-          <div>{profile?.username ? <Link className="textLink" href={`/people/${profile.username}`}>{name}</Link> : <strong>{name}</strong>}<span className="muted">{new Date(post.published_at || post.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span></div>
-        </div>
         <Link className={styles.feedPhotoLink} href={`/outfits/${post.id}`} aria-label={`Open ${post.headline || "Outfit"}`}>
           {image ? <img className={styles.photo} src={image} alt={`Outfit by ${name}`} /> : <div className={styles.photoFallback}>Photo unavailable</div>}
         </Link>
         <div className={styles.body}>
-          <div className={styles.pills}>{postOccasions.map((row) => <span key={row.occasion}>{OUTFIT_OCCASION_LABELS.get(row.occasion) ?? row.occasion}</span>)}</div>
-          {postStyles.length ? <div className={styles.styleLine}>{postStyles.map((row) => <span key={row.display_tag}>#{row.display_tag}</span>)}</div> : null}
           <Link className={styles.feedHeadline} href={`/outfits/${post.id}`}>{post.headline || "Outfit"}</Link>
-          <div className={styles.socialRow}>
-            <form action={hasLiked ? unlikeOutfit : likeOutfit}><input type="hidden" name="post_id" value={post.id} /><input type="hidden" name="return_to" value={returnTo} /><button className={hasLiked ? styles.likedButton : styles.likeButton} type="submit" aria-pressed={hasLiked}>{hasLiked ? "♥ Liked" : "♡ Like"}</button></form>
-            <span>{post.like_count} {post.like_count === 1 ? "like" : "likes"}</span>
-            <Link href={`/outfits/${post.id}#comments`}>{post.comment_count} {post.comment_count === 1 ? "comment" : "comments"}</Link>
+          <div className={styles.pinCreatorRow}>
+            <div className="avatar small">{name.slice(0, 1).toUpperCase()}</div>
+            <div>
+              {profile?.username ? <Link className={styles.creatorLink} href={`/people/${profile.username}`}>{name}</Link> : <strong>{name}</strong>}
+              <span>{new Date(post.published_at || post.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+            </div>
+          </div>
+          {postOccasions.length ? <div className={styles.pinOccasions}>{postOccasions.map((row) => <span key={row.occasion}>{OUTFIT_OCCASION_LABELS.get(row.occasion) ?? row.occasion}</span>)}</div> : null}
+          {postStyles.length ? <div className={styles.pinStyles}>{postStyles.map((row) => <span key={row.display_tag}>#{row.display_tag}</span>)}</div> : null}
+          <div className={styles.pinSocialRow}>
+            <form action={hasLiked ? unlikeOutfit : likeOutfit}>
+              <input type="hidden" name="post_id" value={post.id} />
+              <input type="hidden" name="return_to" value={returnTo} />
+              <button className={hasLiked ? styles.likedButton : styles.likeButton} type="submit" aria-pressed={hasLiked}>{hasLiked ? "♥" : "♡"}</button>
+            </form>
+            <span>{post.like_count}</span>
+            <Link href={`/outfits/${post.id}#comments`}>💬 {post.comment_count}</Link>
           </div>
         </div>
       </article>;

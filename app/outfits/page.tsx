@@ -34,7 +34,7 @@ export default async function OutfitsPage({ searchParams }: { searchParams: Sear
   const params = await searchParams;
   const feed = first(params.feed) === "following" ? "following" : "all";
   let followedIds: string[] = [];
-  if (feed === "following") {
+  if (feed==="following") {
     const { data, error } = await supabase.from("follows").select("followed_id").eq("follower_id", viewerId);
     if (error) throw new Error("Could not load people you follow.");
     followedIds = (data ?? []).map((row) => row.followed_id);

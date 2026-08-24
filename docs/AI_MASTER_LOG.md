@@ -25,14 +25,13 @@ During an owner live audit, when the owner identifies concrete breakage and dire
 
 ## Canonical production line — LIVE
 - `main` is the one production implementation line and is coupled to Vercel production.
-- Current production **application** merge is `f1030fdad78623b0c7dc31020595bf89c54e5a96`, squash merge of PR #74 **Repair New Outfit live-audit batch 2**.
-- PR #74 exact final head `a32fd722d410c94c88fb6a6790bc8342bd66bafc` passed full LikeSized CI #796 (`32776895479`) before merge: canonical integrity, TypeScript, all focused application safeguards, production build, fresh migration replay and all 637 database behavior/privacy tests passed.
-- The owner explicitly authorized deployment of that accumulated seven-item Roadmap 12 live-audit repair batch on 2026-08-24.
-- Production Vercel deployment `dpl_8jGX2SPrYjnW55u3BU9itJdNfXPY` for merge `f1030fdad78623b0c7dc31020595bf89c54e5a96` reached READY and aliases `likesized.com`, `likesized.vercel.app` and the canonical main-branch aliases.
-- Deployment-scoped runtime inspection found no runtime errors in the checked post-cutover window.
-- PR #74 contains no database migration; production Supabase schema/migrations were unchanged.
-- PR #75 completed the docs-only reconciliation of that PR #74 deployment; production application behavior did not change.
-- PR #76 **Fix iOS Outfit photo conversion failure** is currently branch-only and **not deployed**. Production remains the PR #74 application state until the owner explicitly authorizes a new production deployment.
+- Current production **application** merge is `e4af3074806a0e2307d7e8d0c21e821c70425eaa`, squash merge of PR #76 **Fix iOS Outfit photo conversion failure**.
+- PR #76 exact final head `36d5a433a16d844ada1e5cfdd67264f8caf5a918` passed full LikeSized CI #801 (`32780524136`) before merge: canonical integrity, dependency install, TypeScript, focused application safeguards including the Safari photo fallback regression, production build, complete fresh migration replay and database behavior/privacy tests passed.
+- The owner explicitly authorized production deployment of PR #76 on 2026-08-24.
+- Production Vercel deployment `dpl_AU3ZyuW84yEi5X1G27kCd3mX6iX6` for merge `e4af3074806a0e2307d7e8d0c21e821c70425eaa` reached READY and aliases `likesized.com`, `likesized.vercel.app` and the canonical main-branch aliases.
+- Live homepage verification returned HTTP 200 from deployment `dpl_AU3ZyuW84yEi5X1G27kCd3mX6iX6`; deployment-scoped runtime inspection found no error/fatal logs in the checked post-cutover window.
+- PR #76 contains no database migration; production Supabase schema/migrations were unchanged.
+- Previous New Outfit live-audit batch 2 production application merge was `f1030fdad78623b0c7dc31020595bf89c54e5a96` through PR #74; PR #75 completed its docs-only reconciliation.
 - Previous signed-in published Outfit Product-read repair remains `f10ac414d65583411a304ec7ea6d518535a2bdd8` through PR #72; docs reconciliation for that deployment shipped through PR #73.
 - Previous Roadmap 12 repair merge remains `0742b759c1b8a39baf0db0bf81d4eed6b7a4e214` through PR #70; PR #71 completed its docs-only reconciliation.
 - Previous homepage-copy production merge remains `4fc64957809ee18a6c7c0ac203f29147ef2c8646` through PR #68.
@@ -41,7 +40,7 @@ During an owner live audit, when the owner identifies concrete breakage and dire
 - No paid Supabase branches.
 
 ## Roadmap 12 — New Outfit — COMPLETE / DEPLOYED / OWNER LIVE RE-AUDIT ACTIVE
-Roadmap 12 foundation shipped through PR #67. The first owner live-audit repair batch shipped through PR #70. The signed-in published Outfit Product-read blocker shipped through PR #72. The owner's next seven live-audit findings shipped through PR #74. A further owner-reported iPhone/Safari photo-conversion blocker is now implemented and verified on PR #76 but is not production-live yet. Do not advance to Roadmap 13 until this New Outfit live audit is handled.
+Roadmap 12 foundation shipped through PR #67. The first owner live-audit repair batch shipped through PR #70. The signed-in published Outfit Product-read blocker shipped through PR #72. The owner's next seven live-audit findings shipped through PR #74. The owner-reported iPhone/Safari photo-conversion blocker shipped through PR #76 and is now production-live. Do not advance to Roadmap 13 until this New Outfit live audit is handled.
 
 ### Owner-approved Roadmap 12 product state
 - Photo-only V1: 1 required Cover/Main photo + up to 5 additional photos; reorder and Set as Main; no video.
@@ -95,18 +94,16 @@ Production-live behavior:
 6. Draft resume/hydration reduces sequential server reads by parallelizing independent profile/Closet/style/Outfit and Outfit-part work, while existing saved photos are reused rather than reprocessed.
 7. Preview is smaller and review-focused: desktop shell/gallery/image bounds are reduced and mobile uses viewport-aware image height rather than a near-full-screen static banner.
 
-### PR #76 iOS/Safari Outfit photo encoding repair — IMPLEMENTED / VERIFIED CODE / NOT DEPLOYED
-Active branch: `agent/outfit-ios-photo-encoding-repair`. PR #76 implementation head `7d5349a6640e059d9351aac8e34c90186c98ebcb` passed full LikeSized CI #800 (`32780186535`): canonical integrity, dependency install, TypeScript, all focused application safeguards including the new photo fallback regression, production build, complete fresh migration replay and database behavior/privacy tests all passed. This required master-sync commit must retain green exact-head CI before merge/deployment.
+### PR #76 iOS/Safari Outfit photo encoding repair — DEPLOYED
+Branch `agent/outfit-ios-photo-encoding-repair` is recovered through PR #76. Exact final head `36d5a433a16d844ada1e5cfdd67264f8caf5a918` passed full LikeSized CI #801 (`32780524136`), then owner-authorized squash merge `e4af3074806a0e2307d7e8d0c21e821c70425eaa` deployed to Vercel production `dpl_AU3ZyuW84yEi5X1G27kCd3mX6iX6`, which reached READY and aliases `likesized.com`. Live homepage verification returned HTTP 200 from that deployment and the checked deployment-scoped runtime window contained no error/fatal logs. No database migration was required.
 
-Branch behavior:
+Production-live behavior:
 - Root cause addressed: some Safari/iOS environments can decode a normal camera photo into canvas but do not provide a working canvas WebP encoder. That previously caused the exact client error **“Photo conversion failed on this device.”** before the photo could be added.
 - Native browser WebP encoding remains the preferred path.
 - If WebP canvas encoding is unavailable, the client uses a size-bounded JPEG transport fallback instead of rejecting the photo.
 - The server validates the actual derivative bytes and normalizes that JPEG fallback to a real canonical WebP using the existing server-side Sharp dependency before any Supabase storage write.
 - Existing canonical storage paths, WebP content type, 600 KB display limit and 220 KB feed limit stay unchanged; no alternate photo-storage representation is introduced.
 - Focused regression coverage generates a JPEG transport payload and proves it becomes real WebP before storage.
-- No database migration is required.
-- Production remains unchanged until the owner explicitly authorizes deployment of PR #76.
 
 ### Roadmap 12 database foundation
 Production Supabase project: `rlksidwniuoxoacumyaf`.
@@ -259,7 +256,7 @@ Recent branch classification:
 - `agent/post-pr72-production-reconciliation` — RECOVERED via PR #73 / docs-only; no longer active.
 - `agent/outfit-live-audit-batch-2` — RECOVERED via PR #74 / DEPLOYED; no longer active.
 - `agent/post-pr74-production-reconciliation` — RECOVERED via PR #75 / docs-only; no longer active.
-- `agent/outfit-ios-photo-encoding-repair` — ACTIVE through PR #76 / VERIFIED CODE / NOT DEPLOYED.
+- `agent/outfit-ios-photo-encoding-repair` — RECOVERED via PR #76 / DEPLOYED; no longer active.
 
 # OWNER RE-AUDIT ORDER
 1. Homepage + FAQ — live; exact sex/body-specific measurement FAQ wording still pending owner approval.
@@ -274,7 +271,7 @@ Recent branch classification:
 10. My Circle / Following / system-generated Fit Twin — audit remains; future Outfit view direction is Following / Fit Twins / Discover.
 11. New Fit Report — six browser/backend wiring checks complete; cleanup through PR #65 deployed.
 11A. **Garment-question variation classification — COMPLETE / DEPLOYED through PR #66.**
-12. **New Outfit — production deployed through PR #74; PR #76 iOS photo repair is verified branch-only and authenticated owner live re-audit remains the current gate.**
+12. **New Outfit — production deployed through PR #76; authenticated owner live re-audit remains the current gate.**
 13. Outfits / Style Feed — follows Roadmap 12 foundation; full discovery/ranking audit remains after the owner finishes the New Outfit live audit.
 14. Garment/Product detail — Exact Variation may consume the canonical 11A map when this audit item is reached.
 15. Explore.
@@ -284,7 +281,7 @@ Recent branch classification:
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- PR #76 is implemented and code-verified but not production-live. The remaining production gate is explicit owner deployment authorization after the master-sync head retains green exact-head CI. Once deployed, the first retest is the same normal iPhone photo that previously produced **“Photo conversion failed on this device.”**
+- PR #76 is production-live. The owner's first retest is the same normal iPhone photo that previously produced **“Photo conversion failed on this device.”**
 - Continue the broader Roadmap 12 authenticated New Outfit audit after that blocker retest: create, Draft/resume, Preview, Publish, opened Outfit/gallery/hotspots, edit, comments/social, and practical mobile/desktop behavior.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification; do not silently rekey/collapse historical reports.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
@@ -313,9 +310,9 @@ Recent branch classification:
 - PR #73 reconciled PR #72 production documentation; exact head `8c438b87e68b293e2a60e58f03b01e9cf487b8ae` passed full CI #790; docs-only squash merge `4b2995fec9abf2610e76eb4566db64447c1ff693`.
 - PR #74 deployed New Outfit live-audit batch 2; exact final head `a32fd722d410c94c88fb6a6790bc8342bd66bafc` passed full CI #796 (`32776895479`), owner authorized deployment, squash merge `f1030fdad78623b0c7dc31020595bf89c54e5a96`, production Vercel `dpl_8jGX2SPrYjnW55u3BU9itJdNfXPY` reached READY and aliases `likesized.com`; deployment-scoped runtime inspection found no errors; no database migration was included.
 - PR #75 reconciled the PR #74 production deployment in canonical documentation; docs-only.
-- PR #76 repairs the owner-reported iOS/Safari Outfit photo conversion blocker. Implementation head `7d5349a6640e059d9351aac8e34c90186c98ebcb` passed full CI #800 (`32780186535`). It preserves canonical WebP storage by normalizing Safari's JPEG transport fallback server-side. **Not deployed; production authorization pending.**
+- PR #76 repaired the owner-reported iOS/Safari Outfit photo conversion blocker; exact final head `36d5a433a16d844ada1e5cfdd67264f8caf5a918` passed full CI #801 (`32780524136`), owner authorized deployment, squash merge `e4af3074806a0e2307d7e8d0c21e821c70425eaa`, production Vercel `dpl_AU3ZyuW84yEi5X1G27kCd3mX6iX6` reached READY and aliases `likesized.com`; live homepage returned HTTP 200 from that deployment and deployment-scoped runtime inspection found no error/fatal logs in the checked post-cutover window; no database migration was included.
 
 # EXACT NEXT ACTION — CURRENT
-1. Keep PR #76 green on its exact head after this required master synchronization; production remains untouched.
-2. The remaining production boundary is explicit owner authorization to deploy PR #76. Once authorized, merge the exact tested head, wait for Vercel production READY, verify the runtime and reconcile the deployment record without another status-only stop.
-3. Owner immediately retests the same normal iPhone photo selection that previously failed, then continues the Roadmap 12 create→draft/resume→Preview→Publish→detail/gallery/hotspots→edit→comments/social mobile/desktop audit. Do not advance to Roadmap 13 until that audit is complete.
+1. Owner immediately retests the same normal iPhone photo selection that previously produced **“Photo conversion failed on this device.”**
+2. Continue the Roadmap 12 create→draft/resume→Preview→Publish→detail/gallery/hotspots→edit→comments/social mobile/desktop audit after that blocker retest.
+3. Do not advance to Roadmap 13 until the New Outfit owner live audit is complete.

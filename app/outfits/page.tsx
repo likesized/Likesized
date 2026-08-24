@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { likeOutfit, unlikeOutfit } from "@/app/outfits/actions";
-import { OUTFIT_OCCASION_LABELS } from "@/lib/outfit-taxonomy";
+import { OUTFIT_OCCASIONS, OUTFIT_OCCASION_LABELS } from "@/lib/outfit-taxonomy";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./outfits.module.css";
 
@@ -20,7 +20,8 @@ type OutfitPost = {
 type DraftPost = { id: string; headline: string | null; updated_at: string };
 type ProfileRecord = { username: string; display_name: string | null };
 type OutfitLike = { post_id: string };
-type OccasionRow = { post_id: string; occasion: string; sort_order: number };
+type OccasionValue = (typeof OUTFIT_OCCASIONS)[number]["value"];
+type OccasionRow = { post_id: string; occasion: OccasionValue; sort_order: number };
 type StyleRow = { post_id: string; display_tag: string; sort_order: number };
 function first(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
 function one<T>(value: unknown): T | null { return Array.isArray(value) ? ((value[0] as T | undefined) ?? null) : ((value as T | null) ?? null); }

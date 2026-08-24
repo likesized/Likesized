@@ -122,11 +122,13 @@ Barcode confidence is separate from Product confidence.
 # 6. New Fit Report intake — LOCKED
 Ordinary member intake begins with one simple **Identify your item** screen.
 
+Approved opening helper copy: **“Scan the barcode or add a photo of the tag so we can verify the exact item.”**
+
 Primary choices:
 1. **Scan barcode**.
-2. **Take / upload tag photo** — the device may offer camera capture or an existing photo. The image is private identity-review evidence; taking a tag photo does not imply LikeSized can automatically read or identify every field from it.
+2. **Add tag photo** — the device may offer camera capture or an existing photo. Taking a tag photo does not imply LikeSized can automatically read or identify every Product field from it.
 
-A smaller fallback appears beneath those choices: **Cut the tags out? Enter item manually →**.
+A smaller fallback appears beneath those choices: **Tags missing? Enter item manually →**.
 
 The three paths converge on the same canonical Brand / Item / Product flow and the same Fit Report form. There is no second tag-photo evidence system and no parallel manual catalog.
 
@@ -138,6 +140,15 @@ Ordinary member intake never calls SerpAPI.
 - Barcode and manual-entry paths retain a small optional Product Label / Tag Photo control directly below Brand / Item so the member can still add that evidence.
 - When the member began with a tag photo, that compact in-form uploader is hidden because the evidence is already present.
 - Product Label / Tag Photo never becomes generic Product display imagery merely because it was supplied during intake.
+- Whenever no canonical Product match is active—tag-photo path, manual entry, barcode with no Product match, or after rejecting a previous match—the top of the form says: **“Enter as much information as you can about the item. If you’re unsure about something, just leave it blank.”**
+- When a canonical Product match is active, the existing prefilled/community-match guidance is shown instead.
+
+## Matched Product identity reset
+- **Change Brand** means the previous Product identity is no longer trusted. It clears the matched Product, Item / Style / Model, Category, Specific Garment Type, prefilled structured item answers, matched Product image/message and Product-derived defaults. It does not erase unrelated Fit Report information or evidence the member entered themselves.
+- **Change Item** also invalidates the previous matched Product. It keeps the current Brand but clears Item / Style / Model, Category, Specific Garment Type, prefilled structured item answers, matched Product image/message and Product-derived defaults.
+- After either identity reset, the normal unmatched guidance and **I’m not sure this is the correct item/style name** control return.
+- If the previous match came from a scanned barcode, the barcode remains evidence. A barcode resolution may not silently reattach the old Product when the member-submitted Brand or Item no longer agrees with that Product identity.
+- Selecting a new real LikeSized Product suggestion establishes that new Product match normally.
 
 ## Main information order
 1. Brand / Make — required.
@@ -163,11 +174,13 @@ Manual Item suggestions render as the actual dropdown immediately under the Item
 For a new or unresolved item, the member may check **I’m not sure this is the correct item/style name**.
 
 The helper is evidence-aware and uses the same underlying evidence fields as the rest of intake:
-- Retail / Product URL;
+- Retail Link;
 - Product Label / Tag Photo, only when one has not already been supplied;
-- Product Photo — a clear photo of the garment by itself.
+- Product Photo.
 
 If the member started with a tag photo, the helper does not ask for a second tag photo. If the member came through barcode/manual entry without a tag photo, the helper may offer one. Existing evidence is preserved; **Save & Continue** keeps the values and **I’ll Add This Later** closes the helper without erasing the Unconfirmed signal.
+
+The uncertainty helper keeps the established pre-redesign explanatory copy rather than introducing new evidence descriptions solely because the intake entry point changed.
 
 The form must never create duplicate copies of the same evidence values or a second Label/Tag upload path.
 

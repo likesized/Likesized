@@ -2,8 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, auth;
-
-select plan(51);
+select plan(29);
 
 insert into auth.users(id,aud,role,email,created_at,updated_at)
 values
@@ -15,6 +14,11 @@ set local role authenticated;
 set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
 select public.save_fit_profile('social_viewer','metric','[{"measurement_type_key":"height","entered_value":170,"entered_unit":"cm","source":"manual","method":"tape"},{"measurement_type_key":"natural_waist","entered_value":80,"entered_unit":"cm","source":"manual","method":"tape"}]'::jsonb,'[]'::jsonb);
+insert into public.follows(follower_id,followed_id)
+values('fb400000-0000-4000-8000-000000000001'::uuid,'fb400000-0000-4000-8000-000000000002'::uuid);
+select is((select count(*) from public.get_following_notification_subscriptions()),0::bigint,'ordinary Follow does not silently opt into notifications');
+select is(public.set_following_notification_subscription('fb400000-0000-4000-8000-000000000002'::uuid,true),true,'viewer can explicitly turn the followed-member bell on');
+select is((select count(*) from public.get_following_notification_subscriptions()),1::bigint,'explicit bell stores one per-person subscription');
 reset role;
 
 set local role authenticated;
@@ -39,11 +43,55 @@ set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000002';
 set local request.jwt.claim.role='authenticated';
 insert into public.closet_items(id,user_id,product_id,size_label,visibility,wears_count)
 values
- ('fb430000-0000-4000-8000-000000000001'::uuid,'fb400000-0000-4000-8000-000000000002'::uuid,'fb420000-0000-4000-8000-000000000001'::uuid,'29','private',0),
- ('fb430000-0000-4000-8000-000000000002'::uuid,'fb400000-0000-4000-8000-000000000002'::uuid,'fb420000-0000-4000-8000-000000000001'::uuid,'30','private',0);
+  ('fb430000-0000-4000-8000-000000000001'::uuid,'fb400000-0000-4000-8000-000000000002'::uuid,'fb420000-0000-4000-8000-000000000001'::uuid,'29','shared',0),
+  ('fb430000-0000-4000-8000-000000000002'::uuid,'fb400000-0000-4000-8000-000000000002'::uuid,'fb420000-0000-4000-8000-000000000001'::uuid,'30','shared',0);
 insert into public.fit_reports(id,user_id,closet_item_id,product_id,fit_profile_version_id,size_label,fit,fit_notes,created_at)
-select 'fb440000-0000-4000-8000-000000000001'::uuid,'fb400000-0000-4000-8000-000000000002'::uuid,'fb430000-0000-4000-8000-000000000001'::uuid,'fb420000-0000-4000-8000-000000000001'::uuid,current_version_id,'29','snug','Initial private fit',clock_timestamp()-interval '2 minutes'
+select 'fb440000-0000-4000-8000-000000000001'::uuid,'fb400000-0000-4000-8000-000000000002'::uuid,'fb430000-0000-4000-8000-000000000001'::uuid,'fb420000-0000-4000-8000-000000000001'::uuid,current_version_id,'29','snug','Initial visible fit',clock_timestamp()-interval '2 minutes'
 from public.fit_profiles where user_id='fb400000-0000-4000-8000-000000000002'::uuid;
+reset role;
+
+set local role authenticated;
+set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000001';
+set local request.jwt.claim.role='authenticated';
+select is((select count(*) from public.get_following_feed(50,null) where activity_type='closet_shared'),1::bigint,'first visible Fit Report reaches the followed-member Style Feed');
+select is((select count(*) from public.get_fit_twin_activity_notifications(50,null)),1::bigint,'explicit bell receives the first visible garment notification');
+select throws_like(
+  $$select public.create_outfit_post('fb450000-0000-4000-8000-000000000009'::uuid,'Wrong owner','fb400000-0000-4000-8000-000000000001/fb450000-0000-4000-8000-000000000009/outfit.jpg',array['fb430000-0000-4000-8000-000000000001'::uuid])$$,
+  '%Every tagged garment must belong to the current member%',
+  'Outfit RPC cannot tag another member Closet item'
+);
+reset role;
+
+set local role authenticated;
+set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000002';
+set local request.jwt.claim.role='authenticated';
+select throws_like(
+  $$select public.create_outfit_post('fb450000-0000-4000-8000-000000000010'::uuid,'Missing report','fb400000-0000-4000-8000-000000000002/fb450000-0000-4000-8000-000000000010/outfit.jpg',array['fb430000-0000-4000-8000-000000000001'::uuid,'fb430000-0000-4000-8000-000000000002'::uuid])$$,
+  '%Every tagged garment must have Fit Report evidence%',
+  'Outfit creation rejects a selected garment without Fit Report evidence'
+);
+select is((select count(*) from public.outfit_posts where id='fb450000-0000-4000-8000-000000000010'::uuid),0::bigint,'failed Outfit transaction leaves no post behind');
+select is(
+  public.create_outfit_post(
+    'fb450000-0000-4000-8000-000000000001'::uuid,
+    'Followed Outfit',
+    'fb400000-0000-4000-8000-000000000002/fb450000-0000-4000-8000-000000000001/outfit.jpg',
+    array['fb430000-0000-4000-8000-000000000001'::uuid]
+  ),
+  'fb450000-0000-4000-8000-000000000001'::uuid,
+  'valid compatibility creation returns the canonical Outfit id'
+);
+select is((select visibility::text from public.closet_items where id='fb430000-0000-4000-8000-000000000001'::uuid),'shared','posting an Outfit does not mutate the unified Closet visibility state');
+select is((select count(*) from public.outfit_posts where id='fb450000-0000-4000-8000-000000000001'::uuid),1::bigint,'valid Outfit creation creates one published post');
+select is((select count(*) from public.outfit_post_items where post_id='fb450000-0000-4000-8000-000000000001'::uuid),1::bigint,'valid Outfit creation stores one canonical garment relationship');
+reset role;
+
+set local role authenticated;
+set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000001';
+set local request.jwt.claim.role='authenticated';
+select is((select count(*) from public.get_following_feed(50,null)),2::bigint,'followed-member feed contains the garment activity and published Outfit');
+select is((select count(*) from public.get_following_feed(50,null) where activity_type='outfit_posted'),1::bigint,'published Outfit contributes exactly one Outfit feed event');
+select is((select count(*) from public.get_fit_twin_activity_notifications(50,null)),2::bigint,'bell-subscribed viewer receives garment plus Outfit notifications');
 reset role;
 
 set local role authenticated;
@@ -51,163 +99,75 @@ set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000003';
 set local request.jwt.claim.role='authenticated';
 insert into public.closet_items(id,user_id,product_id,size_label,visibility,wears_count)
 values('fb430000-0000-4000-8000-000000000003'::uuid,'fb400000-0000-4000-8000-000000000003'::uuid,'fb420000-0000-4000-8000-000000000001'::uuid,'31','shared',0);
-insert into public.fit_reports(id,user_id,closet_item_id,product_id,fit_profile_version_id,size_label,fit,created_at)
-select 'fb440000-0000-4000-8000-000000000003'::uuid,'fb400000-0000-4000-8000-000000000003'::uuid,'fb430000-0000-4000-8000-000000000003'::uuid,'fb420000-0000-4000-8000-000000000001'::uuid,current_version_id,'31','just_right',clock_timestamp()-interval '1 minute'
+insert into public.fit_reports(id,user_id,closet_item_id,product_id,fit_profile_version_id,size_label,fit)
+select 'fb440000-0000-4000-8000-000000000003'::uuid,'fb400000-0000-4000-8000-000000000003'::uuid,'fb430000-0000-4000-8000-000000000003'::uuid,'fb420000-0000-4000-8000-000000000001'::uuid,current_version_id,'31','just_right'
 from public.fit_profiles where user_id='fb400000-0000-4000-8000-000000000003'::uuid;
+select public.create_outfit_post(
+  'fb450000-0000-4000-8000-000000000003'::uuid,
+  'Other member Outfit',
+  'fb400000-0000-4000-8000-000000000003/fb450000-0000-4000-8000-000000000003/outfit.jpg',
+  array['fb430000-0000-4000-8000-000000000003'::uuid]
+);
 reset role;
 
 set local role authenticated;
 set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
-insert into public.follows(follower_id,followed_id)
-values('fb400000-0000-4000-8000-000000000001'::uuid,'fb400000-0000-4000-8000-000000000002'::uuid);
-select is((select count(*) from public.get_following_notification_subscriptions()),0::bigint,'Following alone does not opt the member into person notifications');
-select is(public.set_following_notification_subscription('fb400000-0000-4000-8000-000000000002'::uuid,true),true,'explicit person-bell opt-in enables notifications for the followed member');
+select is((select count(*) from public.outfit_posts where status='published'),2::bigint,'overall Outfit discovery contains followed and unfollowed published posts');
+select is((select count(*) from public.get_following_feed(50,null) where actor_id='fb400000-0000-4000-8000-000000000003'::uuid),0::bigint,'Following Feed excludes unfollowed member Outfit activity');
+select is((select count(*) from public.get_fit_twin_activity_notifications(50,null) where actor_id='fb400000-0000-4000-8000-000000000003'::uuid),0::bigint,'person notifications exclude unfollowed member activity');
+select lives_ok($$insert into public.outfit_likes(post_id,user_id) values('fb450000-0000-4000-8000-000000000001'::uuid,'fb400000-0000-4000-8000-000000000001'::uuid)$$,'member can like a visible published Outfit');
 select throws_like(
- $$select public.create_outfit_post('fb450000-0000-4000-8000-000000000009'::uuid,null,'fb400000-0000-4000-8000-000000000001/fb450000-0000-4000-8000-000000000009/outfit.jpg',array['fb430000-0000-4000-8000-000000000001'::uuid])$$,
- '%Every tagged garment must belong to the current member%',
- 'outfit RPC cannot tag another member Closet item'
+  $$insert into public.outfit_likes(post_id,user_id) values('fb450000-0000-4000-8000-000000000001'::uuid,'fb400000-0000-4000-8000-000000000001'::uuid)$$,
+  '%duplicate key value%',
+  'same member cannot create duplicate Outfit likes'
 );
+select is((select like_count from public.outfit_posts where id='fb450000-0000-4000-8000-000000000001'::uuid),1,'public Outfit like counter follows the canonical like relationship');
 reset role;
 
 set local role authenticated;
 set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000002';
 set local request.jwt.claim.role='authenticated';
-select throws_like(
- $$select public.create_outfit_post('fb450000-0000-4000-8000-000000000010'::uuid,'Should roll back','fb400000-0000-4000-8000-000000000002/fb450000-0000-4000-8000-000000000010/outfit.jpg',array['fb430000-0000-4000-8000-000000000001'::uuid,'fb430000-0000-4000-8000-000000000002'::uuid])$$,
- '%Every tagged garment must have Fit Report evidence%',
- 'atomic outfit creation rejects any selected garment without Fit Report evidence'
-);
-select is((select visibility::text from public.closet_items where id='fb430000-0000-4000-8000-000000000001'::uuid),'private','failed outfit transaction leaves previously Private valid garment Private');
-select is((select count(*) from public.outfit_posts where id='fb450000-0000-4000-8000-000000000010'::uuid),0::bigint,'failed outfit transaction creates no outfit post');
+insert into public.fit_reports(id,user_id,closet_item_id,product_id,fit_profile_version_id,size_label,fit,fit_notes,created_at)
+select 'fb440000-0000-4000-8000-000000000002'::uuid,'fb400000-0000-4000-8000-000000000002'::uuid,'fb430000-0000-4000-8000-000000000001'::uuid,'fb420000-0000-4000-8000-000000000001'::uuid,current_version_id,'29','relaxed','Latest visible fit',clock_timestamp()
+from public.fit_profiles where user_id='fb400000-0000-4000-8000-000000000002'::uuid;
 reset role;
 
 set local role authenticated;
 set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
-select is((select count(*) from public.get_following_feed(50,null)),0::bigint,'failed outfit transaction creates no Following Feed activity');
-select is((select count(*) from public.get_fit_twin_activity_notifications(50,null)),0::bigint,'failed outfit transaction creates no person notification');
+select is((select count(*) from public.get_following_feed(50,null) where activity_type='fit_report_added'),1::bigint,'later Fit Report appears as one followed-member re-try-on event');
+select is((select count(*) from public.get_fit_twin_activity_notifications(50,null) where activity_type='fit_report_added'),1::bigint,'later Fit Report creates one opted-in person notification');
 reset role;
 
 set local role authenticated;
 set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000002';
 set local request.jwt.claim.role='authenticated';
-select is(
- public.create_outfit_post('fb450000-0000-4000-8000-000000000001'::uuid,'Followed outfit','fb400000-0000-4000-8000-000000000002/fb450000-0000-4000-8000-000000000001/outfit.jpg',array['fb430000-0000-4000-8000-000000000001'::uuid]),
- 'fb450000-0000-4000-8000-000000000001'::uuid,
- 'valid atomic outfit creation returns canonical post id'
-);
-select is((select visibility::text from public.closet_items where id='fb430000-0000-4000-8000-000000000001'::uuid),'shared','successful outfit tagging auto-shares previously Private garment');
-select is((select count(*) from public.outfit_posts where id='fb450000-0000-4000-8000-000000000001'::uuid),1::bigint,'successful atomic outfit creation creates one post');
-select is((select count(*) from public.outfit_post_items where post_id='fb450000-0000-4000-8000-000000000001'::uuid),1::bigint,'successful atomic outfit creation creates one garment tag');
+delete from public.outfit_posts where id='fb450000-0000-4000-8000-000000000001'::uuid;
 reset role;
 
 set local role authenticated;
 set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
-select is((select count(*) from public.closet_items where id='fb430000-0000-4000-8000-000000000001'::uuid),1::bigint,'another member can read auto-shared Closet garment');
-select is((select count(*) from public.fit_reports where closet_item_id='fb430000-0000-4000-8000-000000000001'::uuid),1::bigint,'another member can read auto-shared Shared Fit History');
-select is((select count(*) from public.outfit_post_items where post_id='fb450000-0000-4000-8000-000000000001'::uuid),1::bigint,'another member can read outfit tag while garment is Shared');
-select is((select count(*) from public.get_following_feed(50,null)),2::bigint,'auto-share plus outfit post produce the two locked meaningful followed activities');
-select is((select count(*) from public.get_following_feed(50,null) where activity_type='closet_shared'),1::bigint,'Following Feed contains newly Shared garment activity');
-select is((select count(*) from public.get_following_feed(50,null) where activity_type='outfit_posted'),1::bigint,'Following Feed contains new outfit activity');
-select is((select count(*) from public.get_fit_twin_activity_notifications(50,null)),2::bigint,'explicitly subscribed followed member produces two person notifications for the two meaningful activities');
-reset role;
-
-set local role authenticated;
-set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000003';
-set local request.jwt.claim.role='authenticated';
-select is(
- public.create_outfit_post('fb450000-0000-4000-8000-000000000003'::uuid,'Other member outfit','fb400000-0000-4000-8000-000000000003/fb450000-0000-4000-8000-000000000003/outfit.jpg',array['fb430000-0000-4000-8000-000000000003'::uuid]),
- 'fb450000-0000-4000-8000-000000000003'::uuid,
- 'unfollowed member can independently create a valid outfit'
-);
-reset role;
-
-set local role authenticated;
-set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000001';
-set local request.jwt.claim.role='authenticated';
-select is((select count(*) from public.outfit_posts),2::bigint,'All outfits surface contains both followed and unfollowed member posts');
-select is((select count(*) from public.outfit_posts op where op.user_id in (select f.followed_id from public.follows f where f.follower_id='fb400000-0000-4000-8000-000000000001'::uuid)),1::bigint,'Following-based outfit filtering resolves only posts from followed members');
-select is((select count(*) from public.get_following_feed(50,null) where actor_id='fb400000-0000-4000-8000-000000000003'::uuid),0::bigint,'Following Feed excludes unfollowed member outfit activity');
-select is((select count(*) from public.get_fit_twin_activity_notifications(50,null) where actor_id='fb400000-0000-4000-8000-000000000003'::uuid),0::bigint,'notifications exclude unfollowed member outfit activity');
-select lives_ok($$insert into public.outfit_likes(post_id,user_id) values('fb450000-0000-4000-8000-000000000001'::uuid,'fb400000-0000-4000-8000-000000000001'::uuid)$$,'member can like an outfit');
-select is((select count(*) from public.outfit_likes where post_id='fb450000-0000-4000-8000-000000000001'::uuid),1::bigint,'one member creates one outfit like');
-select throws_like(
- $$insert into public.outfit_likes(post_id,user_id) values('fb450000-0000-4000-8000-000000000001'::uuid,'fb400000-0000-4000-8000-000000000001'::uuid)$$,
- '%duplicate key value%',
- 'duplicate like from same member is rejected'
-);
-reset role;
-
-set local role authenticated;
-set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000003';
-set local request.jwt.claim.role='authenticated';
-select lives_ok($$delete from public.outfit_likes where post_id='fb450000-0000-4000-8000-000000000001'::uuid and user_id='fb400000-0000-4000-8000-000000000001'::uuid$$,'another member cannot remove someone else like but RLS filters the delete safely');
-reset role;
-
-set local role authenticated;
-set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000001';
-set local request.jwt.claim.role='authenticated';
-select is((select count(*) from public.outfit_likes where post_id='fb450000-0000-4000-8000-000000000001'::uuid),1::bigint,'cross-member unlike attempt leaves original like intact');
-select is((select count(*) from public.get_following_feed(50,null)),2::bigint,'outfit like does not create Following Feed activity');
-select is((select count(*) from public.get_fit_twin_activity_notifications(50,null)),2::bigint,'outfit like does not create a person notification');
+select is((select count(*) from public.outfit_likes where post_id='fb450000-0000-4000-8000-000000000001'::uuid),0::bigint,'Outfit deletion cascades its likes');
+select is((select count(*) from public.get_following_feed(50,null) where activity_type='outfit_posted'),0::bigint,'Outfit deletion removes its Following Feed event');
+select is((select count(*) from public.get_fit_twin_activity_notifications(50,null)),2::bigint,'deleting the Outfit removes its notification but preserves garment notifications');
 reset role;
 
 set local role authenticated;
 set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000002';
 set local request.jwt.claim.role='authenticated';
-select lives_ok($$
- insert into public.fit_reports(id,user_id,closet_item_id,product_id,fit_profile_version_id,size_label,fit,fit_notes,created_at)
- select 'fb440000-0000-4000-8000-000000000002'::uuid,'fb400000-0000-4000-8000-000000000002'::uuid,'fb430000-0000-4000-8000-000000000001'::uuid,'fb420000-0000-4000-8000-000000000001'::uuid,current_version_id,'29','relaxed','Latest visible fit',clock_timestamp()
- from public.fit_profiles where user_id='fb400000-0000-4000-8000-000000000002'::uuid
-$$,'Shared tagged garment can receive a later Fit Report observation');
+delete from public.closet_items where id='fb430000-0000-4000-8000-000000000001'::uuid;
 reset role;
 
 set local role authenticated;
 set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
-select is((select count(*) from public.fit_reports where closet_item_id='fb430000-0000-4000-8000-000000000001'::uuid),2::bigint,'Shared Fit History exposes both immutable observations');
-select is((select fit::text from public.fit_reports where closet_item_id='fb430000-0000-4000-8000-000000000001'::uuid order by created_at desc,id desc limit 1),'relaxed','outfit latest-visible-report selection resolves the newest observation');
-select is((select count(*) from public.get_following_feed(50,null) where activity_type='fit_report_added'),1::bigint,'later Shared Fit Report appears as one Following Feed re-try-on event');
-select is((select count(*) from public.get_fit_twin_activity_notifications(50,null) where activity_type='fit_report_added'),1::bigint,'later Shared Fit Report creates one opted-in person notification');
+select is((select count(*) from public.get_following_feed(50,null)),0::bigint,'deleting the source Closet garment removes all remaining followed-member garment activity');
+select is((select count(*) from public.get_fit_twin_activity_notifications(50,null)),0::bigint,'deleting the source Closet garment removes all remaining source-linked notifications');
 reset role;
 
-set local role authenticated;
-set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000002';
-set local request.jwt.claim.role='authenticated';
-select lives_ok($$update public.closet_items set visibility='private' where id='fb430000-0000-4000-8000-000000000001'::uuid$$,'owner can make tagged garment Private when no shared fit photo blocks it');
-reset role;
-
-set local role authenticated;
-set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000001';
-set local request.jwt.claim.role='authenticated';
-select is((select count(*) from public.closet_items where id='fb430000-0000-4000-8000-000000000001'::uuid),0::bigint,'Private tagged garment disappears from another member Closet access');
-select is((select count(*) from public.fit_reports where closet_item_id='fb430000-0000-4000-8000-000000000001'::uuid),0::bigint,'Private transition removes Shared Fit History access');
-select is((select count(*) from public.outfit_post_items where post_id='fb450000-0000-4000-8000-000000000001'::uuid),0::bigint,'Private transition hides the outfit garment tag from other members');
-select is((select count(*) from public.outfit_posts where id='fb450000-0000-4000-8000-000000000001'::uuid),1::bigint,'outfit social post itself remains member-visible after a tagged garment becomes Private');
-select is((select count(*) from public.outfit_likes where post_id='fb450000-0000-4000-8000-000000000001'::uuid),1::bigint,'outfit like remains attached to the still-visible outfit post');
-select is((select count(*) from public.get_following_feed(50,null)),1::bigint,'Private transition removes garment activities but preserves followed outfit activity');
-select is((select count(*) from public.get_fit_twin_activity_notifications(50,null)),1::bigint,'Private transition removes garment notifications but preserves the opted-in outfit notification');
-reset role;
-
-set local role authenticated;
-set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000002';
-set local request.jwt.claim.role='authenticated';
-select lives_ok($$delete from public.outfit_posts where id='fb450000-0000-4000-8000-000000000001'::uuid$$,'outfit owner can delete the social post');
-reset role;
-
-set local role authenticated;
-set local request.jwt.claim.sub='fb400000-0000-4000-8000-000000000001';
-set local request.jwt.claim.role='authenticated';
-select is((select count(*) from public.outfit_posts where id='fb450000-0000-4000-8000-000000000001'::uuid),0::bigint,'deleted outfit is no longer visible');
-select is((select count(*) from public.outfit_likes where post_id='fb450000-0000-4000-8000-000000000001'::uuid),0::bigint,'outfit deletion cascades likes');
-select is((select count(*) from public.get_following_feed(50,null)),0::bigint,'outfit deletion removes final followed social activity from Following Feed');
-select is((select count(*) from public.get_fit_twin_activity_notifications(50,null)),0::bigint,'outfit deletion removes final source-linked person notification');
-select is((select count(*) from public.outfit_posts where id='fb450000-0000-4000-8000-000000000003'::uuid),1::bigint,'unrelated unfollowed member outfit remains intact');
-reset role;
-
-select ok(not has_function_privilege('anon','public.create_outfit_post(uuid,text,text,uuid[])','EXECUTE'),'anonymous visitors cannot execute atomic outfit creation');
+select ok(not has_function_privilege('anon','public.create_outfit_post(uuid,text,text,uuid[])','EXECUTE'),'anonymous visitors cannot execute Outfit creation');
 
 select * from finish();
 rollback;

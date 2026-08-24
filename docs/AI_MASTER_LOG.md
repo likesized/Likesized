@@ -22,7 +22,7 @@ LikeSized is not yet a public active service with an external audience. `likesiz
 
 ## Canonical production line — LIVE
 - `main` is the one production implementation line and is coupled to Vercel production.
-- Current production application merge: `f10ac414d65583411a304ec7ea6d518535a2bdd8`, squash merge of PR #72 **Fix published Outfit Product read**.
+- Current `main` HEAD is docs-only PR #73 merge `4b2995fec9abf2610e76eb4566db64447c1ff693`; current production **application** merge remains `f10ac414d65583411a304ec7ea6d518535a2bdd8`, squash merge of PR #72 **Fix published Outfit Product read**.
 - PR #72 exact final head `53cce002736ca02091dd11677fc7fbcb6a51a4a8` passed full LikeSized CI #788 (`32772604463`) before merge: canonical integrity, TypeScript, all focused application safeguards, production build, fresh migration replay and the complete database behavior/privacy suite passed.
 - The owner explicitly authorized immediate deployment of this publish-blocking repair on 2026-08-24.
 - Production Vercel deployment `dpl_6SRPe9UQYEu5ZKpn2s9j4JArwZm1` for merge `f10ac414d65583411a304ec7ea6d518535a2bdd8` reached READY and aliases `likesized.com`.
@@ -30,6 +30,7 @@ LikeSized is not yet a public active service with an external audience. `likesiz
 - PR #72 contains no database migration; production Supabase schema/migrations were unchanged.
 - The live blocker was traced to signed-in `/outfits/[id]` requesting nonexistent `products.retailer_url`. Production schema inspection confirmed Product shopping links live in canonical `retailer_listings.product_url`; PR #72 removed the stale Product field read/fallback and added a regression safeguard preventing its return.
 - The exact published test Outfit used during the failure has valid resolved Products and retailer listing data at the database layer, including canonical `retailer_listings.product_url` where available.
+- PR #73 reconciled the PR #72 production record in canonical documentation after full CI #790; docs-only.
 - Previous Roadmap 12 repair merge remains `0742b759c1b8a39baf0db0bf81d4eed6b7a4e214` through PR #70.
 - PR #71 completed the docs-only PR #70 production reconciliation after full CI #783.
 - Previous homepage-copy production merge remains `4fc64957809ee18a6c7c0ac203f29147ef2c8646` through PR #68.
@@ -38,13 +39,13 @@ LikeSized is not yet a public active service with an external audience. `likesiz
 - No paid Supabase branches.
 
 ## Roadmap 12 — New Outfit — COMPLETE / DEPLOYED / OWNER LIVE RE-AUDIT ACTIVE
-Roadmap 12 foundation shipped through PR #67. The first owner live audit repair batch shipped through PR #70. During the owner's second live audit, Publish itself succeeded but the signed-in published Outfit page 500ed because the detail query requested nonexistent `products.retailer_url`. That isolated blocker is repaired and deployed through PR #72. The owner should now resume the live audit from the published Outfit/detail flow. Do not silently advance to Roadmap 13 until this audit is handled.
+Roadmap 12 foundation shipped through PR #67. The first owner live-audit repair batch shipped through PR #70. During the owner's second live audit, Publish itself succeeded but the signed-in published Outfit page 500ed because the detail query requested nonexistent `products.retailer_url`; that isolated blocker shipped through PR #72. The owner then identified seven additional live-audit issues. Those seven are implemented and verified on branch `agent/outfit-live-audit-batch-2` in PR #74, but **PR #74 is not deployed and production authorization has not been granted for it**. Production remains the PR #72 application state until the owner explicitly authorizes the next deployment. Do not advance to Roadmap 13 until this New Outfit audit is handled.
 
 ### Owner-approved Roadmap 12 product state
 - Photo-only V1: 1 required Cover/Main photo + up to 5 additional photos; reorder and Set as Main; no video.
 - Required Headline ≤100; optional Outfit Story ≤5,000.
 - Required Occasion 1–2 from the fixed approved list; optional community Style Tags up to 3, normalized/suggested without silently rewriting creator text.
-- 1–6 owned Closet garments; a missing garment reuses the existing canonical `/closet/add` Fit Report intake inside the Outfit flow, never a second garment system.
+- 1–6 owned Closet garments; adding a new garment reuses the existing canonical `/closet/add` Fit Report intake inside the Outfit flow, never a second garment system.
 - Optional per-photo garment hotspots use only the master Outfit garment set.
 - Drafts are unpublished owner-only work; first publish requires Preview; no scheduled publishing; published edits update the same Outfit.
 - Published `/outfits/[id]` is a shareable logged-out editorial page with OG/Twitter metadata.
@@ -65,7 +66,7 @@ Roadmap 12 foundation shipped through PR #67. The first owner live audit repair 
 - Occasion uses a normal required select plus an optional second select; Style Tags remain community-created, max 3, with suggestions after typing and compact removable chips.
 - Step 4 is **Items in this Outfit**: choose the 1–6 master Closet items once through search, Category/Garment Type and Brand filters, Recently added / Brand A–Z / Garment type sorting, progressive Load more and a persistent selected-items area.
 - Step 5 is **Photo Tags (optional)** after item selection; hotspots may only place already-selected Outfit items and never present an unexplained empty tagging panel.
-- Embedded canonical Fit Report intake returns directly to the same Outfit after a missing garment is saved and auto-selects that Closet item.
+- Embedded canonical Fit Report intake returns directly to the same Outfit after a garment is saved and auto-selects that Closet item.
 - Comments copy is reduced to **Comments** / **Allow people to comment on this Outfit**.
 - Preview is bounded and reviewable, with previous/next controls, clickable thumbnails and per-photo hotspot display instead of one oversized static image.
 - Draft saving has explicit in-progress/saved feedback; `/outfits/drafts` provides a clear owner-only resume workspace; `/outfits` exposes a creator-facing Drafts entry instead of relying on a buried feed strip.
@@ -80,15 +81,19 @@ Roadmap 12 foundation shipped through PR #67. The first owner live audit repair 
 - The focused New Outfit safeguard now fails if `retailer_url` is reintroduced into the published Outfit detail source and requires `retailer_listings` to remain the shopping-link source.
 - No schema migration was required.
 
-### Owner live-audit findings waiting for the NEXT repair batch
-These findings were reported after the prior repair deployment and are intentionally not folded into the already-deployed PR #72 blocker fix:
-1. Change **+ Add a missing garment** to **+ Add a new garment**.
-2. Photo reorder needs immediate visible movement while reordering and/or clear up/down controls, especially on mobile.
-3. Mobile phone photos can fail with **photo couldn't be reduced enough** and may not add at all; normal iPhone/Android photos must process successfully without manual resizing.
-4. Add a contextual **Clear filters** control in Items in this Outfit that resets search/category/garment type/brand and sort to Recently added.
-5. Save Draft is still slow and can trigger the browser **Leave site? Changes you made may not be saved** warning immediately after a successful save; successful save must clear dirty state before navigation.
-6. Opening/resuming a draft is very slow; reduce sequential loading and avoid reprocessing already-saved media.
-7. Preview/gallery images are still too large; cap desktop width/height and keep the preview focused on reviewing the full post rather than a near-full-screen photo.
+### PR #74 live-audit batch 2 — IMPLEMENTED / VERIFIED ON BRANCH / NOT DEPLOYED
+Branch: `agent/outfit-live-audit-batch-2`. Draft PR: #74 **Repair New Outfit live-audit batch 2**. Application/test head `7eba12f6797942086404748d91107775c69e432e` passed full LikeSized CI #795 (`32776531292`): canonical integrity, TypeScript, focused safeguards, production build, fresh migration replay and database behavior/privacy tests all passed. The PR remains outside production until the owner explicitly authorizes deployment.
+
+Implemented current branch behavior:
+1. **+ Add a new garment** replaces the misleading “missing garment” wording while continuing to reuse the canonical embedded Fit Report intake.
+2. Photo reorder visibly moves cards during desktop drag and provides explicit **↑ / ↓** controls as the reliable mobile/fallback method; the displayed order is the saved order.
+3. Mobile photo preparation accepts normal phone image selection including JPEG/PNG/WebP and HEIC/HEIF inputs where the device can decode them, raises the normal input ceiling to 24 MB, retries substantially smaller dimensions/quality instead of failing early, lowers mobile memory pressure by preparing derivatives sequentially and preserves successfully prepared additional photos if another selected photo fails.
+4. Items in this Outfit shows contextual **Clear filters** only when filtering/search/sort differs from default; it resets search, category, garment type, brand and sort to Recently added.
+5. Successful Save Draft clears the dirty state before navigation handling, keeps the editor in place instead of forcing a full reload, returns newly registered photo IDs so already-saved photos are not uploaded again on the next save and shows **Draft saved.** without the false browser leave warning.
+6. Draft resume/hydration reduces sequential server reads by parallelizing independent profile/Closet/style/Outfit and Outfit-part work, while existing saved photos are reused rather than reprocessed.
+7. Preview is smaller and review-focused: desktop shell/gallery/image bounds are reduced and mobile uses viewport-aware image height rather than a near-full-screen static banner.
+
+No database migration is part of PR #74.
 
 ### Roadmap 12 database foundation
 Production Supabase project: `rlksidwniuoxoacumyaf`.
@@ -238,7 +243,8 @@ Recent branch classification:
 - `agent/outfit-live-audit-repairs` — RECOVERED via PR #70 / DEPLOYED; no longer active.
 - `agent/post-pr70-production-reconciliation` — RECOVERED via PR #71 / docs-only; no longer active.
 - `agent/outfit-publish-product-read-fix` — RECOVERED via PR #72 / DEPLOYED; no longer active.
-- `agent/post-pr72-production-reconciliation` — current docs-only reconciliation line until this production record is merged.
+- `agent/post-pr72-production-reconciliation` — RECOVERED via PR #73 / docs-only; no longer active.
+- `agent/outfit-live-audit-batch-2` — ACTIVE through PR #74; implemented/verified branch-only; **NOT DEPLOYED** and awaiting separate owner deployment authorization.
 
 # OWNER RE-AUDIT ORDER
 1. Homepage + FAQ — live; exact sex/body-specific measurement FAQ wording still pending owner approval.
@@ -253,7 +259,7 @@ Recent branch classification:
 10. My Circle / Following / system-generated Fit Twin — audit remains; future Outfit view direction is Following / Fit Twins / Discover.
 11. New Fit Report — six browser/backend wiring checks complete; cleanup through PR #65 deployed.
 11A. **Garment-question variation classification — COMPLETE / DEPLOYED through PR #66.**
-12. **New Outfit — COMPLETE / DEPLOYED through PR #72; authenticated owner live re-audit is the current gate.**
+12. **New Outfit — production is deployed through PR #72; PR #74 batch 2 is verified branch-only and must be deployed only after explicit owner authorization, then authenticated owner live re-audit continues as the current gate.**
 13. Outfits / Style Feed — follows Roadmap 12 foundation; full discovery/ranking audit remains after the owner finishes the New Outfit live audit.
 14. Garment/Product detail — Exact Variation may consume the canonical 11A map when this audit item is reached.
 15. Explore.
@@ -263,8 +269,8 @@ Recent branch classification:
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Roadmap 12 publish blocker is repaired and production-live through PR #72. Owner should immediately retest the exact published Outfit route and continue the authenticated detail/gallery/social audit.
-- The seven owner findings listed under **Owner live-audit findings waiting for the NEXT repair batch** remain pending and must not be lost or silently treated as deployed.
+- Production still lacks the seven PR #74 live-audit repairs. Do not send the owner back to production to verify those specific fixes until PR #74 has explicit deployment authorization, is merged, reaches Vercel READY and runtime state is checked.
+- After PR #74 is deployed, the owner must retest iPhone photo selection/preparation, arrow/live reorder behavior, Clear filters, Save Draft/no false leave warning, draft resume speed, compact Preview and the new-garment wording in the authenticated browser.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification; do not silently rekey/collapse historical reports.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
 - Full Admin all-Products priority/filter/merge/split presentation remains.
@@ -289,8 +295,10 @@ Recent branch classification:
 - PR #70 repaired New Outfit live-audit issues; exact head `ab7277487a69de78369eba878005741f0846062f` passed full CI #781, owner authorized deployment, squash merge `0742b759c1b8a39baf0db0bf81d4eed6b7a4e214`, production Vercel `dpl_DCMbfcMyE23CDbMde4Fq2aoVLHru` reached READY and aliases `likesized.com`; no database migration was included.
 - PR #71 reconciled the PR #70 production record in canonical documentation after exact head `65b9938281ec40ed2c02a8ffe73aca21f2f054e1` passed full CI #783; docs-only.
 - PR #72 repaired the signed-in published Outfit Product read; exact head `53cce002736ca02091dd11677fc7fbcb6a51a4a8` passed full CI #788; owner authorized immediate deployment; squash merge `f10ac414d65583411a304ec7ea6d518535a2bdd8`; production Vercel `dpl_6SRPe9UQYEu5ZKpn2s9j4JArwZm1` reached READY and aliases `likesized.com`; no schema migration was included.
+- PR #73 reconciled PR #72 production documentation; exact head `8c438b87e68b293e2a60e58f03b01e9cf487b8ae` passed full CI #790; docs-only squash merge `4b2995fec9abf2610e76eb4566db64447c1ff693`.
+- PR #74 is the current New Outfit live-audit batch 2 branch. Application/test head `7eba12f6797942086404748d91107775c69e432e` passed full CI #795. PR #74 is **not deployed** and has no production authorization yet.
 
 # EXACT NEXT ACTION — CURRENT
-1. Complete this docs-only PR #72 production reconciliation and keep the canonical master synchronized with the already-live blocker repair.
-2. Owner retests the exact published Outfit route on `likesized.com` and continues the signed-in detail/gallery/social audit.
-3. Keep the seven pending owner findings as the next repair batch; do not advance to Roadmap 13 until the owner completes this New Outfit live audit.
+1. Keep PR #74 canonical and exact-head CI green; the application/test implementation is already verified through CI #795 and this master synchronization is part of the same branch.
+2. Do **not** merge PR #74, update `main`, or deploy production until the owner explicitly authorizes this batch for deployment.
+3. Once authorized, finish exact-head CI if needed, merge the frozen PR #74 batch, wait for Vercel production READY, verify runtime state, then return `likesized.com` to the owner for the seven-item authenticated live retest. Do not advance to Roadmap 13 before that audit is complete.

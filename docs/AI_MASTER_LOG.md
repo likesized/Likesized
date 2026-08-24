@@ -306,7 +306,7 @@ Review logging rule:
 - Status vocabulary for this queue: **RECORDED / APPROVED TO FIX / IMPLEMENTED / VERIFIED / DEPLOYED / DEFERRED**.
 
 Current issues after PR #76 deployment:
-- None recorded yet. Owner live review is in progress; first expected retest is the normal iPhone photo that previously produced **“Photo conversion failed on this device.”**
+- **RECORDED — New Outfit / Photo Tags:** **Use Cover Photo Tags** needs to read much more obviously as a button/action; its current presentation is too easy to mistake for non-interactive text or a passive control.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
 - PR #76 is production-live. The owner's first retest is the same normal iPhone photo that previously produced **“Photo conversion failed on this device.”**

@@ -26,7 +26,7 @@ test("New Outfit has one canonical creator and reuses the canonical Fit Report i
   assert.doesNotMatch(newPage, /visibility|Private\s*→\s*will share|become Shared/i);
   assert.doesNotMatch(actions, /visibility|closet_visibility|update\([^)]*shared/i);
   assert.match(composer, /Add a missing garment/);
-  assert.match(composer, /iframe[^>]+[\s\S]*?src="\/closet\/add"/);
+  assert.match(composer, /iframe[^>]+[\s\S]*?src="\/closet\/add\?embed=outfit"/);
 });
 
 test("current V1 Closet UI has no per-garment Private / Shared control", () => {
@@ -44,9 +44,9 @@ test("creator supports the locked editorial, gallery, hotspot, draft and preview
   assert.match(composer, /\/5,000/);
   assert.match(composer, /Additional photos/);
   assert.match(composer, /multiple/);
-  assert.match(composer, /Set as Main/);
-  assert.match(composer, /drag to reorder/);
-  assert.match(composer, /drag its dot/);
+  assert.match(composer, /Set as cover/);
+  assert.match(composer, /Drag to reorder/);
+  assert.match(composer, /Drag a dot to move it/);
   assert.match(composer, /Save Draft/);
   assert.match(composer, /Preview Outfit/);
   assert.match(composer, /Publish Outfit/);
@@ -60,12 +60,12 @@ test("Occasion is a fixed shared vocabulary and Style Tags remain community-crea
   for (const label of required) assert.ok(taxonomy.includes(label), `missing Occasion ${label}`);
   assert.equal(count(taxonomy, " value: "), 24);
   assert.match(composer, /Style tags/);
-  assert.match(composer, /up to 3/);
+  assert.match(composer, /Up to 3/);
   assert.match(newPage, /get_outfit_style_tag_suggestions/);
 });
 
 test("Outfit browse is image-first masonry with natural photo proportions and a two-column mobile feed", () => {
-  assert.match(feedPage, /Browse real outfits first/);
+  assert.match(feedPage, /Browse outfits, then open a look/);
   assert.match(feedPage, /feedPhotoLink/);
   assert.match(feedPage, /pinCreatorRow/);
   assert.match(outfitStyles, /\.feed\{column-count:4;column-gap:18px\}/);
@@ -92,7 +92,7 @@ test("published Outfit detail keeps anonymous editorial view separate from membe
 });
 
 test("V1 social controls include comments, reporting, blocking and the locked creator analytics", () => {
-  assert.match(actions, /body\.length>500/);
+  assert.match(actions, /body\.length\s*>\s*500/);
   assert.match(actions, /LINK_PATTERN/);
   assert.match(detail, /outfit_comment/);
   assert.match(detail, /Block member/);
@@ -103,7 +103,7 @@ test("V1 social controls include comments, reporting, blocking and the locked cr
 });
 
 test("new photos stay private until publish transition", () => {
-  assert.match(actions, /bucket="outfit-draft-photos" as const/);
+  assert.match(actions, /const bucket = "outfit-draft-photos" as const/);
   assert.match(actions, /moveDraftPhotoToPublic/);
   assert.match(actions, /cleanupNewFailedPublish/);
 });

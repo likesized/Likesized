@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useState } from "react";
-import styles from "../outfits.module.css";
+import styles from "./outfitDetail.module.css";
 
 export type OutfitTabKey="style"|"comments"|"tagged";
 

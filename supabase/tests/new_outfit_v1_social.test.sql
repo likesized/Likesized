@@ -76,6 +76,8 @@ select is(
 );
 reset role;
 
+set local request.jwt.claim.sub='';
+set local request.jwt.claim.role='anon';
 set local role anon;
 select is(
   (select count(*) from public.outfit_posts where id='e5000000-0000-4000-8000-000000000001'::uuid),
@@ -174,6 +176,8 @@ select throws_like(
 );
 reset role;
 
+set local request.jwt.claim.sub='';
+set local request.jwt.claim.role='anon';
 set local role anon;
 select is(
   (select count(*) from public.outfit_posts where id='e5000000-0000-4000-8000-000000000001'::uuid),
@@ -239,6 +243,8 @@ select is(
 );
 reset role;
 
+set local request.jwt.claim.sub='';
+set local request.jwt.claim.role='anon';
 set local role anon;
 select is(
   (select count(*) from public.outfit_posts where id='e5000000-0000-4000-8000-000000000001'::uuid),

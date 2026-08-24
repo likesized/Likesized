@@ -5,6 +5,23 @@ import styles from "@/app/closet/add/fitReport.module.css";
 
 export function FitReportSuccessModal({ closetItemId, wasUpdated, underReview = false }: { closetItemId: string; wasUpdated: boolean; underReview?: boolean }) {
   const [open, setOpen] = useState(true);
+  const [embedded, setEmbedded] = useState(false);
+
+  function returnToOutfit() {
+    window.parent.postMessage(
+      { type: "likesized:outfit-garment-saved", closetItemId },
+      window.location.origin,
+    );
+  }
+
+  useEffect(() => {
+    const isEmbedded = window.parent !== window;
+    setEmbedded(isEmbedded);
+    if (isEmbedded) {
+      const timer = window.setTimeout(returnToOutfit, 25);
+      return () => window.clearTimeout(timer);
+    }
+  }, [closetItemId]);
 
   useEffect(() => {
     if (!open) return;
@@ -13,9 +30,13 @@ export function FitReportSuccessModal({ closetItemId, wasUpdated, underReview = 
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  }, [open, embedded]);
 
   function closeModal() {
+    if (embedded) {
+      returnToOutfit();
+      return;
+    }
     window.history.replaceState(null, "", "/closet/add");
     setOpen(false);
   }
@@ -25,6 +46,17 @@ export function FitReportSuccessModal({ closetItemId, wasUpdated, underReview = 
   }
 
   if (!open) return null;
+
+  if (embedded) {
+    return <div className={styles.successOverlay} role="dialog" aria-modal="true" aria-labelledby="fit-report-success-title">
+      <div className={styles.successCard}>
+        <span className="eyebrow">GARMENT ADDED</span>
+        <h2 id="fit-report-success-title">Returning to your Outfit…</h2>
+        <p>Your Fit Report is saved and this garment will be added to the Outfit automatically.</p>
+        <div className={styles.successActions}><button className="secondaryButton" type="button" onClick={returnToOutfit}>Back to Outfit</button></div>
+      </div>
+    </div>;
+  }
 
   const eyebrow = underReview ? "FIT REPORT SAVED · ITEM UNDER REVIEW" : wasUpdated ? "FIT REPORT UPDATED" : "FIT REPORT ADDED";
   const title = underReview

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import styles from "../outfits.module.css";
+import styles from "./outfitDetail.module.css";
 
 export default function OutfitEngagementClient({ postId, headline }: { postId: string; headline: string }) {
   const [shared,setShared]=useState(false);

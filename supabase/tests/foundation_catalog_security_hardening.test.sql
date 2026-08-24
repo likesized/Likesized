@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions,auth,private;
-select plan(15);
+select plan(17);
 
 -- First account preserves the bootstrap-admin behavior. Owner/other are ordinary members.
 insert into auth.users(id,aud,role,email,created_at,updated_at) values

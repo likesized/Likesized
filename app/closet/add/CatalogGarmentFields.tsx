@@ -88,6 +88,7 @@ const PURCHASE_MONTHS = [
 ];
 const CURRENT_YEAR = new Date().getFullYear();
 const PURCHASE_YEARS = Array.from({ length: CURRENT_YEAR - 1899 }, (_, index) => String(CURRENT_YEAR - index));
+const ITEM_SEARCH_DEBOUNCE_MS = 100;
 
 export function useCatalogGarment() {
   return useContext(CatalogContext);
@@ -292,6 +293,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
   const productLabelPhotoInput = useRef<HTMLInputElement>(null);
   const brandInput = useRef<HTMLInputElement>(null);
   const itemNameInput = useRef<HTMLInputElement>(null);
+  const itemSuggestionCache = useRef(new Map<string, CatalogProduct>());
 
   const selectedType = GARMENT_TYPES.find((item) => item.key === type);
   const filteredTypes = category ? GARMENT_TYPES.filter((item) => item.category === category) : [];
@@ -494,28 +496,32 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
 
   useEffect(() => {
     const normalizedItem = normalizeCatalogText(itemName);
+    const normalizedBrand = normalizeCatalogText(brand);
     if (step !== "details" || (product && !itemIssue) || !brand.trim() || normalizedItem.length < 2) {
       setItemSuggestions([]);
       return;
     }
-    setItemSuggestions([]);
+    const cached = [...itemSuggestionCache.current.values()]
+      .filter((item) => normalizeCatalogText(item.brand_name) === normalizedBrand && normalizeCatalogText(item.name).includes(normalizedItem))
+      .slice(0, 12);
+    setItemSuggestions(cached);
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
         const response = await fetch(`/api/catalog/search?brand=${encodeURIComponent(brand)}&q=${encodeURIComponent(itemName)}`, { signal: controller.signal });
         const body = await response.json() as { local?: CatalogProduct[] };
-        const normalizedBrand = normalizeCatalogText(brand);
         const fixtures = fixtureProducts.filter((item) => normalizeCatalogText(item.brand_name) === normalizedBrand && normalizeCatalogText(item.name).includes(normalizedItem));
         const merged = [...fixtures, ...(body.local ?? [])]
           .filter((item) => normalizeCatalogText(item.brand_name) === normalizedBrand)
           .filter((item, index, all) => all.findIndex((other) => other.id === item.id) === index);
+        for (const item of merged) itemSuggestionCache.current.set(item.id, item);
         const exactMatch = merged.find((item) => normalizeCatalogText(item.name) === normalizedItem);
         if (exactMatch) { chooseProduct(exactMatch); return; }
         setItemSuggestions(merged.slice(0, 12));
       } catch (cause) {
-        if ((cause as Error).name !== "AbortError") setItemSuggestions([]);
+        if ((cause as Error).name !== "AbortError" && cached.length === 0) setItemSuggestions([]);
       }
-    }, 250);
+    }, ITEM_SEARCH_DEBOUNCE_MS);
     return () => { clearTimeout(timer); controller.abort(); };
   }, [step, product, itemIssue, brand, itemName, fixtureProducts]);
 
@@ -646,15 +652,15 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
           </div>
         </div>
 
-        <label>Overall category
-          <select name="garment_category" value={category} disabled={typeLocked} onChange={(event) => { setCategory(event.target.value as GarmentCategoryKey); setType(""); setCandidateDefaultSizeKind(null); setAnswers({}); }} required data-review-label="Overall category">
-            <option value="" disabled>Select a category</option>
-            {GARMENT_CATEGORIES.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}
-          </select>
-          {typeLocked ? <input type="hidden" name="garment_category" value={category}/> : null}
-        </label>
+        <div className={styles.categoryTypeGroup}>
+          <label>Overall category
+            <select name="garment_category" value={category} disabled={typeLocked} onChange={(event) => { setCategory(event.target.value as GarmentCategoryKey); setType(""); setCandidateDefaultSizeKind(null); setAnswers({}); }} required data-review-label="Overall category">
+              <option value="" disabled>Select a category</option>
+              {GARMENT_CATEGORIES.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}
+            </select>
+            {typeLocked ? <input type="hidden" name="garment_category" value={category}/> : null}
+          </label>
 
-        <div className={styles.editableField}>
           <label>Specific garment type
             <select name="garment_type" value={type} disabled={!category || typeLocked} onChange={(event) => { setType(event.target.value); setCandidateDefaultSizeKind(null); setAnswers({}); }} required data-review-label="Specific garment type">
               <option value="" disabled>{category ? "Select the specific garment" : "Choose a category first"}</option>
@@ -662,7 +668,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
             </select>
             {typeLocked ? <input type="hidden" name="garment_type" value={type}/> : null}
           </label>
-          {typeLocked ? <button className={styles.changeThis} type="button" onClick={() => { setTypeIssue(true); setCategory(""); setType(""); setCandidateDefaultSizeKind(null); setAnswers({}); }}>Change</button> : null}
+          {typeLocked ? <button className={styles.changeThis} type="button" onClick={() => { setTypeIssue(true); setCategory(""); setType(""); setCandidateDefaultSizeKind(null); setAnswers({}); }}>Change category / type</button> : null}
         </div>
 
         <CatalogDepartmentField departments={departments} />

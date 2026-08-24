@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { deleteOutfit } from "@/app/outfits/actions";
-import styles from "../outfits.module.css";
+import styles from "./outfitDetail.module.css";
 
 export default function ConfirmDeleteOutfit({postId}:{postId:string}){
   const [open,setOpen]=useState(false);

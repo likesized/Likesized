@@ -370,7 +370,11 @@ export async function addGarment(formData: FormData) {
   let labelPhotoEvidenceId: string | null = null;
   try {
     const resolvedKnown = await resolveKnownCatalogProduct(supabase, existingProductId, brandName, styleNumber, identifier, productUrl);
-    const known = identityUncertain ? null : resolvedKnown;
+    const resolvedIdentityMatchesSubmitted = !resolvedKnown || Boolean(existingProductId) || !identifier || (
+      normalizeSearchText(brandName) === resolvedKnown.brand.normalized_name
+      && normalizeSearchText(productName) === normalizeSearchText(resolvedKnown.product.name)
+    );
+    const known = identityUncertain || !resolvedIdentityMatchesSubmitted ? null : resolvedKnown;
     const normalizedSizeId = await getNormalizedSize(supabase, structuredSizeLabel, sizeKind, sizingSystem);
 
     if (known) {

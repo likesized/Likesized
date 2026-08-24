@@ -81,6 +81,8 @@ test("published Outfit detail keeps anonymous editorial view separate from membe
   assert.match(detail, /get_public_outfit_comments/);
   assert.match(detail, /get_public_outfit_product_teasers/);
   assert.doesNotMatch(detail, /from\("outfit_posts"\)\.select\("[^"\n]*profile:profiles/);
+  assert.doesNotMatch(detail, /retailer_url/);
+  assert.match(detail, /retailer_listings/);
   assert.match(detail, /Sign in to see size worn and reported fit/);
   assert.match(detail, /Size \$\{report\.size_label\}/);
   assert.match(gallery, /View tagged items/);

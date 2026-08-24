@@ -4,6 +4,8 @@ import { existsSync, readFileSync } from "node:fs";
 
 const composer = readFileSync(new URL("../app/outfits/new/OutfitComposer.tsx", import.meta.url), "utf8");
 const newPage = readFileSync(new URL("../app/outfits/new/page.tsx", import.meta.url), "utf8");
+const feedPage = readFileSync(new URL("../app/outfits/page.tsx", import.meta.url), "utf8");
+const outfitStyles = readFileSync(new URL("../app/outfits/outfits.module.css", import.meta.url), "utf8");
 const actions = readFileSync(new URL("../app/outfits/actions.ts", import.meta.url), "utf8");
 const detail = readFileSync(new URL("../app/outfits/[id]/page.tsx", import.meta.url), "utf8");
 const gallery = readFileSync(new URL("../app/outfits/[id]/OutfitGallery.tsx", import.meta.url), "utf8");
@@ -60,6 +62,17 @@ test("Occasion is a fixed shared vocabulary and Style Tags remain community-crea
   assert.match(composer, /Style tags/);
   assert.match(composer, /up to 3/);
   assert.match(newPage, /get_outfit_style_tag_suggestions/);
+});
+
+test("Outfit browse is image-first masonry with natural photo proportions and a two-column mobile feed", () => {
+  assert.match(feedPage, /Browse real outfits first/);
+  assert.match(feedPage, /feedPhotoLink/);
+  assert.match(feedPage, /pinCreatorRow/);
+  assert.match(outfitStyles, /\.feed\{column-count:4;column-gap:18px\}/);
+  assert.match(outfitStyles, /\.post\{display:inline-block;width:100%/);
+  assert.match(outfitStyles, /\.photo\{height:auto;aspect-ratio:auto/);
+  assert.match(outfitStyles, /@media\(max-width:760px\)\{\.feed\{column-count:2;column-gap:12px\}/);
+  assert.doesNotMatch(outfitStyles, /\.feed\{display:grid;grid-template-columns:repeat\(2/);
 });
 
 test("published Outfit detail keeps anonymous editorial view separate from member Fit detail", () => {

@@ -14,7 +14,7 @@ type ManifestTag = { closetItemId: string; x: number; y: number };
 type ManifestPhoto = { key: string; existingId?: string; isMain: boolean; tags: ManifestTag[] };
 type ExistingPhoto = { id: string; bucket: "outfit-photos" | "outfit-draft-photos"; display_path: string; feed_path: string; sort_order: number; is_main: boolean };
 type Supabase = Awaited<ReturnType<typeof createClient>>;
-export type OutfitSaveResult = { ok: boolean; postId?: string; status?: "draft" | "published"; error?: string };
+export type OutfitSaveResult = { ok: boolean; postId?: string; status?: "draft" | "published"; photoIds?: Record<string, string>; error?: string };
 
 function text(formData: FormData, name: string) { return String(formData.get(name) ?? "").trim(); }
 function safeReturnTo(value: FormDataEntryValue | null, fallback = "/outfits") { const raw = String(value ?? ""); return raw.startsWith("/") && !raw.startsWith("//") ? raw : fallback; }
@@ -227,8 +227,13 @@ async function saveOutfit(formData: FormData, mode: SaveMode): Promise<OutfitSav
     }
 
     cleanup = null;
-    for (const path of ["/outfits", "/outfits/drafts", `/outfits/${postId}`, "/circle", "/explore"]) revalidatePath(path);
-    return { ok: true, postId, status: mode === "draft" ? "draft" : "published" };
+    if (mode === "draft") {
+      revalidatePath("/outfits");
+      revalidatePath("/outfits/drafts");
+    } else {
+      for (const path of ["/outfits", "/outfits/drafts", `/outfits/${postId}`, "/circle", "/explore"]) revalidatePath(path);
+    }
+    return { ok: true, postId, status: mode === "draft" ? "draft" : "published", photoIds: Object.fromEntries(photoIdByKey) };
   } catch (error) {
     if (cleanup) await cleanupNewFailedPublish(cleanup.supabase, cleanup.postId);
     return { ok: false, error: error instanceof Error ? error.message : "That Outfit could not be saved." };

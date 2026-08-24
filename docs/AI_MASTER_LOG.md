@@ -44,8 +44,8 @@ The six ordered browser-to-backend checks are complete:
 
 Controlled production test identity remains Maidenform / Heirloom / Bra Product `4086fdaa-172d-4a3f-b6c4-2c155094bb25`, UPC `196988323504`. Its deliberate `catalog_review_needed` state came from the controlled correction test, not barcode corruption.
 
-## Roadmap 11A — Garment-question variation classification — OWNER AUDIT COMPLETE / IMPLEMENTATION ACTIVE
-Primary active implementation line: `agent/variation-definition-map`, based directly on current production `main` commit `f75acec9bea0af8a6e8b1b691942f080f9668ea5`.
+## Roadmap 11A — Garment-question variation classification — IMPLEMENTATION COMPLETE / FINAL EXACT-HEAD CI PENDING
+Primary active implementation line: `agent/variation-definition-map`, based directly on current production `main` commit `f75acec9bea0af8a6e8b1b691942f080f9668ea5`. PR #66 is open.
 
 Owner audit is complete. Locked 11A decisions:
 - **Intended Fit is deleted from every current Garment Type question set.** It was judged subjective/redundant with actual Fit Result and wearer evidence.
@@ -61,7 +61,9 @@ Owner audit is complete. Locked 11A decisions:
 - Current counted-report `objective_variant_key` remains a separate historical/report-dedup concept during 11A. This implementation must not silently rekey historical Fit Reports or collapse possible legacy duplicates merely because a question was retired. A deliberate counted-report fingerprint reconciliation remains separate work if needed.
 - No schema migration is required merely to retire current intake questions; historical database vocabulary/answers may remain inert for compatibility with immutable history.
 
-Current implementation is isolated to PR #66 / `agent/variation-definition-map`. A Vercel branch preview may build automatically from Git integration, but it is not production authorization and does not replace required exact-head CI.
+Implementation head `2581d23416b0a95ff56ed32ea65e3794cc8a974b` passed full LikeSized CI #726 (`32694000887`): canonical integrity, TypeScript, all focused application safeguards including the new tracked-variation test, production build, fresh replay of every canonical migration and the complete database behavior/privacy suite all passed. This documentation-only verification note changes the branch head, so the new final exact head must pass CI again before PR #66 can be considered exact-head verified.
+
+A Vercel branch preview may build automatically from Git integration, but it is not production authorization and does not replace required exact-head CI.
 
 **Deployment state:** 11A has not been authorized for production. Do not merge/update `main` or deploy this branch without explicit owner authorization.
 
@@ -237,7 +239,7 @@ Older recovery/feature/verification branches classified in Git history remain RE
 9. People My Size — audit remains.
 10. My Circle / Following / system-generated Fit Twin — audit remains.
 11. New Fit Report — six browser/backend wiring checks complete; cleanup through PR #65 is deployed.
-11A. **Garment-question variation classification — owner audit complete; canonical implementation/verification active on PR #66.**
+11A. **Garment-question variation classification — implementation complete; final exact-head CI pending on PR #66 before any merge decision.**
 12. New Outfit.
 13. Outfits / Style Feed.
 14. Garment/Product detail — Exact Variation behavior only after 11A is verified/reconciled.
@@ -248,7 +250,7 @@ Older recovery/feature/verification branches classified in Git history remain RE
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Finish PR #66 / `agent/variation-definition-map` through exact-head canonical check, typecheck, focused taxonomy/variation safeguards, production build and full repository CI.
+- Run final exact-head full repository CI on PR #66 after this docs-only verification note.
 - Do not merge/deploy PR #66 without explicit owner authorization.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification; do not silently rekey/collapse historical reports.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
@@ -283,8 +285,7 @@ Older recovery/feature/verification branches classified in Git history remain RE
 - PR #65 exact head `f9d49a9ad66a11183dcbf5086e706be5b3c8d8a7` passed full CI #723; merge/current production `f75acec9bea0af8a6e8b1b691942f080f9668ea5`; Vercel `dpl_FdQSyuvSBTDrpEnK4hThiAMdjQ1E` is READY.
 
 # EXACT NEXT ACTION — CURRENT
-1. Run full LikeSized CI on the exact PR #66 head after this canonical reconciliation.
-2. Inspect any failure without weakening safeguards; keep `objective_variant_key` behavior untouched unless the owner separately authorizes historical counted-report reconciliation.
-3. Once the exact PR #66 head is green, record that verified head/run here and rerun final exact-head CI after the docs-only verification note if required.
-4. Do **not** merge or deploy PR #66 without separate explicit owner authorization.
-5. After 11A is verified/reconciled, proceed to the next owner-selected audit item; Product Detail Exact Variation must consume the one canonical variation-definition map.
+1. Run full LikeSized CI on the new exact PR #66 head created by this documentation-only verification note.
+2. If green, freeze PR #66 exactly as verified and report it ready for the owner's merge/deployment decision.
+3. Do **not** merge or deploy PR #66 without separate explicit owner authorization.
+4. After 11A is verified/reconciled, proceed to the next owner-selected audit item; Product Detail Exact Variation must consume the one canonical variation-definition map.

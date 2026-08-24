@@ -12,9 +12,14 @@ const confirmDelete=readFileSync(new URL("../app/outfits/[id]/ConfirmDeleteOutfi
 const actions=readFileSync(new URL("../app/outfits/actions.ts",import.meta.url),"utf8");
 const commentComposer=readFileSync(new URL("../app/outfits/[id]/CommentComposer.tsx",import.meta.url),"utf8");
 const shopRoute=readFileSync(new URL("../app/api/outfits/[id]/shop/route.ts",import.meta.url),"utf8");
+const closetPage=readFileSync(new URL("../app/closet/page.tsx",import.meta.url),"utf8");
+const outfitsIndex=readFileSync(new URL("../app/outfits/page.tsx",import.meta.url),"utf8");
+const explorePage=readFileSync(new URL("../app/explore/page.tsx",import.meta.url),"utf8");
+const profilePhoto=readFileSync(new URL("../lib/profile-photo.ts",import.meta.url),"utf8");
 const migration=readFileSync(new URL("../supabase/migrations/20260824133500_new_outfit_v1_social_foundation.sql",import.meta.url),"utf8");
 const hardeningMigration=readFileSync(new URL("../supabase/migrations/20260824133700_harden_new_outfit_v1_social_controls.sql",import.meta.url),"utf8");
 const commentLikesMigration=readFileSync(new URL("../supabase/migrations/20260824231500_outfit_comment_likes.sql",import.meta.url),"utf8");
+const liveIdentityMigration=readFileSync(new URL("../supabase/migrations/20260824234500_live_profile_identity.sql",import.meta.url),"utf8");
 
 test("New Outfit creator keeps canonical photo preparation and six-photo boundaries",()=>{
  assert.match(composer,/Cover photo \(required\)/);
@@ -63,6 +68,35 @@ test("photo tagging and Preview Publish keep the owner-reviewed interaction",()=
  assert.match(composer,/window\.scrollTo\(\{top:0,behavior:"auto"\}\)/);
  assert.match(composer,/Previous photo/);
  assert.match(composer,/Next photo/);
+});
+
+test("My Closet is the canonical owned-content hub",()=>{
+ assert.match(closetPage,/My Closet sections/);
+ assert.match(closetPage,/>Garments<\/Link>/);
+ assert.match(closetPage,/>Outfits<\/Link>/);
+ assert.match(closetPage,/>FITuition<\/Link>/);
+ assert.match(closetPage,/tab === "outfits"/);
+ assert.match(closetPage,/\.eq\("user_id", userId\)/);
+ assert.match(closetPage,/status === "draft" \? `\/outfits\/new\?draft=/);
+ assert.match(closetPage,/FITuition combines the Fit Reports and garment history in your Closet/);
+ assert.match(outfitsIndex,/redirect\(`\/closet\?tab=outfits/);
+ assert.doesNotMatch(outfitsIndex,/outfit_posts|feed=following|YOUR DRAFTS/);
+});
+
+test("profile photos are live identity instead of Outfit or comment snapshots",()=>{
+ assert.match(profilePhoto,/current profiles\.avatar_url at render time/);
+ assert.match(profilePhoto,/getPublicUrl/);
+ assert.match(detailPage,/currentProfilePhotoUrl/);
+ assert.match(detailPage,/get_public_outfit_creator/);
+ assert.match(detailPage,/get_public_outfit_comments/);
+ assert.match(detailPage,/avatar_url/);
+ assert.match(explorePage,/profile:profiles\(username,display_name,avatar_url\)/);
+ assert.match(explorePage,/outfitProfilePhotos/);
+ assert.match(liveIdentityMigration,/set public = true/);
+ assert.match(liveIdentityMigration,/p\.avatar_url/);
+ assert.match(liveIdentityMigration,/oc\.like_count/);
+ assert.match(liveIdentityMigration,/never snapshotted onto the comment/);
+ assert.doesNotMatch(migration,/comment_avatar|outfit_avatar/);
 });
 
 test("opened Outfit is a direct-navigation one-photo gallery with no secondary thumbnail strip",()=>{

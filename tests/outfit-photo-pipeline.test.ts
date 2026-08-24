@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
+import sharp from "sharp";
+import { canonicalOutfitWebp } from "../lib/outfit-photo-server.ts";
 import { outfitFeedPhotoPath } from "../lib/outfit-photo-paths.ts";
 
 test("legacy feed helper remains compatible for existing Style Feed rows", () => {
@@ -11,16 +13,33 @@ test("legacy feed helper remains compatible for existing Style Feed rows", () =>
 test("gallery upload enforces optimized WebP display and feed boundaries", () => {
   const actions = readFileSync(new URL("../app/outfits/actions.ts", import.meta.url), "utf8");
   const composer = readFileSync(new URL("../app/outfits/new/OutfitComposer.tsx", import.meta.url), "utf8");
+  const serverNormalizer = readFileSync(new URL("../lib/outfit-photo-server.ts", import.meta.url), "utf8");
   assert.match(actions, /photo_display__/);
   assert.match(actions, /photo_feed__/);
   assert.match(actions, /600\s*\*\s*1024/);
   assert.match(actions, /220\s*\*\s*1024/);
   assert.match(actions, /outfit-draft-photos/);
   assert.match(actions, /moveDraftPhotoToPublic/);
+  assert.match(actions, /canonicalOutfitWebp/);
   assert.match(composer, /multiple/);
   assert.match(composer, /photos\.length\s*>=\s*6/);
   assert.match(composer, /Set as cover/);
   assert.match(composer, /draggable/);
+  assert.match(composer, /canvasWebpSupported/);
+  assert.match(composer, /image\/jpeg/);
+  assert.match(serverNormalizer, /metadata\.format === "webp"/);
+  assert.match(serverNormalizer, /\.webp\(\{ quality \}\)/);
+});
+
+test("Safari JPEG transport fallback is normalized to real WebP before storage", async () => {
+  const jpeg = await sharp({
+    create: { width: 64, height: 64, channels: 3, background: { r: 120, g: 140, b: 160 } },
+  }).jpeg({ quality: 80 }).toBuffer();
+  const transport = new File([jpeg], "display.webp", { type: "image/webp" });
+  const normalized = await canonicalOutfitWebp(transport, 600 * 1024);
+  const metadata = await sharp(normalized).metadata();
+  assert.equal(metadata.format, "webp");
+  assert.ok(normalized.byteLength <= 600 * 1024);
 });
 
 test("new Outfit feed serves feed derivatives while legacy circle compatibility remains", () => {

@@ -6,7 +6,7 @@ This is the one canonical roadmap, current-status record, owner-decision ledger,
 Canonical ownership:
 - `AI_REPOSITORY_RULES.md` — repository/source-of-truth policy.
 - `docs/AI_MASTER_LOG.md` — this file; roadmap/status/decision/handoff.
-- `docs/V1_PRODUCT_SPEC.md` — current product/fit architecture.
+- `docs/V1_PRODUCT_SPEC.md` — current product/fit architecture only.
 - `supabase/schema_contract.md` — current database behavior/privacy contract plus explicit implementation debt.
 - `supabase/migrations/` — immutable ordered executable database history.
 
@@ -22,6 +22,9 @@ LikeSized is not yet a public active service with an external audience. For the 
 
 ## Canonical production line — LIVE
 - `main` is the one production implementation line and is coupled to Vercel production.
+- Current homepage brand-copy production merge: `4fc64957809ee18a6c7c0ac203f29147ef2c8646`, squash merge of PR #68 **Update homepage brand copy**.
+- PR #68 exact tested head `3193772517682ab2336f1cbc7368fe0236f8b93b` passed full LikeSized CI #771 (`32754654957`) before merge; owner explicitly authorized deployment on 2026-08-24.
+- Production Vercel deployment `dpl_Hd1Ys6BfCEJxBERP4kNr2UQMdLp6` reached READY and aliases `likesized.com`; a live fetch confirmed the approved hero/capability copy and deployment-scoped error/fatal logs were empty in the checked window.
 - Current Roadmap 12 application production merge: `965274351a2f10f893631d769c9caeccdcc5e402`, squash merge of PR #67 **Roadmap 12: New Outfit V1**.
 - PR #67 exact tested head `113e9d474afe19e82df154982d4d4ddd741ad67d` passed full LikeSized CI #765 (`32751821261`) before merge.
 - Owner explicitly authorized deployment of PR #67 on 2026-08-24.
@@ -31,8 +34,8 @@ LikeSized is not yet a public active service with an external audience. For the 
 - Applied database migrations are immutable; corrections use later ordered migrations.
 - No paid Supabase branches.
 
-## Homepage brand copy — OWNER LOCKED / BRANCH VERIFIED / AWAITING DEPLOYMENT AUTHORIZATION
-Owner-approved homepage copy work is isolated on `agent/homepage-brand-copy`, based directly on the latest reconciled production `main` head `0ce928546ef40aafa720aa124bac5edbadab4409`. This branch is not production and has no deployment authorization yet.
+## Homepage brand copy — COMPLETE / DEPLOYED / OWNER LIVE CHECK PENDING
+Owner-approved homepage copy work shipped through PR #68. Exact final PR head `3193772517682ab2336f1cbc7368fe0236f8b93b` passed full LikeSized CI #771 (`32754654957`) before the owner explicitly authorized deployment on 2026-08-24. PR #68 squash-merged to `main` as `4fc64957809ee18a6c7c0ac203f29147ef2c8646`. Production Vercel deployment `dpl_Hd1Ys6BfCEJxBERP4kNr2UQMdLp6` reached READY, aliases `likesized.com`, and a live fetch returned the approved homepage copy from that exact deployment. Deployment-scoped runtime error inspection returned no error/fatal logs in the checked window. Owner visual confirmation on the live page remains the final human check.
 
 Locked scope for this batch:
 - hero eyebrow: **YOUR BODY ISN’T A SIZE CHART.**
@@ -44,7 +47,7 @@ Locked scope for this batch:
 - the Build Your Circle description becomes **See what they wear, how they style it, what they recommend, and how they put it all together.**
 - no other homepage copy, layout, behavior, FAQ, schema or product semantics are part of this batch.
 
-Owner-approved implementation/test head `06a3ffcc3e410e72f800c279f7692278e964a3e0` passed full LikeSized CI #770 (`32754191856`): canonical integrity, TypeScript, all focused application safeguards including the updated public-homepage content safeguard, production build, fresh replay of every canonical migration and the complete database behavior/privacy suite all passed. PR #68 remains open. The later master-only reconciliation commit must preserve the same green contract before any owner-authorized production merge.
+Final exact PR #68 head `3193772517682ab2336f1cbc7368fe0236f8b93b` passed full LikeSized CI #771 (`32754654957`): canonical integrity, TypeScript, all focused application safeguards including the updated public-homepage content safeguard, production build, fresh replay of every canonical migration and the complete database behavior/privacy suite all passed. No schema migration or product-logic change was part of PR #68.
 
 ## Roadmap 12 — New Outfit — COMPLETE / DEPLOYED / OWNER LIVE AUDIT NEXT
 PR #67 **Roadmap 12: New Outfit V1** is merged to `main` and live on `likesized.com`. The implementation/schema/docs verification and production cutover are complete. The required next product step is the owner's first live browser audit of the working page; do not silently advance to Roadmap 13 before that audit is handled.
@@ -116,7 +119,7 @@ Exact implementation head `d585d7df34a5f6370cdd242afcee2ebd5fd6f1c4` passed full
 Production reconciliation after PR #58/#59. Exact head `f28d988ca7018653ae82d641b758fc4f4c020481` passed CI #706 and was squash-merged as `c6e643f707bf5f0c44cb26a5cd5fa7f903bbca28`. No application/database behavior change.
 
 ## PR #61 — COMPLETE / DEPLOYED
-**Polish final Fit Report desktop and item-search UX.** Exact head `d4c84b9926ed3b2b53666a399b131e6e14cedfa3` passed CI #708; squash merge `24fb0e42b6e05d42a10b1912a5493367975952da`; production Vercel `dpl_J9cnoV8VxewwZDZfbjpusi3Gx4RG`. Delivered 680px desktop single-field cap, shared Category/Type Change control and faster/cached Item suggestions. No database change.
+**Polish final Fit Report desktop and item-search UX.** Exact head `d4c84b9926ed3b2b53666a399b131e6e14cedfa3` passed CI #708; squash merge `24fb0e42b6e05d42a10b1912a5493367975952da`; Vercel production `dpl_J9cnoV8VxewwZDZfbjpusi3Gx4RG`. Delivered 680px desktop single-field cap, shared Category/Type Change control and faster/cached Item suggestions. No database change.
 
 ## PR #62 — COMPLETE / DEPLOYED
 **Promote Product Label photo in Fit Report.** Exact head `39684abed6312f5d317697f58454b7bd1a6c7572` passed CI #712; squash merge `245bfab0d0d918671cfce3856b78e57525867df2`; production Vercel `dpl_3DXrLcVy13gwc4L8CSLtvspFLc9G`. It preserved one Label/Tag evidence input and kept Product Photo in Optional Additional Information, but its large in-form Label/Tag card presentation was superseded by PR #63.
@@ -279,7 +282,7 @@ Recent branch classification:
 - `agent/faster-item-suggestions` — RECOVERED via PR #65; no longer active.
 - `agent/variation-definition-map` — RECOVERED via PR #66; no longer active.
 - `agent/new-outfit-v1` — **RECOVERED via PR #67 / DEPLOYED**; no longer the active implementation line.
-- `agent/homepage-brand-copy` — **ACTIVE / VERIFIED / AWAITING DEPLOYMENT AUTHORIZATION**, based on reconciled production `main` head `0ce928546ef40aafa720aa124bac5edbadab4409`; PR #68 is open and production remains unchanged.
+- `agent/homepage-brand-copy` — **RECOVERED via PR #68 / DEPLOYED**; no longer the active implementation line.
 
 Older recovery/feature/verification branches classified in Git history remain RECOVERED, SUPERSEDED, OBSOLETE or DUPLICATE; none overrides current `main`.
 
@@ -306,7 +309,6 @@ Older recovery/feature/verification branches classified in Git history remain RE
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Owner-approved homepage brand/capability copy is verified on `agent/homepage-brand-copy` through implementation/test head `06a3ffcc3e410e72f800c279f7692278e964a3e0` and CI #770; PR #68 remains branch-only and awaits explicit owner deployment authorization plus final exact-head CI after this master-only reconciliation.
 - Roadmap 12 is production-live; the owner must perform the first authenticated live create/draft/preview/publish/detail/edit/social browser audit before the roadmap advances or any discovered correction is classified complete.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification; do not silently rekey/collapse historical reports.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
@@ -342,8 +344,9 @@ Older recovery/feature/verification branches classified in Git history remain RE
 - PR #65 exact head `f9d49a9ad66a11183dcbf5086e706be5b3c8d8a7` passed full LikeSized CI #723; merge `f75acec9bea0af8a6e8b1b691942f080f9668ea5`; Vercel production `dpl_FdQSyuvSBTDrpEnK4hThiAMdjQ1E` reached READY.
 - PR #66 exact head `d585d7df34a5f6370cdd242afcee2ebd5fd6f1c4` passed full LikeSized CI #727; squash merge `00b6245325bad003e9a82bed438930fd91e13dff`; final post-merge reconciliation production head `921383ac10ecf63ecbf35743caa366c4b635dd1b`; final Vercel `dpl_BdpDbpMEGWwLhqrzWqzZrWr393Bk` reached READY.
 - PR #67 exact tested head `113e9d474afe19e82df154982d4d4ddd741ad67d` passed full CI #765; six migrations were applied database-first; squash merge `965274351a2f10f893631d769c9caeccdcc5e402`; production Vercel `dpl_H9MRX5S1Z1uc1w9UCTRBdFfSxvrK` reached READY and aliases `likesized.com`; no runtime errors were found in the checked post-cutover window. First live owner browser audit remains.
+- PR #68 exact tested head `3193772517682ab2336f1cbc7368fe0236f8b93b` passed full CI #771; owner authorized deployment; squash merge `4fc64957809ee18a6c7c0ac203f29147ef2c8646`; production Vercel `dpl_Hd1Ys6BfCEJxBERP4kNr2UQMdLp6` reached READY and aliases `likesized.com`; live fetch confirmed the approved homepage copy and deployment-scoped error/fatal logs were empty in the checked window. Owner visual confirmation remains.
 
 # EXACT NEXT ACTION — CURRENT
-1. Wait for the final exact PR #68 head, including this master-only reconciliation, to pass LikeSized CI; do not merge or deploy while it is unverified.
-2. After the final head is green, wait for explicit owner deployment authorization. If authorized, freeze PR #68 as that deployment batch, squash-merge it to `main`, wait for production Vercel READY, then have the owner verify the homepage live. If not authorized, leave `main` and production unchanged.
-3. After the homepage copy batch is deployed and live-verified, resume the Roadmap 12 first authenticated New Outfit browser audit before advancing to Roadmap 13.
+1. Owner visually confirms the deployed homepage copy on `likesized.com`; machine live-fetch verification already confirms the approved PR #68 content is being served from production deployment `dpl_Hd1Ys6BfCEJxBERP4kNr2UQMdLp6`.
+2. Resume the Roadmap 12 first authenticated New Outfit browser audit: create an Outfit, exercise Save Draft/resume, Preview, Publish, opened Outfit/gallery/hotspots, edit, comments/social controls and mobile/desktop visual layout as practical.
+3. Record that owner audit result before advancing to Roadmap 13 Outfits / Style Feed.

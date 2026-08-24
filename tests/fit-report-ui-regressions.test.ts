@@ -35,7 +35,7 @@ test("Category and garment type use one clearly shared Change control", () => {
 });
 
 test("desktop single-field controls are capped while grouped sections keep the wider form", () => {
-  assert.match(fitCss, /\.form > label,[\s\S]*?\.form > :global\(\.garmentSizeFields\),[\s\S]*?\.catalogDetails > label,[\s\S]*?\.categoryTypeGroup\s*\{\s*width: min\(100%, 680px\);/);
+  assert.match(fitCss, /\.form > label,[\s\S]*?\.form > :global\(\.garmentSizeFields\),[\s\S]*?\.catalogDetails > label,[\s\S]*?\.categoryTypeGroup,[\s\S]*?\.compactTagEvidence\s*\{\s*width: min\(100%, 680px\);/);
   assert.match(fitCss, /\.form\s*\{[\s\S]*?max-width: 920px;/);
   assert.doesNotMatch(fitCss, /\.optionalDetails\s*\{[\s\S]*?max-width: 680px;/);
 });
@@ -47,20 +47,53 @@ test("manual item uncertainty is prominent and does not sit under redundant help
   assert.match(fitCss, /\.uncertaintyCheck\s*\{[\s\S]*?padding: 12px 14px;[\s\S]*?border: 1px solid var\(--line\);/);
 });
 
-test("Product Label photo is visible after Item and uses the same evidence input as the uncertainty helper", () => {
+test("Fit Report opens with barcode and tag-photo evidence choices plus a smaller manual fallback", () => {
+  const startIndex = catalog.indexOf('if (step === "start")');
+  const scanIndex = catalog.indexOf('if (step === "scan")');
+  const start = catalog.slice(startIndex, scanIndex);
+
+  assert.match(start, />Identify your item</);
+  assert.match(start, />Scan barcode<\/button>/);
+  assert.match(start, />Take \/ upload tag photo<\/button>/);
+  assert.match(start, /Cut the tags out\? Enter item manually →/);
+  assert.match(start, /productLabelPhotoInput\.current\?\.click\(\)/);
+  assert.match(fitCss, /\.identificationActions\s*\{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
+  assert.match(fitCss, /\.manualFallback\s*\{[\s\S]*?background: transparent;[\s\S]*?font-size: 13px;/);
+});
+
+test("Tag-photo start uses the one canonical label evidence input and carries it into details", () => {
+  assert.equal(catalog.match(/name="product_label_photo"/g)?.length, 1);
+  assert.match(catalog, /type IntakeSource = "barcode" \| "tag_photo" \| "manual" \| null;/);
+  assert.match(catalog, /if \(step === "start" && nextName\) \{[\s\S]*?setIntakeSource\("tag_photo"\);[\s\S]*?setStep\("details"\);/);
+  assert.match(catalog, /const showCompactTagUpload = intakeSource !== "tag_photo";/);
+  assert.match(catalog, /\{showCompactTagUpload \? <div className=\{styles\.compactTagEvidence\}>/);
+  assert.match(fitCss, /\.compactTagEvidence\s*\{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto;[\s\S]*?padding: 10px 12px;/);
+  assert.doesNotMatch(catalog, /<div className=\{styles\.photoEvidenceCard\}>\s*<strong>Product Label \/ Tag Photo/);
+});
+
+test("barcode and manual detail paths keep the compact optional tag-photo control", () => {
+  assert.match(catalog, /setIntakeSource\("barcode"\)/);
+  assert.match(catalog, /setIntakeSource\("manual"\)/);
+  assert.match(catalog, /Product Label \/ Tag Photo <span className="muted inlineMuted">optional<\/span>/);
+  assert.match(catalog, /productLabelPhotoName \? "Replace" : "Add tag photo"/);
+});
+
+test("uncertain identity helper does not ask for a second tag photo when one already exists", () => {
+  assert.match(catalog, /Anything you already attached stays with this item, so we won’t ask you for the same tag photo twice\./);
+  assert.match(catalog, /Retail \/ Product URL/);
+  assert.match(catalog, /\{!productLabelPhotoName \? <div><strong>Photo of Tag \/ Style Label<\/strong>/);
+  assert.match(catalog, /<strong>Product Photo<\/strong><span className="fieldHelp">A clear photo of the garment by itself\.<\/span>/);
+  assert.match(catalog, /productLabelPhotoName \? styles\.identityEvidenceActionsSingle : ""/);
+  assert.match(fitCss, /\.identityEvidenceActionsSingle\s*\{\s*grid-template-columns: 1fr;/);
+});
+
+test("Product Photo remains at the bottom of Optional Additional Information", () => {
   const enrichmentStart = catalog.indexOf("export function CatalogCommunityEnrichment");
   const garmentStart = catalog.indexOf("export function CatalogGarmentFields");
   const enrichment = catalog.slice(enrichmentStart, garmentStart);
-  const itemIndex = catalog.indexOf("Item / Style / Model", garmentStart);
-  const labelIndex = catalog.indexOf("Product Label / Tag Photo", garmentStart);
-  const categoryIndex = catalog.indexOf("categoryTypeGroup", garmentStart);
 
-  assert.ok(itemIndex >= 0 && labelIndex > itemIndex && categoryIndex > labelIndex);
-  assert.equal(catalog.match(/name="product_label_photo"/g)?.length, 1);
-  assert.match(catalog, /productLabelPhotoInput\.current\?\.click\(\)/);
-  assert.match(catalog, /Photo of Tag \/ Style Label/);
-  assert.doesNotMatch(enrichment, /Product Label \/ Tag Photo/);
   assert.match(enrichment, /Product Photo/);
+  assert.doesNotMatch(enrichment, /Product Label \/ Tag Photo/);
 });
 
 test("Fit Report confirmation uses actual form pending state instead of disabling itself on click", () => {

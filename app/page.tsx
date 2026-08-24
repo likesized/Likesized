@@ -15,7 +15,7 @@ const capabilities = [
     title: "Discover people shaped like you.",
     description: "Ranked by the measurements that matter most for each garment—not generic size charts that can vary widely between brands and products.",
     href: "/people",
-    link: "Find My Matches →",
+    link: "Find My Fit Twin →",
   },
   {
     eyebrow: "SEE WHAT WORKS FOR THEM",
@@ -27,7 +27,7 @@ const capabilities = [
   {
     eyebrow: "BUILD YOUR CIRCLE",
     title: "Follow people whose fit and style you trust.",
-    description: "See what they wear, how they style it, what they recommend, and the looks they create.",
+    description: "See what they wear, how they style it, what they recommend, and how they put it all together.",
     href: "/circle",
     link: "Get Inspired →",
   },
@@ -134,14 +134,19 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
     <main>
       <section className="hero">
         <div className="eyebrow heroEyebrow">
-          <span className="heroEyebrowLine">REAL PEOPLE. SMARTER MATCHING.</span>{" "}
-          <span className="heroEyebrowLine">BETTER FIT.</span>
+          <span className="heroEyebrowLine">YOUR BODY ISN’T A SIZE CHART.</span>
         </div>
         <h1>
-          <span className="heroLine heroLinePrimary">Find your Fit Twin.</span>
-          <span className="heroLine">Find your fit.</span>
+          <span className="heroLine heroLinePrimary">Billions of bodies.</span>
+          <span className="heroLine">A handful of sizes.</span>
         </h1>
-        <p>Match with people who have a body like yours. See the brands they wear, the sizes they buy, and what actually works on them.</p>
+        <p>
+          <strong>Yeah, we thought that sounded ridiculous too.</strong>
+          <br /><br />
+          A size label was never going to tell the whole story. LikeSized adds what’s been missing: measurements, firsthand Fit Reports, and a better way to compare the information that actually matters.
+          <br /><br />
+          <strong>LikeSized. Because not all sizes are alike.</strong>
+        </p>
         <div className="heroActions">
           <Link className="primaryButton" href="/onboarding">Create My Fit Profile</Link>
           <Link className="secondaryButton" href="#how-it-works">See How It Works</Link>

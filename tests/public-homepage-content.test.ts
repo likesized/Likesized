@@ -5,10 +5,22 @@ import { readFileSync } from "node:fs";
 const home = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
 const homeCss = readFileSync(new URL("../app/home.module.css", import.meta.url), "utf8");
 
+test("homepage brand copy keeps the owner-approved campaign", () => {
+  assert.match(home, /YOUR BODY ISN’T A SIZE CHART\./);
+  assert.match(home, /Billions of bodies\./);
+  assert.match(home, /A handful of sizes\./);
+  assert.match(home, /Yeah, we thought that sounded ridiculous too\./);
+  assert.match(home, /LikeSized\. Because not all sizes are alike\./);
+  assert.doesNotMatch(home, /REAL PEOPLE\. SMARTER MATCHING\./);
+  assert.doesNotMatch(home, /Find your Fit Twin\.<\/span>/);
+});
+
 test("homepage capability calls to action keep their approved rhythm", () => {
-  assert.match(home, /Find My Matches →/);
+  assert.match(home, /FIND PEOPLE MY SIZE/);
+  assert.match(home, /Find My Fit Twin →/);
   assert.match(home, /Shop Smarter →/);
   assert.match(home, /Get Inspired →/);
+  assert.match(home, /See what they wear, how they style it, what they recommend, and how they put it all together\./);
   assert.doesNotMatch(home, /See Following/);
 });
 

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const home = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+const homeCss = readFileSync(new URL("../app/home.module.css", import.meta.url), "utf8");
 
 test("homepage capability calls to action keep their approved rhythm", () => {
   assert.match(home, /Find My Matches →/);
@@ -30,11 +31,23 @@ test("public FAQ teaches Fit Reports and Body Match before advanced evidence", (
   assert.match(home, /It does not mean the garment has a 92% chance of fitting you/);
 });
 
-test("public FAQ keeps approved privacy, social, and community-catalog meaning", () => {
+test("expanded FAQ answers use scan-friendly hierarchy without changing approved meaning", () => {
+  assert.match(home, /styles\.faqAnswer/);
+  assert.match(home, /styles\.faqLead/);
+  assert.match(home, /styles\.faqTerms/);
+  assert.match(home, /styles\.faqTakeaway/);
+  assert.match(home, /Too Small <span>·<\/span> Snug <span>·<\/span> Just Right <span>·<\/span> Relaxed <span>·<\/span> Too Big/);
+  assert.match(homeCss, /\.faqAnswer\s*\{[\s\S]*?display: grid;[\s\S]*?gap: 14px;/);
+  assert.match(homeCss, /\.faqTakeaway\s*\{[\s\S]*?border-top: 1px solid var\(--line\);/);
+});
+
+test("public FAQ keeps approved privacy, social, community-catalog, and uncertainty meaning", () => {
   assert.match(home, /Can other members see my measurements\?/);
   assert.match(home, /What is a Fit Twin, and do I have to be Fit Twins to follow someone\?/);
   assert.match(home, /How does the community-built clothing catalog work\?/);
   assert.match(home, /What if I’m not sure of the item, style, or model\?/);
+  assert.match(home, /I’m not sure this is the correct item\/style name/);
+  assert.doesNotMatch(home, /I’m not completely sure this is the correct item\/style name/);
   assert.doesNotMatch(home, /Can I follow someone who is not my Fit Twin\?/);
   assert.doesNotMatch(home, /Does LikeSized work for both men and women\?/);
   assert.doesNotMatch(home, /upper arm\/bicep/);

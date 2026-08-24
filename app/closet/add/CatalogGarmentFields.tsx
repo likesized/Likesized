@@ -641,9 +641,8 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
               </label>
               {showItemSuggestions ? <div className={styles.itemSuggestionDropdown} role="listbox" aria-label="Existing LikeSized items">{itemSuggestions.map((item) => <button className="catalogSuggestion" type="button" onClick={() => chooseProduct(item)} key={item.id}><span><b>{item.name}</b><small>Already in LikeSized</small></span></button>)}</div> : null}
             </div>
-            <span className="fieldHelp">Enter the specific item, style, or model shown on the garment, tag, packaging, or retailer listing. Examples: 501 Original, Align High-Rise Pant, Air Force 1.</span>
             {product && !itemIssue ? <button className={styles.changeThis} type="button" onClick={() => { setItemIssue(true); setItemName(""); setItemSuggestions([]); window.requestAnimationFrame(() => itemNameInput.current?.focus()); }}>Change</button> : null}
-            {!product ? <label className={styles.uncertaintyCheck}><input name="item_identity_uncertain" type="checkbox" value="1" checked={identityUncertain} onChange={(event) => { const checked = event.target.checked; setIdentityUncertain(checked); if (checked) openIdentityHelp(); else setIdentityHelpOpen(false); }}/><span>I’m not completely sure this is the correct item/style name</span></label> : null}
+            {!product ? <label className={styles.uncertaintyCheck}><input name="item_identity_uncertain" type="checkbox" value="1" checked={identityUncertain} onChange={(event) => { const checked = event.target.checked; setIdentityUncertain(checked); if (checked) openIdentityHelp(); else setIdentityHelpOpen(false); }}/><span>I’m not sure this is the correct item/style name</span></label> : null}
           </div>
         </div>
 

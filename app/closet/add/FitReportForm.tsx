@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import styles from "./fitReport.module.css";
 
 type ServerAction = (formData: FormData) => void | Promise<void>;
@@ -86,6 +87,16 @@ function collectReviewRows(form: HTMLFormElement): ReviewRow[] {
   });
 }
 
+function ReviewActions({ previewOnly, onBack, onConfirm }: { previewOnly: boolean; onBack: () => void; onConfirm: () => void }) {
+  const { pending } = useFormStatus();
+  return <div className={styles.reviewActions}>
+    <button className="secondaryButton" type="button" disabled={pending} onClick={onBack}>← Go Back & Edit</button>
+    {previewOnly
+      ? <button className="primaryButton" type="button" onClick={onBack}>Looks right — preview only</button>
+      : <button className="primaryButton" type="submit" disabled={pending} onClick={onConfirm}>{pending ? "Saving Fit Report…" : "Confirm Fit Report →"}</button>}
+  </div>;
+}
+
 export function FitNotesField() {
   const [value, setValue] = useState("");
   return <label>Fit notes <span className="muted inlineMuted">optional</span>
@@ -99,60 +110,56 @@ export function FitReportForm({ action, previewOnly = false, children }: { actio
   const confirmedRef = useRef(false);
   const [reviewRows, setReviewRows] = useState<ReviewRow[]>([]);
   const [reviewOpen, setReviewOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
-  return <>
-    <form
-      id={FIT_REPORT_FORM_ID}
-      ref={formRef}
-      className={`garmentForm ${styles.form}`}
-      action={action}
-      noValidate
-      onSubmit={(event) => {
-        const form = event.currentTarget;
+  return <form
+    id={FIT_REPORT_FORM_ID}
+    ref={formRef}
+    className={`garmentForm ${styles.form}`}
+    action={action}
+    noValidate
+    onSubmit={(event) => {
+      const form = event.currentTarget;
+      normalizeRetailLink(form);
+      validateBarcodeFields(form);
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        confirmedRef.current = false;
+        showInvalidState(form, true);
+        return;
+      }
+      if (!confirmedRef.current) {
+        event.preventDefault();
+        setReviewRows(collectReviewRows(form));
+        setReviewOpen(true);
+      }
+    }}
+    onBlur={(event) => {
+      const form = event.currentTarget;
+      const target = event.target;
+      if (target instanceof HTMLInputElement && target.name === "product_url") {
         normalizeRetailLink(form);
-        validateBarcodeFields(form);
-        if (!form.checkValidity()) {
-          event.preventDefault();
-          confirmedRef.current = false;
-          setSubmitting(false);
-          showInvalidState(form, true);
-          return;
-        }
-        if (!confirmedRef.current) {
-          event.preventDefault();
-          setReviewRows(collectReviewRows(form));
-          setReviewOpen(true);
-        }
-      }}
-      onBlur={(event) => {
-        const form = event.currentTarget;
-        const target = event.target;
-        if (target instanceof HTMLInputElement && target.name === "product_url") {
-          normalizeRetailLink(form);
-          if (target.validity.valid) clearFieldInvalidState(target);
-        }
-      }}
-      onChange={(event) => {
-        const form = event.currentTarget;
-        const target = event.target;
-        if (target instanceof HTMLInputElement && (target.name === "upc" || target.name === "identity_issue_barcode")) {
-          validateBarcodeField(target);
-        }
-        if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement) {
-          if (target.validity.valid) clearFieldInvalidState(target);
-        }
-        if (!form.querySelector(":invalid")) {
-          const summary = form.querySelector<HTMLElement>("[data-validation-summary]");
-          if (summary) summary.hidden = true;
-        }
-      }}
-    >
-      <div className={styles.validationSummary} data-validation-summary hidden role="alert">
-        Fix or clear the highlighted entries below. Everything else you entered has been kept.
-      </div>
-      {children}
-    </form>
+        if (target.validity.valid) clearFieldInvalidState(target);
+      }
+    }}
+    onChange={(event) => {
+      const form = event.currentTarget;
+      const target = event.target;
+      if (target instanceof HTMLInputElement && (target.name === "upc" || target.name === "identity_issue_barcode")) {
+        validateBarcodeField(target);
+      }
+      if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement) {
+        if (target.validity.valid) clearFieldInvalidState(target);
+      }
+      if (!form.querySelector(":invalid")) {
+        const summary = form.querySelector<HTMLElement>("[data-validation-summary]");
+        if (summary) summary.hidden = true;
+      }
+    }}
+  >
+    <div className={styles.validationSummary} data-validation-summary hidden role="alert">
+      Fix or clear the highlighted entries below. Everything else you entered has been kept.
+    </div>
+    {children}
 
     {reviewOpen ? <div className={styles.reviewOverlay} role="dialog" aria-modal="true" aria-labelledby="fit-report-review-title">
       <div className={styles.reviewCard}>
@@ -166,22 +173,17 @@ export function FitReportForm({ action, previewOnly = false, children }: { actio
           </div>)}
         </div>
         {previewOnly ? <div className={styles.previewNote}>Preview only — nothing will be saved.</div> : null}
-        <div className={styles.reviewActions}>
-          <button className="secondaryButton" type="button" disabled={submitting} onClick={() => setReviewOpen(false)}>← Go Back & Edit</button>
-          {previewOnly
-            ? <button className="primaryButton" type="button" onClick={() => setReviewOpen(false)}>Looks right — preview only</button>
-            : <button
-                className="primaryButton"
-                type="submit"
-                form={FIT_REPORT_FORM_ID}
-                disabled={submitting}
-                onClick={() => {
-                  confirmedRef.current = true;
-                  setSubmitting(true);
-                }}
-              >{submitting ? "Saving Fit Report…" : "Confirm Fit Report →"}</button>}
-        </div>
+        <ReviewActions
+          previewOnly={previewOnly}
+          onBack={() => {
+            confirmedRef.current = false;
+            setReviewOpen(false);
+          }}
+          onConfirm={() => {
+            confirmedRef.current = true;
+          }}
+        />
       </div>
     </div> : null}
-  </>;
+  </form>;
 }

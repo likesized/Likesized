@@ -8,7 +8,10 @@
 
 .form {
   position: relative;
-  gap: 24px;
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  gap: 30px;
 }
 
 .form label > input,
@@ -104,7 +107,8 @@
 }
 
 .catalogDetails {
-  gap: 22px;
+  display: grid;
+  gap: 30px;
 }
 
 .catalogDetails :global(.fieldPair) {
@@ -115,7 +119,7 @@
 .itemField {
   position: relative;
   display: grid;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -185,8 +189,12 @@
 .uncertaintyCheck {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
-  gap: 9px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(191, 9, 73, 0.045);
   font-size: 13px;
   font-weight: 800;
   line-height: 1.35;
@@ -194,7 +202,7 @@
 
 .form .uncertaintyCheck input {
   width: auto;
-  margin-top: 2px;
+  margin-top: 0;
   flex: 0 0 auto;
 }
 
@@ -206,16 +214,16 @@
 .identityEvidenceActions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 18px;
 }
 
 .photoEvidenceCard,
 .identityEvidenceActions > div {
   display: grid;
   align-content: start;
-  gap: 9px;
+  gap: 10px;
   min-width: 0;
-  padding: 15px;
+  padding: 18px;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--panel);
@@ -332,6 +340,7 @@
 
 .optionalDetails {
   overflow: hidden;
+  margin: 0;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--white);
@@ -369,8 +378,9 @@
 }
 
 .optionalDetailsBody {
-  gap: 22px;
-  padding: 24px;
+  display: grid;
+  gap: 30px;
+  padding: 26px;
 }
 
 .optionalDetailsBody :global(.privacyNote) {
@@ -378,19 +388,31 @@
 }
 
 .optionalDetailsBody :global(.fitDimensionFields) {
-  gap: 18px;
+  display: grid;
+  gap: 22px;
+  margin: 0;
+}
+
+.optionalDetailsBody :global(fieldset.fitDimensionFields) {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.optionalDetailsBody :global(.fieldPair) {
+  margin-bottom: 0;
 }
 
 .sizeFields {
   display: grid;
-  gap: 18px;
+  gap: 20px;
 }
 
 .sizePair,
 .sizeTriple,
 .sizeEquation {
   display: grid;
-  gap: 18px;
+  gap: 20px;
   align-items: end;
 }
 
@@ -539,7 +561,8 @@
 
 @media (max-width: 640px) {
   .form {
-    gap: 28px;
+    max-width: none;
+    gap: 32px;
   }
 
   .catalogStart {
@@ -547,7 +570,17 @@
   }
 
   .catalogDetails {
-    gap: 26px;
+    gap: 34px;
+  }
+
+  .editableField,
+  .itemField {
+    gap: 12px;
+  }
+
+  .uncertaintyCheck {
+    padding: 14px;
+    font-size: 14px;
   }
 
   .optionalSummary {
@@ -555,13 +588,13 @@
   }
 
   .optionalDetailsBody {
-    gap: 26px;
-    padding: 20px;
+    gap: 30px;
+    padding: 22px 18px;
   }
 
   .optionalDetailsBody :global(.fitDimensionFields),
   .optionalDetailsBody :global(.fieldPair) {
-    gap: 22px;
+    gap: 24px;
   }
 
   .sizePair,
@@ -576,7 +609,7 @@
   .sizePair,
   .sizeTriple,
   .sizeEquation {
-    gap: 22px;
+    gap: 24px;
   }
 
   .questionGrid {

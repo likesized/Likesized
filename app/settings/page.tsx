@@ -70,7 +70,7 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
       <div className="sectionHeading"><div><span className="eyebrow">FIT COMMUNITY</span><h2>Your personalized default</h2></div></div>
       <div className="evidenceList">
         <div className={`evidence ${styles.settingsEvidence}`}>
-          <div><strong>Choose Men, Women, or Both</strong><span>This controls which member-fit community LikeSized prioritizes in People My Size, Fit Twin suggestions, and your personalized social feed. It never changes your body Match %. A member can still post clothing from any garment Department.</span></div>
+          <div><strong>Your Fit Community</strong><span>Choose who LikeSized should prioritize in People My Size, Fit Twin suggestions, and your social feed. This does not affect your Body Match percentage or what clothing you can post.</span></div>
           <form action={saveFitCommunitySettings}>
             <label>Fit Community<select name="fit_community" defaultValue={fitCommunity} required><option value="men">Men</option><option value="women">Women</option><option value="both">Both</option></select></label>
             <button className="primaryButton" type="submit">Save Fit Community</button>

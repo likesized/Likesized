@@ -70,16 +70,16 @@ export default async function PeoplePage({ searchParams }: { searchParams: Searc
   const savedCommunity=fitProfile.fit_community==="men"||fitProfile.fit_community==="women"?fitProfile.fit_community:"both";
   const community=fitCommunity(requestedCommunity,savedCommunity);
   const [overallResult,topsResult,bottomsResult,{ data: followData, error: followLoadError },{data:twinSettings,error:twinSettingsError}] = await Promise.all([
-    supabase.rpc("get_fit_matches", { p_match_category: "overall", p_result_limit: 30, p_fit_community:community }),
-    supabase.rpc("get_fit_matches", { p_match_category: "tops", p_result_limit: 30, p_fit_community:community }),
-    supabase.rpc("get_fit_matches", { p_match_category: "bottoms", p_result_limit: 30, p_fit_community:community }),
+    supabase.rpc("get_fit_matches", { p_match_category: "overall", p_result_limit: 100, p_fit_community:community }),
+    supabase.rpc("get_fit_matches", { p_match_category: "tops", p_result_limit: 100, p_fit_community:community }),
+    supabase.rpc("get_fit_matches", { p_match_category: "bottoms", p_result_limit: 100, p_fit_community:community }),
     supabase.from("follows").select("followed_id").eq("follower_id", userId),
     supabase.from("fit_twin_settings").select("threshold_percent").eq("singleton",true).maybeSingle(),
   ]);
   if (overallResult.error || topsResult.error || bottomsResult.error || followLoadError || twinSettingsError) throw new Error("Could not load Fit Matches.");
 
   const matchData = category === "tops" ? topsResult.data : category === "bottoms" ? bottomsResult.data : overallResult.data;
-  const matches = (matchData ?? []) as FitMatch[];
+  const matches = ((matchData ?? []) as FitMatch[]).slice(0,30);
   const overall = matchMap(overallResult.data);
   const tops = matchMap(topsResult.data);
   const bottoms = matchMap(bottomsResult.data);

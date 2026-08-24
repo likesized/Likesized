@@ -14,7 +14,18 @@ This file owns current database behavior/privacy plus explicit implementation de
 # Production checkpoint — 2026-08-24
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-Current application `main` is PR #65 merge `f75acec9bea0af8a6e8b1b691942f080f9668ea5`. The latest database-changing production work remains PR #59 merge `b6de93464f55bb03d7c1c0be879c636141cceb40`; PR #60 through PR #65 added no schema migration. Canonical local migration files remain the replay authority; Supabase production has recorded:
+Current production application `main` is `921383ac10ecf63ecbf35743caa366c4b635dd1b`, the post-PR-#66 Roadmap 11A reconciliation head. The latest database-changing production work remains PR #59 merge `b6de93464f55bb03d7c1c0be879c636141cceb40`; PR #60 through PR #66 added no production schema migration.
+
+Roadmap 12 / PR #67 is **branch-only and not deployed**. Its additive canonical migrations are:
+- `supabase/migrations/20260824133400_add_outfit_comment_moderation_target.sql`;
+- `supabase/migrations/20260824133500_new_outfit_v1_social_foundation.sql`;
+- `supabase/migrations/20260824133600_complete_new_outfit_v1_boundaries.sql`;
+- `supabase/migrations/20260824133700_harden_new_outfit_v1_social_controls.sql`;
+- `supabase/migrations/20260824133800_canonical_public_closet_and_outfit_public_identity.sql`.
+
+Until PR #67 receives explicit owner merge/deployment authorization and the database-first production step completes, hosted production still reflects the pre-Roadmap-12 physical Closet/Outfit schema even though the owner-approved product meaning is already locked in `docs/V1_PRODUCT_SPEC.md`.
+
+Canonical local migration files remain the replay authority; Supabase production has recorded:
 - `supabase/migrations/20260823160000_add_unconfirmed_catalog_status.sql` → production `20260823205533 add_unconfirmed_catalog_status`.
 - `supabase/migrations/20260823160100_unconfirmed_identity_and_photo_roles.sql` → production `20260823205642 unconfirmed_identity_and_photo_roles`.
 - `supabase/migrations/20260823160200_needs_more_evidence_followup.sql` → production `20260823205712 needs_more_evidence_followup`.
@@ -85,22 +96,31 @@ Fit Community describes the person/wearer. It is not Product Department. A membe
 
 First-time setup includes Fit Community; post-onboarding editing lives in Profile Settings rather than My Measurements. Database meaning remains unchanged.
 
-# 2. Public Closet target — OWNER LOCKED, LEGACY VISIBILITY STILL PRESENT
-Owner-approved product meaning is one public member Closet:
-- member garments and Fit Reports are intended public member-facing content;
-- no intended per-garment Private / Shared product mode;
-- owner view adds owner-only controls;
-- visitor view uses the same garment/Fit Report data without mutation controls;
-- raw Fit Profile/body-state/private evidence remains protected.
+# 2. Unified member-visible Closet — OWNER LOCKED / ROADMAP 12 BRANCH IMPLEMENTED
+Owner-approved current V1 meaning is one authenticated-member-visible Closet:
+- no member-controlled per-garment Private / Shared product mode;
+- owner view adds owner-only controls to the same canonical garment/Fit Report content;
+- authenticated member reads use that same Closet/Fit evidence foundation;
+- raw Fit Profile/body state, private size references, private catalog/label evidence and admin candidate/review state remain separately protected.
 
-Current executable production schema still contains legacy `closet_items.visibility` and RLS/query paths that distinguish private/shared content. This is implementation debt, not current product meaning. Closet audit must reconcile it canonically without exposing raw body/private system data.
+PR #67 branch migration `20260824133800_canonical_public_closet_and_outfit_public_identity.sql` reconciles the old physical visibility model without rewriting immutable migration history:
+- existing `closet_items.visibility` values are backfilled to `shared`;
+- default is `shared`;
+- `closet_items_shared_only_current_v1` prevents creating or changing a current V1 garment to Private;
+- authenticated members may read current Closet items, Fit Reports, controlled Fit dimensions and Fit-reference-photo metadata;
+- ownership continues to govern inserts/updates/deletes;
+- Fit-reference-photo storage is authenticated-member-readable and owner-writable without a visibility transition;
+- old shared-only photo/visibility coupling triggers are retired and replaced by one owner-integrity trigger;
+- scanner Fit-photo fallback no longer depends on a retired per-garment visibility choice.
+
+The physical `closet_items.visibility` column remains solely for replay compatibility. It is not a current product setting and must not reappear in member UI. This branch migration is **not production-live until PR #67 is explicitly authorized and deployed**.
 
 ## Narrow owner-only unresolved-identity projection
 `public.get_own_unconfirmed_submission_status()` is a security-definer owner projection for the authenticated member's own unresolved Unconfirmed submissions. It returns only the minimum fields needed for owner UI: Closet item, candidate id/status, retained retailer URL and Product/Label photo-presence booleans.
 
 This RPC exists specifically so the member UI does **not** gain broad read access to `catalog_candidates` or admin review state.
 
-Active Unconfirmed review remains invisible to the member. The owner UI renders a disclaimer only when the candidate status is `needs_more_evidence`. Other members must never receive that private queue status/disclaimer through Closet/social surfaces.
+Active Unconfirmed review remains invisible to the member. The owner UI renders a disclaimer only when the candidate status is `needs_more_evidence`. Other members must never receive that private queue status/disclaimer through Closet/social/Outfit surfaces.
 
 # 3. Controlled taxonomy foundations
 - `garment_types`, `garment_attribute_definitions`, `garment_attribute_options` are the database vocabulary aligned to `lib/garment-taxonomy.ts`.
@@ -251,7 +271,7 @@ Barcode lookup/confirmation boundaries exclude unresolved candidates whose ident
 
 `public.get_scan_match_image_source(product_id,candidate_id)` is the narrow authenticated scanner-identification boundary. Scanner image priority is:
 1. Product/catalog photo;
-2. public/shared member Fit Photo, preferring `photo_role='front'` when available;
+2. member Fit Photo, preferring `photo_role='front'` when available;
 3. application placeholder/default when neither exists.
 
 The direct candidate branch independently enforces unresolved, non-Unconfirmed, non-Needs-More-Evidence and non-uncertain eligibility. A crafted direct RPC call cannot expose image paths for the private review states that normal scanner lookup excludes.
@@ -264,7 +284,7 @@ Fit-photo and catalog-photo evidence remain distinct.
 ## Front/back Fit Photos
 `fit_reference_photos.photo_role` is controlled to `front` / `back`. A Closet item may hold at most one of each role. Legacy single-photo rows are migrated/treated as Front so existing evidence remains readable.
 
-Both roles are member wear evidence. They remain separate from Product imagery and do not create separate counted Fit Reports.
+Both roles are authenticated-member-visible wear evidence. They remain separate from Product imagery and do not create separate counted Fit Reports.
 
 ## Product Photo
 `garment_submissions.product_photo_storage_path` remains unresolved submission Product-display/identity evidence. Known Product photo evidence continues through `product_photo_evidence` and normal Product-photo moderation.
@@ -374,7 +394,7 @@ The current operational split remains:
 
 Needs More Evidence records its exact audit action and does not create a second queue system.
 
-Existing `content_reports` moderation covers supported member-visible photo/post targets. Product-level `member_report` uses `catalog_review_flags`, keeping Product identity/content concerns inside the catalog review architecture rather than creating a parallel Product moderation system.
+Existing `content_reports` moderation covers supported member-visible photo/post/comment targets. Product-level `member_report` uses `catalog_review_flags`, keeping Product identity/content concerns inside the catalog review architecture rather than creating a parallel Product moderation system.
 
 # 17. SerpAPI discovery cache
 `private.serpapi_discovery_cache` is private admin research evidence, never ordinary member Product authority. Raw external results do not create/update/merge Products automatically.
@@ -394,10 +414,33 @@ Existing `content_reports` moderation covers supported member-visible photo/post
 - global Following-notification preference is a master switch.
 - Product notification watch is separate from people, Like and Wish state and is a one-shot future qualifying exact-Product alert.
 
-# 20. LikeLocker / Wish Locker / Outfit foundations
-Product likes, Outfit likes and Wish Locker purchase intent are separate states. Outfits remain V1 and reuse canonical Closet/Product/taxonomy foundations.
+# 20. LikeLocker / Wish Locker / Outfit foundations — ROADMAP 12 BRANCH IMPLEMENTED
+Product likes, Outfit likes and Wish Locker purchase intent remain separate states. Outfits reuse canonical Closet/Product/taxonomy foundations; no second garment or shopping system is introduced.
 
-An unresolved Unconfirmed/Needs More Evidence Closet garment may still be used by its owner in Styles/Outfits. That does not materialize Product truth, and private candidate/review status must not leak to viewers.
+PR #67 additive schema establishes:
+- `outfit_posts` draft/published lifecycle with Headline, Outfit Story, comment toggle, publish timestamp and creator analytics counters;
+- `outfit_photos` canonical 1–6 gallery rows with Main/order and display/feed paths;
+- owner-private `outfit-draft-photos` storage before publish and public `outfit-photos` storage for published editorial imagery;
+- `outfit_photo_tags` optional normalized hotspot coordinates that may reference only garments already tagged on that Outfit;
+- `outfit_occasions` controlled 1–2 published Occasion values;
+- `outfit_style_tags` optional normalized community Style vocabulary, maximum three;
+- flat `outfit_comments` with public safe read projection, authenticated write/delete boundaries and creator/admin moderation rights;
+- `member_blocks`, integrated with the one canonical follow graph;
+- public view/share counters plus follow-attribution counter on the Outfit;
+- private `outfit_shop_clicks` commerce attribution, not creator-facing V1 analytics.
+
+Drafts are owner-only and never enter Following activity or anonymous views. Publication is an explicit state transition and requires a valid Headline, 1–6 public photos with one Main, 1–6 tagged owned Closet garments and 1–2 Occasions.
+
+Published Outfit editorial content is anonymously readable, but anonymous access is deliberately narrow:
+- `profiles` remains non-public;
+- `outfit_post_items` remains non-public to anon;
+- direct anon `outfit_comments` table SELECT remains revoked;
+- `get_public_outfit_creator`, `get_public_outfit_comments` and `get_public_outfit_product_teasers` expose only the minimum published fields needed for the public page;
+- Product teasers return only resolved canonical Product identity/image and never Size, Fit Result, Fit Report, body Match, Closet/candidate state or shopping evidence.
+
+Signed-in members may read the detailed tagged garment/Fit layer through normal authenticated boundaries. An unresolved Unconfirmed/Needs More Evidence Closet garment may be used in an Outfit, but null/unresolved Product identity never becomes public Product truth and private candidate/review status never leaks.
+
+Blocking removes follow relationships in both directions and suppresses signed-in Outfit/feed interaction between the members. A block cannot make an otherwise public Outfit URL disappear from anonymous web access.
 
 # 21. Search foundations
 - direct Product search is global as defined above;
@@ -421,12 +464,13 @@ Help Me Size It reuses this architecture. `Would Buy Again` does not affect size
 Before member-facing Product Detail uses `exact_variant`, recommendation/evidence and Admin behavior must consume `GARMENT_VARIATION_DEFINITION_MAP` from `lib/garment-taxonomy.ts`. Size and Color must not become exact-variation key fields. Body Match remains body similarity and must not be collapsed with Fit Result into a synthetic garment-fit percentage.
 
 # 23. Current implementation debt / open verification
-- Current application `main` includes the completed Fit Report intake cleanup through PR #65; the six authenticated browser→backend wiring checks are complete.
-- PR #56 Foundation hardening and PR #59 correction-boundary repair remain the latest database-changing production work; PR #60 through PR #65 added no migration.
-- Roadmap 11A owner classification is complete. The active implementation line must finish canonical map/tests/docs verification before Product Detail Exact Variation work proceeds.
-- Historical counted-report fingerprint reconciliation for retired questions remains separate and must not be smuggled into 11A.
+- Production application `main` is the Roadmap 11A baseline at `921383ac10ecf63ecbf35743caa366c4b635dd1b`.
+- PR #56 Foundation hardening and PR #59 correction-boundary repair remain the latest database-changing production work; PR #60 through PR #66 added no migration.
+- Roadmap 12 / PR #67 is branch-only until explicit owner merge/deployment authorization. Its Outfit/public-Closet migrations must pass exact-head full CI, then be applied database-first and verified before application production cutover.
+- The legacy physical `closet_items.visibility` column remains intentionally in replay history; Roadmap 12 locks it to the compatibility `shared` value rather than rewriting old migrations. Broader Closet lifecycle/mutation rules remain future audit work and must not recreate visibility state.
+- Full My Circle Following / Fit Twins / Discover ranking and richer Outfit discovery/search remain later roadmap work; Roadmap 12 establishes the content/data/social foundation only.
+- Historical counted-report fingerprint reconciliation for retired questions remains separate and must not be smuggled into variation/Outfit work.
 - The proposed sex/body-specific public measurement FAQ wording remains pending owner copy approval.
-- Unified public Closet migration and mutation/lifecycle model remain future audit work beyond the narrow Needs More Evidence owner flow.
 - Complete all-Products admin priority/filter/merge/split UX remains to build beyond the current operational queue.
 - Purchase-context aggregate/admin analytics UI remains open.
 - Product merge/split, richer alias UX, spam moderation, broader Product-photo review, external barcode-provider feasibility, SerpAPI admin UX and broader browser-level regression remain open where previously scoped.
@@ -452,7 +496,7 @@ For the current production foundation and future changes prove as applicable:
 17. Unconfirmed evidence priority is High with all three requested evidence types, Medium with partial evidence and Low with none/parked state;
 18. admin resolution maps history without rewriting original Fit Profile/Fit Result evidence and a newly created Product from explicit Unconfirmed starts Provisional;
 19. Front and Back Fit Photos may coexist exactly once per role; legacy single photos remain readable;
-20. scanner confirmation image priority is Product/catalog photo → Front/shared Fit Photo when available → other shared Fit Photo → placeholder;
+20. scanner confirmation image priority is Product/catalog photo → Front/member Fit Photo when available → other member Fit Photo → placeholder;
 21. Product Label / Tag Photo remains separate/private identity evidence and never becomes generic Product imagery;
 22. a known Product Label/Tag insert must bind the authenticated owner’s exact Fit Report to the same Product and canonical owner/Product/Fit Report path;
 23. another authenticated member may not read another member’s Label/Tag object merely because it shares the catalog-submission bucket;
@@ -481,16 +525,30 @@ For the current production foundation and future changes prove as applicable:
 46. counted-report fingerprint behavior remains separate from tracked variation until a deliberate historical reconciliation is authorized;
 47. authenticated members can record known-Product Item/Brand/Style correction evidence through `record_member_product_identity_issue` without direct EXECUTE on `normalize_identifier`;
 48. known-Product barcode correction validation accepts the controlled normalized format locally and rejects malformed values without widening general helper access;
-49. member correction evidence does not silently overwrite canonical Product or Brand identity.
+49. member correction evidence does not silently overwrite canonical Product or Brand identity;
+50. current V1 rejects creating or changing a Closet garment to Private while retaining the legacy physical column only for replay compatibility;
+51. drafts are readable only by their owner and do not create Following activity or anonymous/public Outfit access;
+52. a published Outfit requires 1–6 public photos with exactly one Main, 1–6 owned tagged Closet garments and 1–2 controlled Occasions;
+53. publishing transitions the same draft rather than creating a duplicate post;
+54. optional photo hotspots may reference only master tagged garments and keep normalized coordinates within the image;
+55. anonymous Outfit access cannot directly read `profiles`, `outfit_post_items` or raw comment author UUIDs;
+56. public Outfit creator/comment/Product teaser RPCs return only published safe projections and respect signed-in block boundaries;
+57. public Product teasers exclude unresolved candidate/Unconfirmed/Needs More Evidence identity and never expose Size/Fit/body/Closet/review/shopping data;
+58. Outfit comments reject external links, remain flat V1 text, are readable through the public safe projection, and support member/creator/admin deletion boundaries;
+59. blocking removes both follow directions and hides the creator's Outfit/feed content from the signed-in blocked member without pretending to control anonymous public access;
+60. Outfit likes/comments/follow attribution counters stay tied to canonical relationships and creator analytics never expose raw interaction identity;
+61. Shop clicks remain private internal attribution rather than creator-facing V1 counts;
+62. newly uploaded unpublished Outfit photos remain private until the successful publish transition moves/registers them on the public Outfit photo boundary;
+63. Outfit deletion/moderation removes canonical metadata and cleans corresponding public/draft storage objects without leaving a second photo system.
 
 # 25. Forbidden regressions
 Do not:
-- expose raw current/historical body measurements through social/search/feed/product pages;
+- expose raw current/historical body measurements through social/search/feed/product/Outfit pages;
 - expose another member's Unconfirmed/Needs More Evidence admin state or private owner disclaimer;
 - grant broad member read access to `catalog_candidates` merely to render the owner warning or authorize scanner photo access;
 - use Fit Community as Match math or Product Department;
 - require a Men/Women switch for direct Product search;
-- surface Unconfirmed/Needs More Evidence as Products in other-member search/suggestions/barcode recognition;
+- surface Unconfirmed/Needs More Evidence as Products in other-member search/suggestions/barcode recognition or public Outfit Product teasers;
 - allow explicit Unconfirmed to auto-promote from member count alone;
 - store Unconfirmed as live Product status;
 - show a member warning during normal active Unconfirmed review;
@@ -516,6 +574,13 @@ Do not:
 - reintroduce retired Intended Fit or Sneakers Use as current Type questions without an explicit owner decision;
 - bypass or duplicate the canonical `GARMENT_VARIATION_DEFINITION_MAP` for Exact Variation behavior;
 - silently equate the current objective counted-report fingerprint with tracked variation;
+- reintroduce a current Closet Private/Shared toggle or make Outfit publishing mutate garment visibility;
+- expose drafts to feeds/search/public URLs or treat a draft as a private published Outfit;
+- expose anonymous visitors to Size Worn, Fit Result, Fit Report/body-match evidence, Closet linkage, unresolved review state, LikeLocker state or authenticated shopping actions through Outfit pages;
+- make the member `profiles` table public merely to render a public Outfit creator;
+- make raw `outfit_comments`/author UUIDs public merely to let logged-out visitors read comments;
+- make Outfit likes and Product likes the same state;
+- create a second Outfit garment intake instead of reusing canonical Fit Report intake;
 - create a second follow/catalog/sizing/moderation/variation system;
 - rewrite applied migrations;
 - reintroduce star Fit Rating UI;

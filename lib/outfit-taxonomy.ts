@@ -1,0 +1,28 @@
+export const OUTFIT_OCCASIONS = [
+  { value: "everyday", label: "Everyday" },
+  { value: "work", label: "Work" },
+  { value: "business_casual", label: "Business Casual" },
+  { value: "business_formal", label: "Business Formal" },
+  { value: "school_campus", label: "School/Campus" },
+  { value: "brunch", label: "Brunch" },
+  { value: "date_night", label: "Date Night" },
+  { value: "dinner", label: "Dinner" },
+  { value: "night_out", label: "Night Out" },
+  { value: "party", label: "Party" },
+  { value: "wedding_guest", label: "Wedding Guest" },
+  { value: "formal_event", label: "Formal Event" },
+  { value: "concert", label: "Concert" },
+  { value: "festival", label: "Festival" },
+  { value: "beach", label: "Beach" },
+  { value: "poolside", label: "Poolside" },
+  { value: "vacation_resort", label: "Vacation/Resort" },
+  { value: "travel", label: "Travel" },
+  { value: "gym_workout", label: "Gym/Workout" },
+  { value: "golf", label: "Golf" },
+  { value: "outdoors", label: "Outdoors" },
+  { value: "lounge_home", label: "Lounge/Home" },
+  { value: "running_errands", label: "Running Errands" },
+  { value: "holiday_special_occasion", label: "Holiday/Special Occasion" },
+] as const;
+
+export const OUTFIT_OCCASION_LABELS = new Map(OUTFIT_OCCASIONS.map((item) => [item.value, item.label]));

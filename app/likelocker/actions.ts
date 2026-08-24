@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-const SAFE_RETURN = /^\/(?:explore|likelocker)(?:\?[^\s]*)?$/;
+const SAFE_RETURN = /^\/(?:explore|likelocker)(?:\?[^\s]*)?$|^\/outfits\/[0-9a-f-]{36}(?:\?[^\s]*)?$/i;
 
 function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -12,7 +12,7 @@ function value(formData: FormData, key: string) {
 
 function returnTo(formData: FormData) {
   const candidate = value(formData, "return_to");
-  return SAFE_RETURN.test(candidate) ? candidate : "/likelocker";
+  return SAFE_RETURN.test(candidate) && !candidate.startsWith("//") ? candidate : "/likelocker";
 }
 
 async function viewer() {
@@ -35,6 +35,7 @@ async function change(table: "product_likes" | "wish_locker_items" | "product_ev
   if (error) throw new Error("Could not update LikeLocker.");
   revalidatePath("/explore");
   revalidatePath("/likelocker");
+  if (destination.startsWith("/outfits/")) revalidatePath(destination.split("?")[0]);
   redirect(destination);
 }
 

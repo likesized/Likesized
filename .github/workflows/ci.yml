@@ -43,6 +43,9 @@ jobs:
       - name: Outfit photo pipeline safeguards
         run: node --test tests/outfit-photo-pipeline.test.ts
 
+      - name: New Outfit V1 safeguards
+        run: node --test tests/new-outfit-v1.test.ts
+
       - name: Public homepage content safeguards
         run: node --test tests/public-homepage-content.test.ts
 

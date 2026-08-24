@@ -29,8 +29,8 @@ insert into public.brands(id,name,slug,normalized_name)
 values('c1000000-0000-4000-8000-000000000001'::uuid,'Dimension Test','dimension-test','dimensiontest');
 insert into public.products(id,brand_id,name,slug,category,normalized_name,garment_type_key,market_segment)
 values('c2000000-0000-4000-8000-000000000001'::uuid,'c1000000-0000-4000-8000-000000000001'::uuid,'Guard Jeans','dimension-test-guard-jeans','bottoms','guardjeans','jeans','unisex');
-insert into public.closet_items(id,user_id,product_id,size_label,visibility)
-values('c3000000-0000-4000-8000-000000000001'::uuid,'c0000000-0000-4000-8000-000000000001'::uuid,'c2000000-0000-4000-8000-000000000001'::uuid,'M','private');
+insert into public.closet_items(id,user_id,product_id,size_label)
+values('c3000000-0000-4000-8000-000000000001'::uuid,'c0000000-0000-4000-8000-000000000001'::uuid,'c2000000-0000-4000-8000-000000000001'::uuid,'M');
 insert into public.fit_reports(id,user_id,closet_item_id,product_id,fit_profile_version_id,size_label,fit)
 select 'c4000000-0000-4000-8000-000000000001'::uuid,'c0000000-0000-4000-8000-000000000001'::uuid,'c3000000-0000-4000-8000-000000000001'::uuid,'c2000000-0000-4000-8000-000000000001'::uuid,current_version_id,'M','just_right'
 from public.fit_profiles where user_id='c0000000-0000-4000-8000-000000000001'::uuid;

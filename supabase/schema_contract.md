@@ -14,10 +14,11 @@ This file owns current database behavior/privacy plus explicit implementation de
 # Production checkpoint — 2026-08-23
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-PR #55 application/UI behavior is live on `main` at `0a972341212e245e9ad3d00263167e50818c6917`, but PR #55 contained no database migration. Production database behavior therefore remains on the applied PR #53 migration checkpoint. Canonical local migration files remain the replay authority; Supabase production has recorded the PR #53 migrations under hosted ledger timestamps:
-- `supabase/migrations/20260823160000_add_unconfirmed_catalog_status.sql` → production `20260823205559 add_unconfirmed_catalog_status`.
-- `supabase/migrations/20260823160100_unconfirmed_identity_and_photo_roles.sql` → production `20260823205714 unconfirmed_identity_and_photo_roles`.
-- `supabase/migrations/20260823160200_needs_more_evidence_followup.sql` → production `20260823205746 needs_more_evidence_followup`.
+PR #56 Foundation hardening is live on `main` at `7bd1a1a6048bcc991ca6a55547e454b10feec832`. Canonical local migration files remain the replay authority; Supabase production has recorded:
+- `supabase/migrations/20260823160000_add_unconfirmed_catalog_status.sql` → production `20260823205533 add_unconfirmed_catalog_status`.
+- `supabase/migrations/20260823160100_unconfirmed_identity_and_photo_roles.sql` → production `20260823205642 unconfirmed_identity_and_photo_roles`.
+- `supabase/migrations/20260823160200_needs_more_evidence_followup.sql` → production `20260823205712 needs_more_evidence_followup`.
+- `supabase/migrations/20260824000500_foundation_audit_security_hardening.sql` → production `20260824003029 foundation_audit_security_hardening`.
 
 The immediately preceding PR #51 migrations remain immutable applied history:
 - `supabase/migrations/20260823130000_add_sleepwear_lingerie_category.sql` → production `20260823153830 add_sleepwear_lingerie_category`.
@@ -29,24 +30,18 @@ Earlier production catalog-confidence migration `20260823054933 generalize_catal
 
 Supabase-assigned production timestamps may differ from local canonical filenames; never rename applied local migration history to chase generated timestamps.
 
-PR #53 exact-head LikeSized CI run #684 (`32665608459`) on tested head `47f949d1b4ce057b54b38c4cc2ea00cb6ced94c2` passed canonical integrity, TypeScript, all focused safeguards, production build, fresh replay of every canonical migration and full database behavior/privacy tests before merge. The three PR #53 migrations were then applied database-first to production and verified directly against the hosted schema/functions/storage/RLS state before the exact tested tree was squash-merged to `main` as `c2fc26233cfbee961ff9e0ea95f4338d1ce641fc`.
+PR #56 final exact-head LikeSized CI run #696 (`32676618920`) on tested head `49293638d878a6b7c0e5b5ce07894653de4c3310` passed canonical integrity, exact dependencies, TypeScript, all focused safeguards, production build, pinned Supabase CLI, fresh replay of every canonical migration and the complete database behavior/privacy suite before merge.
 
-Hosted post-migration verification confirmed the Unconfirmed enum ordering, candidate-only live-Product constraint, front/back Fit Photo role/index, Product Label/Tag evidence table + RLS, owner-scoped catalog-submission photo deletion, backward-compatible 19-argument pending-submission RPC, barcode lookup/confirmation gates, scanner-image source, admin resolution boundary, Needs More Evidence status/projection/re-entry RPCs, and zero live Products with `catalog_status='unconfirmed'`.
+The Foundation migration was applied database-first and verified directly against hosted schema/functions/storage/RLS state before the exact tested tree was squash-merged as `7bd1a1a6048bcc991ca6a55547e454b10feec832`.
 
-Known production Product evidence remained intact after the rollout: Maidenform / Heirloom Product `4086fdaa-172d-4a3f-b6c4-2c155094bb25` remains Corroborated with 2 distinct wearers and 4 Fit Reports.
+Hosted PR #56 verification passed all 12 targeted hardening checks: canonical evidence path constraints, Product Label insertion policy, narrow scanner Product-photo storage helper/policy, hardened direct scanner-image candidate gates, candidate archive trigger/history state, Needs More Evidence audit action support and expected function presence. Security/performance advisors showed no new blocking schema/RLS failure from this migration.
 
-## Foundation Technical Audit — PR #56 VERIFIED / NOT DEPLOYED
-The post-PR-#53 Foundation audit found several authorization/history defects in the current production database that were not covered by the previous test suite. One additive migration, `supabase/migrations/20260824000500_foundation_audit_security_hardening.sql`, fixes them on draft PR #56 but is **not applied to production** until separate owner authorization.
+Known production Product evidence remained intact after the rollout: Maidenform / Heirloom Product `4086fdaa-172d-4a3f-b6c4-2c155094bb25` remains Corroborated with 2 distinct wearers and 4 Fit Reports, with UPC `196988323504` still present.
 
-Current production defects identified by the audit:
-1. the Product Label / Tag insert policy can incorrectly correlate Product identity because the outer Product column was not explicitly qualified inside the Fit Report existence check;
-2. `catalog-submission-photos` currently has a bucket-wide authenticated SELECT even though the bucket stores both scanner-eligible pending Product Photos and private Label/Tag evidence;
-3. the direct candidate branch of `get_scan_match_image_source` does not independently enforce Unconfirmed / Needs More Evidence / explicit-uncertainty exclusion even though normal scanner lookup does;
-4. SECURITY DEFINER evidence writers accept storage-path strings without a database constraint proving the canonical member/Closet/Product/Fit Report path relationship;
-5. permanent `catalog_candidates.identity_key` uniqueness can cause a later uncertain submission to reuse a historical resolved/merged candidate instead of opening a fresh unresolved review case;
-6. `needs_more_evidence` works operationally but is logged as generic enrichment rather than its exact resolution action.
+## Foundation Technical Audit — PR #56 COMPLETE / DEPLOYED
+The post-PR-#53 Foundation audit found six authorization/history defects not covered by the previous test suite. The single additive migration `supabase/migrations/20260824000500_foundation_audit_security_hardening.sql` fixes them in production.
 
-PR #56 hardening contract:
+Live hardening contract:
 - pending Product Photo path = submitting member / `pending` / exact Closet item / `product-*`;
 - pending Product Label path = submitting member / `pending` / exact Closet item / `label-*`;
 - known Product Label path = submitting member / `labels` / exact Product / exact Fit Report / filename;
@@ -57,11 +52,9 @@ PR #56 hardening contract:
 - when a candidate becomes resolved, its internal unique identity key is archived with its candidate UUID while normalized Brand/Item/Type history remains unchanged, freeing the base key for at most one later unresolved candidate;
 - Needs More Evidence records `mark_needs_more_evidence` in the resolution ledger.
 
-Production-data compatibility inspection before the migration found zero current `product_label_photo_evidence` rows and zero current pending Product/Label storage paths, so the new path constraints do not conflict with existing production evidence.
+Production-data compatibility inspection before the migration found zero current `product_label_photo_evidence` rows and zero current pending Product/Label storage paths, so the new path constraints did not conflict with existing production evidence.
 
-The PR #56 regression suite contains 17 focused pgTAP checks. CI #693 replayed the entire migration history and intentionally exposed an over-restrictive first-pass storage policy because the policy queried private candidate/submission tables as the requesting member. The test was not weakened. The policy was corrected with the narrow security-definer path helper. Exact security code/test head `b39297983396958105a1f64be1ac121af7ba8ff0` passed CI #694 (`32676273815`) through canonical integrity, TypeScript, all application safeguards, production build, fresh replay of every ordered migration including the Foundation migration, and the full database behavior/privacy suite.
-
-Until PR #56 is explicitly authorized/applied/merged, the defects above remain accurate descriptions of current production and the hardening rules remain verified branch state rather than live database claims.
+The PR #56 regression suite contains 17 focused pgTAP checks. CI #693 replayed the entire migration history and exposed an over-restrictive first-pass storage policy because the policy queried private candidate/submission tables as the requesting member. The test was not weakened; the policy was corrected with the narrow security-definer path helper. Code/test head `b39297983396958105a1f64be1ac121af7ba8ff0` passed CI #694 (`32676273815`), and final reconciled head `49293638d878a6b7c0e5b5ce07894653de4c3310` passed CI #696 (`32676618920`) through the full required verification contract.
 
 # 1. Privacy / body-state foundations
 - `profiles` stores member identity under authenticated-member authorization boundaries.
@@ -166,16 +159,16 @@ A candidate does not auto-post when blocking identity evidence already exists. E
 Such a candidate remains unresolved/reviewable. This exception path is why `catalog_candidates` remains necessary even though routine clean items no longer await admin approval.
 
 ## Candidate identity-key history
-Production currently stores one globally unique `catalog_candidates.identity_key`, and the Foundation audit found that a resolved historical row can therefore occupy the normalized Brand+Item+Type key forever. Because `record_pending_garment_submission` upserts on that key, a later explicit-uncertain submission can attach to the historical resolved candidate instead of creating a fresh unresolved case.
+A resolved historical candidate must not permanently occupy the normalized Brand+Item+Type aggregation key and absorb a later unresolved explicit-uncertain submission.
 
-PR #56 fixes this without changing Product identity semantics: when a candidate transitions unresolved→resolved, a BEFORE trigger archives only the internal unique `identity_key` by appending the candidate UUID. The normalized Brand/Item/Type columns remain unchanged historical truth. Existing resolved candidates are backfilled the same way. The unsuffixed base key is therefore reserved for the single current unresolved candidate for that identity. This behavior is verified but not production until PR #56 is deployed.
+The live PR #56 trigger archives only a resolved candidate's internal unique `identity_key` by appending its candidate UUID. The normalized Brand/Item/Type columns remain unchanged historical truth. Existing resolved candidates were backfilled the same way. The unsuffixed base key is therefore reserved for the single current unresolved candidate for that identity.
 
 ## Needs More Evidence candidate status
 `catalog_candidates.status` includes `needs_more_evidence`.
 
 This is an admin queue state for an unresolved Unconfirmed identity that cannot reasonably be resolved with current evidence. It is not Product truth, does not map the Fit Report, and does not publish anything.
 
-`public.admin_set_catalog_candidate_status(...)` accepts `needs_more_evidence` only when the candidate remains unresolved and Unconfirmed/explicitly uncertain. The transition is audited through existing catalog-resolution history rather than a parallel queue system. Production currently records this state under the generic enrichment action; PR #56 adds the exact `mark_needs_more_evidence` action.
+`public.admin_set_catalog_candidate_status(...)` accepts `needs_more_evidence` only when the candidate remains unresolved and Unconfirmed/explicitly uncertain. The transition is audited through existing catalog-resolution history rather than a parallel queue system and now records exact action `mark_needs_more_evidence`.
 
 When a member supplies new follow-up evidence through the authorized owner boundary, the candidate automatically returns to `needs_review` and review priority is recalculated.
 
@@ -243,7 +236,7 @@ Barcode lookup/confirmation boundaries exclude unresolved candidates whose ident
 2. public/shared member Fit Photo, preferring `photo_role='front'` when available;
 3. application placeholder/default when neither exists.
 
-Foundation audit caveat: production lookup/confirmation gating is correct, but the candidate branch of the direct image RPC does not itself repeat all candidate eligibility checks. PR #56 adds that defense-in-depth so a crafted direct RPC returns no path for Unconfirmed, Needs More Evidence or explicitly uncertain candidates. Until deployment, do not treat normal scanner lookup exclusion alone as proof the direct RPC is hardened.
+The direct candidate branch now independently enforces unresolved, non-Unconfirmed, non-Needs-More-Evidence and non-uncertain eligibility. A crafted direct RPC call cannot expose image paths for the private review states that normal scanner lookup excludes.
 
 The Fit Photo fallback never becomes canonical Product imagery or Product truth.
 
@@ -258,14 +251,14 @@ Both roles are member wear evidence. They remain separate from Product imagery a
 ## Product Photo
 `garment_submissions.product_photo_storage_path` remains unresolved submission Product-display/identity evidence. Known Product photo evidence continues through `product_photo_evidence` and normal Product-photo moderation.
 
-Cross-member pending Product Photo read must exist only for scanner-eligible unresolved candidates. PR #56 implements the narrow exact-path helper described in the Foundation section; production currently still has the broader bucket policy and therefore requires that hardening.
+Cross-member pending Product Photo read exists only for scanner-eligible unresolved candidates and uses the exact-path SECURITY DEFINER boolean helper. The helper exposes no candidate row or review state.
 
 ## Product Label / Tag Photo
 `garment_submissions.product_label_photo_storage_path` and `product_label_photo_evidence` store label/tag identity evidence.
 
 Label/tag photos are private identity-review evidence. They are not generic Product images and must not be surfaced as Product display photos.
 
-Foundation audit found two production defects in this boundary: the known-label insert RLS Product correlation is not explicitly bound to the outer Product, and the shared bucket SELECT is broad enough to expose Label objects to any authenticated member. PR #56 fixes both and adds canonical storage-path constraints. These are verified fixes, not production claims until the migration is deployed.
+Known-label insertion now explicitly binds the authenticated owner’s Fit Report to the same Product and canonical owner/Product/Fit Report storage path. The shared catalog-submission bucket no longer grants bucket-wide authenticated SELECT; another authenticated member cannot read another member’s Label/Tag object merely because it shares that bucket.
 
 # 10. Direct Product search
 `search_catalog_products` is the canonical broad textual Product search. Current direct Product search does not accept Fit Community or Department as a hidden gate.
@@ -293,7 +286,7 @@ Later owner Fit observations on an unresolved garment must preserve its existing
 ## Objective fingerprint
 `Not sure` and Intended Fit do not become positive physical-identity claims. Genuine objective controlled-answer changes currently may create distinct report states.
 
-The objective fingerprint is not automatically identical to the future tracked fit-variation key. Roadmap item 11A must classify each structured question before Exact Variation is implemented. After that classification, counted-report semantics must be reconciled explicitly: a descriptive-only question may be useful metadata without necessarily deserving another same-member counted Fit Report. Do not change this during Foundation security hardening.
+The objective fingerprint is not automatically identical to the future tracked fit-variation key. Roadmap item 11A must classify each structured question before Exact Variation is implemented. After that classification, counted-report semantics must be reconciled explicitly: a descriptive-only question may be useful metadata without necessarily deserving another same-member counted Fit Report. Do not change this as an incidental side effect of other work.
 
 ## Body-state relevance
 `private.product_match_measurements(product_id)` is the shared Product-specific measurement source for Fit Match and report-state identity.
@@ -319,7 +312,7 @@ At least one new piece of evidence is required. On success:
 - ambiguous-identity flag evidence metadata is refreshed/recreated if necessary;
 - priority recalculates.
 
-Foundation audit caveat: production currently trusts the storage-path strings after the owner/RPC checks. PR #56 adds database path constraints binding pending Product/Label evidence to the authenticated submission’s canonical member + Closet-item path. Known label evidence receives the stricter member + Product + Fit Report path constraint. Until PR #56 deploys, path integrity is an identified production debt.
+Database path constraints now bind pending Product/Label evidence to the submission’s canonical member + Closet-item path. Known label evidence uses the stricter member + Product + Fit Report path constraint.
 
 Storage upload/removal is handled by the authorized server action around this RPC so failed DB writes do not intentionally leave newly uploaded replacement evidence as the final state.
 
@@ -361,7 +354,7 @@ The current operational split remains:
 - admin can return a parked item to Needs Review;
 - member follow-up does that automatically when new evidence is supplied.
 
-PR #56 adds only accurate audit naming for the Needs More Evidence transition; it does not create a second queue system.
+Needs More Evidence records its exact audit action and does not create a second queue system.
 
 Existing `content_reports` moderation covers supported member-visible photo/post targets. Product-level `member_report` uses `catalog_review_flags`, keeping Product identity/content concerns inside the catalog review architecture rather than creating a parallel Product moderation system.
 
@@ -411,13 +404,13 @@ Before member-facing Product Detail uses `exact_variant`, the existing recommend
 
 # 23. Current implementation debt / open verification
 - PR #55 application/UI rollout is complete and live on the production line; it changed no database migration state.
-- PR #56 Foundation security/history hardening is verified on a draft branch through CI #694 but **not deployed**; production defects/fixes are enumerated in the Foundation section above.
+- PR #56 Foundation security/history hardening is complete and live in production; its 17 targeted regressions and hosted verification are part of the current foundation contract.
 - The proposed sex/body-specific public measurement FAQ wording remains pending owner copy approval.
 - Unified public Closet migration and mutation/lifecycle model remain future audit work beyond the narrow Needs More Evidence owner flow.
 - Complete all-Products admin priority/filter/merge/split UX remains to build beyond the current operational queue.
 - Purchase-context aggregate/admin analytics UI remains open.
 - Product merge/split, richer alias UX, spam moderation, broader Product-photo review, external barcode-provider feasibility, SerpAPI admin UX and browser-level regression remain open where previously scoped.
-- Tracked variation-definition audit #11A is required after Foundation production resolution and before Product Detail Exact Variation or counted-report fingerprint reconciliation.
+- Tracked variation-definition audit #11A is now the next required logic audit before Product Detail Exact Variation or counted-report fingerprint reconciliation.
 
 # 24. Verification contract
 For the current production foundation and future changes prove as applicable:

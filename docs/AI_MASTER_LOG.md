@@ -21,12 +21,12 @@ This rule exists to keep production batches small enough for owner review and to
 
 ## Canonical production line — LIVE
 - `main` is the one production implementation line and is coupled to Vercel production.
-- Current production behavior commit: `0a972341212e245e9ad3d00263167e50818c6917` — squash merge of PR #55, **Polish FAQ, Settings, and Fit Report review flow**.
-- PR #55 final exact-head LikeSized CI run **#690** completed successfully before merge: canonical integrity, TypeScript, every focused safeguard suite, production build, fresh replay of every canonical migration and full database behavior/privacy tests.
-- PR #55 contained no database migration. The existing production Supabase schema remained on the PR #53 migration checkpoint while the application/UI batch was merged.
-- The PR #55 tested tree was merged to `main`; the resulting Vercel production deployment reached **READY** and serves `likesized.com`.
-- Live sanity confirmed the revised FAQ is serving, unauthenticated protected Settings/New Fit Report routes still enforce sign-in, and no error/fatal runtime logs were observed for the new production deployment during the post-deploy check.
-- Authenticated private/member/admin surfaces were not falsely claimed as manually exercised without an authenticated browser session; their behavior is covered by exact-head application safeguards, production build and database tests plus the owner’s ongoing interaction audit.
+- Current production behavior commit: `7bd1a1a6048bcc991ca6a55547e454b10feec832` — squash merge of PR #56, **Harden Foundation catalog evidence privacy**.
+- PR #56 final exact-head LikeSized CI run **#696** (`32676618920`) on tested head `49293638d878a6b7c0e5b5ce07894653de4c3310` completed successfully before merge: canonical integrity, exact dependencies, TypeScript, every focused safeguard suite, production build, pinned Supabase CLI, fresh replay of every canonical migration and the complete database behavior/privacy suite.
+- The Foundation migration was applied database-first to production as hosted migration `20260824003029 foundation_audit_security_hardening` and directly verified before the exact tested tree was squash-merged.
+- Production Vercel deployment `dpl_nBJQsoxraFUj5KEMGxVjwQ55dzt9` is **READY**, aliases `likesized.com`, and serves merge commit `7bd1a1a6048bcc991ca6a55547e454b10feec832`.
+- Live sanity confirmed the public homepage is on that deployment, unauthenticated Settings and New Fit Report routes still enforce sign-in, and no error/fatal runtime logs were observed for the deployment during the post-deploy check.
+- Authenticated private/member/admin surfaces were not falsely claimed as manually exercised without an authenticated browser session; their behavior is covered by exact-head application safeguards, production build, fresh migration replay, database tests and hosted-schema/RLS verification plus the owner’s ongoing interaction audit.
 - Applied database migrations are immutable; corrections use later ordered migrations.
 - No paid Supabase branches.
 
@@ -51,12 +51,12 @@ Verification/deployment record:
 - PR #55 was squash-merged to `main` as `0a972341212e245e9ad3d00263167e50818c6917`;
 - the resulting Vercel production deployment reached READY on `likesized.com` and public/protected-route/runtime sanity passed.
 
-## Foundation Technical Audit / PR #56 — AUDITED / HARDENING VERIFIED / NOT DEPLOYED
+## Foundation Technical Audit / PR #56 — COMPLETE / DEPLOYED / SANITY CHECKED
 The required post-PR-#53 Foundation Technical Audit was conducted against the live production foundation after PR #55 deployment. Normal trust progression, barcode corroboration, conflict accumulation, explicit **I’m not completely sure** anti-publication behavior, Needs More Evidence re-entry, known-Product conflict handling and Fit Report body-state deduplication were found internally consistent.
 
-The audit also found concrete authorization/history defects that existing tests had not covered. They are fixed on draft PR #56 **Harden Foundation catalog evidence privacy** on `agent/foundation-audit-security-hardening`, but the migration is **not applied to production** and PR #56 is not merged until the owner separately authorizes that security deployment.
+The audit also found concrete authorization/history defects that existing tests had not covered. They were repaired in the single canonical hardening migration `supabase/migrations/20260824000500_foundation_audit_security_hardening.sql` and are now live in production.
 
-Confirmed findings and the single canonical hardening migration `supabase/migrations/20260824000500_foundation_audit_security_hardening.sql`:
+Confirmed findings and fixes:
 1. **Product Label / Tag insert correlation** — the prior RLS correlation could collapse the Product comparison into a tautology. PR #56 explicitly binds the owned Fit Report to the exact Product and canonical owner/Product/Fit Report storage prefix.
 2. **Catalog-submission storage privacy** — the bucket contains both scanner-eligible pending Product Photos and private Label/Tag evidence, but production had a bucket-wide authenticated SELECT. PR #56 replaces it with a narrow security-definer boolean path check so another member can read only an eligible pending Product Photo; Label/Tag evidence stays owner/admin private and the candidate queue remains unreadable.
 3. **Direct scanner-image RPC defense** — crafted direct candidate calls could bypass the normal scanner lookup eligibility gate. PR #56 requires unresolved, non-Unconfirmed, non-Needs-More-Evidence, non-uncertain candidate state inside the image RPC itself.
@@ -64,28 +64,38 @@ Confirmed findings and the single canonical hardening migration `supabase/migrat
 5. **Resolved candidate history reuse** — permanent `identity_key` uniqueness could make a later uncertain submission reuse a historical merged candidate and strand the new unresolved Fit Report. PR #56 archives a resolved candidate’s internal identity key while preserving normalized historical identity columns, freeing the base key for one fresh unresolved case.
 6. **Needs More Evidence audit naming** — the member/admin flow worked, but the resolution ledger recorded that status as generic enrichment. PR #56 adds the accurate `mark_needs_more_evidence` audit action.
 
-Production-data compatibility check before hardening found zero current `product_label_photo_evidence` rows and zero current pending Product/Label storage paths, so the new path constraints do not conflict with existing production evidence.
+Production-data compatibility check before hardening found zero current `product_label_photo_evidence` rows and zero current pending Product/Label storage paths, so the new path constraints did not conflict with existing production evidence.
 
-PR #56 regression/verification record so far:
+PR #56 verification/deployment record:
 - one permanent pgTAP suite adds 17 malicious/legitimate path checks covering exact Product/Label binding, other-member Label privacy, eligible pending Product-photo read, Unconfirmed scanner/storage blocking, owner evidence access, cross-user path rejection, resolved-history reuse, fresh Unconfirmed creation and Needs More Evidence audit logging;
 - CI #693 replayed every migration successfully and exposed one real first-pass policy defect: storage RLS was querying private candidate/submission tables as the requesting member, so even the eligible Product Photo was hidden; the test was kept strict and the policy was fixed with a narrow SECURITY DEFINER boolean helper rather than weakening privacy or tests;
-- exact security code/test head `b39297983396958105a1f64be1ac121af7ba8ff0` passed CI **#694** (`32676273815`): canonical drift guard, exact dependencies, TypeScript, all application safeguards, production build, pinned Supabase CLI, fresh replay of every canonical migration including the new Foundation migration, and the full database behavior/privacy suite.
+- exact security code/test head `b39297983396958105a1f64be1ac121af7ba8ff0` passed CI **#694** (`32676273815`);
+- final reconciled head `49293638d878a6b7c0e5b5ce07894653de4c3310` passed exact-head CI **#696** (`32676618920`) through canonical integrity, exact dependencies, TypeScript, all application safeguards, production build, pinned Supabase CLI, full fresh migration replay and the complete database behavior/privacy suite;
+- production Supabase recorded the migration as `20260824003029 foundation_audit_security_hardening`;
+- hosted verification passed all 12 targeted hardening checks: path constraints, Label insert policy, narrow storage helper/policy, direct scanner guard, candidate archive trigger/history state, Needs More Evidence action support and function presence;
+- known Maidenform / Heirloom Product `4086fdaa-172d-4a3f-b6c4-2c155094bb25` remained Corroborated with 2 distinct wearers, 4 Fit Reports and UPC `196988323504` present;
+- security/performance advisors showed no new blocking schema/RLS failure from the migration; existing intentional SECURITY DEFINER warnings and existing performance/index debt remain separate work;
+- PR #56 was squash-merged with expected-head protection as `7bd1a1a6048bcc991ca6a55547e454b10feec832`;
+- Vercel production `dpl_nBJQsoxraFUj5KEMGxVjwQ55dzt9` reached READY on `likesized.com`;
+- public homepage, unauthenticated Settings/New Fit Report auth guards and runtime error/fatal sanity passed.
 
-PR #56 remains a draft and production remains on PR #55 application code plus the previously applied PR #53 database migrations until separate owner authorization.
+Foundation hardening is therefore production-resolved. Roadmap item **11A Garment-question variation classification** is the next required product-logic audit before Exact Variation work.
 
-## PR #53 production database checkpoint — LIVE
+## PR #53 production database checkpoint — LIVE / IMMUTABLE HISTORY
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-Canonical local migration files and Supabase production ledger versions:
-- `supabase/migrations/20260823160000_add_unconfirmed_catalog_status.sql` → production `20260823205559 add_unconfirmed_catalog_status`.
-- `supabase/migrations/20260823160100_unconfirmed_identity_and_photo_roles.sql` → production `20260823205714 unconfirmed_identity_and_photo_roles`.
-- `supabase/migrations/20260823160200_needs_more_evidence_followup.sql` → production `20260823205746 needs_more_evidence_followup`.
+Canonical local migration files and actual Supabase production ledger versions:
+- `supabase/migrations/20260823160000_add_unconfirmed_catalog_status.sql` → production `20260823205533 add_unconfirmed_catalog_status`.
+- `supabase/migrations/20260823160100_unconfirmed_identity_and_photo_roles.sql` → production `20260823205642 unconfirmed_identity_and_photo_roles`.
+- `supabase/migrations/20260823160200_needs_more_evidence_followup.sql` → production `20260823205712 needs_more_evidence_followup`.
+- `supabase/migrations/20260824000500_foundation_audit_security_hardening.sql` → production `20260824003029 foundation_audit_security_hardening`.
 
-Hosted verification after application confirmed:
+Hosted verification after PR #56 application confirmed:
 - Unconfirmed sorts below Provisional and is candidate-only; the live Product constraint forbids `products.catalog_status='unconfirmed'` and zero live Products were Unconfirmed.
 - front/back Fit Photo role storage and uniqueness are live;
-- Product Label / Tag evidence table/RLS and owner-scoped storage deletion boundary are live, with Foundation hardening pending PR #56 deployment as recorded above;
-- the backward-compatible pending-submission RPC, barcode lookup/confirmation gates, scanner image source, admin resolution boundary, Needs More Evidence owner projection and evidence re-entry RPCs are present;
+- Product Label / Tag evidence RLS/storage boundaries are hardened as described above;
+- the backward-compatible pending-submission RPC, barcode lookup/confirmation gates, hardened scanner image source, admin resolution boundary, Needs More Evidence owner projection and evidence re-entry RPCs are present;
+- resolved candidate identity keys are archived internally so historical resolved rows do not block a fresh unresolved identity case;
 - existing production evidence was preserved.
 
 Known production evidence preserved through the rollout:
@@ -106,7 +116,7 @@ PR #51 migrations remain immutable applied history:
 ## PR #49 / #50 historical production checkpoints
 - PR #49 generalized catalog identity confidence and deployed as `0b569e4a25b7f75a313e57ca94d79286ec3df1df`; production migration `20260823054933 generalize_catalog_identity_confidence` was applied.
 - PR #50 reconciled that production status at `9431366660f813bd2dda68ee5db9c6f4fdc5ddfa`.
-- Later PR #51/#53 behavior supersedes their current-status descriptions but does not rewrite immutable history.
+- Later PR #51/#53/#56 behavior supersedes their current-status descriptions but does not rewrite immutable history.
 
 # PR #53 REPAIR BATCH — COMPLETE / DEPLOYED / SANITY CHECKED
 The owner completed the post-PR-#51 repair list and explicitly authorized a deployment/sanity-check cycle because the accumulated changes touched several connected surfaces. That authorization froze the batch. The frozen scope was completed and promoted without adding later unrelated requests.
@@ -153,7 +163,7 @@ PR #53 verification/deployment record:
 # CANONICAL RECOVERY / LINEAGE STATUS
 The 2026-08-21 **CANONICAL RECOVERY** is complete. No recovery freeze is active. PR #43 promoted the verified recovery line to `main`. Normal development must still obey one-source/one-line/no-patch rules.
 
-A 2026-08-23 canonical audit found no alternate current-state schema file and no second live implementation on `main`, but it found stale post-PR-#51 documentation plus a large historical branch namespace. PR #52 reconciled that status before PR #53. PR #55 later became the current production application line; PR #56 carries the separate Foundation hardening line recorded above.
+A 2026-08-23 canonical audit found no alternate current-state schema file and no second live implementation on `main`, but it found stale post-PR-#51 documentation plus a large historical branch namespace. PR #52 reconciled that status before PR #53. PR #55 later became the production application line; PR #56 then hardened the Foundation and is now the current production line.
 
 # BRANCH / PR CLEANUP LEDGER — AUDITED 2026-08-23
 ## Cleanup rule
@@ -213,10 +223,8 @@ Safe to delete because the canonical result is already in `main`:
 - `agent/fit-report-review-purchase-context` — PR #51 merged.
 - the PR #52 reconciliation source is represented by merged `main` commit `05f496cbe6cb412681bcd2530f7748aca85db681`.
 - `agent/current-repair-batch` — PR #53 merged to production `main` as `c2fc26233cfbee961ff9e0ea95f4338d1ce641fc` and has no current product authority.
-- `agent/cosmetic-faq-followup` — PR #55 merged to production `main` as `0a972341212e245e9ad3d00263167e50818c6917`; after PR #56 reconciliation it has no current product authority.
-
-## Active Foundation branch — NOT YET MERGED
-- `agent/foundation-audit-security-hardening` — draft PR #56; audited/verified Foundation hardening only. It is the single active security line and has no production authority until separately authorized and merged.
+- `agent/cosmetic-faq-followup` — PR #55 merged to production `main` as `0a972341212e245e9ad3d00263167e50818c6917` and has no current product authority.
+- `agent/foundation-audit-security-hardening` — PR #56 merged to production `main` as `7bd1a1a6048bcc991ca6a55547e454b10feec832`; after this reconciliation it has no current product authority.
 
 ## Historical verification/checkpoint branches — OBSOLETE OR DUPLICATE
 These branches existed to trigger/check CI or preserve temporary verification markers. Their substantive product source is already in later `main`; marker-only/empty verification commits are not product source. Safe to delete:
@@ -521,13 +529,13 @@ Current order:
 3. Auth — owner confirmed.
 4. Fit Profile / My Measurements — Fit Community remains in onboarding but post-onboarding editing is removed from My Measurements; owner interaction audit remains.
 5. Profile Settings — sole post-onboarding Fit Community editor; PR #55 spacing repair is live; broader owner interaction audit remains.
-6. Notifications — unfinished owner interaction audit after Foundation hardening is deployed/recorded.
+6. Notifications — unfinished owner interaction audit.
 7. Unified Closet/member profile Closet — narrow private Needs More Evidence owner-only follow-up and front/back Fit Photo compatibility are live; full legacy private/shared cleanup and lifecycle model remain.
 8. Update/Edit Fit Report only within settled Closet mutation model — Fit Notes are aligned to 2,000 characters and unresolved garment identity snapshots are preserved; full lifecycle/mutation audit remains.
 9. People My Size — Fit Community implemented; full audit remains.
 10. My Circle / Following / Fit Twin — Fit Community implemented; full audit remains.
-11. New Fit Report — PR #55 owner-found Item search/Change/mobile spacing/Fit Notes/final-confirmation/Confirm-submit repairs are live; authenticated owner interaction audit remains. Foundation PR #56 hardens backend privacy/history but is not production yet.
-11A. **Garment-question variation classification audit** — after Foundation hardening is deployed/recorded, classify every structured question as variation-defining / descriptive-only / cosmetic; Size and Color excluded absolutely. Reconcile the counted-report objective fingerprint only after this owner-approved map is settled. Do not implement Product Detail Exact Variation first.
+11. New Fit Report — PR #55 owner-found Item search/Change/mobile spacing/Fit Notes/final-confirmation/Confirm-submit repairs are live; PR #56 backend privacy/history hardening is also live; authenticated owner interaction audit remains.
+11A. **Garment-question variation classification audit — NEXT REQUIRED LOGIC AUDIT.** Classify every structured question as variation-defining / descriptive-only / cosmetic; Size and Color excluded absolutely. Reconcile the counted-report objective fingerprint only after this owner-approved map is settled. Do not implement Product Detail Exact Variation first.
 12. New Outfit — Unconfirmed/Needs More Evidence garments remain usable as owner garments; no special public review badge.
 13. Outfits / Style Feed — same rule: unresolved review state must not leak to viewers.
 14. Garment/Product detail — Report this item is live; full detail audit later must implement locked Exact Variation / Body Match / Fit Result / lifecycle evidence presentation above.
@@ -537,8 +545,8 @@ Current order:
 18. Full Admin Catalog + Moderation — evidence-prioritized active Unconfirmed review and a separate Needs More Evidence bucket are live; full all-Products/filter/merge/split tooling still remains.
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
 
-# FOUNDATION TECHNICAL AUDIT — AUDITED / PR #56 HARDENING VERIFIED / NOT DEPLOYED
-The dedicated Foundation integrity pass is complete at the audit/test level. It did not jump ahead to Product Detail or alter tracked-variation meaning.
+# FOUNDATION TECHNICAL AUDIT — COMPLETE / DEPLOYED / SANITY CHECKED
+The dedicated Foundation integrity pass is production-resolved. It did not jump ahead to Product Detail or alter tracked-variation meaning.
 
 Verified-good foundations include:
 - clean candidate→Product materialization and Product trust progression from distinct wearers;
@@ -552,11 +560,14 @@ Verified-good foundations include:
 - Fit Community separation from Match math/Product Department;
 - global Product search exclusion of unresolved candidates;
 - purchase-context isolation;
-- migration replay and existing database behavior suites.
+- hardened Product Label/Tag RLS and catalog-submission storage boundaries;
+- hardened direct scanner image candidate eligibility;
+- canonical evidence path constraints and resolved-candidate history handling;
+- fresh migration replay and full database behavior/privacy suites.
 
-Audit-found defects and fixes are recorded in the PR #56 section above and in `supabase/schema_contract.md`. The new migration and 17 targeted regressions are verified through CI #694 but remain branch-only until separate owner deployment authorization.
+The six audit-found defects are fixed by the now-live PR #56 migration and guarded by 17 permanent targeted pgTAP regressions. Hosted verification and production sanity are recorded above.
 
-This technical audit is not permission to jump ahead and build Product Detail. After PR #56 is deployed/recorded, roadmap item **11A** is the required variation-definition decision before Exact Variation work or any counted-report fingerprint reconciliation.
+This technical audit is not permission to jump ahead and build Product Detail. Roadmap item **11A** is now the required variation-definition decision before Exact Variation work or any counted-report fingerprint reconciliation.
 
 # ADMIN CATALOG / EVIDENCE TARGET
 Admin all-Products/candidate tooling must expose identity-trust tier, distinct confirming-member count, open flag count/reasons, priority, barcode confidence, retailer links, Product Photo/Label evidence history and resolution provenance.
@@ -585,15 +596,14 @@ During Beta watch direct Product hit rate/manual intake, Unconfirmed resolution/
 Post-Beta: review Mobile App Options + AI Build Viability before approving a separate mobile codebase; expand Gift/public/email wishlist behavior; refine affiliate optimization without changing shopper relevance; expand admin research/catalog tooling where useful.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- PR #56 Foundation hardening is exact-head code/test verified but remains draft/branch-only and **not deployed** until separate owner production authorization.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
 - Full Admin all-Products priority/filter/merge/split presentation remains for the ordered Admin audit.
 - Purchase-context aggregate/admin reporting UI remains open.
 - Unified public Closet legacy visibility cleanup remains open beyond the narrow owner-only Needs More Evidence follow-up.
 - Exact post-submit mutation/lifecycle schema remains open.
 - Product merge/split, richer alias management, spam handling, broader Product-photo moderation, field lock/reopen, external barcode-provider evaluation, SerpAPI admin UX, starter-catalog enrichment and authenticated browser regression remain open where previously scoped.
-- Variation-definition audit (#11A) must be completed after Foundation hardening is production-resolved and before Product Detail Exact Variation or counted-report fingerprint reconciliation.
-- Branch cleanup is authorized by the classification ledger above; the desired long-lived branch state is `main` only after active PR #56 is resolved.
+- Variation-definition audit (#11A) is now the next required logic audit before Product Detail Exact Variation or counted-report fingerprint reconciliation.
+- Branch cleanup is authorized by the classification ledger above; after this reconciliation PR merges, the desired long-lived branch state is `main` only until the next explicitly authorized work branch.
 - `main` is currently not branch-protected. This is not a current repository-rule violation, but enabling required PR + CI protection is a separate owner decision and must not be changed silently.
 
 # CONDENSED DEPLOYMENT / RECOVERY LEDGER
@@ -606,14 +616,13 @@ Post-Beta: review Mobile App Options + AI Build Viability before approving a sep
 - PR #50 recorded that production state at `9431366660f813bd2dda68ee5db9c6f4fdc5ddfa`.
 - PR #51 merged at `93d9414a29f81b5732c42bf277cc085db5e93998`; exact-head CI #668 passed; four ordered migrations were applied in production; Vercel `dpl_AXBaKS6TRWxUv81kKFYULYT22AFu` reached READY on `likesized.com`.
 - PR #52 merged documentation/status reconciliation to `main` at `05f496cbe6cb412681bcd2530f7748aca85db681`.
-- PR #53 exact-head CI #684 passed all application/build/fresh-migration/database gates; hosted migrations `20260823205559`, `20260823205714`, `20260823205746` were applied/verified database-first; exact tested head was squash-merged to `main` as `c2fc26233cfbee961ff9e0ea95f4338d1ce641fc`; Vercel production `dpl_8tpiSJWtNSYzgnKBWzFCByBz6cgg` is READY on `likesized.com`; public/auth-guard/runtime sanity passed.
+- PR #53 exact-head CI #684 passed all application/build/fresh-migration/database gates; hosted migrations `20260823205533`, `20260823205642`, `20260823205712` were applied/verified database-first; exact tested head was squash-merged to `main` as `c2fc26233cfbee961ff9e0ea95f4338d1ce641fc`; Vercel production `dpl_8tpiSJWtNSYzgnKBWzFCByBz6cgg` reached READY on `likesized.com`; public/auth-guard/runtime sanity passed.
 - PR #55 final CI #690 passed; the cosmetic/FAQ/Fit Report UI batch was squash-merged to `main` as `0a972341212e245e9ad3d00263167e50818c6917`; the resulting Vercel production deployment reached READY on `likesized.com` and public/auth-guard/runtime sanity passed.
-- Draft PR #56 carries one additive Foundation hardening migration plus 17 focused pgTAP regressions. CI #693 intentionally exposed an over-restrictive first-pass storage policy; the root was fixed. Exact code/test head `b39297983396958105a1f64be1ac121af7ba8ff0` passed CI #694 including full fresh migration replay and database behavior/privacy tests. PR #56 is **not deployed**.
+- PR #56 final exact-head CI #696 (`32676618920`) passed on `49293638d878a6b7c0e5b5ce07894653de4c3310`; canonical migration `20260824000500_foundation_audit_security_hardening.sql` was applied database-first as hosted `20260824003029 foundation_audit_security_hardening`, 12/12 hosted hardening checks passed, PR #56 was squash-merged as `7bd1a1a6048bcc991ca6a55547e454b10feec832`, and Vercel production `dpl_nBJQsoxraFUj5KEMGxVjwQ55dzt9` reached READY on `likesized.com` with public/auth-guard/runtime sanity passing.
 
 # EXACT NEXT ACTION — CURRENT
-1. Keep PR #56 isolated as the Foundation security batch. Run final exact-head CI after this canonical-doc reconciliation and audit the final PR diff.
-2. Do **not** apply `20260824000500_foundation_audit_security_hardening.sql`, merge PR #56, or deploy it until the owner explicitly authorizes this specific production batch.
-3. On owner authorization: freeze PR #56, confirm exact-head CI, apply/verify the Foundation migration database-first, merge only the tested head, verify production/Vercel and run live public/protected-route/runtime plus hosted-schema/RLS sanity.
-4. After PR #56 production reconciliation, conduct roadmap item **11A Garment-question variation classification**. Classify every controlled question as variation-defining / descriptive-only / cosmetic; Size and Color remain excluded absolutely.
-5. Reconcile the current counted-Fit-Report objective fingerprint to the owner-approved 11A map only after deciding whether descriptive-only answer changes should count as distinct same-member Fit Reports. Do not silently change current counting during Foundation hardening.
-6. Resume the remaining ordered owner audits/roadmap only after Foundation production state and 11A decisions are recorded canonically.
+1. Complete and merge this docs-only PR #56 production reconciliation after exact-head CI; it must not change application or database behavior.
+2. Conduct roadmap item **11A Garment-question variation classification**. Classify every current controlled Garment Type question as variation-defining / descriptive-only / cosmetic/ignored. **Size and Color remain excluded absolutely.**
+3. Produce one canonical variation-definition map shared by future Product Detail, recommendation/evidence aggregation and Admin tooling; do not create parallel variation logic.
+4. After the 11A map is owner-approved, explicitly decide whether descriptive-only answer changes should count as distinct same-member Fit Reports before reconciling the current broader `objective_variant_key`. Do not silently change counted-report identity.
+5. Only after 11A is settled may Product Detail implement Exact Variation behavior. Resume the remaining ordered owner audits/roadmap under separately authorized batches.

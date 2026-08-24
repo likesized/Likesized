@@ -8,9 +8,13 @@ const fitCss = readFileSync("app/closet/add/fitReport.module.css", "utf8");
 const settings = readFileSync("app/settings/page.tsx", "utf8");
 const settingsCss = readFileSync("app/settings/settings.module.css", "utf8");
 
-test("Item suggestions wait for typed search text and overlay the form", () => {
+test("Item suggestions wait for typed search text, reuse recent results, and overlay the form", () => {
   assert.match(catalog, /normalizedItem\.length < 2/);
   assert.match(catalog, /\(product && !itemIssue\)/);
+  assert.match(catalog, /const ITEM_SEARCH_DEBOUNCE_MS = 100;/);
+  assert.match(catalog, /itemSuggestionCache = useRef\(new Map<string, CatalogProduct>\(\)\)/);
+  assert.match(catalog, /setItemSuggestions\(cached\)/);
+  assert.match(catalog, /itemSuggestionCache\.current\.set\(item\.id, item\)/);
   assert.match(catalog, /showItemSuggestions/);
   assert.match(fitCss, /\.itemSuggestionDropdown\s*\{[\s\S]*?position: absolute;/);
   assert.match(fitCss, /top: calc\(100% \+ 4px\);/);
@@ -21,6 +25,19 @@ test("known-item Change controls unlock and focus editable fields on mobile", ()
   assert.match(catalog, /window\.requestAnimationFrame\(\(\) => brandInput\.current\?\.focus\(\)\)/);
   assert.doesNotMatch(catalog, />Change this<\/button>/);
   assert.match(fitCss, /\.changeThis\s*\{[\s\S]*?white-space: nowrap;/);
+});
+
+test("Category and garment type use one clearly shared Change control", () => {
+  assert.match(catalog, /className=\{styles\.categoryTypeGroup\}/);
+  assert.match(catalog, />Change category \/ type<\/button>/);
+  assert.doesNotMatch(catalog, /<div className=\{styles\.editableField\}>\s*<label>Specific garment type/);
+  assert.match(fitCss, /\.categoryTypeGroup\s*\{[\s\S]*?position: relative;[\s\S]*?display: grid;/);
+});
+
+test("desktop single-field controls are capped while grouped sections keep the wider form", () => {
+  assert.match(fitCss, /\.form > label,[\s\S]*?\.form > :global\(\.garmentSizeFields\),[\s\S]*?\.catalogDetails > label,[\s\S]*?\.categoryTypeGroup\s*\{\s*width: min\(100%, 680px\);/);
+  assert.match(fitCss, /\.form\s*\{[\s\S]*?max-width: 920px;/);
+  assert.doesNotMatch(fitCss, /\.optionalDetails\s*\{[\s\S]*?max-width: 680px;/);
 });
 
 test("manual item uncertainty is prominent and does not sit under redundant helper copy", () => {

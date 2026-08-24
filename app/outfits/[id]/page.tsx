@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { blockMemberFromOutfit, deleteOutfit, deleteOutfitComment, followFromOutfit, likeOutfit, toggleOutfitComments, unlikeOutfit } from "@/app/outfits/actions";
 import { addToWishLocker, likeProduct, removeFromWishLocker, unlikeProduct } from "@/app/likelocker/actions";
 import { ReportContentForm } from "@/components/ReportContentForm";
+import { fitTwinDesignation, fitTwinLabel } from "@/lib/fit-twin";
 import { OUTFIT_OCCASION_LABELS } from "@/lib/outfit-taxonomy";
 import { createClient } from "@/lib/supabase/server";
 import CommentComposer from "./CommentComposer";
@@ -25,8 +26,10 @@ type Brand = { id: string; name: string };
 type Comment = { id: string; user_id: string | null; body: string; created_at: string; profile: Profile | null };
 type PublicComment = { comment_id: string; body: string; created_at: string; username: string; display_name: string | null };
 type PublicTeaser = { product_id: string; product_slug: string; brand_name: string; product_name: string; image_url: string | null };
+type MatchRecord = { user_id: string; match_score: number };
 function first(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
 function formatDate(value: string) { return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value)); }
+function scoreForTarget(data: unknown, targetUserId: string) { return ((data ?? []) as MatchRecord[]).find((row) => row.user_id === targetUserId)?.match_score; }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { id } = await params;
@@ -122,6 +125,8 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
   let photoTags: PhotoTag[] = [];
   let liked = false;
   let following = false;
+  let creatorOverallMatch: number | undefined;
+  let creatorTwinLabel: string | null = null;
   const productById = new Map<string, Product>();
   const brandById = new Map<string, Brand>();
   const retailerByProduct = new Map<string, string>();
@@ -140,6 +145,25 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
     garmentLinks = linksResult.data ?? [];
     liked = Boolean(likesResult.data);
     following = Boolean(followResult.data);
+
+    if (!owner) {
+      const [settingsResult, overallResult, topsResult, bottomsResult] = await Promise.all([
+        supabase.from("fit_twin_settings").select("threshold_percent").eq("singleton", true).maybeSingle(),
+        supabase.rpc("get_fit_matches", { p_match_category: "overall", p_result_limit: 100, p_fit_community: "both" }),
+        supabase.rpc("get_fit_matches", { p_match_category: "tops", p_result_limit: 100, p_fit_community: "both" }),
+        supabase.rpc("get_fit_matches", { p_match_category: "bottoms", p_result_limit: 100, p_fit_community: "both" }),
+      ]);
+      if (settingsResult.error || overallResult.error || topsResult.error || bottomsResult.error) throw new Error("Could not load Outfit creator Fit Match.");
+      const threshold = settingsResult.data?.threshold_percent ?? 85;
+      creatorOverallMatch = scoreForTarget(overallResult.data, outfit.user_id);
+      if (following) {
+        creatorTwinLabel = fitTwinLabel(fitTwinDesignation({
+          overall: creatorOverallMatch,
+          tops: scoreForTarget(topsResult.data, outfit.user_id),
+          bottoms: scoreForTarget(bottomsResult.data, outfit.user_id),
+        }, threshold));
+      }
+    }
 
     const closetIds = garmentLinks.map((row) => row.closet_item_id);
     if (closetIds.length) {
@@ -201,7 +225,7 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
 
   return <main className="pageShell">
     {published ? <div className="authMessage">Outfit published.</div> : updated ? <div className="authMessage">Outfit updated.</div> : reported ? <div className="authMessage">Report sent.</div> : null}
-    <div className={styles.detailHeader}><div><span className="eyebrow">OUTFIT</span><h1>{outfit.headline || "Outfit"}</h1><div className={styles.creatorLine}><span className="avatar small">{creatorName.slice(0, 1).toUpperCase()}</span><div><strong>{creatorName}</strong>{profile?.username ? <span>@{profile.username}</span> : null}<span>{formatDate(publishedAt)}</span></div></div></div><div className={styles.detailHeaderActions}><OutfitEngagementClient postId={id} headline={outfit.headline || "Outfit"} />{owner ? <Link className={styles.compactSecondary} href={`/outfits/new?edit=${id}`}>Edit Outfit</Link> : null}</div></div>
+    <div className={styles.detailHeader}><div><span className="eyebrow">OUTFIT</span><h1>{outfit.headline || "Outfit"}</h1><div className={styles.creatorLine}><span className="avatar small">{creatorName.slice(0, 1).toUpperCase()}</span><div><strong>{creatorName}</strong>{profile?.username ? <span>@{profile.username}</span> : null}{typeof creatorOverallMatch === "number" ? <span>{creatorOverallMatch}% Fit Match{creatorTwinLabel ? ` · ${creatorTwinLabel}` : ""}</span> : null}<span>{formatDate(publishedAt)}</span></div></div></div><div className={styles.detailHeaderActions}><OutfitEngagementClient postId={id} headline={outfit.headline || "Outfit"} />{owner ? <Link className={styles.compactSecondary} href={`/outfits/new?edit=${id}`}>Edit Outfit</Link> : null}</div></div>
 
     <div className={styles.detailLayout}><OutfitGallery photos={galleryPhotos} garments={garments} canViewTags={Boolean(viewerId)} /><aside className={styles.storyCard}><div className={styles.pills}>{(occasionsResult.data ?? []).map((row) => <span key={row.occasion}>{OUTFIT_OCCASION_LABELS.get(row.occasion) ?? row.occasion}</span>)}</div>{(stylesResult.data ?? []).length ? <div className={styles.styleLine}>{(stylesResult.data ?? []).map((row) => <span key={row.display_tag}>#{row.display_tag}</span>)}</div> : null}{outfit.story ? <p className={styles.storyText}>{outfit.story}</p> : null}<div className={styles.engagementCounts}><span>♥ {outfit.like_count}</span><span>💬 {outfit.comment_count}</span><span>↗ {outfit.share_count}</span></div>
       {!viewerId ? <div className={styles.memberGate}><strong>See how every piece fit.</strong><p>Join or sign in for sizes worn, Fit Results, Fit Report evidence, photo hotspots, LikeLocker actions, and shopping links.</p><Link className={styles.compactPrimary} href={`/login?next=${encodeURIComponent(returnTo)}`}>Sign in to see fit details</Link></div> : null}

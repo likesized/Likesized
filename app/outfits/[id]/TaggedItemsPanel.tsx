@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { addToWishLocker, likeProduct, removeFromWishLocker, unlikeProduct } from "@/app/likelocker/actions";
-import styles from "../outfits.module.css";
+import styles from "./outfitDetail.module.css";
 
 export type TaggedItem={
   closetItemId:string;

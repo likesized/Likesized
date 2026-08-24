@@ -262,15 +262,17 @@ For a resolved Product, a counted Fit Report represents a distinct state for:
 - objective physical garment-answer fingerprint
 - garment-relevant body state
 
-Fit Result, Intended Fit, Condition, Color, material, retailer URL, barcode, Style/Article Number, Department, notes, Product Photo, Product Label / Tag Photo, Fit Photos and purchase context do not independently create another counted report.
+Fit Result, Condition, Color, material, retailer URL, barcode, Style/Article Number, Department, notes, Product Photo, Product Label / Tag Photo, Fit Photos and purchase context do not independently create another counted report.
 
 An unresolved Unconfirmed garment still preserves its Fit Report/body evidence while Product identity remains unresolved. Admin resolution later maps that history to the canonical Product without rewriting the original try-on/body evidence.
 
 ## Objective fingerprint
-- physical controlled answers may participate;
+- current physical controlled answers may participate;
 - `Not sure` is stored but excluded from positive physical fingerprint;
-- Intended Fit is filter/report metadata and excluded;
+- historical Intended Fit remains excluded from the existing fingerprint and is no longer a current intake question;
 - a genuine objective physical-answer change may create a distinct state.
+
+The counted-report `objective_variant_key` is deliberately separate from tracked fit-variation identity. The 11A tracked-variation audit does not silently rekey historical reports or collapse possible legacy duplicates created by retired questions. Any counted-report fingerprint reconciliation must be a deliberate later change with historical collision handling.
 
 ## Body relevance and 2% rule
 Use the same Product measurement map as Match: `private.product_match_measurements(product_id)`.
@@ -323,23 +325,22 @@ Key locked details:
 - Pajama set uses the printed whole-set size unless pieces are genuinely separate Products.
 - Costume lingerie questions are Garment form, Top style, Bottom style and Structure / Support. Closure is intentionally omitted in favor of Structure / Support.
 
-## Tracked fit variation identity — OWNER LOCKED, IMPLEMENTATION DEFERRED
+## Tracked fit variation identity — OWNER LOCKED
 A tracked fit variation is not the base Product and is not the member's size.
 
-Only structured questions LikeSized actually asks for that Garment Type are even eligible to define a tracked variation, and each question must be explicitly classified before it participates.
-
-Question classes:
-- **Variation-defining:** a meaningful physical garment difference capable of materially changing fit evidence.
-- **Descriptive-only:** useful metadata/filter context but not a separate fit-evidence variation.
-- **Cosmetic/ignored:** not fit-variation identity.
-
-Absolute rules:
+Only structured questions LikeSized actually asks for that Garment Type are eligible to define a tracked variation. The completed 11A owner audit produced these current rules:
+- **Every structured Garment Type question that remains in current V1 intake is variation-defining.** There are currently no descriptive-only or cosmetic structured Type questions.
+- **Intended Fit is retired from every Garment Type question set.** It is subjective/redundant with actual Fit Result and wearer evidence.
+- **Sneakers → Use is retired.** Casual / Running / Training / Court is use/category context rather than tracked fit variation identity.
+- Cropped, sleeve/sleeve length, neckline and closure are variation-defining wherever asked.
+- Shape questions remain variation-defining when their options describe the garment's physical cut, such as Fitted / Flowy.
+- All other retained clothing and shoe questions in `lib/garment-taxonomy.ts` are variation-defining.
 - **Size never defines a tracked variation.** Size stays on the Fit Report.
 - **Color never defines a tracked variation.** Color is cosmetic for variation identity.
-- Do not assume every one of a Garment Type's up-to-four controlled questions is variation-defining.
-- One canonical variation-definition map must eventually be shared by Product Detail, recommendation/evidence aggregation and Admin tooling. Do not create parallel variation logic.
 
-The required classification audit is a roadmap prerequisite before later Product Detail Exact Variation behavior is implemented.
+`lib/garment-taxonomy.ts` is the one canonical current question/classification source. `GARMENT_VARIATION_DEFINITION_MAP` is derived from those same question definitions; Product Detail, recommendation/evidence aggregation and Admin tooling must consume that map rather than create parallel variation logic.
+
+Historical database vocabulary/answers for retired questions may remain inert for compatibility with immutable migration history. Retiring an intake question does not itself authorize historical counted-report rekeying.
 
 # 14. Product evidence boundaries — LOCKED
 Shared Product facts resolve field by field; one Fit Report never wholesale-replaces another.
@@ -366,8 +367,10 @@ Physical values are Too Small / Snug / Just Right / Relaxed / Too Big.
 
 There is **no current V1 1–5-star Fit Rating UI**. Bad fits remain useful evidence and do not lower body Match %.
 
-# 17. Preferred Fit — RETIRED
-Old member-level Preferred Fit by garment type is not current V1 behavior. It is absent from current Fit Profile UI and does not change Match %, Fit Twin or counted report identity. Historical DB rows may remain inert. Per-report Intended Fit is separate metadata.
+# 17. Preferred Fit / Intended Fit — RETIRED
+Old member-level Preferred Fit by garment type is not current V1 behavior. It is absent from current Fit Profile UI and does not change Match %, Fit Twin or counted report identity. Historical DB rows may remain inert.
+
+The old per-report **Intended Fit** structured question is also retired from current V1 intake. Historical Intended Fit values may remain inert for compatibility and remain excluded from the existing counted-report objective fingerprint.
 
 # 18. Deep Fit Match architecture — LOCKED
 - Match is symmetric body similarity.
@@ -394,7 +397,7 @@ Recovered weights:
 
 Pending/unmapped submissions, including Unconfirmed and Needs More Evidence, do not count as exact canonical Product evidence. `Would Buy Again` does not affect size recommendation/confidence.
 
-**Exact Variant** must eventually consume the one approved variation-definition map from Section 13. Size and Color are never variation-key fields.
+**Exact Variant** must consume the one approved variation-definition map from Section 13 when Exact Variant behavior is implemented. Size and Color are never variation-key fields.
 
 ## Product Detail fit-evidence presentation — OWNER LOCKED, ROADMAP DEFERRED
 Do not implement this ahead of the Garment/Product Detail audit.
@@ -462,7 +465,7 @@ Unconfirmed active review is an exception queue prioritized by requested identit
 
 Admin work is exception-driven: duplicate/identity conflict, explicit member uncertainty, incorrect information, member reports, content/photo problems, identifier/listing collisions and evidence disagreements—not mandatory approval of every clean new garment.
 
-When variation tooling is reached, Admin must distinguish base Product identity, tracked fit variation, descriptive metadata, cosmetic fields and report-specific Size/Color/Fit Result. Admin tooling must not accidentally promote Size or Color into variation identity.
+When variation tooling is reached, Admin must distinguish base Product identity, tracked fit variation, descriptive metadata, cosmetic fields and report-specific Size/Color/Fit Result. Admin tooling must consume the canonical variation-definition map and must not accidentally promote Size or Color into variation identity.
 
 # 26. SerpAPI — ADMIN RESEARCH ONLY
 SerpAPI checks private cache first, dedupes queries, respects caps and requires explicit resolution. Raw results never write directly to Product truth. Ordinary member search/intake/scanner does not use it.

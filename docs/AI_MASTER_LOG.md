@@ -22,13 +22,14 @@ LikeSized is not yet a public active service with an external audience. For the 
 
 ## Canonical production line — LIVE
 - `main` is the one production implementation line and is coupled to Vercel production.
-- Current production commit: `25ffa95b15295d2138fae1e476d28c392c4d45f1` — squash merge of PR #63, **Make Fit Report intake evidence-first**.
-- PR #63 exact tested head `2f086f73d6784fb5f78f2d2f6fcd85109ee245d0` passed full LikeSized CI #716 before merge.
-- Production Vercel deployment `dpl_BQxgW1vq2UrqfVJagWf7FeGcVGB` is READY and aliases `likesized.com`.
-- PR #63 introduced the evidence-first **Identify your item** entry, one canonical tag-photo input, compact in-form tag upload for barcode/manual paths, and evidence-aware uncertainty behavior. Owner visual review then identified copy/spacing and matched-identity reset defects; those are the only purpose of the active cleanup branch below.
-- PR #62 merge `245bfab0d0d918671cfce3856b78e57525867df2` and production `dpl_3DXrLcVy13gwc4L8CSLtvspFLc9G` are superseded by PR #63 production.
+- Current production commit: `f75acec9bea0af8a6e8b1b691942f080f9668ea5` — merge of PR #65, **Speed Fit Report suggestions and restore photo feedback**.
+- PR #65 exact tested head `f9d49a9ad66a11183dcbf5086e706be5b3c8d8a7` passed full LikeSized CI #723 before merge.
+- Production Vercel deployment `dpl_FdQSyuvSBTDrpEnK4hThiAMdjQ1E` is READY for current `main`.
+- PR #64 exact tested head `63fb7698c8338e729cf71495c9b4abac10c6b4a9` passed full LikeSized CI #721 and merged as `97fb30aeee6b08c08f90a369438c85f6be7a5e11`; production Vercel deployment `dpl_CV2dFjk4wim1gfatEtdsEpNwgU1q` reached READY before being superseded by PR #65.
+- PR #63 exact tested head `2f086f73d6784fb5f78f2d2f6fcd85109ee245d0` passed full LikeSized CI #716 before merge; squash merge `25ffa95b15295d2138fae1e476d28c392c4d45f1`; production Vercel deployment `dpl_BQxgW1vq2UrqfVJagWf7FeGcVGB` reached READY before later production updates.
+- PR #62 merge `245bfab0d0d918671cfce3856b78e57525867df2` and production `dpl_3DXrLcVy13gwc4L8CSLtvspFLc9G` are superseded by later production.
 - PR #61 exact tested head `d4c84b9926ed3b2b53666a399b131e6e14cedfa3` passed full LikeSized CI #708 and was squash-merged as `24fb0e42b6e05d42a10b1912a5493367975952da`; Vercel production `dpl_J9cnoV8VxewwZDZfbjpusi3Gx4RG` reached READY.
-- No database/schema migration was part of PR #61, PR #62 or PR #63.
+- No database/schema migration was part of PR #61 through PR #65.
 - Applied database migrations are immutable; corrections use later ordered migrations.
 - No paid Supabase branches.
 
@@ -43,25 +44,28 @@ The six ordered browser-to-backend checks are complete:
 
 Controlled production test identity remains Maidenform / Heirloom / Bra Product `4086fdaa-172d-4a3f-b6c4-2c155094bb25`, UPC `196988323504`. Its deliberate `catalog_review_needed` state came from the controlled correction test, not barcode corruption.
 
-## Fit Report intake UX cleanup — ACTIVE / OWNER AUTHORIZED THROUGH LIVE DEPLOYMENT
-Primary active implementation line: `agent/fit-report-intake-ux-cleanup`, based directly on production PR #63 merge `25ffa95b15295d2138fae1e476d28c392c4d45f1`.
+## Roadmap 11A — Garment-question variation classification — IMPLEMENTATION COMPLETE / FINAL EXACT-HEAD CI PENDING
+Primary active implementation line: `agent/variation-definition-map`, based directly on current production `main` commit `f75acec9bea0af8a6e8b1b691942f080f9668ea5`. PR #66 is open.
 
-The owner has authorized this cleanup to proceed through merge and live deployment. The implementation head `84bc7066819e3daca1623dabb4eba331f2a8e0f5` passed full LikeSized CI #718 before this documentation-only workflow reconciliation. Because this workflow note changes the branch head, the final exact head must pass CI again before merge. Do not stop at or require a Vercel preview; owner verification happens on the live site after deployment.
+Owner audit is complete. Locked 11A decisions:
+- **Intended Fit is deleted from every current Garment Type question set.** It was judged subjective/redundant with actual Fit Result and wearer evidence.
+- **Sneakers → Use is deleted.** Casual / Running / Training / Court is use/category context, not tracked fit variation identity.
+- **Every other structured Garment Type question that remains in current V1 intake is variation-defining.** There are currently no descriptive-only or cosmetic structured Type questions.
+- Cropped, sleeve/sleeve length, neckline and closure are globally variation-defining wherever asked.
+- Shape values such as Fitted / Flowy remain variation-defining when they describe the garment's physical cut rather than the wearer's subjective Fit Result.
+- All remaining clothing questions are variation-defining.
+- Approved shoe variation questions are: Sneakers Height/Closure; Boots Style/Height/Heel/Closure; Dress shoes Style/Toe; Loafers Style/Toe; Flats Style/Toe; Heels Heel height/Heel style/Toe; Sandals Style/Closure; Slides Sole; Clogs Heel/Back.
+- **Size never defines tracked variation.** Size remains report-specific.
+- **Color never defines tracked variation.** Color remains cosmetic for tracked variation identity.
+- `lib/garment-taxonomy.ts` is the canonical current Type-question source and owns the derived variation-definition map. Product Detail, recommendation/evidence aggregation and Admin tooling must consume that one map rather than invent parallel logic.
+- Current counted-report `objective_variant_key` remains a separate historical/report-dedup concept during 11A. This implementation must not silently rekey historical Fit Reports or collapse possible legacy duplicates merely because a question was retired. A deliberate counted-report fingerprint reconciliation remains separate work if needed.
+- No schema migration is required merely to retire current intake questions; historical database vocabulary/answers may remain inert for compatibility with immutable history.
 
-Frozen scope:
-- tighten the **Identify your item** spacing/presentation;
-- opening helper copy: **“Scan the barcode or add a photo of the tag so we can verify the exact item.”**;
-- opening actions: **Scan barcode**, **Add tag photo**, and smaller **Tags missing? Enter item manually →**;
-- whenever no canonical Product match is active, show the standard top-of-form guidance: **“Enter as much information as you can about the item. If you’re unsure about something, just leave it blank.”**;
-- matched Products keep the existing prefilled/community-match message instead;
-- preserve the compact optional Product Label / Tag Photo row on barcode/manual paths and do not duplicate it when the opening tag photo is already present;
-- restore the pre-redesign uncertainty-modal wording and field labels rather than invent new descriptions; keep the tag-photo prompt conditional on whether that evidence already exists;
-- constrain the uncertainty modal heading and tighten its spacing without redesigning unrelated UI;
-- **Change Brand** invalidates the entire matched Product identity and clears matched Item, Category, Garment Type, structured Product answers/image/message/defaults while preserving unrelated member-entered Fit Report information/evidence;
-- **Change Item** invalidates the matched Product while keeping Brand, then restores the unresolved/manual path and uncertainty control;
-- if the rejected match came from a scanned barcode, keep the barcode as evidence but do not silently reattach the old Product when submitted Brand or Item no longer agrees;
-- selecting a new real LikeSized Product suggestion establishes that new Product match normally;
-- no schema, migration, RLS, Product-trust formula, Match formula or recommendation formula change is part of this cleanup.
+Implementation head `2581d23416b0a95ff56ed32ea65e3794cc8a974b` passed full LikeSized CI #726 (`32694000887`): canonical integrity, TypeScript, all focused application safeguards including the new tracked-variation test, production build, fresh replay of every canonical migration and the complete database behavior/privacy suite all passed. This documentation-only verification note changes the branch head, so the new final exact head must pass CI again before PR #66 can be considered exact-head verified.
+
+A Vercel branch preview may build automatically from Git integration, but it is not production authorization and does not replace required exact-head CI.
+
+**Deployment state:** 11A has not been authorized for production. Do not merge/update `main` or deploy this branch without explicit owner authorization.
 
 # RECENT PRODUCTION HISTORY
 
@@ -78,7 +82,13 @@ Production reconciliation after PR #58/#59. Exact head `f28d988ca7018653ae82d641
 **Promote Product Label photo in Fit Report.** Exact head `39684abed6312f5d317697f58454b7bd1a6c7572` passed CI #712; squash merge `245bfab0d0d918671cfce3856b78e57525867df2`; production Vercel `dpl_3DXrLcVy13gwc4L8CSLtvspFLc9G`. It preserved one Label/Tag evidence input and kept Product Photo in Optional Additional Information, but its large in-form Label/Tag card presentation was superseded by PR #63.
 
 ## PR #63 — COMPLETE / DEPLOYED
-**Make Fit Report intake evidence-first.** Exact head `2f086f73d6784fb5f78f2d2f6fcd85109ee245d0` passed full CI #716; squash merge `25ffa95b15295d2138fae1e476d28c392c4d45f1`; production Vercel `dpl_BQxgW1vq2UrqfVJagWf7FeGcVGB`. Delivered the evidence-first opening, one canonical tag-photo input, compact conditional tag control and evidence-aware uncertainty path. Owner visual verification exposed the copy/spacing and match-reset defects now isolated to `agent/fit-report-intake-ux-cleanup`.
+**Make Fit Report intake evidence-first.** Exact head `2f086f73d6784fb5f78f2d2f6fcd85109ee245d0` passed full CI #716; squash merge `25ffa95b15295d2138fae1e476d28c392c4d45f1`; production Vercel `dpl_BQxgW1vq2UrqfVJagWf7FeGcVGB`. Delivered the evidence-first opening, one canonical tag-photo input, compact conditional tag control and evidence-aware uncertainty path. Owner visual review identified copy/spacing and match-reset defects later repaired by PR #64.
+
+## PR #64 — COMPLETE / DEPLOYED
+**Fix Fit Report identity reset and intake copy.** Exact head `63fb7698c8338e729cf71495c9b4abac10c6b4a9` passed full LikeSized CI #721; merge commit `97fb30aeee6b08c08f90a369438c85f6be7a5e11`; production Vercel `dpl_CV2dFjk4wim1gfatEtdsEpNwgU1q` reached READY. Delivered the owner-approved Identify Item/uncertainty copy and spacing cleanup plus canonical Change Brand / Change Item stale-Product reset behavior and barcode non-reattachment safeguards. No database change.
+
+## PR #65 — COMPLETE / DEPLOYED
+**Speed Fit Report suggestions and restore photo feedback.** Exact head `f9d49a9ad66a11183dcbf5086e706be5b3c8d8a7` passed full LikeSized CI #723; merge/current production commit `f75acec9bea0af8a6e8b1b691942f080f9668ea5`; production Vercel `dpl_FdQSyuvSBTDrpEnK4hThiAMdjQ1E` is READY. Removed the artificial Item-suggestion debounce, restored uncertainty-helper Retail Link alignment and Product Photo explanation/selected-photo confirmation while preserving PR #64 stale-match safeguards. No database change.
 
 # FOUNDATION / DATABASE STATUS — VERIFIED
 Production Supabase project: `rlksidwniuoxoacumyaf`.
@@ -171,7 +181,7 @@ Optional Additional Information remains collapsed by default:
 7. Material / Fabric Composition.
 8. Product Photo at the bottom.
 
-Product Photo and Product Label / Tag Photo remain separate evidence roles. This cleanup does not change their existing database/storage access controls.
+Product Photo and Product Label / Tag Photo remain separate evidence roles. Current intake cleanup does not change their existing database/storage access controls.
 
 ## Fit Result / Fit Rating
 Fit Result remains Too Small / Snug / Just Right / Relaxed / Too Big. There is **no current V1 1–5-star Fit Rating UI**.
@@ -179,19 +189,22 @@ Fit Result remains Too Small / Snug / Just Right / Relaxed / Too Big. There is *
 ## Counted Fit Report identity
 For a resolved Product, counted Fit Report identity remains Member + exact Product + normalized Size + objective physical-answer fingerprint + compatible garment-relevant body state. Size stays report-specific. Product Label/Tag evidence does not create another counted report by itself.
 
-## Tracked fit variation — NEXT LOGIC AUDIT
-Tracked variation is separate from base Product and report Size. Before Product Detail implements Exact Variation, roadmap item 11A must classify every structured Garment Type question as:
-- variation-defining;
-- descriptive-only;
-- cosmetic/ignored.
+11A tracked-variation classification does **not** silently rewrite the existing `objective_variant_key` history. `Not sure` and historical Intended Fit remain excluded by the current fingerprint behavior; legacy retired-question fingerprints are a separate reconciliation concern.
 
-Absolute rules:
-- Size never defines tracked variation.
-- Color never defines tracked variation.
-- One canonical variation-definition map must be shared by Product Detail, recommendation/evidence aggregation and Admin tooling.
-- Do not change the current broader counted-report `objective_variant_key` until 11A is owner-approved and the owner decides how descriptive-only changes affect same-member duplicate counting.
+## Tracked fit variation — OWNER AUDIT COMPLETE / IMPLEMENTATION ACTIVE
+Tracked variation is separate from base Product and report Size.
 
-## Product Detail evidence — DEFERRED UNTIL 11A
+Current 11A rules:
+- only structured questions LikeSized actually asks for that Garment Type are eligible;
+- every remaining current structured Type question is variation-defining;
+- Intended Fit is retired globally from current Type questions;
+- Sneakers Use is retired;
+- Size never defines tracked variation;
+- Color never defines tracked variation;
+- one canonical map from `lib/garment-taxonomy.ts` must be shared by Product Detail, recommendation/evidence aggregation and Admin tooling;
+- current broader counted-report `objective_variant_key` remains separate and is not rekeyed by 11A.
+
+## Product Detail evidence — ROADMAP DEFERRED
 When reached, exact tracked variation evidence comes first regardless of whether a related variation has a higher Body Match. Related evidence is secondary and must identify the actual variation difference. Strong Fit Reports aggregate only the same exact variation. Body Match means body similarity, not garment-fit probability.
 
 ## Shopping
@@ -208,7 +221,9 @@ Recent branch classification:
 - `agent/promote-label-photo` — RECOVERED/SUPERSEDED via PR #62/PR #63.
 - accidental duplicate refs created during PR #62 work contained no unique product work and were reset to production; they have no authority.
 - `agent/evidence-first-fit-report-intake` — RECOVERED via PR #63; no longer active.
-- `agent/fit-report-intake-ux-cleanup` — **ACTIVE PRIMARY LINE**, based on current production PR #63 and owner-authorized through live deployment. Do not start a second product-decision branch while it is active.
+- `agent/fit-report-intake-ux-cleanup` — RECOVERED via PR #64; no longer active.
+- `agent/faster-item-suggestions` — RECOVERED via PR #65; no longer active.
+- `agent/variation-definition-map` — **ACTIVE PRIMARY LINE** for roadmap 11A; PR #66 open; no production authorization.
 
 Older recovery/feature/verification branches classified in Git history remain RECOVERED, SUPERSEDED, OBSOLETE or DUPLICATE; none overrides current `main` or this one active line.
 
@@ -223,11 +238,11 @@ Older recovery/feature/verification branches classified in Git history remain RE
 8. Post-submit Fit Report mutation/lifecycle model — remains.
 9. People My Size — audit remains.
 10. My Circle / Following / system-generated Fit Twin — audit remains.
-11. New Fit Report — six browser/backend wiring checks complete and PR #63 is deployed. Current narrow intake UX/match-reset cleanup is owner-authorized through live deployment; visually verify the tightened opening/modal and Brand/Item reset behavior on `likesized.com` after rollout.
-11A. **Garment-question variation classification audit — NEXT PRODUCT-LOGIC AUDIT after the current cleanup rollout.**
+11. New Fit Report — six browser/backend wiring checks complete; cleanup through PR #65 is deployed.
+11A. **Garment-question variation classification — implementation complete; final exact-head CI pending on PR #66 before any merge decision.**
 12. New Outfit.
 13. Outfits / Style Feed.
-14. Garment/Product detail — Exact Variation behavior only after 11A.
+14. Garment/Product detail — Exact Variation behavior only after 11A is verified/reconciled.
 15. Explore.
 16. Search + `/browse` compatibility.
 17. LikeLocker / Wish Locker.
@@ -235,15 +250,15 @@ Older recovery/feature/verification branches classified in Git history remain RE
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Finish `agent/fit-report-intake-ux-cleanup` through exact-head CI, expected-head merge and live production sanity; do not stop at a separate Vercel preview gate.
-- After deployment, owner visually verifies opening spacing/copy, uncertainty modal spacing/copy, unmatched guidance, compact tag uploader, Change Brand full reset, Change Item Product reset and barcode non-reattachment behavior on the live site.
+- Run final exact-head full repository CI on PR #66 after this docs-only verification note.
+- Do not merge/deploy PR #66 without explicit owner authorization.
+- Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification; do not silently rekey/collapse historical reports.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
 - Full Admin all-Products priority/filter/merge/split presentation remains.
 - Purchase-context aggregate/admin reporting UI remains open.
 - Unified public Closet legacy visibility cleanup remains open.
 - Exact post-submit mutation/lifecycle schema remains open.
 - Product merge/split, richer alias management, spam handling, broader Product-photo moderation, field lock/reopen, external barcode-provider evaluation, SerpAPI admin UX and starter-catalog enrichment remain open where previously scoped.
-- 11A variation-definition audit is the next logic audit after this cleanup rollout and before Product Detail Exact Variation or counted-report fingerprint reconciliation.
 - `main` is currently not branch-protected; enabling required PR + CI protection remains a separate owner decision and must not be changed silently.
 
 # CONDENSED DEPLOYMENT LEDGER
@@ -266,10 +281,11 @@ Older recovery/feature/verification branches classified in Git history remain RE
 - PR #61 exact head `d4c84b9926ed3b2b53666a399b131e6e14cedfa3` passed CI #708; squash merge `24fb0e42b6e05d42a10b1912a5493367975952da`; Vercel `dpl_J9cnoV8VxewwZDZfbjpusi3Gx4RG`.
 - PR #62 exact head `39684abed6312f5d317697f58454b7bd1a6c7572` passed CI #712; squash merge `245bfab0d0d918671cfce3856b78e57525867df2`; Vercel `dpl_3DXrLcVy13gwc4L8CSLtvspFLc9G`.
 - PR #63 exact head `2f086f73d6784fb5f78f2d2f6fcd85109ee245d0` passed full CI #716; squash merge `25ffa95b15295d2138fae1e476d28c392c4d45f1`; Vercel `dpl_BQxgW1vq2UrqfVJagWf7FeGcVGB`.
+- PR #64 exact head `63fb7698c8338e729cf71495c9b4abac10c6b4a9` passed full CI #721; merge `97fb30aeee6b08c08f90a369438c85f6be7a5e11`; Vercel `dpl_CV2dFjk4wim1gfatEtdsEpNwgU1q` reached READY.
+- PR #65 exact head `f9d49a9ad66a11183dcbf5086e706be5b3c8d8a7` passed full CI #723; merge/current production `f75acec9bea0af8a6e8b1b691942f080f9668ea5`; Vercel `dpl_FdQSyuvSBTDrpEnK4hThiAMdjQ1E` is READY.
 
 # EXACT NEXT ACTION — CURRENT
-1. Run full LikeSized CI on the new exact head after this owner workflow reconciliation.
-2. If green, freeze that exact head and squash-merge PR #64 with expected-head protection under the owner's current production authorization.
-3. Follow the Git-triggered Vercel production deployment until READY on `likesized.com`; verify merge SHA, protected-route behavior and runtime errors.
-4. Owner visually verifies the tightened opening, standard unmatched guidance, compact in-form tag control, restored uncertainty modal and matched Brand/Item reset behavior on the live site.
-5. Then conduct roadmap item **11A Garment-question variation classification** before any Product Detail Exact Variation work.
+1. Run full LikeSized CI on the new exact PR #66 head created by this documentation-only verification note.
+2. If green, freeze PR #66 exactly as verified and report it ready for the owner's merge/deployment decision.
+3. Do **not** merge or deploy PR #66 without separate explicit owner authorization.
+4. After 11A is verified/reconciled, proceed to the next owner-selected audit item; Product Detail Exact Variation must consume the one canonical variation-definition map.

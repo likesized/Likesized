@@ -14,7 +14,7 @@ This file owns current database behavior/privacy plus explicit implementation de
 # Production checkpoint — 2026-08-24
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-Current production `main` is PR #59 merge `b6de93464f55bb03d7c1c0be879c636141cceb40`, on top of PR #58 application/UI merge `d2b546e1ebac2ff537b1375bd9a8909a8cf51b62`. Canonical local migration files remain the replay authority; Supabase production has recorded:
+Current application `main` is PR #65 merge `f75acec9bea0af8a6e8b1b691942f080f9668ea5`. The latest database-changing production work remains PR #59 merge `b6de93464f55bb03d7c1c0be879c636141cceb40`; PR #60 through PR #65 added no schema migration. Canonical local migration files remain the replay authority; Supabase production has recorded:
 - `supabase/migrations/20260823160000_add_unconfirmed_catalog_status.sql` → production `20260823205533 add_unconfirmed_catalog_status`.
 - `supabase/migrations/20260823160100_unconfirmed_identity_and_photo_roles.sql` → production `20260823205642 unconfirmed_identity_and_photo_roles`.
 - `supabase/migrations/20260823160200_needs_more_evidence_followup.sql` → production `20260823205712 needs_more_evidence_followup`.
@@ -111,17 +111,21 @@ Active Unconfirmed review remains invisible to the member. The owner UI renders 
 - `color_families` stores controlled colors.
 - Material remains evidence, not a Match input.
 
-## Tracked variation definition — IMPLEMENTATION DEBT / ROADMAP LOCK
-Current taxonomy stores controlled questions/options and existing recommendation infrastructure includes an `exact_variant` evidence tier. The owner has locked a stricter future tracked-variation meaning:
-- only structured questions actually asked for a Garment Type are eligible;
-- each question must be explicitly classified as variation-defining, descriptive-only or cosmetic/ignored before it participates;
-- **Size must never define tracked variation identity**;
-- **Color must never define tracked variation identity**;
-- do not assume every controlled question is variation-defining.
+## Tracked variation definition — OWNER AUDIT COMPLETE / APP MAP CANONICAL
+Current taxonomy stores controlled questions/options and existing recommendation infrastructure includes an `exact_variant` evidence tier. The completed 11A owner audit locks the current tracked-variation meaning:
+- only structured questions actually asked for a current Garment Type are eligible;
+- every structured question that remains in current V1 intake is explicitly `variation-defining`;
+- there are currently no descriptive-only or cosmetic structured Type questions;
+- `intended_fit` is retired from every current Garment Type question set;
+- `sneakers.shoe_use` is retired from current intake;
+- **Size never defines tracked variation identity**;
+- **Color never defines tracked variation identity**.
 
-Before Product Detail relies on Exact Variation, roadmap item 11A must audit every controlled question and produce one canonical variation-definition map shared by evidence/recommendation/Admin behavior. Do not create a parallel variation table/system by assumption.
+`lib/garment-taxonomy.ts` is the canonical current question/classification source. `GARMENT_VARIATION_DEFINITION_MAP` is derived from those same definitions and is the one map future evidence/recommendation/Admin Exact Variation behavior must consume. Do not create a parallel database variation table/system by assumption.
 
-The Foundation audit confirms the current counted-report `objective_variant_key` is deliberately a separate, currently broader concept: application hashing excludes Intended Fit and Not sure, but otherwise includes objective structured answers. Do not silently narrow or repurpose that fingerprint during Foundation hardening. After 11A classification, the owner must decide whether descriptive-only answer changes still represent a distinct same-member counted Fit Report situation.
+Historical database vocabulary or stored answers for retired questions may remain inert for migration/history compatibility. No schema migration is required merely to stop asking those questions in current intake.
+
+The counted-report `objective_variant_key` remains deliberately separate from tracked variation. Existing application hashing excludes historical Intended Fit and Not sure but otherwise preserves the established counted-report behavior. 11A does not silently rekey historical reports or collapse possible duplicates that differ only by a now-retired question such as Sneakers Use. Any counted-report fingerprint reconciliation requires a separate deliberate design with collision/history handling.
 
 # 4. Submission-first catalog architecture
 Database layers remain:
@@ -298,9 +302,9 @@ Unresolved Unconfirmed reports preserve their original Fit Profile version/body/
 Later owner Fit observations on an unresolved garment must preserve its existing garment identity snapshot fields rather than dropping type/answer/fingerprint context merely because `product_id` is still null.
 
 ## Objective fingerprint
-`Not sure` and Intended Fit do not become positive physical-identity claims. Genuine objective controlled-answer changes currently may create distinct report states.
+`Not sure` and historical Intended Fit do not become positive physical-identity claims. Genuine objective controlled-answer changes currently may create distinct report states.
 
-The objective fingerprint is not automatically identical to the future tracked fit-variation key. Roadmap item 11A must classify each structured question before Exact Variation is implemented. After that classification, counted-report semantics must be reconciled explicitly: a descriptive-only question may be useful metadata without necessarily deserving another same-member counted Fit Report. Do not change this as an incidental side effect of other work.
+The objective fingerprint is intentionally not the tracked fit-variation key. The completed 11A classification does not alter the existing persisted `objective_variant_key` contract or backfill historical rows. In particular, legacy reports may retain retired answer data/fingerprints such as Sneakers Use. Counted-report semantics for retired-question history must be reconciled deliberately later if needed; do not change this as an incidental side effect of tracked-variation work.
 
 ## Body-state relevance
 `private.product_match_measurements(product_id)` is the shared Product-specific measurement source for Fit Match and report-state identity.
@@ -414,17 +418,18 @@ Evidence hierarchy remains:
 
 Help Me Size It reuses this architecture. `Would Buy Again` does not affect size recommendation/confidence. Pending/unmapped candidate reports, including Unconfirmed/Needs More Evidence, do not count as exact canonical Product evidence until mapped.
 
-Before member-facing Product Detail uses `exact_variant`, the existing recommendation/variant foundation must be audited against the owner-locked tracked-variation definition. Size and Color must not become exact-variation key fields. Body Match remains body similarity and must not be collapsed with Fit Result into a synthetic garment-fit percentage.
+Before member-facing Product Detail uses `exact_variant`, recommendation/evidence and Admin behavior must consume `GARMENT_VARIATION_DEFINITION_MAP` from `lib/garment-taxonomy.ts`. Size and Color must not become exact-variation key fields. Body Match remains body similarity and must not be collapsed with Fit Result into a synthetic garment-fit percentage.
 
 # 23. Current implementation debt / open verification
-- PR #55 and PR #58 application/UI cleanup are live; PR #56 Foundation hardening and PR #59 correction-boundary repair are live in production.
-- Browser wiring remains incomplete at Test #3. The RPC/database defect is repaired and hosted verification passed, but the full browser→server-action→database Test #3 must be rerun before Test #4.
+- Current application `main` includes the completed Fit Report intake cleanup through PR #65; the six authenticated browser→backend wiring checks are complete.
+- PR #56 Foundation hardening and PR #59 correction-boundary repair remain the latest database-changing production work; PR #60 through PR #65 added no migration.
+- Roadmap 11A owner classification is complete. The active implementation line must finish canonical map/tests/docs verification before Product Detail Exact Variation work proceeds.
+- Historical counted-report fingerprint reconciliation for retired questions remains separate and must not be smuggled into 11A.
 - The proposed sex/body-specific public measurement FAQ wording remains pending owner copy approval.
 - Unified public Closet migration and mutation/lifecycle model remain future audit work beyond the narrow Needs More Evidence owner flow.
 - Complete all-Products admin priority/filter/merge/split UX remains to build beyond the current operational queue.
 - Purchase-context aggregate/admin analytics UI remains open.
 - Product merge/split, richer alias UX, spam moderation, broader Product-photo review, external barcode-provider feasibility, SerpAPI admin UX and broader browser-level regression remain open where previously scoped.
-- Tracked variation-definition audit #11A is the next required logic audit after browser wiring and before Product Detail Exact Variation or counted-report fingerprint reconciliation.
 
 # 24. Verification contract
 For the current production foundation and future changes prove as applicable:
@@ -471,12 +476,12 @@ For the current production foundation and future changes prove as applicable:
 41. direct Product search is not gated by Fit Community/Department;
 42. Sleepwear app taxonomy matches replayed database vocabulary;
 43. owner interaction review occurs before a surface is marked owner-confirmed;
-44. when tracked-variation logic is implemented, Size and Color are excluded and only explicitly approved question keys participate;
-45. after 11A, counted-report fingerprint behavior is reconciled deliberately rather than assuming every structured question difference deserves another counted same-member report;
-46. authenticated members can record known-Product Item/Brand/Style correction evidence through `record_member_product_identity_issue` without direct EXECUTE on `normalize_identifier`;
-47. known-Product barcode correction validation accepts the controlled normalized format locally and rejects malformed values without widening general helper access;
-48. member correction evidence does not silently overwrite canonical Product or Brand identity;
-49. browser wiring Test #3 is not marked complete until the repaired production path succeeds end-to-end in an authenticated browser and backend inspection confirms the intended evidence/review state.
+44. the tracked-variation map excludes Size and Color, includes only current owner-approved question keys and is derived from the canonical taxonomy source;
+45. retired `intended_fit` and `sneakers.shoe_use` are absent from current intake while historical database vocabulary/answers may remain inert;
+46. counted-report fingerprint behavior remains separate from tracked variation until a deliberate historical reconciliation is authorized;
+47. authenticated members can record known-Product Item/Brand/Style correction evidence through `record_member_product_identity_issue` without direct EXECUTE on `normalize_identifier`;
+48. known-Product barcode correction validation accepts the controlled normalized format locally and rejects malformed values without widening general helper access;
+49. member correction evidence does not silently overwrite canonical Product or Brand identity.
 
 # 25. Forbidden regressions
 Do not:
@@ -508,8 +513,9 @@ Do not:
 - silently reassign a barcode between competing Products;
 - treat purchase context as Product truth;
 - make Size or Color a tracked fit-variation key;
-- automatically treat every controlled garment question as variation-defining;
-- silently equate the current objective counted-report fingerprint with the future tracked-variation map;
+- reintroduce retired Intended Fit or Sneakers Use as current Type questions without an explicit owner decision;
+- bypass or duplicate the canonical `GARMENT_VARIATION_DEFINITION_MAP` for Exact Variation behavior;
+- silently equate the current objective counted-report fingerprint with tracked variation;
 - create a second follow/catalog/sizing/moderation/variation system;
 - rewrite applied migrations;
 - reintroduce star Fit Rating UI;

@@ -17,7 +17,6 @@ const outfitsIndex=readFileSync(new URL("../app/outfits/page.tsx",import.meta.ur
 const explorePage=readFileSync(new URL("../app/explore/page.tsx",import.meta.url),"utf8");
 const profilePhoto=readFileSync(new URL("../lib/profile-photo.ts",import.meta.url),"utf8");
 const migration=readFileSync(new URL("../supabase/migrations/20260824133500_new_outfit_v1_social_foundation.sql",import.meta.url),"utf8");
-const hardeningMigration=readFileSync(new URL("../supabase/migrations/20260824133700_harden_new_outfit_v1_social_controls.sql",import.meta.url),"utf8");
 const commentLikesMigration=readFileSync(new URL("../supabase/migrations/20260824231500_outfit_comment_likes.sql",import.meta.url),"utf8");
 const liveIdentityMigration=readFileSync(new URL("../supabase/migrations/20260824234500_live_profile_identity.sql",import.meta.url),"utf8");
 
@@ -172,7 +171,7 @@ test("Outfit social database boundaries remain canonical",()=>{
  assert.match(migration,/create table public\.outfit_comments/);
  assert.match(migration,/drop policy if exists "owner likes outfit" on public\.outfit_likes/);
  assert.match(migration,/create policy "member likes visible outfit" on public\.outfit_likes/);
- assert.match(hardeningMigration,/follow_from_outfit/);
- assert.match(hardeningMigration,/record_outfit_shop_click/);
+ assert.match(migration,/follow_from_outfit/);
+ assert.match(migration,/record_outfit_shop_click/);
  assert.equal(existsSync(new URL("../app/outfits/[id]/OutfitTabs.tsx",import.meta.url)),true);
 });

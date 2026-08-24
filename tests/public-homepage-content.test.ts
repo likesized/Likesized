@@ -53,9 +53,14 @@ test("expanded FAQ answers use scan-friendly hierarchy without changing approved
   assert.match(homeCss, /\.faqTakeaway\s*\{[\s\S]*?border-top: 1px solid var\(--line\);/);
 });
 
-test("public FAQ keeps approved privacy, social, community-catalog, and uncertainty meaning", () => {
+test("public FAQ keeps approved privacy, regional Twin, community-catalog, and uncertainty meaning", () => {
   assert.match(home, /Can other members see my measurements\?/);
   assert.match(home, /What is a Fit Twin, and do I have to be Fit Twins to follow someone\?/);
+  assert.match(home, /Tops Match/);
+  assert.match(home, /Bottoms Match/);
+  assert.match(home, /Tops Twin/);
+  assert.match(home, /Bottoms Twin/);
+  assert.match(home, /A high Overall Match by itself does not create a Fit Twin designation/);
   assert.match(home, /How does the community-built clothing catalog work\?/);
   assert.match(home, /What if I’m not sure of the item, style, or model\?/);
   assert.match(home, /I’m not sure this is the correct item\/style name/);

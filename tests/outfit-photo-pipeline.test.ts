@@ -18,8 +18,8 @@ test("gallery upload enforces optimized WebP display and feed boundaries", () =>
   assert.match(actions, /outfit-draft-photos/);
   assert.match(actions, /moveDraftPhotoToPublic/);
   assert.match(composer, /multiple/);
-  assert.match(composer, /photos\.length>=6|photos\.length\s*>=\s*6/);
-  assert.match(composer, /Set as Main/);
+  assert.match(composer, /photos\.length\s*>=\s*6/);
+  assert.match(composer, /Set as cover/);
   assert.match(composer, /draggable/);
 });
 

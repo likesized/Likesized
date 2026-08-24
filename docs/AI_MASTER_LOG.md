@@ -49,8 +49,8 @@ Locked scope for this batch:
 
 Final exact PR #68 head `3193772517682ab2336f1cbc7368fe0236f8b93b` passed full LikeSized CI #771 (`32754654957`): canonical integrity, TypeScript, all focused application safeguards including the updated public-homepage content safeguard, production build, fresh replay of every canonical migration and the complete database behavior/privacy suite all passed. No schema migration or product-logic change was part of PR #68.
 
-## Roadmap 12 — New Outfit — COMPLETE / DEPLOYED / OWNER LIVE AUDIT NEXT
-PR #67 **Roadmap 12: New Outfit V1** is merged to `main` and live on `likesized.com`. The implementation/schema/docs verification and production cutover are complete. The required next product step is the owner's first live browser audit of the working page; do not silently advance to Roadmap 13 before that audit is handled.
+## Roadmap 12 — New Outfit — COMPLETE / DEPLOYED / OWNER LIVE AUDIT REPAIR BATCH VERIFIED
+PR #67 **Roadmap 12: New Outfit V1** is merged to `main` and live on `likesized.com`. The first owner live browser audit found creator-workspace UX/read-path issues; those owner-approved repairs are implemented and verified on the one active implementation line in draft PR #70 **Repair New Outfit live-audit issues** (`agent/outfit-live-audit-repairs`). PR #70 remains unmerged and is not production-authorized. Do not advance to Roadmap 13 before the repair batch is separately authorized for deployment and the owner resumes the live audit.
 
 Owner-approved Roadmap 12 product state:
 - photo-only V1: 1 required Main Photo + up to 5 Additional Photos; reorder and Set as Main; no video;
@@ -79,6 +79,24 @@ Roadmap 12 canonical migrations and hosted production mappings:
 - `20260824133900_fix_outfit_compatibility_photo_registration.sql` → hosted `20260824164507 fix_outfit_compatibility_photo_registration`.
 
 Exact PR head `113e9d474afe19e82df154982d4d4ddd741ad67d` passed full LikeSized CI #765 (`32751821261`): canonical integrity, TypeScript, every focused application safeguard, production build, fresh replay of every canonical migration and the complete pgTAP database behavior/privacy suite all passed. Production database inspection after the database-first migration found zero non-shared Closet rows, the new Outfit tables/functions present, the shared-only Closet constraint present, published Outfit storage public and draft Outfit storage private. The live `/outfits/new` route resolves through the production deployment and correctly sends a logged-out visitor to sign-in. No published Outfit existed yet for a logged-out detail-page smoke test; the first real create/publish flow is therefore part of the owner live audit.
+
+## Roadmap 12 live-audit repair batch — IMPLEMENTED / VERIFIED / NOT DEPLOYED
+Owner-approved corrections implemented in draft PR #70:
+- New Outfit is a compact creator workspace, not a landing-page hero: smaller header/section treatment, quiet back navigation and compact actions instead of giant pill buttons;
+- Photos uses **Cover photo (required)** plus optional additional photos, compact upload/photo-management rows and no redundant optimization/count helper clutter;
+- The Post uses **Tell people about the look.**, the approved Headline/Story placeholders and reduced visual weight;
+- Occasion uses a normal required select plus an optional second select; Style Tags remain community-created, max 3, with suggestions only after typing and compact removable chips;
+- Step 4 is **Items in this Outfit**: choose the 1–6 master Closet items once through search, Category/Garment Type and Brand filters, Recently added / Brand A–Z / Garment type sorting, progressive Load more and a persistent selected-items area;
+- Step 5 is **Photo Tags (optional)** after item selection; hotspots may only place the already-selected Outfit items and never present an unexplained empty tagging panel;
+- the embedded canonical Fit Report intake returns directly to the same Outfit after a missing garment is saved and auto-selects that Closet item rather than creating a second garment flow;
+- comments copy is reduced to **Comments** / **Allow people to comment on this Outfit**;
+- Preview is bounded and reviewable, with previous/next controls, clickable thumbnails and per-photo hotspot display rather than one oversized static image;
+- draft saving has explicit in-progress/saved feedback, `/outfits/drafts` provides a clear owner-only resume workspace, and `/outfits` exposes a creator-facing Drafts entry instead of relying on a buried feed strip;
+- avoidable independent media/storage work is parallelized without weakening persistence guarantees;
+- `/outfits` and signed-in `/outfits/[id]` stop relying on fragile nested PostgREST relationship reads for creator/comment/Product/Brand details and instead resolve those canonical records explicitly;
+- no database migration is part of this repair batch.
+
+The implementation/source line through `59c6e7c4694181e3db4ca6dad6ccd7c0dc86f10d` passed full LikeSized CI #779 (`32767936012`). The subsequent canonical master-log reconciliation head `cc40afc3acec19fc4086d58b7dc7cfd2127cc6ce` passed full LikeSized CI #780 (`32768165664`): canonical integrity, TypeScript, all focused application safeguards, production build, fresh replay of every canonical migration and the complete database behavior/privacy suite all passed. The repair branch is `agent/outfit-live-audit-repairs`; draft PR #70 is the only active implementation line. Production remains unchanged until the owner separately authorizes deployment of this repair batch.
 
 ## Authenticated browser → backend wiring — COMPLETE
 The six ordered browser-to-backend checks are complete:
@@ -283,6 +301,7 @@ Recent branch classification:
 - `agent/variation-definition-map` — RECOVERED via PR #66; no longer active.
 - `agent/new-outfit-v1` — **RECOVERED via PR #67 / DEPLOYED**; no longer the active implementation line.
 - `agent/homepage-brand-copy` — **RECOVERED via PR #68 / DEPLOYED**; no longer the active implementation line.
+- `agent/outfit-live-audit-repairs` — **ACTIVE through draft PR #70 / VERIFIED / NOT DEPLOYED**; sole current implementation line for the owner-approved Roadmap 12 live-audit repair batch.
 
 Older recovery/feature/verification branches classified in Git history remain RECOVERED, SUPERSEDED, OBSOLETE or DUPLICATE; none overrides current `main`.
 
@@ -299,7 +318,7 @@ Older recovery/feature/verification branches classified in Git history remain RE
 10. My Circle / Following / system-generated Fit Twin — audit remains; future Outfit view direction is Following / Fit Twins / Discover.
 11. New Fit Report — six browser/backend wiring checks complete; cleanup through PR #65 is deployed.
 11A. **Garment-question variation classification — COMPLETE / DEPLOYED through PR #66.**
-12. **New Outfit — COMPLETE / DEPLOYED through PR #67; first live owner browser audit is the current gate.**
+12. **New Outfit — COMPLETE / DEPLOYED through PR #67; live-audit repair batch is implemented/verified in draft PR #70 and awaits separate deployment authorization before the owner resumes live testing.**
 13. Outfits / Style Feed — follows Roadmap 12 foundation; full discovery/ranking audit remains after the owner finishes the New Outfit live audit.
 14. Garment/Product detail — Exact Variation may now consume the canonical 11A map when this audit item is reached.
 15. Explore.
@@ -309,7 +328,7 @@ Older recovery/feature/verification branches classified in Git history remain RE
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Roadmap 12 is production-live; the owner must perform the first authenticated live create/draft/preview/publish/detail/edit/social browser audit before the roadmap advances or any discovered correction is classified complete.
+- Roadmap 12 repair implementation is verified in draft PR #70. Production is intentionally untouched until the owner separately authorizes this batch; after cutover, resume the owner live create/draft/preview/publish/detail/edit/social browser audit before advancing the roadmap.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification; do not silently rekey/collapse historical reports.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
 - Full Admin all-Products priority/filter/merge/split presentation remains.
@@ -345,8 +364,9 @@ Older recovery/feature/verification branches classified in Git history remain RE
 - PR #66 exact head `d585d7df34a5f6370cdd242afcee2ebd5fd6f1c4` passed full LikeSized CI #727; squash merge `00b6245325bad003e9a82bed438930fd91e13dff`; final post-merge reconciliation production head `921383ac10ecf63ecbf35743caa366c4b635dd1b`; final Vercel `dpl_BdpDbpMEGWwLhqrzWqzZrWr393Bk` reached READY.
 - PR #67 exact tested head `113e9d474afe19e82df154982d4d4ddd741ad67d` passed full CI #765; six migrations were applied database-first; squash merge `965274351a2f10f893631d769c9caeccdcc5e402`; production Vercel `dpl_H9MRX5S1Z1uc1w9UCTRBdFfSxvrK` reached READY and aliases `likesized.com`; no runtime errors were found in the checked post-cutover window. First live owner browser audit remains.
 - PR #68 exact tested head `3193772517682ab2336f1cbc7368fe0236f8b93b` passed full CI #771; owner authorized deployment; squash merge `4fc64957809ee18a6c7c0ac203f29147ef2c8646`; production Vercel `dpl_Hd1Ys6BfCEJxBERP4kNr2UQMdLp6` reached READY and aliases `likesized.com`; live fetch confirmed the approved homepage copy and deployment-scoped error/fatal logs were empty in the checked window. Owner visual confirmation remains.
+- PR #70 repair source line through `59c6e7c4694181e3db4ca6dad6ccd7c0dc86f10d` passed full CI #779; canonical reconciliation head `cc40afc3acec19fc4086d58b7dc7cfd2127cc6ce` passed full CI #780. PR #70 remains draft/open, has no schema migration, is not merged and is not deployed.
 
 # EXACT NEXT ACTION — CURRENT
-1. Owner visually confirms the deployed homepage copy on `likesized.com`; machine live-fetch verification already confirms the approved PR #68 content is being served from production deployment `dpl_Hd1Ys6BfCEJxBERP4kNr2UQMdLp6`.
-2. Resume the Roadmap 12 first authenticated New Outfit browser audit: create an Outfit, exercise Save Draft/resume, Preview, Publish, opened Outfit/gallery/hotspots, edit, comments/social controls and mobile/desktop visual layout as practical.
-3. Record that owner audit result before advancing to Roadmap 13 Outfits / Style Feed.
+1. Keep verified draft PR #70 unmerged and production unchanged until the owner gives a separate explicit deployment authorization for this repair batch.
+2. If authorized, merge the frozen PR to `main`, wait for the production Vercel deployment to reach READY and perform the normal live smoke/runtime-error check.
+3. Resume the authenticated New Outfit owner audit on `likesized.com` across create/draft/resume/preview/publish/detail/gallery/hotspots/edit/comments/social and practical mobile/desktop layout before advancing to Roadmap 13.

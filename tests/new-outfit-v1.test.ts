@@ -170,7 +170,8 @@ test("creator analytics and delete controls match the live-review contract",()=>
 
 test("Outfit social database boundaries remain canonical",()=>{
  assert.match(migration,/create table public\.outfit_comments/);
- assert.match(migration,/create table public\.outfit_likes/);
+ assert.match(migration,/drop policy if exists "owner likes outfit" on public\.outfit_likes/);
+ assert.match(migration,/create policy "member likes visible outfit" on public\.outfit_likes/);
  assert.match(hardeningMigration,/follow_from_outfit/);
  assert.match(hardeningMigration,/record_outfit_shop_click/);
  assert.equal(existsSync(new URL("../app/outfits/[id]/OutfitTabs.tsx",import.meta.url)),true);

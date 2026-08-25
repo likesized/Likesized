@@ -17,9 +17,10 @@ Current-state wording here must match owner-approved product meaning. Superseded
 - `fit_reports.match_fit_profile_version_id` may advance as active matching/body-state evidence without rewriting original history.
 - Raw current/historical measurements and private size references are never exposed to other members.
 - Current-person Match and historical garment Match return safe derived scores/context only.
+- A member profile photo, when uploaded, is public current identity. Outfit, Explore and comment surfaces resolve the member's current profile photo rather than snapshotting an old avatar onto historical content.
 
 # 2. Current-person Match vs historical garment Match — LOCKED
-1. **Current-person Match** compares the viewer's current body with another member's current body. Overall/Tops/Bottoms and Fit Twin designation live here.
+1. **Current-person Match** compares the viewer's current body with another member's current body. Overall/Tops/Bottoms and Twin designation live here.
 2. **Historical garment Match** compares the viewer's current body with the relevant private body state attached to a historical Fit Report.
 
 Match % means **garment-relevant body similarity**, not probability a garment will fit.
@@ -33,12 +34,15 @@ Match % means **garment-relevant body similarity**, not probability a garment wi
 - The community belongs to the person wearing/posting the garment. Wearing a men's or women's Department item does not change the member's community.
 - Fit Community is asked during first-time profile setup. After onboarding it is managed in Profile Settings, not My Measurements.
 
-## Following / Fit Twin
+## Following / Twin designation
 - Following is member-controlled.
-- Fit Twin is **system-generated** among followed members from strong current-person Match quality.
+- Twin status is **system-generated** among followed members from strong current-person regional Match quality.
 - One canonical `follows` graph exists; there is no second user-controlled Fit Twin graph.
-- Initial Fit Twin threshold starts at 85% Overall Match.
-- My Circle and Style Feed are Following-driven; Fit Twin is designation/filter/context only.
+- Tops Match and Bottoms Match qualify independently against the centrally configured strong-match threshold.
+- **Fit Twin** requires both Tops Match and Bottoms Match to clear that threshold.
+- **Tops Twin** means only Tops Match clears it. **Bottoms Twin** means only Bottoms Match clears it.
+- Overall Match remains the visible general body-similarity score but **does not grant Twin status by itself**.
+- My Circle ranks full/regional Twin designations ahead of ordinary Following while remaining Following-driven overall; Twin is a designation/filter/context, not a second relationship.
 - `/following` is compatibility-only and resolves to `/circle`.
 - Signed-in `/` enters My Circle; logged-out `/` is the public homepage.
 - Follow alone does not enable person notifications.
@@ -168,7 +172,7 @@ Ordinary member intake never calls SerpAPI.
 
 Item / Style / Model stays required for new unresolved/manual items. Do not offer a generic blank **No model** escape. Examples must not duplicate the separate Brand field.
 
-Manual Item suggestions render as the actual dropdown immediately under the Item / Style / Model field.
+Manual Item suggestions render as the actual dropdown immediately under the Item / Style / Model field. Suggestions use a short network debounce with immediate cached results/prefetch so the UI does not intentionally block on a long search delay.
 
 ## Identity uncertainty checkbox/modal
 For a new or unresolved item, the member may check **I’m not sure this is the correct item/style name**.
@@ -293,12 +297,14 @@ Do not introduce unrestricted Edit Item product meaning before the broader mutat
 
 # 12. Unified member-visible Closet — LOCKED
 LikeSized has one canonical member Closet meaning, not separate My Closet and Shared Closet systems.
+- **My Closet is the owned-content hub** with Garments, Outfits and FITuition sections/tabs. Owned Outfit drafts and published Outfits live there rather than in a second creator-content system; `/outfits` is a compatibility route into the Closet Outfits view.
 - Current V1 has **no member-controlled per-garment Private / Shared state**. Garments and Fit Reports are authenticated-member-visible content; self view adds owner-only management controls to the same canonical content.
 - The historical physical `closet_items.visibility` column remains only so immutable migration history can replay. Current V1 locks that compatibility value to `shared`; it is not a product setting or UI choice.
 - Raw body measurements, historical body snapshots, owner size references, private catalog/label evidence and admin review state remain protected by their separate privacy boundaries.
 - Fit/reference photos are member-visible wear evidence and do not require a visibility transition.
 - Active Unconfirmed review remains invisible to other members and creates no searchable Product identity. Only Needs More Evidence shows a small private owner-only disclaimer and **Add More Information** action.
 - Unconfirmed/Needs More Evidence garments remain usable by the owner in Styles/Outfits while unresolved identity/review state stays private.
+- FITuition in My Closet explains/reuses the same canonical Fit Report and Closet-history recommendation evidence; it is not a second recommendation engine.
 - Broader Closet lifecycle/mutation behavior remains a later Closet audit; it must not reintroduce a second visibility system.
 
 # 13. Controlled taxonomy — LOCKED
@@ -366,7 +372,7 @@ Physical values are Too Small / Snug / Just Right / Relaxed / Too Big.
 There is **no current V1 1–5-star Fit Rating UI**. Bad fits remain useful evidence and do not lower body Match %.
 
 # 17. Preferred Fit / Intended Fit — RETIRED
-Old member-level Preferred Fit by garment type is not current V1 behavior. It is absent from current Fit Profile UI and does not change Match %, Fit Twin or counted report identity. Historical DB rows may remain inert.
+Old member-level Preferred Fit by garment type is not current V1 behavior. It is absent from current Fit Profile UI and does not change Match %, Twin designation or counted report identity. Historical DB rows may remain inert.
 
 The old per-report **Intended Fit** structured question is also retired from current V1 intake. Historical Intended Fit values may remain inert for compatibility and remain excluded from the existing counted-report objective fingerprint.
 
@@ -428,6 +434,7 @@ Help Me Size It is fallback sizing assistance and reuses the canonical recommend
 - Provisional/Corroborated/Established/Verified Products remain searchable unless rejected/otherwise explicitly moderated.
 - Unresolved candidates are not ordinary Product results; Unconfirmed/Needs More Evidence are explicitly excluded from other-member search, suggestions, browse/discovery and unresolved barcode suggestions.
 - Direct textual Product search remains global as defined in Section 7.
+- Outfit creator identity shown in discovery resolves the creator's current public profile identity/photo rather than a content-time snapshot.
 - No blank image state and no star Fit Rating.
 
 # 22. Product actions / notifications / shopping — LOCKED
@@ -442,7 +449,7 @@ No action silently performs another. Product bell is separate from person bell. 
 Locked disclosure when required: **“LikeSized may earn a commission from purchases made through our shopping links.”**
 
 # 23. Outfits / Style Feed — V1 LOCKED
-Outfits are member-created mini editorial posts built from owned Closet garments and the same canonical Product/Fit system. Outfit likes and Product likes remain separate.
+Outfits are member-created mini editorial posts built from owned Closet garments and the same canonical Product/Fit system. Outfit likes and Product likes remain separate. Owned Outfit drafts and published Outfits are managed from **My Closet → Outfits**; `/outfits` is compatibility routing, not a second owned-content hub.
 
 ## Creator model
 - V1 is photo-only: **1 required Main Photo + up to 5 optional Additional Photos**; no video and no scheduled publishing.
@@ -450,39 +457,50 @@ Outfits are member-created mini editorial posts built from owned Closet garments
 - **Headline** is required, maximum 100 characters. **Outfit Story** is optional, maximum 5,000 characters.
 - **Occasion** is required: choose 1–2 from the fixed LikeSized Occasion vocabulary. **Style Tags** are optional: up to 3 community-created tags, normalized behind the scenes and suggested from existing vocabulary without silently rewriting the creator's display text.
 - A published Outfit tags **1–6 owned Closet garments**. If a garment is missing, the creator reuses the canonical `/closet/add` Fit Report intake inside the Outfit flow; there is no simplified second garment-intake system.
+- The garment picker starts at **All Garments** with only **Recently Added** and **A–Z** sorting. Narrowing controls such as Garment Type and Brand appear progressively when relevant; Garment Type is a filter, never a sort option.
+- Clicking a garment card opens a compact quick view instead of silently selecting it. Quick view identifies the garment with Brand, Item/Model, Category/Garment Type, Size, Color, available photos, Fit Result where applicable and every answered garment-specific structured question. Selection requires an explicit **Add**/check action.
+- Embedded Brand/Item suggestions stay anchored below the active field and use the same cached/prefetched fast search path as canonical Fit Report intake.
 - Accessories outside the V1 garment taxonomy may appear in photos and Outfit Story but are not separate Product/Closet tags.
-- Each photo may optionally map one or more master tagged garments to on-image hotspots. Normal gallery display stays clean until the viewer chooses **View tagged items**.
+- Each photo may optionally map one or more master tagged garments to on-image hotspots. **Use Cover Photo Tags** is an explicit action when reusing cover tags rather than passive helper text.
 
 ## Draft / preview / publish
 - Drafts are unpublished owner-only work and are not private published Outfits.
 - First publication requires **Preview Outfit** before **Publish Outfit**. The same draft becomes the published Outfit; publishing does not create a duplicate post.
+- Successful Save Draft gives immediate pending/saved feedback, keeps the editor stable, reuses already-persisted photo IDs and avoids unnecessary photo re-upload/reprocessing.
+- Entering Preview starts at the top of the preview content rather than inheriting the editor's prior bottom scroll position.
 - Unsaved creator navigation offers Save Draft / Leave Without Saving / Keep Editing; browser refresh/close uses the standard unsaved-changes warning.
-- Published Outfits may later be edited in place—Headline, Story, photos/order/Main, garments, Occasion and Style Tags—and may be deleted by the creator.
+- Published Outfits may later be edited in place—Headline, Story, photos/order/Main, garments, Occasion and Style Tags.
+- Deleting a published Outfit requires an explicit confirmation step before the destructive action executes.
 
 ## Published Outfit detail and public sharing
 - Every published Outfit has one canonical shareable detail URL at `/outfits/[id]` with social-preview metadata using the Main Photo, Headline, creator identity and LikeSized branding.
+- The opened gallery is a **single-image viewer on both mobile and desktop**. Secondary photos stay hidden behind the active image instead of appearing as a thumbnail/secondary strip. Touch swipe/drag and tap advance work on mobile; desktop click plus pointer/trackpad drag-style navigation and keyboard arrows work where applicable.
 - Logged-out visitors may read the published editorial layer: gallery, Headline, creator display identity/handle, Occasion, Style Tags, Outfit Story, social counts, readable comments, and teasers for already-resolved canonical tagged Products.
+- Creator/comment profile identity is resolved live from the member's current public profile identity/photo; old profile photos are not snapshotted onto Outfit/comment records.
 - Logged-out visitors do **not** receive Size Worn, Fit Result, Fit Report/body-match evidence, Closet linkage, unresolved candidate/review state, LikeLocker/Product-like state or authenticated shopping actions.
-- Signed-in members may receive the detailed garment layer: Product link/image, Size Worn, Fit Result, photo hotspots and normal Product Like/Wishlist/Shop actions when valid retailer destinations exist.
+- Signed-in members may receive the detailed garment layer: Product link/image, Garment Type, Size Worn, Fit Result, photo hotspots and normal Product Like/Wishlist/Shop actions when valid retailer destinations exist.
+- Tagged-item Product actions use a compact responsive grouping rather than large dead spacing between Product identity and actions.
 - An Unconfirmed or Needs More Evidence garment may be used by its owner in an Outfit, but unresolved identity/admin-review state never leaks and never creates a public/searchable Product teaser until resolved.
 - Raw body measurements remain private in every Outfit context.
 
 ## Social controls
 - V1 Outfit actions are **Like · Comment · Follow · Share**. Follow reuses the one canonical `follows` graph.
-- Comments are flat plain-text threads in V1; no nested replies. Logged-out visitors may read visible comments but must sign in to comment.
-- Members may delete their own comments; an Outfit creator may remove comments on their Outfit. Outfit posts/comments support reporting; signed-in members may block another member.
+- Comments are **plain text only** in V1: no rich-text editor, markup/formatting controls, embedded media or nested replies. Logged-out visitors may read visible comments but must sign in to comment.
+- Signed-in members may Like visible comments. Comment-Like state is private to the liking member while the safe aggregate count is visible.
+- Members may delete their own comments; an Outfit creator may remove comments on their Outfit. Outfit posts/comments support reporting; signed-in members may block another member from that member's profile context.
 - Creators may turn comments off and back on without deleting the preserved thread.
-- Creator-only V1 analytics show **Views · Likes · Comments · Shares · Follows generated**. Shop clicks are tracked internally for commerce attribution and are not creator-facing V1 analytics.
+- The creator-facing incremental analytics are **Views · Follows generated**. Likes, Comments and Shares are not duplicated in a separate analytics block because those social counts are already visible on the Outfit. Shop clicks remain internal-only LikeSized commerce attribution and no creator-facing Shop-click metric/explanatory copy is shown.
 
 ## Feed/discovery boundary
-- Outfit browsing is **image-first with a Pinterest-like masonry/pinboard rhythm**: natural Main Photo proportions, staggered columns, minimal card chrome and lightweight Headline/creator/Occasion/Style/social metadata beneath the image. Normal mobile widths keep a compact two-column visual feed. This is a visual direction, not a copy of Pinterest product behavior.
+- Outfit browsing is **image-first with a Pinterest-like masonry/pinboard rhythm**: natural Main Photo proportions, staggered multi-column layout, minimal card chrome and lightweight Headline/creator/Occasion/Style/social metadata beneath the image. Normal mobile widths keep a compact two-column visual feed. Outfits must not collapse into one unnecessary full-width vertical stack when the viewport supports the intended pinboard layout. This is a visual direction, not a copy of Pinterest product behavior.
 - Following activity may surface published Outfits in My Circle/Style Feed; drafts never create activity.
-- General Outfit discovery/search may use Occasion, normalized Style Tags, Headline/Story relevance, engagement and recency in the dedicated discovery work. Full Following / Fit Twin / Discover ranking behavior remains a later My Circle/Style Feed roadmap audit rather than being silently invented inside New Outfit.
+- General Outfit discovery/search may use Occasion, normalized Style Tags, Headline/Story relevance, engagement and recency in the dedicated discovery work. Full Following / Twin / Discover ranking behavior remains a later My Circle/Style Feed roadmap audit rather than being silently invented inside New Outfit.
 
 # 24. Images — LOCKED
 - Front Fit Photo and Back Fit Photo = separate optional member wear-evidence roles attached to the Closet/Fit Report garment; either may exist independently.
 - Product Photo = separate catalog-display evidence.
 - Product Label / Tag Photo = separate private identity-review evidence, never generic Product imagery.
+- Profile Photo = public current member identity when uploaded; social/editorial surfaces resolve the current profile photo rather than storing content-time avatar snapshots.
 - Product/catalog imagery is preferred on Product-identification surfaces.
 - A public/shared member Fit Photo may be used as the scanner **Is this the item?** fallback when no Product/catalog photo exists; Front is preferred when both fit-photo roles exist.
 - That fallback never promotes the Fit Photo into generic/canonical Product imagery.
@@ -505,6 +523,8 @@ SerpAPI checks private cache first, dedupes queries, respects caps and requires 
 Homepage remains useful logged out; signed-in `/` enters My Circle.
 
 Homepage order is Hero → distinct **WHAT LIKESIZED DOES** feature band → **THE LOOP** → FAQ. Published FAQ copy must be owner-approved and accurately explain current behavior without unverifiable competitor claims.
+
+The Fit Twin FAQ uses the current regional qualification rule: both Tops and Bottoms clearing the strong-match threshold qualify Fit Twin; one qualifying region yields Tops Twin or Bottoms Twin; Overall Match alone never grants Twin status.
 
 The FAQ includes the community-built catalog explanation and a dedicated explanation for what to do when the member is not sure of the item/style/model, including use of the uncertainty checkbox instead of guessing. The proposed measurement-specific men/women FAQ wording remains pending owner review and must not be published until separately approved.
 

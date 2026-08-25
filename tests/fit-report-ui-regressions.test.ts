@@ -8,6 +8,7 @@ const form = readFileSync("app/closet/add/FitReportForm.tsx", "utf8");
 const photoFields = readFileSync("app/closet/add/FitReportPhotoFields.tsx", "utf8");
 const fitCss = readFileSync("app/closet/add/fitReport.module.css", "utf8");
 const settings = readFileSync("app/settings/page.tsx", "utf8");
+const settingsForm = readFileSync("app/settings/ProfileSettingsForm.tsx", "utf8");
 const settingsCss = readFileSync("app/settings/settings.module.css", "utf8");
 
 test("Item suggestions show cached results immediately while the brief network search stays lightly debounced", () => {
@@ -160,16 +161,21 @@ test("Fit Report spacing containers actually establish grid rhythm on desktop an
   assert.match(fitCss, /@media \(max-width: 640px\)[\s\S]*?\.optionalDetailsBody\s*\{[\s\S]*?gap: 30px;/);
 });
 
-test("Profile Settings uses one local section spacing system instead of nested global section padding", () => {
+test("Profile Settings uses one local restrained spacing system instead of nested global section padding", () => {
   assert.doesNotMatch(settings, /<section className="section/);
-  assert.match(settings, /styles\.settingsSection/);
-  assert.match(settingsCss, /\.settingsSection\s*\{\s*padding: 32px 0;/);
-  assert.match(settingsCss, /\.firstSettingsSection\s*\{\s*padding-top: 0;/);
+  assert.match(settings, /styles\.settingsPage/);
+  assert.match(settings, /styles\.secondarySection/);
+  assert.match(settings, /styles\.privacyStatement/);
+  assert.match(settingsCss, /\.settingsPage\s*\{[\s\S]*?padding: 38px clamp\(18px, 4vw, 44px\) 56px;/);
+  assert.match(settingsCss, /\.secondarySection\s*\{[\s\S]*?margin-top: 22px;[\s\S]*?padding: 20px 2px;/);
+  assert.match(settingsCss, /\.privacyStatement\s*\{\s*padding: 20px 2px 0;/);
 });
 
-test("Fit Community setting uses the approved member-facing language", () => {
-  assert.match(settings, /<strong>Your Fit Community<\/strong>/);
-  assert.match(settings, /Choose who LikeSized should prioritize in People My Size, Fit Twin suggestions, and your social feed\./);
-  assert.match(settings, /This does not affect your Body Match percentage or what clothing you can post\./);
+test("Fit Community remains an editable field inside the consolidated profile editor", () => {
+  assert.match(settingsForm, /<span>Fit Community<\/span>/);
+  assert.match(settingsForm, /name="fit_community"/);
+  assert.match(settingsForm, /<option value="men">Men<\/option>/);
+  assert.match(settingsForm, /<option value="women">Women<\/option>/);
+  assert.match(settingsForm, /<option value="both">Both<\/option>/);
   assert.doesNotMatch(settings, /<strong>Choose Men, Women, or Both<\/strong>/);
 });

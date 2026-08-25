@@ -22,6 +22,7 @@ export default function FitReportPhotoFields() {
   return <fieldset className={styles.itemDetailsFieldset} data-photo-requirement>
     <legend>Photos <span className="muted inlineMuted">at least one required</span></legend>
     <p className="fieldHelp">Add at least one photo. Choose a Front Fit Photo, Back Fit Photo, or Product Photo so others can clearly identify the item.</p>
+    <div className={styles.validationSummary} data-photo-error hidden role="alert">Add a Front Fit Photo, Back Fit Photo, or Product Photo to continue.</div>
     <div className={styles.photoEvidenceGrid}>
       <FitPhotoCard label="Front Fit Photo" name="photo_front" fileName={frontName} setFileName={setFrontName}/>
       <FitPhotoCard label="Back Fit Photo" name="photo_back" fileName={backName} setFileName={setBackName}/>

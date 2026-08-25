@@ -14,7 +14,7 @@ type ActionPresentation = {
 
 export const UNIVERSAL_ACTIONS: Record<UniversalActionKind, ActionPresentation> = {
   likeLocker: { icon: "♡", activeIcon: "♥", label: "LikeLocker", activeLabel: "In LikeLocker", inactiveAria: "Add to LikeLocker", activeAria: "Remove from LikeLocker" },
-  wishLocker: { icon: "✧", activeIcon: "✦", label: "Wish Locker", activeLabel: "In Wish Locker", inactiveAria: "Add to Wish Locker", activeAria: "Remove from Wish Locker" },
+  wishLocker: { icon: "🛍♡", activeIcon: "🛍♥", label: "Wishlist", activeLabel: "In Wishlist", inactiveAria: "Add to Wishlist", activeAria: "Remove from Wishlist" },
   like: { icon: "♡", activeIcon: "♥", label: "Like", activeLabel: "Unlike", inactiveAria: "Like", activeAria: "Unlike" },
   shop: { icon: "🛒", label: "Shop" },
   share: { icon: "↗", label: "Share" },
@@ -48,19 +48,21 @@ type CommonActionProps = {
 
 export function UniversalActionButton({ action, active = false, className, count, countClassName, showLabel = false, ariaLabel, title, ...props }: CommonActionProps & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "aria-label" | "title">) {
   const item = presentation(action, active);
+  const visibleCount = action === "wishLocker" ? undefined : count;
   return <button {...props} className={className} aria-label={ariaLabel ?? item.aria} title={title ?? item.label} aria-pressed={action === "likeLocker" || action === "wishLocker" || action === "like" || action === "follow" || action === "notify" ? active : undefined}>
     <span aria-hidden="true">{item.icon}</span>
     {showLabel ? <span>{item.label}</span> : null}
-    {count !== undefined ? <span className={countClassName}>{count}</span> : null}
+    {visibleCount !== undefined ? <span className={countClassName}>{visibleCount}</span> : null}
   </button>;
 }
 
 export function UniversalActionLink({ action, href, active = false, className, count, countClassName, showLabel = false, ariaLabel, title, prefetch = false, target, rel }: CommonActionProps & { href: string; prefetch?: boolean; target?: string; rel?: string }) {
   const item = presentation(action, active);
+  const visibleCount = action === "wishLocker" ? undefined : count;
   return <Link className={className} href={href} prefetch={prefetch} target={target} rel={rel} aria-label={ariaLabel ?? item.aria} title={title ?? item.label}>
     <span aria-hidden="true">{item.icon}</span>
     {showLabel ? <span>{item.label}</span> : null}
-    {count !== undefined ? <span className={countClassName}>{count}</span> : null}
+    {visibleCount !== undefined ? <span className={countClassName}>{visibleCount}</span> : null}
   </Link>;
 }
 

@@ -31,6 +31,10 @@ test("new Fit Reports require one identification or Fit Photo on client and serv
   assert.match(photoFields,/Front Fit Photo, Back Fit Photo, or Product Photo/);
   assert.match(photoFields,/Product Photo \(not being worn\)/);
   assert.match(photoFields,/visible to the LikeSized community/);
+  assert.match(photoFields,/data-photo-error hidden role="alert"/);
+  assert.match(fitForm,/querySelector<HTMLElement>\("\[data-photo-error\]"\)/);
+  assert.match(fitForm,/const photoGroup=hasPhoto\?null:form\.querySelector<HTMLElement>\("\[data-photo-requirement\]"\)/);
+  assert.match(fitForm,/const target=photoGroup\?\?invalid\[0\]/);
   assert.match(addAction,/photo_required/);
   assert.match(fitForm,/validatePhotoRequirement/);
 });
@@ -42,6 +46,9 @@ test("Fit Report photo controls use one canonical Product Photo input and consis
   assert.match(photoFields,/Replace Photo/);
   assert.match(photoFields,/No file chosen/);
   assert.match(catalogFields,/SwipeDismissImageLightbox/);
+  assert.match(swipeLightbox,/onPointerMove=\{pointerMove\}/);
+  assert.match(swipeLightbox,/translateY\(\$\{dragY\}px\)/);
+  assert.match(swipeLightbox,/touchAction: "pan-x pinch-zoom"/);
   assert.match(swipeLightbox,/dy >= 70/);
 });
 
@@ -73,6 +80,9 @@ test("Outfit photos open a full-size viewer without stealing tag or Caption clic
   assert.match(gallery,/Close full-size photo/);
   assert.match(gallery,/Previous photo/);
   assert.match(gallery,/Next photo/);
+  assert.match(gallery,/onPointerMove=\{lightboxPointerMove\}/);
+  assert.match(gallery,/translateY\(\$\{lightboxDragY\}px\)/);
+  assert.match(gallery,/touchAction:"pan-x pinch-zoom"/);
   assert.match(gallery,/dy>=70/);
   assert.match(gallery,/openTaggedItem\(tag\.closetItemId\)/);
   assert.match(gallery,/event\.stopPropagation\(\);setShowCaption/);

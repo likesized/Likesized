@@ -83,7 +83,7 @@ export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedIt
     setWishPending((current)=>({...current,[item.productId]:true}));
     const formData=new FormData();formData.set("product_id",item.productId);formData.set("return_to",returnTo);formData.set("stay_open","1");
     try{await (next?addToWishLocker:removeFromWishLocker)(formData);}
-    catch{setWished((current)=>({...current,[item.productId]:!next}));setActionError("Wish Locker could not update. Try again.");}
+    catch{setWished((current)=>({...current,[item.productId]:!next}));setActionError("Wishlist could not update. Try again.");}
     finally{setWishPending((current)=>({...current,[item.productId]:false}));}
   }
   async function share(item:TaggedItem){
@@ -115,7 +115,6 @@ export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedIt
             {meta.bestMatch?<span><b>{meta.bestMatch.bodyMatch}% Body Match</b> · Size {meta.bestMatch.sizeLabel} · {meta.bestMatch.fitLabel}</span>:null}
             {meta.fitSnippet?<strong>{meta.fitSnippet}</strong>:meta.matchingFitReports>0?<><strong>FITuition isn’t confident enough yet.</strong><span>We found {meta.matchingFitReports} relevant fit {meta.matchingFitReports===1?"match":"matches"}, but not enough strong evidence to recommend a size yet.</span></>:<><strong>FITuition needs more evidence.</strong><span>We don’t have enough relevant Fit Reports to recommend a size yet.</span></>}
           </>}
-          <Link prefetch={false} className="textLink" href={selected.href}>See fit evidence →</Link>
         </div>
         {actionError?<small role="status" className="muted">{actionError}</small>:null}
         <UniversalActionBar className={styles.itemPreviewActions} ariaLabel="Item actions">
@@ -129,7 +128,7 @@ export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedIt
             <label>Details <span className="muted inlineMuted">optional</span><textarea name="details" maxLength={500} rows={2}/></label><button type="submit">Send report</button>
           </form></details>
         </UniversalActionBar>
-        <Link prefetch={false} className={styles.fullDetailsLink} href={selected.href}>Full details →</Link>
+        <Link prefetch={false} className={styles.fullDetailsLink} href={selected.href}>View Garment →</Link>
       </div>
     </div>:null}
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { UniversalActionButton } from "@/components/UniversalActionBar";
 import styles from "./outfitDetail.module.css";
 
 export default function OutfitEngagementClient({postId,headline,shareCount}:{postId:string;headline:string;shareCount:number}){
@@ -21,5 +22,5 @@ export default function OutfitEngagementClient({postId,headline,shareCount}:{pos
       setShared(true);window.setTimeout(()=>setShared(false),1600);
     }catch{/* user cancelled or browser denied */}
   }
-  return <button className={styles.iconAction} type="button" onClick={()=>void share()} aria-label="Share Outfit" title="Share Outfit"><span aria-hidden="true">{shared?"✓":"↗"}</span><span className={styles.actionCount}>{count}</span></button>;
+  return <UniversalActionButton className={styles.iconAction} action="share" type="button" onClick={()=>void share()} ariaLabel={shared?"Outfit shared":"Share Outfit"} title={shared?"Shared":"Share"} count={count} countClassName={styles.actionCount}/>;
 }

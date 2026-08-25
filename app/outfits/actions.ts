@@ -126,6 +126,76 @@ async function cleanupNewFailedPublish(supabase: Supabase, postId: string) {
   }));
 }
 
+async function syncOutfitPhotos(
+  supabase: Supabase,
+  userId: string,
+  postId: string,
+  manifest: ManifestPhoto[],
+  formData: FormData,
+) {
+  const { data: photoData, error: photoLoadError } = await supabase.from("outfit_photos").select("id,bucket,display_path,feed_path,sort_order,is_main").eq("post_id", postId).order("sort_order");
+  if (photoLoadError) throw new Error("Could not load Outfit photos.");
+  const existingPhotos = (photoData ?? []) as ExistingPhoto[];
+  const existingById = new Map(existingPhotos.map((row) => [row.id, row]));
+  for (const item of manifest) if (item.existingId && !existingById.has(item.existingId)) throw new Error("An Outfit photo is no longer available.");
+
+  const kept = new Set(manifest.flatMap((item) => item.existingId ? [item.existingId] : []));
+  const removed = existingPhotos.filter((row) => !kept.has(row.id));
+  for (const row of removed) {
+    const { error } = await supabase.from("outfit_photos").delete().eq("id", row.id).eq("post_id", postId);
+    if (error) throw new Error("Could not update the Outfit gallery.");
+  }
+
+  const photoIdByKey = new Map<string, string>();
+  for (const item of manifest) {
+    if (item.existingId) {
+      photoIdByKey.set(item.key, item.existingId);
+      continue;
+    }
+    const displayPhoto = optimizedPhoto(formData, `photo_display__${item.key}`, DISPLAY_MAX_BYTES);
+    const feedPhoto = optimizedPhoto(formData, `photo_feed__${item.key}`, FEED_MAX_BYTES);
+    if (!displayPhoto || !feedPhoto) throw new Error("Every new photo must finish preparing before you save.");
+    const photoId = randomUUID();
+    const bucket = "outfit-draft-photos" as const;
+    const displayPath = `${userId}/${postId}/${photoId}/display.webp`;
+    const feedPath = `${userId}/${postId}/${photoId}/feed.webp`;
+    await uploadPair(supabase, bucket, displayPath, feedPath, displayPhoto, feedPhoto);
+    const { error: registerError } = await supabase.rpc("register_outfit_photo", {
+      p_post_id: postId,
+      p_photo_id: photoId,
+      p_bucket: bucket,
+      p_display_path: displayPath,
+      p_feed_path: feedPath,
+    });
+    if (registerError) {
+      await supabase.storage.from(bucket).remove([displayPath, feedPath]);
+      throw new Error(registerError.message);
+    }
+    photoIdByKey.set(item.key, photoId);
+  }
+
+  if (manifest.length) {
+    const orderedIds = manifest.map((item) => photoIdByKey.get(item.key)).filter((value): value is string => Boolean(value));
+    const main = manifest.find((item) => item.isMain);
+    const mainId = main ? photoIdByKey.get(main.key) : undefined;
+    if (orderedIds.length !== manifest.length || !mainId) throw new Error("Could not resolve the Outfit gallery.");
+    const { error: orderError } = await supabase.rpc("sync_outfit_photo_order", { p_post_id: postId, p_photo_ids: orderedIds, p_main_photo_id: mainId });
+    if (orderError) throw new Error(orderError.message);
+    const tagResults = await Promise.all(manifest.map((item) => {
+      const photoId = photoIdByKey.get(item.key)!;
+      return supabase.rpc("replace_outfit_photo_tags", {
+        p_photo_id: photoId,
+        p_tags: item.tags.map((tag) => ({ closet_item_id: tag.closetItemId, x: tag.x, y: tag.y })),
+      });
+    }));
+    const tagError = tagResults.find((result) => result.error)?.error;
+    if (tagError) throw new Error(tagError.message);
+  }
+
+  await Promise.all(removed.map((row) => supabase.storage.from(row.bucket).remove([row.display_path, row.feed_path])));
+  return photoIdByKey;
+}
+
 async function saveOutfit(formData: FormData, mode: SaveMode): Promise<OutfitSaveResult> {
   let cleanup: { supabase: Supabase; postId: string } | null = null;
   try {
@@ -139,6 +209,7 @@ async function saveOutfit(formData: FormData, mode: SaveMode): Promise<OutfitSav
     const styleTags = formData.getAll("style_tag").map((value) => String(value).trim()).filter(Boolean);
     const commentsEnabled = String(formData.get("comments_enabled") ?? "true") !== "false";
     const manifest = parseManifest(text(formData, "photo_manifest"));
+    const photosDirty = text(formData, "photos_dirty") === "1";
 
     if (headline.length > 100 || story.length > 5000 || closetItemIds.length > 6 || occasions.length > 2 || styleTags.length > 3) return { ok: false, error: "One of the Outfit limits was exceeded." };
     if (styleTags.some((tag) => tag.replace(/^#+/, "").trim().length > 30)) return { ok: false, error: "Style tags can be up to 30 characters each." };
@@ -161,71 +232,18 @@ async function saveOutfit(formData: FormData, mode: SaveMode): Promise<OutfitSav
     });
     if (contentError) throw new Error(contentError.message);
 
-    const { data: photoData, error: photoLoadError } = await supabase.from("outfit_photos").select("id,bucket,display_path,feed_path,sort_order,is_main").eq("post_id", postId).order("sort_order");
-    if (photoLoadError) throw new Error("Could not load Outfit photos.");
-    const existingPhotos = (photoData ?? []) as ExistingPhoto[];
-    const existingById = new Map(existingPhotos.map((row) => [row.id, row]));
-    for (const item of manifest) if (item.existingId && !existingById.has(item.existingId)) throw new Error("An Outfit photo is no longer available.");
-
-    const kept = new Set(manifest.flatMap((item) => item.existingId ? [item.existingId] : []));
-    const removed = existingPhotos.filter((row) => !kept.has(row.id));
-    for (const row of removed) {
-      const { error } = await supabase.from("outfit_photos").delete().eq("id", row.id).eq("post_id", postId);
-      if (error) throw new Error("Could not update the Outfit gallery.");
-    }
-
-    const photoIdByKey = new Map<string, string>();
-    for (const item of manifest) {
-      if (item.existingId) {
-        photoIdByKey.set(item.key, item.existingId);
-        continue;
-      }
-      const displayPhoto = optimizedPhoto(formData, `photo_display__${item.key}`, DISPLAY_MAX_BYTES);
-      const feedPhoto = optimizedPhoto(formData, `photo_feed__${item.key}`, FEED_MAX_BYTES);
-      if (!displayPhoto || !feedPhoto) throw new Error("Every new photo must finish preparing before you save.");
-      const photoId = randomUUID();
-      const bucket = "outfit-draft-photos" as const;
-      const displayPath = `${userId}/${postId}/${photoId}/display.webp`;
-      const feedPath = `${userId}/${postId}/${photoId}/feed.webp`;
-      await uploadPair(supabase, bucket, displayPath, feedPath, displayPhoto, feedPhoto);
-      const { error: registerError } = await supabase.rpc("register_outfit_photo", {
-        p_post_id: postId,
-        p_photo_id: photoId,
-        p_bucket: bucket,
-        p_display_path: displayPath,
-        p_feed_path: feedPath,
-      });
-      if (registerError) {
-        await supabase.storage.from(bucket).remove([displayPath, feedPath]);
-        throw new Error(registerError.message);
-      }
-      photoIdByKey.set(item.key, photoId);
-    }
-
-    if (manifest.length) {
-      const orderedIds = manifest.map((item) => photoIdByKey.get(item.key)).filter((value): value is string => Boolean(value));
-      const main = manifest.find((item) => item.isMain);
-      const mainId = main ? photoIdByKey.get(main.key) : undefined;
-      if (orderedIds.length !== manifest.length || !mainId) throw new Error("Could not resolve the Outfit gallery.");
-      const { error: orderError } = await supabase.rpc("sync_outfit_photo_order", { p_post_id: postId, p_photo_ids: orderedIds, p_main_photo_id: mainId });
-      if (orderError) throw new Error(orderError.message);
-      const tagResults = await Promise.all(manifest.map((item) => {
-        const photoId = photoIdByKey.get(item.key)!;
-        return supabase.rpc("replace_outfit_photo_tags", {
-          p_photo_id: photoId,
-          p_tags: item.tags.map((tag) => ({ closet_item_id: tag.closetItemId, x: tag.x, y: tag.y })),
-        });
-      }));
-      const tagError = tagResults.find((result) => result.error)?.error;
-      if (tagError) throw new Error(tagError.message);
-    }
-
-    await Promise.all(removed.map((row) => supabase.storage.from(row.bucket).remove([row.display_path, row.feed_path])));
+    const mustPromoteDraftPhotos = mode !== "draft" && existingPost?.status === "draft";
+    const shouldSyncPhotos = photosDirty || !existingPost || mustPromoteDraftPhotos;
+    let photoIdByKey = new Map<string,string>();
+    if (shouldSyncPhotos) photoIdByKey = await syncOutfitPhotos(supabase,userId,postId,manifest,formData);
+    else for (const item of manifest) if (item.existingId) photoIdByKey.set(item.key,item.existingId);
 
     if (mode !== "draft") {
-      const { data: currentPhotoData, error: currentPhotoError } = await supabase.from("outfit_photos").select("id,bucket,display_path,feed_path,sort_order,is_main").eq("post_id", postId);
-      if (currentPhotoError) throw new Error("Could not prepare Outfit photos.");
-      await Promise.all(((currentPhotoData ?? []) as ExistingPhoto[]).map((row) => moveDraftPhotoToPublic(supabase, row)));
+      if (mustPromoteDraftPhotos || photosDirty || !existingPost) {
+        const { data: currentPhotoData, error: currentPhotoError } = await supabase.from("outfit_photos").select("id,bucket,display_path,feed_path,sort_order,is_main").eq("post_id", postId);
+        if (currentPhotoError) throw new Error("Could not prepare Outfit photos.");
+        await Promise.all(((currentPhotoData ?? []) as ExistingPhoto[]).map((row) => moveDraftPhotoToPublic(supabase, row)));
+      }
       const { error: publishError } = await supabase.rpc("publish_outfit_post", { p_post_id: postId });
       if (publishError) throw new Error(publishError.message);
     }
@@ -274,7 +292,7 @@ export async function unlikeOutfit(formData: FormData) { return outfitReaction(f
 export async function addOutfitComment(formData: FormData) {
   const postId = text(formData, "post_id");
   const body = String(formData.get("body") ?? "").trim();
-  const returnTo = safeReturnTo(formData.get("return_to"), UUID.test(postId) ? `/outfits/${postId}` : "/outfits");
+  const returnTo = safeReturnTo(formData.get("return_to"), UUID.test(postId) ? `/outfits/${postId}?tab=comments` : "/outfits");
   if (!UUID.test(postId) || !body || body.length > 500 || LINK_PATTERN.test(body)) redirect(withParam(returnTo, "comment_error", "1"));
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
@@ -286,10 +304,31 @@ export async function addOutfitComment(formData: FormData) {
   redirect(withParam(returnTo, "commented", "1"));
 }
 
+async function outfitCommentReaction(formData:FormData,liked:boolean){
+  const commentId=text(formData,"comment_id");
+  const postId=text(formData,"post_id");
+  const returnTo=safeReturnTo(formData.get("return_to"),UUID.test(postId)?`/outfits/${postId}?tab=comments`:"/outfits");
+  if(!UUID.test(commentId))redirect(returnTo);
+  const supabase=await createClient();
+  const {data:claims}=await supabase.auth.getClaims();
+  const userId=claims?.claims?.sub;
+  if(!userId)redirect(`/login?next=${encodeURIComponent(returnTo)}`);
+  const operation=liked
+    ? supabase.from("outfit_comment_likes").upsert({comment_id:commentId,user_id:userId},{onConflict:"comment_id,user_id"})
+    : supabase.from("outfit_comment_likes").delete().eq("comment_id",commentId).eq("user_id",userId);
+  const {error}=await operation;
+  if(error)throw new Error("Could not update comment Like.");
+  if(UUID.test(postId))revalidatePath(`/outfits/${postId}`);
+  redirect(returnTo);
+}
+
+export async function likeOutfitComment(formData:FormData){return outfitCommentReaction(formData,true);}
+export async function unlikeOutfitComment(formData:FormData){return outfitCommentReaction(formData,false);}
+
 export async function deleteOutfitComment(formData: FormData) {
   const commentId = text(formData, "comment_id");
   const postId = text(formData, "post_id");
-  const returnTo = safeReturnTo(formData.get("return_to"), UUID.test(postId) ? `/outfits/${postId}` : "/outfits");
+  const returnTo = safeReturnTo(formData.get("return_to"), UUID.test(postId) ? `/outfits/${postId}?tab=comments` : "/outfits");
   if (!UUID.test(commentId)) redirect(returnTo);
   const supabase = await createClient();
   const { error } = await supabase.from("outfit_comments").delete().eq("id", commentId);
@@ -320,18 +359,6 @@ export async function followFromOutfit(formData: FormData) {
   revalidatePath(`/outfits/${postId}`);
   revalidatePath("/circle");
   redirect(returnTo);
-}
-
-export async function blockMemberFromOutfit(formData: FormData) {
-  const memberId = text(formData, "member_id");
-  if (!UUID.test(memberId)) redirect("/outfits");
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("block_member", { p_blocked_id: memberId });
-  if (error) throw new Error(error.message);
-  revalidatePath("/outfits");
-  revalidatePath("/circle");
-  revalidatePath("/explore");
-  redirect("/outfits?blocked=1");
 }
 
 export async function unblockMember(formData: FormData) {

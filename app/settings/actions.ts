@@ -13,7 +13,7 @@ function fail(code:string):never{redirect(`/settings?error=${encodeURIComponent(
 function fitCommunity(value:string):FitCommunity|null{return value==="men"||value==="women"||value==="both"?value:null;}
 async function authenticatedSettingsClient(){const supabase=await createClient();const {data:claimsData,error}=await supabase.auth.getClaims();const userId=claimsData?.claims?.sub;if(error||!userId)redirect("/login?next=/settings");return{supabase,userId};}
 function validProfilePhoto(formData:FormData){const entry=formData.get("profile_photo");return entry instanceof File&&entry.size>0&&entry.type==="image/webp"&&entry.size<=PROFILE_PHOTO_MAX_BYTES?entry:null;}
-function revalidateProfileSurfaces(){revalidatePath("/settings");revalidatePath("/people");revalidatePath("/search");revalidatePath("/following");revalidatePath("/circle");revalidatePath("/outfits");}
+function revalidateProfileSurfaces(){revalidatePath("/settings");revalidatePath("/people","layout");revalidatePath("/search");revalidatePath("/following");revalidatePath("/circle");revalidatePath("/explore");revalidatePath("/closet");revalidatePath("/outfits","layout");}
 
 export async function saveUsernameSettings(formData:FormData){
   if(text(formData,"confirm_username_change")!=="1")fail("username_locked");

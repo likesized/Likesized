@@ -21,6 +21,19 @@ LikeSized is not yet a public active service with an external audience. `likesiz
 ## Live repair fast path — OWNER DIRECTED 2026-08-24
 During an owner live audit, when the owner identifies concrete breakage and directs it fixed, that instruction authorizes implementation of the named repair on the one active repair branch. Do not stop for repeated re-audits, duplicate approval questions or status-only handoffs. Read the canonical rules/master once at batch start, implement the repair in canonical source, add focused coverage, run the required verification and continue through a branch-ready handoff. Production/main remains a separate boundary and still requires explicit owner deployment authorization.
 
+## Future app transition — OWNER LOCKED 2026-08-24
+LikeSized remains web-first while V1 is completed and owner-audited, but the intended product direction is to move into app form after the web product is finished enough to justify that transition. New work must therefore avoid unnecessary browser-only architecture that would force a later rebuild.
+
+Going forward:
+- Keep product/business rules, Match logic, validation, permissions and canonical data behavior outside UI-specific code whenever practical so web and a future app client can share the same product truth.
+- Prefer reusable service/data boundaries and stable typed contracts over burying important behavior inside individual Next.js pages/components.
+- Keep the Supabase data model, authentication boundaries, storage rules, media contracts and server-side validation usable by both the current web client and a future app client.
+- Isolate browser-specific concerns such as DOM behavior, file inputs, browser history and local browser state from reusable product logic where practical.
+- Treat phone/mobile UX, camera/photo intake, touch interactions and constrained-device behavior as first-class now rather than desktop-only behavior that will later need to be redesigned.
+- Do not create a second web-vs-app product system. The future app should consume the same canonical backend rules/data instead of duplicating them.
+- Do not prematurely choose or lock a native framework, rewrite working V1 solely for hypothetical portability, or introduce abstraction that has no present value. The rule is to avoid needless coupling while finishing the current product efficiently.
+- When future roadmap work has two reasonably equivalent implementation choices, prefer the one that can be reused or exposed cleanly to a future app without compromising the current web product.
+
 # CURRENT STATUS — 2026-08-24
 
 ## Canonical production line — LIVE
@@ -36,6 +49,7 @@ During an owner live audit, when the owner identifies concrete breakage and dire
 - Previous Roadmap 12 repair merge remains `0742b759c1b8a39baf0db0bf81d4eed6b7a4e214` through PR #70; PR #71 completed its docs-only reconciliation.
 - Previous homepage-copy production merge remains `4fc64957809ee18a6c7c0ac203f29147ef2c8646` through PR #68.
 - Previous Roadmap 12 foundation merge remains `965274351a2f10f893631d769c9caeccdcc5e402` through PR #67.
+- Active owner-review line is `agent/roadmap-app-transition-live-review`; it is branch-only, begins from reconciled production `main`, owns the app-transition direction plus the current live-review issue ledger, and is not production-live.
 - Applied database migrations are immutable; future corrections use later ordered migrations.
 - No paid Supabase branches.
 
@@ -243,7 +257,7 @@ Verified-good production foundations include:
 - full fresh migration replay and database behavior/privacy suites.
 
 # CANONICAL RECOVERY / BRANCH LINEAGE
-The 2026-08-21 **CANONICAL RECOVERY** is complete. No recovery freeze is active. PR #43 promoted the verified recovery line to `main`.
+The 2026-08-21 **CANONICAL RECOVERY** is complete. No recovery freeze is active. PR #43 promoted it.
 
 Historical branches have no current authority. Git history preserves superseded implementations; current files define current truth.
 
@@ -257,6 +271,7 @@ Recent branch classification:
 - `agent/outfit-live-audit-batch-2` — RECOVERED via PR #74 / DEPLOYED; no longer active.
 - `agent/post-pr74-production-reconciliation` — RECOVERED via PR #75 / docs-only; no longer active.
 - `agent/outfit-ios-photo-encoding-repair` — RECOVERED via PR #76 / DEPLOYED; no longer active.
+- `agent/roadmap-app-transition-live-review` — ACTIVE owner-review line; app-transition direction + current live-review issue ledger; branch-only / not deployed.
 
 # OWNER RE-AUDIT ORDER
 1. Homepage + FAQ — live; exact sex/body-specific measurement FAQ wording still pending owner approval.
@@ -280,9 +295,32 @@ Recent branch classification:
 18. Full Admin Catalog + Moderation.
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
 
+# ACTIVE OWNER LIVE-REVIEW ISSUE LOG — BRANCH-ONLY
+Active branch: `agent/roadmap-app-transition-live-review`.
+
+Review logging rule:
+- As the owner calls out issues during live testing, record each issue here immediately and keep the owner's meaning intact.
+- Merely reporting an issue means **RECORDED**, not permission to change production. Do not silently fix recorded items unless the owner directs that issue fixed.
+- When the owner explicitly directs a concrete issue fixed, the live-repair fast path applies on this same active branch: implement → focused verification → exact-head CI → branch-ready handoff without repeated approval/status stops.
+- Production remains a separate explicit authorization boundary.
+- Status vocabulary for this queue: **RECORDED / APPROVED TO FIX / IMPLEMENTED / VERIFIED / DEPLOYED / DEFERRED**.
+
+Current issues after PR #76 deployment:
+- **RECORDED — New Outfit / Photo Tags:** **Use Cover Photo Tags** needs to read much more obviously as a button/action; its current presentation is too easy to mistake for non-interactive text or a passive control.
+- **RECORDED — New Outfit / Items in this Outfit filters:** The picker must use progressive/dynamic filtering rather than showing every narrowing control up front. Initial state should be **All garments** with only the sort choices **Recently added** and **A–Z** visible. Additional narrowing filters should appear only as the user drills down and they become relevant. **Garment Type is a filter, not a sort choice, and must not appear in the same control/list as Recently added and A–Z.**
+- **RECORDED — New Outfit / Garment picker selection + quick view:** Clicking a garment card must **not** immediately add/select it. Clicking the card should open a compact detail preview so the user can verify they have the right garment. The quick view must show **Brand, Item/Model, Category, Size, Color, available photos and every answered garment-specific structured question (up to the four questions for that Garment Type)** so different versions/variations can be identified. Actual selection should require an explicit **Add** action or checkmark.
+- **RECORDED — New Outfit embedded Add Garment / Brand suggestions:** Brand suggestions currently open over the active Brand input and cover the text being typed. The suggestion panel must anchor below the field and never obscure the active input.
+- **RECORDED — New Outfit embedded Add Garment / Item-Style-Model suggestions performance:** Item / Style / Model suggestions are still taking far too long to populate in live use. This remains unresolved despite the earlier PR #65 suggestion-speed work and despite a prior commitment to address it; do not treat the historical speed improvement as closure for this embedded-flow latency.
+- **RECORDED — New Outfit / Save Draft performance:** Saving a draft is still noticeably slow in live use and briefly makes the editor appear frozen before the save completes. Previous draft-save optimization does not count as closure while this pause remains visible.
+- **RECORDED — New Outfit / Preview scroll position:** Entering **Preview Publish** currently opens near the bottom of the preview around the **Publish Outfit** button. Preview must start at the top of the page/content instead of inheriting or landing on the bottom scroll position.
+- **RECORDED — Published/opened Outfit / photo gallery navigation:** When viewing an Outfit, photo navigation should be direct and touch-friendly: **swipe** between photos on touch devices and **tap/click the displayed photo** to advance to the next image. The viewer should not require clicking a row of image-preview thumbnails underneath as the primary way to move through the gallery.
+- **RECORDED — Published/opened Outfit / tagged garment details:** Tagged garment details need to include the garment category/type so the item is immediately identifiable. Example: a detail currently reading **Maidenform Heirloom · 38D · Snug** must also identify that the garment is a **Bra**.
+- **RECORDED — New Outfit / creator analytics:** Remove redundant creator-facing analytics that simply repeat visible social counts. **Likes, Comments and Shares should not be duplicated in a separate analytics block when those counts are already visible on the Outfit.** The useful additional creator metrics are **Views** and **Follows generated**. Internal Shop-click attribution may remain tracked by LikeSized, but neither the Shop-click metric nor explanatory internal tracking copy belongs in the creator-facing V1 analytics UI.
+
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
 - PR #76 is production-live. The owner's first retest is the same normal iPhone photo that previously produced **“Photo conversion failed on this device.”**
 - Continue the broader Roadmap 12 authenticated New Outfit audit after that blocker retest: create, Draft/resume, Preview, Publish, opened Outfit/gallery/hotspots, edit, comments/social, and practical mobile/desktop behavior.
+- Future roadmap implementation must preserve the owner-locked app-transition direction above: finish web V1 efficiently while avoiding needless web-only coupling that would force a later rebuild.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification; do not silently rekey/collapse historical reports.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
 - Full Admin all-Products priority/filter/merge/split presentation remains.
@@ -313,6 +351,7 @@ Recent branch classification:
 - PR #76 repaired the owner-reported iOS/Safari Outfit photo conversion blocker; exact final head `36d5a433a16d844ada1e5cfdd67264f8caf5a918` passed full CI #801 (`32780524136`), owner authorized deployment, squash merge `e4af3074806a0e2307d7e8d0c21e821c70425eaa`, production Vercel `dpl_AU3ZyuW84yEi5X1G27kCd3mX6iX6` reached READY and aliases `likesized.com`; live homepage returned HTTP 200 from that deployment and deployment-scoped runtime inspection found no error/fatal logs in the checked post-cutover window; no database migration was included.
 
 # EXACT NEXT ACTION — CURRENT
-1. Owner immediately retests the same normal iPhone photo selection that previously produced **“Photo conversion failed on this device.”**
-2. Continue the Roadmap 12 create→draft/resume→Preview→Publish→detail/gallery/hotspots→edit→comments/social mobile/desktop audit after that blocker retest.
-3. Do not advance to Roadmap 13 until the New Outfit owner live audit is complete.
+1. Owner live-reviews production and calls out issues; record every issue immediately in the active branch ledger without silently changing production.
+2. When the owner directs a recorded concrete issue fixed, implement it on `agent/roadmap-app-transition-live-review`, verify it, and keep the branch as the one active repair line.
+3. Continue Roadmap 12 create→draft/resume→Preview→Publish→detail/gallery/hotspots→edit→comments/social mobile/desktop audit, starting with the same iPhone photo that previously failed.
+4. Do not advance to Roadmap 13 until the New Outfit owner live audit is complete.

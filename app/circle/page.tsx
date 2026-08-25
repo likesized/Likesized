@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { outfitFeedPhotoPath } from "@/lib/outfit-photo-paths";
+import { fitTwinDesignation, fitTwinLabel, fitTwinPriority } from "@/lib/fit-twin";
 import { createClient } from "@/lib/supabase/server";
 import { ReportContentForm } from "@/components/ReportContentForm";
 import styles from "./circle.module.css";
@@ -42,6 +43,9 @@ function first(value:string|string[]|undefined){return Array.isArray(value)?valu
 function requestedCommunity(value:string|undefined):FitCommunity|null{return value==="men"||value==="women"||value==="both"?value:null;}
 function savedCommunity(value:unknown):FitCommunity{return value==="men"||value==="women"?value:"both";}
 function circleHref(community:FitCommunity){return `/circle?community=${community}`;}
+function matchMap(data: unknown) {
+  return new Map(((data ?? []) as Match[]).map((row) => [row.user_id, row.match_score]));
+}
 function activity(type: FeedRow["activity_type"]) {
   if (type === "fit_report_added") return "Posted a new fit update";
   if (type === "outfit_posted") return "Posted a new outfit";
@@ -70,7 +74,9 @@ export default async function MyCirclePage({searchParams}:{searchParams:SearchPa
     { data: profile, error: profileError },
     { data: fitProfile, error: fitProfileError },
     { data: feedData, error: feedError },
-    { data: matchData, error: matchError },
+    { data: overallMatchData, error: overallMatchError },
+    { data: topsMatchData, error: topsMatchError },
+    { data: bottomsMatchData, error: bottomsMatchError },
     { data: settings, error: settingsError },
   ] = await Promise.all([
     supabase
@@ -89,6 +95,16 @@ export default async function MyCirclePage({searchParams}:{searchParams:SearchPa
       p_result_limit: 100,
       p_fit_community:override,
     }),
+    supabase.rpc("get_fit_matches", {
+      p_match_category: "tops",
+      p_result_limit: 100,
+      p_fit_community:override,
+    }),
+    supabase.rpc("get_fit_matches", {
+      p_match_category: "bottoms",
+      p_result_limit: 100,
+      p_fit_community:override,
+    }),
     supabase
       .from("fit_twin_settings")
       .select("threshold_percent")
@@ -99,19 +115,26 @@ export default async function MyCirclePage({searchParams}:{searchParams:SearchPa
     profileError ||
     fitProfileError ||
     feedError ||
-    matchError ||
+    overallMatchError ||
+    topsMatchError ||
+    bottomsMatchError ||
     settingsError
   )
     throw new Error("Could not load My Circle.");
   if (!profile?.username || !fitProfile?.completed_at) redirect("/onboarding");
   const community=override??savedCommunity(fitProfile.fit_community);
   const threshold = settings?.threshold_percent ?? 85;
-  const overall = new Map(
-    ((matchData ?? []) as Match[]).map((row) => [row.user_id, row.match_score]),
-  );
+  const overall = matchMap(overallMatchData);
+  const tops = matchMap(topsMatchData);
+  const bottoms = matchMap(bottomsMatchData);
+  const designationFor = (userId: string) => fitTwinDesignation({
+    overall: overall.get(userId),
+    tops: tops.get(userId),
+    bottoms: bottoms.get(userId),
+  }, threshold);
   const feed = [...((feedData ?? []) as FeedRow[])].sort((a, b) => {
-    const aTwin = (overall.get(a.actor_id) ?? 0) >= threshold ? 1 : 0;
-    const bTwin = (overall.get(b.actor_id) ?? 0) >= threshold ? 1 : 0;
+    const aTwin = fitTwinPriority(designationFor(a.actor_id));
+    const bTwin = fitTwinPriority(designationFor(b.actor_id));
     return (
       bTwin - aTwin ||
       new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()
@@ -161,17 +184,17 @@ export default async function MyCirclePage({searchParams}:{searchParams:SearchPa
   );
   const twinPeople = new Set(
     feed
-      .filter((row) => (overall.get(row.actor_id) ?? 0) >= threshold)
+      .filter((row) => Boolean(designationFor(row.actor_id)))
       .map((row) => row.actor_id),
   );
   return (
     <main className="pageShell">
       <div className="pageTitle">
         <span className="eyebrow">MY CIRCLE</span>
-        <h1>Your Style Feed starts with Fit Twins.</h1>
+        <h1>Your Style Feed starts with your strongest body matches.</h1>
         <p>
-          My Circle contains everyone you follow. LikeSized shows Fit Twin
-          activity first, then fills the feed with posts from everyone else you
+          My Circle contains everyone you follow. LikeSized shows full Fit Twins first,
+          then Tops Twins and Bottoms Twins, then fills the feed with everyone else you
           follow—without duplicates.
         </p>
         <div className="authActions">
@@ -188,24 +211,26 @@ export default async function MyCirclePage({searchParams}:{searchParams:SearchPa
         <span className="eyebrow">FIT TWINS</span>
         <h2>
           {twinPeople.size
-            ? `${twinPeople.size} followed ${twinPeople.size === 1 ? "person qualifies" : "people qualify"} right now.`
-            : "No followed person qualifies yet—and that is okay."}
+            ? `${twinPeople.size} followed ${twinPeople.size === 1 ? "person qualifies" : "people qualify"} for a Twin designation right now.`
+            : "No followed person qualifies for a Twin designation yet."}
         </h2>
         <p>
-          A Fit Twin is someone in this Fit Community whom you follow with an Overall
-          Match of at least {threshold}%. Switching Men, Women, or Both changes only this view.
+          A Fit Twin clears the current {threshold}% strong-match threshold for both Tops and Bottoms Match.
+          A Tops Twin or Bottoms Twin clears it for only that region. Overall Match stays your general
+          body-similarity score and does not grant Twin status by itself.
         </p>
       </section>
       <div className="pageTitle">
         <span className="eyebrow">STYLE FEED</span>
-        <h2>Fit Twins first. The rest of your relevant following fills the feed.</h2>
+        <h2>Twin matches first. The rest of your relevant following fills the feed.</h2>
       </div>
       {feed.length ? (
         <div className={styles.feed}>
           {feed.map((row) => {
             const name = row.display_name?.trim() || row.username;
             const score = overall.get(row.actor_id);
-            const isTwin = typeof score === "number" && score >= threshold;
+            const designation = designationFor(row.actor_id);
+            const twinLabel = fitTwinLabel(designation);
             const fitPhoto = row.closet_item_id
               ? signedFit.get(row.closet_item_id)
               : undefined;
@@ -235,11 +260,9 @@ export default async function MyCirclePage({searchParams}:{searchParams:SearchPa
                       </span>
                     </div>
                     <span className={styles.badge}>
-                      {isTwin
-                        ? `Fit Twin · ${score}% Overall Match`
-                        : typeof score === "number"
-                          ? `Following · ${score}% Overall Match`
-                          : "Following"}
+                      {typeof score === "number"
+                        ? `${score}% Overall Match${twinLabel ? ` · ${twinLabel}` : " · Following"}`
+                        : twinLabel ?? "Following"}
                     </span>
                   </div>
                   <div className={styles.activity}>
@@ -298,9 +321,8 @@ export default async function MyCirclePage({searchParams}:{searchParams:SearchPa
                         />
                       ) : null}
                       <div className={styles.context}>
-                        The badge uses your current Overall Match. Garment
-                        evidence remains tied to the body snapshot from the
-                        try-on.
+                        Overall Match is your general score. Twin designation uses your
+                        current Tops and Bottoms Match independently.
                       </div>
                     </>
                   ) : (
@@ -350,8 +372,8 @@ export default async function MyCirclePage({searchParams}:{searchParams:SearchPa
           <span className="eyebrow">YOUR STYLE FEED IS READY</span>
           <h2>Follow people to bring their posts into My Circle.</h2>
           <p>
-            Fit Twins will automatically move to the front when a followed
-            person in this Fit Community meets the current threshold.
+            Full and regional Twin matches will automatically move ahead of other followed
+            activity when their current Tops and Bottoms scores meet the threshold.
           </p>
           <Link className="primaryButton" href={`/people?community=${community}`}>
             Find people my size →

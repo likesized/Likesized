@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { followPerson, setFollowingNotificationSubscription, unfollowPerson } from "@/app/people/actions";
+import { blockPerson, followPerson, setFollowingNotificationSubscription, unfollowPerson } from "@/app/people/actions";
+import { fitTwinDesignation, fitTwinLabel } from "@/lib/fit-twin";
 import { createClient } from "@/lib/supabase/server";
 
 type Params=Promise<{username:string}>;
@@ -38,15 +39,16 @@ export default async function MemberProfilePage({params}:{params:Params}){
   const profile=profileData as ProfileRecord;
   const isSelf=profile.id===viewerId;
 
-  const [{data:reportsData,error:reportsError},{data:followData,error:followError},{data:notificationData,error:notificationError},overall,tops,bottoms]=await Promise.all([
+  const [{data:reportsData,error:reportsError},{data:followData,error:followError},{data:notificationData,error:notificationError},{data:twinSettings,error:twinSettingsError},overall,tops,bottoms]=await Promise.all([
     supabase.from("fit_reports").select("id,closet_item_id,size_label,fit,would_buy_again,created_at,product:products(name,slug,category,garment_type_key,brand:brands(name))").eq("user_id",profile.id).order("created_at",{ascending:false}).limit(50),
     isSelf?Promise.resolve({data:null,error:null}):supabase.from("follows").select("followed_id").eq("follower_id",viewerId).eq("followed_id",profile.id).maybeSingle(),
     isSelf?Promise.resolve({data:[],error:null}):supabase.rpc("get_following_notification_subscriptions"),
+    isSelf?Promise.resolve({data:null,error:null}):supabase.from("fit_twin_settings").select("threshold_percent").eq("singleton",true).maybeSingle(),
     isSelf?Promise.resolve(undefined):scoreFor(supabase,profile.id,"overall"),
     isSelf?Promise.resolve(undefined):scoreFor(supabase,profile.id,"tops"),
     isSelf?Promise.resolve(undefined):scoreFor(supabase,profile.id,"bottoms"),
   ]);
-  if(reportsError||followError||notificationError)throw new Error("Could not load member fit evidence.");
+  if(reportsError||followError||notificationError||twinSettingsError)throw new Error("Could not load member fit evidence.");
 
   const reports=(reportsData??[]) as ReportRecord[];
   const closetIds=[...new Set(reports.map((row)=>row.closet_item_id))];
@@ -101,13 +103,15 @@ export default async function MemberProfilePage({params}:{params:Params}){
   const notificationsOn=((notificationData??[]) as NotificationSubscription[]).some((row)=>row.followed_id===profile.id);
   const name=profile.display_name?.trim()||profile.username;
   const returnTo=`/people/${profile.username}`;
+  const twinDesignation=!isSelf&&followed?fitTwinDesignation({overall,tops,bottoms},twinSettings?.threshold_percent??85):null;
+  const twinLabel=fitTwinLabel(twinDesignation);
 
   return <main className="pageShell">
     <div className="pageTitle">
       {profilePhotoUrl?<img className="avatar photoAvatar profileAvatar" src={profilePhotoUrl} alt={`${name} profile`}/>:<div className="avatar profileAvatar">{name.slice(0,1).toUpperCase()}</div>}
-      <span className="eyebrow">MEMBER PROFILE</span><h1>{name}</h1><p>@{profile.username}{profile.bio?` · ${profile.bio}`:""}</p><p>Current Fit Match scores compare your current bodies. Shared Closet history below stays tied to the body state from each actual try-on. Raw measurements are never shown.</p>
+      <span className="eyebrow">MEMBER PROFILE</span><h1>{name}</h1><p>@{profile.username}{profile.bio?` · ${profile.bio}`:""}{twinLabel?` · ${twinLabel}`:""}</p><p>Current Fit Match scores compare your current bodies. Shared Closet history below stays tied to the body state from each actual try-on. Raw measurements are never shown.</p>
       {!isSelf?<div className="statsRow"><span><b>{typeof overall==="number"?`${overall}%`:"—"}</b> current overall</span><span><b>{typeof tops==="number"?`${tops}%`:"—"}</b> current tops</span><span><b>{typeof bottoms==="number"?`${bottoms}%`:"—"}</b> current bottoms</span></div>:null}
-      {!isSelf?<><div className="authActions"><form action={followed?unfollowPerson:followPerson}><input type="hidden" name="target_user_id" value={profile.id}/><input type="hidden" name="return_to" value={returnTo}/><button className={followed?"secondaryButton":"primaryButton"} type="submit">{followed?"Unfollow":"Follow"}</button></form><form action={setFollowingNotificationSubscription}><input type="hidden" name="target_user_id" value={profile.id}/><input type="hidden" name="enabled" value={notificationsOn?"false":"true"}/><input type="hidden" name="return_to" value={returnTo}/><button className={notificationsOn?"primaryButton":"secondaryButton"} type="submit" aria-pressed={notificationsOn}>{notificationsOn?"🔔 Notifications on":"🔔 Notify me"}</button></form><Link className="secondaryButton" href="/people">Back to matches</Link></div><p className="tiny">Follow adds this member to your Style Feed. The bell is separate; turning it on also follows them.</p></>:<div className="authActions"><Link className="secondaryButton" href="/settings">Profile & Privacy</Link><Link className="secondaryButton" href="/onboarding">Edit Fit Profile</Link><Link className="secondaryButton" href="/closet">My Closet</Link></div>}
+      {!isSelf?<><div className="authActions"><form action={followed?unfollowPerson:followPerson}><input type="hidden" name="target_user_id" value={profile.id}/><input type="hidden" name="return_to" value={returnTo}/><button className={followed?"secondaryButton":"primaryButton"} type="submit">{followed?"Unfollow":"Follow"}</button></form><form action={setFollowingNotificationSubscription}><input type="hidden" name="target_user_id" value={profile.id}/><input type="hidden" name="enabled" value={notificationsOn?"false":"true"}/><input type="hidden" name="return_to" value={returnTo}/><button className={notificationsOn?"primaryButton":"secondaryButton"} type="submit" aria-pressed={notificationsOn}>{notificationsOn?"🔔 Notifications on":"🔔 Notify me"}</button></form><Link className="secondaryButton" href="/people">Back to matches</Link><details><summary aria-label={`More options for ${name}`} title={`More options for ${name}`}>•••</summary><form action={blockPerson}><input type="hidden" name="target_user_id" value={profile.id}/><button type="submit">Block @{profile.username}</button></form></details></div><p className="tiny">Follow adds this member to your Style Feed. Twin designation is automatic for followed people: both regional scores clear the strong-match threshold for Fit Twin; one qualifying region becomes Tops Twin or Bottoms Twin.</p></>:<div className="authActions"><Link className="secondaryButton" href="/settings">Profile & Privacy</Link><Link className="secondaryButton" href="/onboarding">Edit Fit Profile</Link><Link className="secondaryButton" href="/closet">My Closet</Link></div>}
     </div>
 
     <section className="section flush"><div className="sectionHeading"><div><span className="eyebrow">SHARED FIT HISTORY</span><h2>{isSelf?"Your visible fit-reference history":`${name}'s real garment evidence`}</h2></div></div>
@@ -126,7 +130,7 @@ export default async function MemberProfilePage({params}:{params:Params}){
           <div><span>Buy again</span><strong>{report.would_buy_again===true?"Yes":report.would_buy_again===false?"No":"—"}</strong></div>
           {dims.length?<div>{dims.map((dim)=><span key={dim.dimension_key}><b>{dimensionName.get(dim.dimension_key)||dim.dimension_key}:</b> {responseName.get(`${dim.dimension_key}:${dim.response_key}`)||dim.response_key} </span>)}</div>:null}
         </div>;
-      })}</div>:<div className="emptyState"><span className="eyebrow">NO SHARED GARMENTS YET</span><h2>No shared fit evidence to show.</h2><p>Private Closet items remain owner-only. Shared historical garments and optional fit/reference photos can appear here without exposing body measurements.</p></div>}
+      })}</div>:<div className="emptyState"><span className="eyebrow">NO SHARED GARMENTS YET</span><h2>No shared fit evidence to show.</h2><p>Shared historical garments and optional fit/reference photos can appear here without exposing body measurements.</p></div>}
     </section>
   </main>;
 }

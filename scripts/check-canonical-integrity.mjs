@@ -128,7 +128,11 @@ if (/\.from\(["']follows["']\)/.test(twinsPage)) {
 }
 mustContain('app/people/actions.ts', 'followPerson');
 mustContain('app/people/actions.ts', 'unfollowPerson');
-mustContain('app/outfits/page.tsx', 'feed==="following"');
+mustContain('app/outfits/page.tsx', '/closet?tab=outfits');
+mustContain('app/closet/page.tsx', '>Garments</Link>');
+mustContain('app/closet/page.tsx', '>Outfits</Link>');
+mustContain('app/closet/page.tsx', '>FITuition</Link>');
+mustNotContain('app/outfits/page.tsx', 'feed==="following"');
 
 const recommendation = read('lib/recommendation.ts');
 if (/wouldBuyAgain|would_buy_again/.test(recommendation)) {

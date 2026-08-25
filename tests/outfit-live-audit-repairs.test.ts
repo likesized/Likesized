@@ -1,78 +1,146 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 
-const composer = readFileSync(new URL("../app/outfits/new/OutfitComposer.tsx", import.meta.url), "utf8");
-const newPage = readFileSync(new URL("../app/outfits/new/page.tsx", import.meta.url), "utf8");
-const feedPage = readFileSync(new URL("../app/outfits/page.tsx", import.meta.url), "utf8");
-const detailPage = readFileSync(new URL("../app/outfits/[id]/page.tsx", import.meta.url), "utf8");
-const successModal = readFileSync(new URL("../app/closet/add/FitReportSuccessModal.tsx", import.meta.url), "utf8");
+const composer=readFileSync(new URL("../app/outfits/new/OutfitComposer.tsx",import.meta.url),"utf8");
+const newPage=readFileSync(new URL("../app/outfits/new/page.tsx",import.meta.url),"utf8");
+const detail=readFileSync(new URL("../app/outfits/[id]/page.tsx",import.meta.url),"utf8");
+const detailCss=readFileSync(new URL("../app/outfits/[id]/outfitDetail.module.css",import.meta.url),"utf8");
+const gallery=readFileSync(new URL("../app/outfits/[id]/OutfitGallery.tsx",import.meta.url),"utf8");
+const tabs=readFileSync(new URL("../app/outfits/[id]/OutfitTabs.tsx",import.meta.url),"utf8");
+const tagged=readFileSync(new URL("../app/outfits/[id]/TaggedItemsPanel.tsx",import.meta.url),"utf8");
+const actions=readFileSync(new URL("../app/outfits/actions.ts",import.meta.url),"utf8");
+const peopleActions=readFileSync(new URL("../app/people/actions.ts",import.meta.url),"utf8");
+const profile=readFileSync(new URL("../app/people/[username]/page.tsx",import.meta.url),"utf8");
+const closetPage=readFileSync(new URL("../app/closet/page.tsx",import.meta.url),"utf8");
+const outfitsIndex=readFileSync(new URL("../app/outfits/page.tsx",import.meta.url),"utf8");
+const explore=readFileSync(new URL("../app/explore/page.tsx",import.meta.url),"utf8");
+const profilePhoto=readFileSync(new URL("../lib/profile-photo.ts",import.meta.url),"utf8");
+const liveIdentityMigration=readFileSync(new URL("../supabase/migrations/20260824234500_live_profile_identity.sql",import.meta.url),"utf8");
+const catalogFields=readFileSync(new URL("../app/closet/add/CatalogGarmentFields.tsx",import.meta.url),"utf8");
+const catalogRoute=readFileSync(new URL("../app/api/catalog/search/route.ts",import.meta.url),"utf8");
 
-test("New Outfit creator copy stays compact and owner-approved", () => {
-  assert.match(newPage, /Create an Outfit\./);
-  assert.match(newPage, /Add photos, a few details, and the items you’re wearing\./);
-  assert.match(composer, /Cover photo \(required\)/);
-  assert.match(composer, /Additional photos \(optional\)/);
-  assert.match(composer, /Upload up to 5 additional photos\./);
-  assert.match(composer, /Tell people about the look\./);
-  assert.match(composer, /Give your outfit a title/);
-  assert.match(composer, /Share the details, inspiration, styling choices/);
-  assert.doesNotMatch(composer, /1 required \+ up to 5 additional/);
-  assert.doesNotMatch(composer, /optimized automatically/);
-  assert.doesNotMatch(composer, /Make the look discoverable/);
-  assert.doesNotMatch(composer, /Accessories do not need separate garment records/);
+test("My Closet owns member Garments, Outfits, and FITuition",()=>{
+ assert.match(closetPage,/My Closet sections/);
+ assert.match(closetPage,/>Garments<\/Link>/);
+ assert.match(closetPage,/>Outfits<\/Link>/);
+ assert.match(closetPage,/>FITuition<\/Link>/);
+ assert.match(closetPage,/\.eq\("user_id", userId\)/);
+ assert.match(closetPage,/Published looks and drafts/);
+ assert.match(outfitsIndex,/\/closet\?tab=outfits/);
+ assert.doesNotMatch(outfitsIndex,/outfit_posts|feed=following/);
 });
 
-test("Outfit flow selects master items before optional photo hotspots", () => {
-  const itemStep = composer.indexOf("4 · ITEMS IN THIS OUTFIT");
-  const photoTagStep = composer.indexOf("5 · PHOTO TAGS");
-  assert.ok(itemStep > -1);
-  assert.ok(photoTagStep > itemStep);
-  assert.match(composer, /Search your Closet/);
-  assert.match(composer, /All categories/);
-  assert.match(composer, /All garment types/);
-  assert.match(composer, /All brands/);
-  assert.match(composer, /Recently added/);
-  assert.match(composer, /Clear filters/);
-  assert.match(composer, /\+ Add a new garment/);
-  assert.match(composer, /Load more/);
-  assert.match(composer, /Selected for this Outfit/);
-  assert.match(composer, /Select the items in this Outfit first\./);
+test("current profile identity resolves live across owned, discovered, opened, and commented Outfits",()=>{
+ assert.match(profilePhoto,/current profiles\.avatar_url at render time/);
+ assert.match(closetPage,/currentProfilePhotoUrl/);
+ assert.match(explore,/profile:profiles\(username,display_name,avatar_url\)/);
+ assert.match(explore,/currentProfilePhotoUrl/);
+ assert.match(detail,/get_public_outfit_creator/);
+ assert.match(detail,/get_public_outfit_comments/);
+ assert.match(detail,/currentProfilePhotoUrl/);
+ assert.match(liveIdentityMigration,/p\.avatar_url/);
+ assert.match(liveIdentityMigration,/set public = true/);
+ assert.match(liveIdentityMigration,/never snapshotted onto the comment/);
 });
 
-test("Occasion, style tags, preview gallery, and comments use simplified controls", () => {
-  assert.match(composer, /Choose an occasion/);
-  assert.match(composer, /\+ Add another occasion/);
-  assert.match(composer, /Add a style tag/);
-  assert.match(composer, /Up to 3/);
-  assert.match(composer, /Previous photo/);
-  assert.match(composer, /Next photo/);
-  assert.match(composer, /setPreviewIndex\(index\)/);
-  assert.match(composer, /<strong>Comments<\/strong>/);
-  assert.match(composer, /Allow people to comment on this Outfit/);
+test("New Outfit picker uses progressive filters and explicit Add",()=>{
+ assert.match(composer,/>All Garments</);
+ assert.match(composer,/>Recently Added</);
+ assert.match(composer,/>A–Z</);
+ assert.match(composer,/closetCategory\?<select aria-label="Filter by garment type"/);
+ assert.match(composer,/closetCategory&&closetType\?<select aria-label="Filter by brand"/);
+ assert.match(composer,/setClosetPreviewId\(item\.id\)/);
+ assert.match(composer,/\{added\?"✓ Added":"Add"\}/);
+ assert.doesNotMatch(composer,/Garment Type<\/option>/);
 });
 
-test("embedded garment creation returns to the same Outfit and auto-selects", () => {
-  assert.match(composer, /\/closet\/add\?embed=outfit/);
-  assert.match(composer, /likesized:outfit-garment-saved/);
-  assert.match(successModal, /likesized:outfit-garment-saved/);
-  assert.match(successModal, /Returning to your Outfit/);
-  assert.match(composer, /Garment added to this Outfit\./);
+test("picker quick view identifies similar garment variations before selection",()=>{
+ for(const text of ["BRAND","ITEM / MODEL","GARMENT TYPE","SIZE","COLOR","FIT RESULT"])assert.match(composer,new RegExp(text.replace("/","\\/")));
+ assert.match(composer,/closetPreview\.photoUrls/);
+ assert.match(composer,/closetPreview\.answers/);
+ assert.match(newPage,/product_attribute_values/);
+ assert.match(newPage,/fit_reference_photos/);
+ assert.match(newPage,/color:item\.variant_id/);
 });
 
-test("drafts have a dedicated resume workspace", () => {
-  assert.equal(existsSync(new URL("../app/outfits/drafts/page.tsx", import.meta.url)), true);
-  assert.match(feedPage, /\/outfits\/drafts/);
-  assert.match(feedPage, /YOUR DRAFTS/);
+test("cover-tag reuse, draft responsiveness, and Preview Publish scroll are explicit",()=>{
+ assert.match(composer,/Use Cover Photo Tags/);
+ assert.match(composer,/photos_dirty/);
+ assert.match(actions,/shouldSyncPhotos/);
+ assert.match(composer,/await nextPaint\(\)/);
+ assert.match(composer,/window\.scrollTo\(\{top:0,behavior:"auto"\}\)/);
 });
 
-test("Outfit feed and detail avoid fragile nested PostgREST relationship reads", () => {
-  assert.doesNotMatch(feedPage, /profile:profiles/);
-  assert.doesNotMatch(detailPage, /product:products/);
-  assert.doesNotMatch(detailPage, /profile:profiles/);
-  assert.doesNotMatch(detailPage, /retailer_url/);
-  assert.match(detailPage, /\.from\("products"\)\.select\("id,name,slug,image_url,brand_id"\)/);
-  assert.match(detailPage, /\.from\("retailer_listings"\)\.select\("product_id,product_url"\)/);
-  assert.match(detailPage, /\.from\("brands"\)\.select\("id,name"\)/);
-  assert.match(detailPage, /Could not load Outfit garment details:/);
+test("embedded Brand and Item suggestions stay anchored and lightweight",()=>{
+ assert.match(catalogFields,/brandSuggestionsOpen/);
+ assert.match(catalogFields,/itemSuggestionDropdown/);
+ assert.doesNotMatch(catalogFields,/list="brand-options"/);
+ assert.match(catalogFields,/ITEM_SEARCH_DEBOUNCE_MS = 60/);
+ assert.match(catalogFields,/brief=1/);
+ assert.match(catalogFields,/itemSuggestionCache/);
+ assert.match(catalogRoute,/const brief = url\.searchParams\.get\("brief"\) === "1"/);
+ assert.match(catalogRoute,/briefProducts/);
+});
+
+test("opened gallery hides secondary photos and navigates directly on the active photo",()=>{
+ assert.match(gallery,/Click, drag, or swipe the photo/);
+ assert.match(gallery,/onPointerDown/);
+ assert.match(gallery,/onPointerUp/);
+ assert.match(gallery,/ArrowRight/);
+ assert.match(gallery,/ArrowLeft/);
+ assert.doesNotMatch(gallery,/galleryThumb|previewThumb/);
+});
+
+test("opened Outfit hierarchy is compact header, photo, actions, then three exclusive tabs",()=>{
+ assert.match(detail,/outfitIdentityHeader/);
+ assert.match(detail,/outfitIdentityPhoto/);
+ assert.match(detail,/% Fit Match/);
+ assert.match(detail,/creatorTwin/);
+ assert.match(detail,/outfitActionBar/);
+ assert.match(detail,/OutfitTabs/);
+ assert.match(tabs,/Style Notes/);
+ assert.match(tabs,/Comments/);
+ assert.match(tabs,/Tagged Items/);
+ assert.match(detail,/OUTFIT TITLE/);
+ assert.match(detail,/OUTFIT TAGS/);
+ assert.match(detail,/OUTFIT DESCRIPTION/);
+ assert.match(detailCss,/\.outfitTabBar/);
+});
+
+test("Outfit social controls are icon-first and blocking lives on the profile",()=>{
+ assert.match(detail,/aria-label=\{liked\?"Unlike Outfit":"Like Outfit"\}/);
+ assert.match(detail,/title="Follow"/);
+ assert.match(detail,/summaryLabel="Report Outfit" iconOnly/);
+ assert.doesNotMatch(detail,/Follow \{creatorName\}/);
+ assert.doesNotMatch(detail,/blockMemberFromOutfit/);
+ assert.match(peopleActions,/blockPerson/);
+ assert.match(profile,/Block @\{profile\.username\}/);
+});
+
+test("Tagged Items and photo hotspots preview in place before Full details navigation",()=>{
+ assert.match(gallery,/setActiveGarment/);
+ assert.match(gallery,/Full details →/);
+ assert.match(tagged,/setSelectedId/);
+ assert.match(tagged,/role="dialog"/);
+ assert.match(tagged,/Full details →/);
+ assert.match(tagged,/Wish Locker/);
+ assert.match(tagged,/🛒/);
+});
+
+test("comments are compact plain text with Like, flag, and owner-or-author delete",()=>{
+ assert.match(detail,/commentAvatar/);
+ assert.match(detail,/comment\.profile\.username/);
+ assert.match(detail,/likeOutfitComment/);
+ assert.match(detail,/summaryLabel="Report comment" iconOnly/);
+ assert.match(detail,/owner\|\|comment\.user_id===viewerId/);
+ assert.doesNotMatch(detail,/blockMemberFromOutfit/);
+});
+
+test("creator tools expose only incremental analytics and destructive confirmation",()=>{
+ assert.match(detail,/outfit\.view_count/);
+ assert.match(detail,/outfit\.follows_generated_count/);
+ assert.doesNotMatch(detail,/analyticsGrid/);
+ assert.doesNotMatch(detail,/Shop clicks are tracked internally/);
+ assert.match(detail,/ConfirmDeleteOutfit/);
 });

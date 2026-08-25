@@ -46,6 +46,9 @@ jobs:
       - name: New Outfit V1 safeguards
         run: node --test tests/new-outfit-v1.test.ts
 
+      - name: Outfit live-audit repair safeguards
+        run: node --test tests/outfit-live-audit-repairs.test.ts
+
       - name: Public homepage content safeguards
         run: node --test tests/public-homepage-content.test.ts
 

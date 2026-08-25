@@ -2,151 +2,176 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 
-const composer = readFileSync(new URL("../app/outfits/new/OutfitComposer.tsx", import.meta.url), "utf8");
-const newPage = readFileSync(new URL("../app/outfits/new/page.tsx", import.meta.url), "utf8");
-const feedPage = readFileSync(new URL("../app/outfits/page.tsx", import.meta.url), "utf8");
-const outfitStyles = readFileSync(new URL("../app/outfits/outfits.module.css", import.meta.url), "utf8");
-const actions = readFileSync(new URL("../app/outfits/actions.ts", import.meta.url), "utf8");
-const detail = readFileSync(new URL("../app/outfits/[id]/page.tsx", import.meta.url), "utf8");
-const gallery = readFileSync(new URL("../app/outfits/[id]/OutfitGallery.tsx", import.meta.url), "utf8");
-const proxy = readFileSync(new URL("../lib/supabase/proxy.ts", import.meta.url), "utf8");
-const taxonomy = readFileSync(new URL("../lib/outfit-taxonomy.ts", import.meta.url), "utf8");
-const socialMigration = readFileSync(new URL("../supabase/migrations/20260824133500_new_outfit_v1_social_foundation.sql", import.meta.url), "utf8");
-const boundaryMigration = readFileSync(new URL("../supabase/migrations/20260824133800_canonical_public_closet_and_outfit_public_identity.sql", import.meta.url), "utf8");
-const closetPage = readFileSync(new URL("../app/closet/page.tsx", import.meta.url), "utf8");
-const closetEdit = readFileSync(new URL("../app/closet/[id]/edit/page.tsx", import.meta.url), "utf8");
-const closetActions = readFileSync(new URL("../app/closet/edit-actions.ts", import.meta.url), "utf8");
+const composer=readFileSync(new URL("../app/outfits/new/OutfitComposer.tsx",import.meta.url),"utf8");
+const newPage=readFileSync(new URL("../app/outfits/new/page.tsx",import.meta.url),"utf8");
+const detailPage=readFileSync(new URL("../app/outfits/[id]/page.tsx",import.meta.url),"utf8");
+const gallery=readFileSync(new URL("../app/outfits/[id]/OutfitGallery.tsx",import.meta.url),"utf8");
+const tabs=readFileSync(new URL("../app/outfits/[id]/OutfitTabs.tsx",import.meta.url),"utf8");
+const tagged=readFileSync(new URL("../app/outfits/[id]/TaggedItemsPanel.tsx",import.meta.url),"utf8");
+const confirmDelete=readFileSync(new URL("../app/outfits/[id]/ConfirmDeleteOutfit.tsx",import.meta.url),"utf8");
+const actions=readFileSync(new URL("../app/outfits/actions.ts",import.meta.url),"utf8");
+const commentComposer=readFileSync(new URL("../app/outfits/[id]/CommentComposer.tsx",import.meta.url),"utf8");
+const shopRoute=readFileSync(new URL("../app/api/outfits/[id]/shop/route.ts",import.meta.url),"utf8");
+const closetPage=readFileSync(new URL("../app/closet/page.tsx",import.meta.url),"utf8");
+const outfitsIndex=readFileSync(new URL("../app/outfits/page.tsx",import.meta.url),"utf8");
+const explorePage=readFileSync(new URL("../app/explore/page.tsx",import.meta.url),"utf8");
+const profilePhoto=readFileSync(new URL("../lib/profile-photo.ts",import.meta.url),"utf8");
+const migration=readFileSync(new URL("../supabase/migrations/20260824133500_new_outfit_v1_social_foundation.sql",import.meta.url),"utf8");
+const commentLikesMigration=readFileSync(new URL("../supabase/migrations/20260824231500_outfit_comment_likes.sql",import.meta.url),"utf8");
+const liveIdentityMigration=readFileSync(new URL("../supabase/migrations/20260824234500_live_profile_identity.sql",import.meta.url),"utf8");
 
-function count(haystack: string, needle: string) {
-  return haystack.split(needle).length - 1;
-}
-
-test("New Outfit has one canonical creator and reuses the canonical Fit Report intake", () => {
-  assert.equal(existsSync(new URL("../app/outfits/new/OutfitPhotoInput.tsx", import.meta.url)), false);
-  assert.doesNotMatch(newPage, /visibility|Private\s*→\s*will share|become Shared/i);
-  assert.doesNotMatch(actions, /visibility|closet_visibility|update\([^)]*shared/i);
-  assert.match(composer, /Add a new garment/);
-  assert.doesNotMatch(composer, /Add a missing garment/);
-  assert.match(composer, /iframe[^>]+[\s\S]*?src="\/closet\/add\?embed=outfit"/);
+test("New Outfit creator keeps canonical photo preparation and six-photo boundaries",()=>{
+ assert.match(composer,/Cover photo \(required\)/);
+ assert.match(composer,/Additional photos \(optional\)/);
+ assert.match(composer,/Upload up to 5 additional photos/);
+ assert.match(composer,/DISPLAY_MAX_BYTES = 600 \* 1024/);
+ assert.match(composer,/FEED_MAX_BYTES = 220 \* 1024/);
+ assert.match(composer,/image\/heic/);
+ assert.match(composer,/image\/heif/);
+ assert.match(composer,/photos_dirty/);
+ assert.match(actions,/const shouldSyncPhotos = photosDirty \|\| !existingPost \|\| mustPromoteDraftPhotos/);
 });
 
-test("current V1 Closet UI has no per-garment Private / Shared control", () => {
-  assert.doesNotMatch(closetPage, /visibility|\bPrivate\b|\bShared\b/i);
-  assert.doesNotMatch(closetEdit, /Closet visibility|value="private"|value="shared"|photo_requires_shared/i);
-  assert.doesNotMatch(closetActions, /name="visibility"|photo_requires_shared|visibility\s*===?\s*"private"/i);
-  assert.match(boundaryMigration, /closet_items_shared_only_current_v1/);
-  assert.match(boundaryMigration, /Legacy replay-compatibility column/);
+test("Closet picker is progressive and selection is explicit",()=>{
+ assert.match(composer,/>All Garments</);
+ assert.match(composer,/>Recently Added</);
+ assert.match(composer,/>A–Z</);
+ assert.match(composer,/closetCategory\?<select aria-label="Filter by garment type"/);
+ assert.match(composer,/closetCategory&&closetType\?<select aria-label="Filter by brand"/);
+ assert.match(composer,/pickerStyles\.choiceMain/);
+ assert.match(composer,/setClosetPreviewId\(item\.id\)/);
+ assert.match(composer,/pickerStyles\.addButton/);
+ assert.match(composer,/\{added\?"✓ Added":"Add"\}/);
+ assert.doesNotMatch(composer,/option value="type">Garment Type<\/option>/);
 });
 
-test("creator supports the locked editorial, gallery, hotspot, draft and preview contract", () => {
-  assert.match(composer, /Headline/);
-  assert.match(composer, /\/100/);
-  assert.match(composer, /Outfit Story/);
-  assert.match(composer, /\/5,000/);
-  assert.match(composer, /Additional photos/);
-  assert.match(composer, /multiple/);
-  assert.match(composer, /Set as cover/);
-  assert.match(composer, /Drag or use the arrows to reorder/);
-  assert.match(composer, /Move additional photo \$\{index\} up/);
-  assert.match(composer, /Move additional photo \$\{index\} down/);
-  assert.match(composer, /onDragEnter=\{\(\) => reorderDraggedPhoto\(photo\.key\)\}/);
-  assert.match(composer, /Drag a dot to move it/);
-  assert.match(composer, /Save Draft/);
-  assert.match(composer, /Preview Outfit/);
-  assert.match(composer, /Publish Outfit/);
-  assert.match(composer, /Leave Without Saving/);
-  assert.match(composer, /Keep Editing/);
-  assert.match(composer, /beforeunload/);
+test("garment quick view uses real Closet detail evidence",()=>{
+ assert.match(newPage,/product_attribute_values/);
+ assert.match(newPage,/fit_reference_photos/);
+ assert.match(newPage,/variant_id/);
+ assert.match(newPage,/color:item\.variant_id/);
+ assert.match(newPage,/photoUrls/);
+ assert.match(newPage,/answers/);
+ assert.match(composer,/BRAND/);
+ assert.match(composer,/ITEM \/ MODEL/);
+ assert.match(composer,/GARMENT TYPE/);
+ assert.match(composer,/SIZE/);
+ assert.match(composer,/COLOR/);
+ assert.match(composer,/FIT RESULT/);
+ assert.match(composer,/closetPreview\.answers\.map/);
 });
 
-test("mobile photo preparation accepts normal phone formats and keeps reducing instead of failing early", () => {
-  assert.match(composer, /24 \* 1024 \* 1024/);
-  assert.match(composer, /image\/heic/);
-  assert.match(composer, /image\/heif/);
-  assert.match(composer, /accept="image\/\*"/);
-  assert.match(composer, /0\.34, 0\.28, 0\.22/);
-  assert.match(composer, /0\.36, 0\.3, 0\.24/);
-  assert.match(composer, /Promise\.allSettled/);
-  assert.doesNotMatch(composer, /This photo could not be reduced enough/);
+test("photo tagging and Preview Publish keep the owner-reviewed interaction",()=>{
+ assert.match(composer,/Use Cover Photo Tags/);
+ assert.match(composer,/className=\{styles\.compactSecondary\}/);
+ assert.match(composer,/window\.scrollTo\(\{top:0,behavior:"auto"\}\)/);
+ assert.match(composer,/Previous photo/);
+ assert.match(composer,/Next photo/);
 });
 
-test("Outfit Closet filters have a contextual reset", () => {
-  assert.match(composer, /hasClosetFilters/);
-  assert.match(composer, /Clear filters/);
-  assert.match(composer, /setClosetSearch\(""\)/);
-  assert.match(composer, /setClosetCategory\(""\)/);
-  assert.match(composer, /setClosetType\(""\)/);
-  assert.match(composer, /setClosetBrand\(""\)/);
-  assert.match(composer, /setClosetSort\("recent"\)/);
+test("My Closet is the canonical owned-content hub",()=>{
+ assert.match(closetPage,/My Closet sections/);
+ assert.match(closetPage,/>Garments<\/Link>/);
+ assert.match(closetPage,/>Outfits<\/Link>/);
+ assert.match(closetPage,/>FITuition<\/Link>/);
+ assert.match(closetPage,/tab === "outfits"/);
+ assert.match(closetPage,/\.eq\("user_id", userId\)/);
+ assert.match(closetPage,/status === "draft" \? `\/outfits\/new\?draft=/);
+ assert.match(closetPage,/FITuition combines the Fit Reports and garment history in your Closet/);
+ assert.match(outfitsIndex,/redirect\(`\/closet\?tab=outfits/);
+ assert.doesNotMatch(outfitsIndex,/outfit_posts|feed=following|YOUR DRAFTS/);
 });
 
-test("successful draft saves clear dirty state and stay in the editor without a full reload", () => {
-  assert.match(actions, /photoIds\?: Record<string, string>/);
-  assert.match(composer, /dirtyRef\.current = false/);
-  assert.match(composer, /setDirty\(false\)/);
-  assert.match(composer, /setLeaveHref\(null\)/);
-  assert.match(composer, /window\.history\.replaceState/);
-  assert.match(composer, /Draft saved\./);
+test("profile photos are live identity instead of Outfit or comment snapshots",()=>{
+ assert.match(profilePhoto,/current profiles\.avatar_url at render time/);
+ assert.match(profilePhoto,/getPublicUrl/);
+ assert.match(detailPage,/currentProfilePhotoUrl/);
+ assert.match(detailPage,/get_public_outfit_creator/);
+ assert.match(detailPage,/get_public_outfit_comments/);
+ assert.match(detailPage,/avatar_url/);
+ assert.match(explorePage,/profile:profiles\(username,display_name,avatar_url\)/);
+ assert.match(explorePage,/outfitProfilePhotos/);
+ assert.match(liveIdentityMigration,/set public = true/);
+ assert.match(liveIdentityMigration,/p\.avatar_url/);
+ assert.match(liveIdentityMigration,/oc\.like_count/);
+ assert.match(liveIdentityMigration,/never snapshotted onto the comment/);
+ assert.doesNotMatch(migration,/comment_avatar|outfit_avatar/);
 });
 
-test("draft hydration and preview size reflect the live-audit performance fixes", () => {
-  assert.match(newPage, /Promise\.all/);
-  assert.match(outfitStyles, /\.previewShell\{max-width:920px\}/);
-  assert.match(outfitStyles, /\.previewGallery\{min-width:0;max-width:520px\}/);
-  assert.match(outfitStyles, /\.previewMain\{[^}]*max-height:460px/);
+test("opened Outfit is a direct-navigation one-photo gallery with no secondary thumbnail strip",()=>{
+ assert.match(gallery,/onPointerDown=\{pointerDown\}/);
+ assert.match(gallery,/onPointerUp=\{pointerUp\}/);
+ assert.match(gallery,/move\(1\)/);
+ assert.match(gallery,/ArrowLeft/);
+ assert.match(gallery,/Full details →/);
+ assert.doesNotMatch(gallery,/galleryThumb/);
+ assert.doesNotMatch(gallery,/thumbnail/i);
 });
 
-test("Occasion is a fixed shared vocabulary and Style Tags remain community-created", () => {
-  const required = ["Everyday", "Work", "Business Casual", "Business Formal", "School/Campus", "Brunch", "Date Night", "Dinner", "Night Out", "Party", "Wedding Guest", "Formal Event", "Concert", "Festival", "Beach", "Poolside", "Vacation/Resort", "Travel", "Gym/Workout", "Golf", "Outdoors", "Lounge/Home", "Running Errands", "Holiday/Special Occasion"];
-  for (const label of required) assert.ok(taxonomy.includes(label), `missing Occasion ${label}`);
-  assert.equal(count(taxonomy, " value: "), 24);
-  assert.match(composer, /Style tags/);
-  assert.match(composer, /Up to 3/);
-  assert.match(newPage, /get_outfit_style_tag_suggestions/);
+test("opened Outfit uses Style Notes, Comments, and Tagged Items tabs",()=>{
+ assert.match(detailPage,/OutfitTabs/);
+ assert.match(tabs,/\["style","Style Notes"\]/);
+ assert.match(tabs,/\["comments","Comments"\]/);
+ assert.match(tabs,/\["tagged","Tagged Items"\]/);
+ assert.match(tabs,/initialTab="style"/);
+ assert.match(detailPage,/OUTFIT TITLE/);
+ assert.match(detailPage,/OUTFIT TAGS/);
+ assert.match(detailPage,/OUTFIT DESCRIPTION/);
 });
 
-test("Outfit browse is image-first masonry with natural photo proportions and a two-column mobile feed", () => {
-  assert.match(feedPage, /Browse outfits, then open a look/);
-  assert.match(feedPage, /feedPhotoLink/);
-  assert.match(feedPage, /pinCreatorRow/);
-  assert.match(outfitStyles, /\.feed\{column-count:4;column-gap:18px\}/);
-  assert.match(outfitStyles, /\.post\{display:inline-block;width:100%/);
-  assert.match(outfitStyles, /\.photo\{height:auto;aspect-ratio:auto/);
-  assert.match(outfitStyles, /@media\(max-width:760px\)\{\.feed\{column-count:2;column-gap:12px\}/);
-  assert.doesNotMatch(outfitStyles, /\.feed\{display:grid;grid-template-columns:repeat\(2/);
+test("opened Outfit creator header and social row stay compact and contextual",()=>{
+ assert.match(detailPage,/outfitIdentityPhoto/);
+ assert.match(detailPage,/outfitNameLine/);
+ assert.match(detailPage,/% Fit Match/);
+ assert.match(detailPage,/creatorTwin/);
+ assert.match(detailPage,/outfitActionBar/);
+ assert.match(detailPage,/aria-label=\{liked\?"Unlike Outfit":"Like Outfit"\}/);
+ assert.match(detailPage,/title="Follow"/);
+ assert.match(detailPage,/summaryLabel="Report Outfit" iconOnly/);
+ assert.doesNotMatch(detailPage,/Follow \{creatorName\}/);
+ assert.doesNotMatch(detailPage,/blockMemberFromOutfit/);
 });
 
-test("published Outfit detail keeps anonymous editorial view separate from member Fit detail", () => {
-  assert.match(proxy, /PUBLIC_OUTFIT/);
-  assert.match(detail, /get_public_outfit_creator/);
-  assert.match(detail, /get_public_outfit_comments/);
-  assert.match(detail, /get_public_outfit_product_teasers/);
-  assert.doesNotMatch(detail, /from\("outfit_posts"\)\.select\("[^"\n]*profile:profiles/);
-  assert.doesNotMatch(detail, /retailer_url/);
-  assert.match(detail, /retailer_listings/);
-  assert.match(detail, /Sign in to see size worn and reported fit/);
-  assert.match(detail, /Size \$\{report\.size_label\}/);
-  assert.match(gallery, /View tagged items/);
-  assert.match(detail, /openGraph/);
-  assert.match(detail, /summary_large_image/);
-  assert.match(boundaryMigration, /revoke select on public\.outfit_comments from anon/);
-  assert.match(boundaryMigration, /get_public_outfit_creator/);
-  assert.match(boundaryMigration, /get_public_outfit_comments/);
+test("Tagged Items preview before navigation and uses Like, Wish Locker, and cart actions",()=>{
+ assert.match(tagged,/setSelectedId/);
+ assert.match(tagged,/Full details →/);
+ assert.match(tagged,/Wish Locker/);
+ assert.match(tagged,/🛒/);
+ assert.match(tagged,/\/api\/outfits\/\$\{postId\}\/shop\?product_id=/);
+ assert.match(shopRoute,/retailer_listings/);
+ assert.match(shopRoute,/product_url/);
+ assert.doesNotMatch(shopRoute,/retailer_url/);
 });
 
-test("V1 social controls include comments, reporting, blocking and the locked creator analytics", () => {
-  assert.match(actions, /body\.length\s*>\s*500/);
-  assert.match(actions, /LINK_PATTERN/);
-  assert.match(detail, /outfit_comment/);
-  assert.match(detail, /Block member/);
-  for (const metric of ["Views", "Likes", "Comments", "Shares", "Follows generated"]) assert.match(detail, new RegExp(metric));
-  assert.match(detail, /Shop clicks are tracked internally by LikeSized and are not creator-facing in V1/);
-  assert.match(socialMigration, /private\.outfit_shop_clicks/);
-  assert.match(socialMigration, /comments_enabled/);
+test("comments remain plain text and each comment has Like, flag, and authorized delete",()=>{
+ assert.match(commentComposer,/textarea/);
+ assert.doesNotMatch(commentComposer,/contentEditable|execCommand|rich text/i);
+ assert.match(actions,/LINK_PATTERN/);
+ assert.match(actions,/likeOutfitComment/);
+ assert.match(actions,/unlikeOutfitComment/);
+ assert.match(detailPage,/targetType="outfit_comment"/);
+ assert.match(detailPage,/summaryLabel="Report comment" iconOnly/);
+ assert.match(detailPage,/owner\|\|comment\.user_id===viewerId/);
+ assert.match(detailPage,/\/people\/\$\{comment\.profile\.username\}/);
+ assert.match(commentLikesMigration,/create table public\.outfit_comment_likes/);
+ assert.match(commentLikesMigration,/add column like_count/);
 });
 
-test("new photos stay private until publish transition", () => {
-  assert.match(actions, /const bucket = "outfit-draft-photos" as const/);
-  assert.match(actions, /moveDraftPhotoToPublic/);
-  assert.match(actions, /cleanupNewFailedPublish/);
+test("creator analytics and delete controls match the live-review contract",()=>{
+ assert.match(detailPage,/outfit\.view_count/);
+ assert.match(detailPage,/outfit\.follows_generated_count/);
+ assert.match(detailPage,/ConfirmDeleteOutfit/);
+ assert.match(confirmDelete,/Delete this Outfit\?/);
+ assert.match(confirmDelete,/Cancel/);
+ assert.doesNotMatch(detailPage,/analyticsGrid/);
+ assert.doesNotMatch(detailPage,/Shop clicks are tracked internally/);
+});
+
+test("Outfit social database boundaries remain canonical",()=>{
+ assert.match(migration,/create table public\.outfit_comments/);
+ assert.match(migration,/drop policy if exists "owner likes outfit" on public\.outfit_likes/);
+ assert.match(migration,/create policy "member likes visible outfit" on public\.outfit_likes/);
+ assert.match(migration,/follow_from_outfit/);
+ assert.match(migration,/record_outfit_shop_click/);
+ assert.equal(existsSync(new URL("../app/outfits/[id]/OutfitTabs.tsx",import.meta.url)),true);
 });

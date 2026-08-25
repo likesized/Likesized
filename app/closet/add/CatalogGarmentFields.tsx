@@ -89,7 +89,7 @@ const PURCHASE_MONTHS = [
 ];
 const CURRENT_YEAR = new Date().getFullYear();
 const PURCHASE_YEARS = Array.from({ length: CURRENT_YEAR - 1899 }, (_, index) => String(CURRENT_YEAR - index));
-const ITEM_SEARCH_DEBOUNCE_MS = 0;
+const ITEM_SEARCH_DEBOUNCE_MS = 60;
 const UNMATCHED_GUIDANCE = "Enter as much information as you can about the item. If you’re unsure about something, just leave it blank.";
 
 export function useCatalogGarment() {
@@ -208,8 +208,7 @@ export function CatalogCommunityEnrichment({ materials, retailers }: { materials
           <label>Year
             <select name="purchase_year" value={purchaseYear} required={Boolean(purchaseMonth)} onChange={(event) => setPurchaseYear(event.target.value)}>
               <option value="">Choose year</option>
-              {PURCHASE_YEARS.map((year) => <option value={year} key={year}>{year}</option>)}
-            </select>
+              {PURCHASE_YEARS.map((year) => <option value={year} key={year}>{year}</option>)}</select>
           </label>
         </div>
       </fieldset>
@@ -261,6 +260,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
   const [candidateDefaultSizeKind, setCandidateDefaultSizeKind] = useState<GarmentSizeKind | null>(null);
   const [barcodeMatch, setBarcodeMatch] = useState<BarcodeMatch | null>(null);
   const [brand, setBrand] = useState("");
+  const [brandSuggestionsOpen, setBrandSuggestionsOpen] = useState(false);
   const [itemName, setItemName] = useState("");
   const [category, setCategory] = useState<GarmentCategoryKey | "">("");
   const [type, setType] = useState("");
@@ -287,6 +287,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
   const brandInput = useRef<HTMLInputElement>(null);
   const itemNameInput = useRef<HTMLInputElement>(null);
   const itemSuggestionCache = useRef(new Map<string, CatalogProduct>());
+  const prefetchedBrandNames = useRef(new Set<string>());
 
   const selectedType = GARMENT_TYPES.find((item) => item.key === type);
   const filteredTypes = category ? GARMENT_TYPES.filter((item) => item.category === category) : [];
@@ -312,6 +313,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     setProduct(null);
     setCandidateDefaultSizeKind(null);
     setBrand("");
+    setBrandSuggestionsOpen(false);
     setItemName("");
     setCategory("");
     setType("");
@@ -349,6 +351,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
 
   function changeMatchedBrand() {
     clearMatchedProductIdentity(false);
+    setBrandSuggestionsOpen(true);
     window.requestAnimationFrame(() => brandInput.current?.focus());
   }
 
@@ -363,6 +366,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     setProduct(item);
     setCandidateDefaultSizeKind(null);
     setBrand(item.brand_name);
+    setBrandSuggestionsOpen(false);
     setItemName(item.name);
     setCategory(categoryForType(item.garment_type_key));
     setType(item.garment_type_key ?? "");
@@ -376,6 +380,18 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     setError("");
     setItemSuggestions([]);
     setStep("details");
+  }
+
+  async function chooseSuggestedProduct(item: CatalogProduct) {
+    setItemSuggestions([]);
+    try {
+      const response = await fetch(`/api/catalog/search?brand=${encodeURIComponent(item.brand_name)}&q=${encodeURIComponent(item.name)}`);
+      const body = await response.json() as { local?: CatalogProduct[] };
+      const full = body.local?.find((candidate) => candidate.id === item.id) ?? item;
+      chooseProduct(full);
+    } catch {
+      chooseProduct(item);
+    }
   }
 
   function showBarcodeMatch(match: BarcodeMatch, barcode: string) {
@@ -515,6 +531,21 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
   }, [step]);
 
   useEffect(() => {
+    const normalizedBrand = normalizeCatalogText(brand);
+    const exactBrand = brands.find((item) => normalizeCatalogText(item.name) === normalizedBrand);
+    if (step !== "details" || product || !exactBrand || prefetchedBrandNames.current.has(normalizedBrand)) return;
+    prefetchedBrandNames.current.add(normalizedBrand);
+    const fixtures = fixtureProducts.filter((item) => normalizeCatalogText(item.brand_name) === normalizedBrand);
+    for (const item of fixtures) itemSuggestionCache.current.set(item.id, item);
+    const controller = new AbortController();
+    void fetch(`/api/catalog/search?brand=${encodeURIComponent(exactBrand.name)}&brief=1`, { signal: controller.signal })
+      .then((response) => response.json() as Promise<{ local?: CatalogProduct[] }>)
+      .then((body) => { for (const item of body.local ?? []) itemSuggestionCache.current.set(item.id, item); })
+      .catch((cause) => { if ((cause as Error).name === "AbortError") prefetchedBrandNames.current.delete(normalizedBrand); });
+    return () => controller.abort();
+  }, [step, product, brand, brands, fixtureProducts]);
+
+  useEffect(() => {
     const normalizedItem = normalizeCatalogText(itemName);
     const normalizedBrand = normalizeCatalogText(brand);
     if (step !== "details" || (product && !itemIssue) || !brand.trim() || normalizedItem.length < 2) {
@@ -523,20 +554,21 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     }
     const cached = [...itemSuggestionCache.current.values()]
       .filter((item) => normalizeCatalogText(item.brand_name) === normalizedBrand && normalizeCatalogText(item.name).includes(normalizedItem))
+      .sort((a,b)=>Number(normalizeCatalogText(a.name).startsWith(normalizedItem))-Number(normalizeCatalogText(b.name).startsWith(normalizedItem)))
+      .reverse()
       .slice(0, 12);
     setItemSuggestions(cached);
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
-        const response = await fetch(`/api/catalog/search?brand=${encodeURIComponent(brand)}&q=${encodeURIComponent(itemName)}`, { signal: controller.signal });
+        const response = await fetch(`/api/catalog/search?brand=${encodeURIComponent(brand)}&q=${encodeURIComponent(itemName)}&brief=1`, { signal: controller.signal });
         const body = await response.json() as { local?: CatalogProduct[] };
         const fixtures = fixtureProducts.filter((item) => normalizeCatalogText(item.brand_name) === normalizedBrand && normalizeCatalogText(item.name).includes(normalizedItem));
         const merged = [...fixtures, ...(body.local ?? [])]
           .filter((item) => normalizeCatalogText(item.brand_name) === normalizedBrand)
-          .filter((item, index, all) => all.findIndex((other) => other.id === item.id) === index);
+          .filter((item, index, all) => all.findIndex((other) => other.id === item.id) === index)
+          .sort((a,b)=>Number(normalizeCatalogText(b.name).startsWith(normalizedItem))-Number(normalizeCatalogText(a.name).startsWith(normalizedItem))||a.name.localeCompare(b.name));
         for (const item of merged) itemSuggestionCache.current.set(item.id, item);
-        const exactMatch = merged.find((item) => normalizeCatalogText(item.name) === normalizedItem);
-        if (exactMatch) { chooseProduct(exactMatch); return; }
         setItemSuggestions(merged.slice(0, 12));
       } catch (cause) {
         if ((cause as Error).name !== "AbortError" && cached.length === 0) setItemSuggestions([]);
@@ -653,6 +685,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     : UNMATCHED_GUIDANCE;
   const typeLocked = Boolean(product?.garment_type_key) && !typeIssue;
   const showItemSuggestions = (!product || itemIssue) && Boolean(brand.trim()) && normalizeCatalogText(itemName).length >= 2 && itemSuggestions.length > 0;
+  const showBrandSuggestions = brandSuggestionsOpen && (!product || brandIssue) && brandSuggestions.length > 0;
   const showCompactTagUpload = intakeSource !== "tag_photo";
 
   return <>
@@ -677,9 +710,9 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
         <div className="fieldPair">
           <div className={styles.editableField}>
             <label>Brand / Make
-              <input ref={brandInput} name="brand" list={brand.trim() && (!product || brandIssue) ? "brand-options" : undefined} maxLength={120} value={brand} readOnly={Boolean(product) && !brandIssue} onChange={(event) => { setBrand(event.target.value); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required data-review-label="Brand" />
-              <datalist id="brand-options">{brandSuggestions.map((item) => <option value={item.name} key={item.id}/>)}</datalist>
+              <input ref={brandInput} name="brand" maxLength={120} value={brand} readOnly={Boolean(product) && !brandIssue} autoComplete="off" onFocus={() => setBrandSuggestionsOpen(true)} onBlur={() => window.setTimeout(() => setBrandSuggestionsOpen(false), 120)} onChange={(event) => { setBrand(event.target.value); setBrandSuggestionsOpen(true); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required data-review-label="Brand" />
             </label>
+            {showBrandSuggestions ? <div className={styles.itemSuggestionDropdown} role="listbox" aria-label="Brand suggestions">{brandSuggestions.map((item) => <button className="catalogSuggestion" type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setBrand(item.name); setBrandSuggestionsOpen(false); setCandidateDefaultSizeKind(null); setItemSuggestions([]); window.requestAnimationFrame(() => itemNameInput.current?.focus()); }} key={item.id}><span><b>{item.name}</b></span></button>)}</div> : null}
             {product && !brandIssue ? <button className={styles.changeThis} type="button" onClick={changeMatchedBrand}>Change</button> : null}
           </div>
           <div className={styles.itemField}>
@@ -687,7 +720,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
               <label>Item / Style / Model
                 <input ref={itemNameInput} name="product" maxLength={180} value={itemName} readOnly={Boolean(product) && !itemIssue} onChange={(event) => { setItemName(event.target.value); setCandidateDefaultSizeKind(null); setItemSuggestions([]); }} required placeholder="e.g. 501 Original" autoComplete="off" data-review-label="Item" />
               </label>
-              {showItemSuggestions ? <div className={styles.itemSuggestionDropdown} role="listbox" aria-label="Existing LikeSized items">{itemSuggestions.map((item) => <button className="catalogSuggestion" type="button" onClick={() => chooseProduct(item)} key={item.id}><span><b>{item.name}</b><small>Already in LikeSized</small></span></button>)}</div> : null}
+              {showItemSuggestions ? <div className={styles.itemSuggestionDropdown} role="listbox" aria-label="Existing LikeSized items">{itemSuggestions.map((item) => <button className="catalogSuggestion" type="button" onClick={() => void chooseSuggestedProduct(item)} key={item.id}><span><b>{item.name}</b><small>Already in LikeSized</small></span></button>)}</div> : null}
             </div>
             {product && !itemIssue ? <button className={styles.changeThis} type="button" onClick={changeMatchedItem}>Change</button> : null}
             {!product ? <label className={styles.uncertaintyCheck}><input name="item_identity_uncertain" type="checkbox" value="1" checked={identityUncertain} onChange={(event) => { const checked = event.target.checked; setIdentityUncertain(checked); if (checked) openIdentityHelp(); else setIdentityHelpOpen(false); }}/><span>I’m not sure this is the correct item/style name</span></label> : null}

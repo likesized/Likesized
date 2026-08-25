@@ -1,0 +1,24 @@
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 26px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.tab{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 18px;border:1px solid var(--line);border-radius:999px;text-decoration:none;font-weight:800;background:var(--surface,#fff);color:inherit}
+.active{background:#181818;color:#fff;border-color:#181818}
+.outfitHeader{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.outfitHeader p{margin:4px 0 0}
+.outfitGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.outfitCard{border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff;min-width:0}
+.outfitPhotoLink{display:block;background:#f3f0ec;aspect-ratio:4/5;overflow:hidden}
+.outfitPhotoLink img{width:100%;height:100%;display:block;object-fit:cover}
+.outfitPhotoFallback{width:100%;height:100%;display:grid;place-items:center;color:#777;font-weight:800;padding:20px;text-align:center}
+.outfitBody{display:grid;gap:10px;padding:14px}
+.ownerIdentity{display:flex;align-items:center;gap:9px;min-width:0}
+.ownerAvatar,.ownerAvatarFallback{width:34px;height:34px;border-radius:50%;flex:0 0 34px;object-fit:cover}
+.ownerAvatarFallback{display:grid;place-items:center;background:#ece7e1;font-weight:900}
+.ownerIdentity span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.outfitMeta{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#6b6b6b;font-size:.85rem}
+.status{font-weight:900;text-transform:uppercase;letter-spacing:.06em;font-size:.72rem}
+.outfitTitle{font-size:1.05rem;line-height:1.25}
+.outfitCounts{display:flex;gap:14px;font-size:.88rem;color:#555}
+.fituition{display:grid;gap:18px;max-width:780px}
+.fituitionCard{border:1px solid var(--line);border-radius:18px;padding:22px;background:#fff;display:grid;gap:10px}
+.fituitionCard h2,.fituitionCard p{margin:0}
+@media(max-width:900px){.outfitGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.outfitGrid{grid-template-columns:1fr}.outfitHeader{align-items:flex-start;flex-direction:column}.tabs{gap:6px}.tab{flex:1;padding:0 12px}}

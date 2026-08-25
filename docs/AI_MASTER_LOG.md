@@ -278,9 +278,10 @@ Applied migrations are immutable. PR #86 adds no migration.
 - Product merge/split, richer alias management, spam handling, broader Product-photo moderation, field lock/reopen, external barcode-provider evaluation, SerpAPI admin UX and starter-catalog enrichment remain open where previously scoped.
 - `main` is currently not branch-protected; required PR + CI protection remains a separate owner decision and must not be changed silently.
 
-# RECENT CANONICAL LINEAGE
-Historical branches have no current authority; Git history preserves superseded implementations and current files define current truth.
+# CANONICAL RECOVERY — COMPLETE
+The 2026-08-21 canonical recovery is complete. No recovery freeze is active. Historical repair branches and superseded files have no current authority; Git history preserves them for provenance while current canonical files and `main` define present truth. Do not resurrect an old branch/file as a competing source merely because it still exists in Git history.
 
+# RECENT CANONICAL LINEAGE
 Recent production lineage:
 - PR #80 — stopping-point Roadmap 12 repair — DEPLOYED.
 - PR #81 — tagged-item live regression repair — DEPLOYED, merge `1743b0638ac80a5465dba8bb52cab831f6f35148`.

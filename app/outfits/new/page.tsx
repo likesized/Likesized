@@ -159,7 +159,7 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
   const saved = first(params.saved) === "1";
   const editing = initial?.status === "published";
   return <main className="pageShell">
-    <div className={styles.composerPageHeader}><div><span className="eyebrow">{editing ? "EDIT OUTFIT" : "NEW OUTFIT"}</span><h1>{editing ? "Edit Outfit." : "Create an Outfit."}</h1><p>Add photos, a few details, and the items you’re wearing.</p></div><Link className={styles.quietBackLink} href={editing && initial?.id ? `/outfits/${initial.id}` : "/outfits"}>← Back to Outfits</Link></div>
+    <div className={styles.composerPageHeader}><div><span className="eyebrow">{editing ? "EDIT OUTFIT" : "NEW OUTFIT"}</span><h1>{editing ? "Edit Outfit." : "Create an Outfit."}</h1><p>Add photos, a few details, and the items you’re wearing.</p></div><Link prefetch={false} className={styles.quietBackLink} href={editing && initial?.id ? `/outfits/${initial.id}` : "/closet?tab=outfits"}>← Back to My Closet</Link></div>
     {saved ? <div className="authMessage">Draft saved.</div> : null}
     <OutfitComposer closet={closet} initial={initial} styleSuggestions={styleSuggestions} />
   </main>;

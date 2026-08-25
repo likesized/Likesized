@@ -64,8 +64,7 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
     const category=product.garment_type_key?(GARMENT_TYPE_BY_KEY.get(product.garment_type_key)?.label??product.garment_type_key.replaceAll("_"," ")):"Garment";
     if(!profileReady)return [productId,{category,profileReady:false,matchingFitReports:0,strong:false,fitSnippet:null,bestMatch:null}] as const;
 
-    const {data:candidateData,error:candidateError}=await supabase.rpc("get_product_evidence_candidates",{p_product_id:productId,p_variant_id:null,p_result_limit:160});
-    if(candidateError)return [productId,{category,profileReady:true,matchingFitReports:0,strong:false,fitSnippet:null,bestMatch:null}] as const;
+    const {data:candidateData}=await supabase.rpc("get_product_evidence_candidates",{p_product_id:productId,p_variant_id:null,p_result_limit:160});
     const candidates=(candidateData??[]) as Candidate[];
     const usefulExact=candidates.filter((row)=>row.evidence_product_id===productId&&(row.evidence_level==="exact_product"||row.evidence_level==="exact_variant")&&row.historical_match_score>=50);
     const ownExactReports=ownReports.filter((report)=>report.product_id===product.id&&report.garment_condition==="normal");

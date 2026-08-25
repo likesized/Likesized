@@ -8,29 +8,31 @@ const taggedPanel=readFileSync(new URL("../app/outfits/[id]/TaggedItemsPanel.tsx
 const css=readFileSync(new URL("../app/outfits/[id]/outfitDetail.module.css",import.meta.url),"utf8");
 
 test("photo hotspots can open the canonical tagged quick view from any detail tab",()=>{
-  assert.match(tabs,/tab==="style"\?styleNotes:null/);
+  assert.match(tabs,/tab==="style"\?<div ref=\{styleRef\}/);
   assert.match(tabs,/tab==="comments"\?comments:null/);
   assert.match(tabs,/taggedTabDormant/);
   assert.match(tabs,/\{taggedItems\}/);
+  assert.match(tabs,/return_to:`\$\{window\.location\.pathname\}\$\{window\.location\.search\}`/);
   assert.match(css,/\.taggedTabDormant \.taggedGrid\{display:none\}/);
 });
 
 test("Matching Fit Reports and recommendation evidence collapse repeat reports by tracked variation",()=>{
   assert.match(taggedFit,/newestUniqueVariationEvidence/);
   assert.match(taggedFit,/objective_variant_key/);
-  assert.match(taggedFit,/usefulExactVariations=new Set/);
-  assert.match(taggedFit,/variationEvidenceKey\(report\.user_id,report\.product_id,report\.objective_variant_key,report\.id\)/);
-  assert.match(taggedFit,/matchingFitReports:usefulExactVariations\.size/);
+  assert.match(taggedFit,/const relevantExact=candidates\.filter/);
+  assert.match(taggedFit,/row\.historical_match_score>=QUICK_VIEW_STRONG_MATCH_THRESHOLD/);
+  assert.match(taggedFit,/matchingFitReports:relevantExact\.length/);
 });
 
 test("insufficient FITuition copy agrees with a positive matching-evidence count",()=>{
-  assert.match(taggedPanel,/FITuition isn’t confident enough yet\./);
-  assert.match(taggedPanel,/We found \{meta\.matchingFitReports\} relevant fit/);
+  assert.match(taggedPanel,/I’m not confident enough to recommend a size yet\./);
+  assert.match(taggedPanel,/I found \{meta\.matchingFitReports\} Fit Report/);
+  assert.match(taggedPanel,/for this exact variation from people close to your measurements/);
   assert.doesNotMatch(taggedPanel,/No useful exact-item Fit Reports match your Fit Profile yet/);
 });
 
 test("mobile tagged quick view stays readable and Report stays in the viewport",()=>{
-  assert.match(css,/\.itemPreviewInfo>strong,\.itemPreviewInfo>span,\.fitSnippet strong,\.fitSnippet span\{white-space:normal;overflow-wrap:anywhere\}/);
-  assert.match(css,/@media\(max-width:640px\)[\s\S]*\.itemPreviewCard\{width:min\(380px,calc\(100vw - 16px\)\);max-height:calc\(100dvh - 16px\);overflow:auto/);
-  assert.match(css,/@media\(max-width:640px\)[\s\S]*\.itemReport>form\{position:fixed;z-index:150;left:12px;right:12px;top:auto;bottom:max\(12px,env\(safe-area-inset-bottom\)\)/);
+  assert.match(css,/\.itemPreviewInfo\{display:grid;gap:3px;min-width:0\}/);
+  assert.match(css,/@media\(max-width:640px\)[\s\S]*\.itemPreviewCard\{width:100%;max-height:min\(86dvh,720px\);padding:18px;border-radius:18px\}/);
+  assert.match(css,/@media\(max-width:640px\)[\s\S]*\.itemReport>form\{position:fixed/);
 });

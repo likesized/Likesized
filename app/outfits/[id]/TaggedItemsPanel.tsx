@@ -6,7 +6,7 @@ import { reportProductItem } from "@/app/item/[slug]/actions";
 import { addToWishLocker, likeProduct, removeFromWishLocker, unlikeProduct } from "@/app/likelocker/actions";
 import { SwipeDismissImageLightbox } from "@/components/SwipeDismissImageLightbox";
 import { UniversalActionBar, UniversalActionButton, UniversalActionLink, UniversalActionSummary } from "@/components/UniversalActionBar";
-import quickStyles from "./CreatorQuickView.module.css";
+import quickStyles from "./TaggedItemsPanel.module.css";
 import styles from "./outfitDetail.module.css";
 
 export type TaggedItem={

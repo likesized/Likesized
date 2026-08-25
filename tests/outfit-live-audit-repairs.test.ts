@@ -15,6 +15,7 @@ const commentThread=readFileSync(new URL("../app/outfits/[id]/CommentThread.tsx"
 const commentComposer=readFileSync(new URL("../app/outfits/[id]/CommentComposer.tsx",import.meta.url),"utf8");
 const commentApi=readFileSync(new URL("../app/api/outfits/[id]/comments/route.ts",import.meta.url),"utf8");
 const commentPageMigration=readFileSync(new URL("../supabase/migrations/20260825021000_outfit_comment_cursor_pagination.sql",import.meta.url),"utf8");
+const interactionMigration=readFileSync(new URL("../supabase/migrations/20260825152000_outfit_public_hotspots_and_comment_sorting.sql",import.meta.url),"utf8");
 const pickerCss=readFileSync(new URL("../app/outfits/new/outfitPicker.module.css",import.meta.url),"utf8");
 const lockerActions=readFileSync(new URL("../app/likelocker/actions.ts",import.meta.url),"utf8");
 const actions=readFileSync(new URL("../app/outfits/actions.ts",import.meta.url),"utf8");
@@ -177,21 +178,25 @@ test("Tagged quick view uses useful fit context, compact actions, and a logged-o
  assert.match(taggedFit,/recommendation\.confidence>=45/);
 });
 
-test("comments use real newest-first cursor pagination with a bottom composer",()=>{
+test("comments default to Top with Newest available and use local API mutations",()=>{
  assert.match(commentThread,/PAGE_SIZE=20/);
- assert.match(commentThread,/requestPage/);
- assert.match(commentThread,/before_created_at/);
- assert.match(commentThread,/Load earlier comments/);
+ assert.match(commentThread,/useState<SortMode>\("top"\)/);
+ assert.match(commentThread,/>Top<\/button>/);
+ assert.match(commentThread,/>Newest<\/button>/);
+ assert.match(commentThread,/before_like_count/);
  assert.match(commentThread,/commentsSheetFooter/);
  assert.match(detail,/comments=1/);
  assert.doesNotMatch(detail,/limit\(200\)|get_public_outfit_comments/);
- assert.match(commentApi,/get_outfit_comments_page/);
- assert.match(commentPageMigration,/order by oc\.created_at desc,oc\.id desc/);
- assert.match(commentPageMigration,/p_before_created_at/);
- assert.match(commentThread,/likeOutfitComment/);
+ assert.match(commentApi,/get_outfit_comments_sorted_page/);
+ assert.match(interactionMigration,/case when p_sort = 'top' then oc\.like_count end desc/);
+ assert.match(interactionMigration,/p_before_like_count/);
+ assert.match(commentApi,/export async function POST/);
+ assert.match(commentApi,/export async function PATCH/);
+ assert.doesNotMatch(commentThread,/likeOutfitComment|unlikeOutfitComment/);
  assert.match(commentThread,/reportContent/);
  assert.match(commentThread,/comment\.canDelete/);
- assert.doesNotMatch(commentComposer,/Plain text only|GIFs|external links/);
+ assert.doesNotMatch(commentComposer,/action=\{addOutfitComment\}/);
+ assert.match(commentComposer,/onChange=\{\(event\)=>setBody/);
  assert.match(detailCss,/\.commentIdentity a\{display:grid/);
  assert.match(detailCss,/\.commentsSheetFooter\{position:sticky;bottom:0/);
 });

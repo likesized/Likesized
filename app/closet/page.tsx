@@ -7,11 +7,12 @@ import styles from "./closet.module.css";
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 type ClosetTab = "garments" | "outfits" | "fituition";
 type ClosetRow = { id: string; variant_id: string | null; size_label: string; wears_count: number; product: unknown; submission: unknown };
-type ProductView = { id: string; name: string; slug: string; category: string; garment_type_key: string | null; brand: unknown };
+type ProductView = { id: string; name: string; slug: string; category: string; garment_type_key: string | null; image_url:string|null; brand: unknown };
 type BrandView = { name: string };
-type PendingView = { brand_text: string; model_text: string; garment_type_key: string };
+type PendingView = { brand_text: string; model_text: string; garment_type_key: string; product_photo_storage_path:string|null };
 type FitReport = { closet_item_id: string; fit: string; would_buy_again: boolean | null; created_at: string };
 type FitPhoto = { closet_item_id: string; storage_path: string; photo_role: "front" | "back" };
+type ProductPhotoEvidence={product_id:string;public_url:string;source_status:string;created_at:string};
 type UnconfirmedStatus = { closet_item_id: string; candidate_id: string; candidate_status: string; retailer_url: string | null; has_product_photo: boolean; has_label_photo: boolean };
 type Profile = { username: string; display_name: string | null; avatar_url: string | null };
 type OutfitRow = { id: string; headline: string | null; status: "draft" | "published"; published_at: string | null; created_at: string; like_count: number; comment_count: number };
@@ -111,7 +112,7 @@ export default async function ClosetPage({ searchParams }: { searchParams: Searc
   const deleted = first(params.deleted) === "1";
   const evidenceAdded = first(params.evidence_added) === "1";
   const [{ data, error }, { data: unconfirmedData, error: unconfirmedError }] = await Promise.all([
-    supabase.from("closet_items").select("id,variant_id,size_label,wears_count,product:products(id,name,slug,category,garment_type_key,brand:brands(name)),submission:garment_submissions(brand_text,model_text,garment_type_key)").eq("user_id", userId).order("created_at", { ascending: false }),
+    supabase.from("closet_items").select("id,variant_id,size_label,wears_count,product:products(id,name,slug,category,garment_type_key,image_url,brand:brands(name)),submission:garment_submissions(brand_text,model_text,garment_type_key,product_photo_storage_path)").eq("user_id", userId).order("created_at", { ascending: false }),
     supabase.rpc("get_own_unconfirmed_submission_status"),
   ]);
   if (error || unconfirmedError) throw new Error("Could not load Closet.");
@@ -119,29 +120,44 @@ export default async function ClosetPage({ searchParams }: { searchParams: Searc
   const items = (data ?? []) as ClosetRow[];
   const followupByItem = new Map(((unconfirmedData ?? []) as UnconfirmedStatus[]).filter((row) => row.candidate_status === "needs_more_evidence").map((row) => [row.closet_item_id, row]));
   const ids = items.map((item) => item.id);
+  const productIds=[...new Set(items.flatMap((item)=>{const product=one<ProductView>(item.product);return product?[product.id]:[];}))];
   let reports: FitReport[] = [];
   let photos: FitPhoto[] = [];
+  let productPhotos:ProductPhotoEvidence[]=[];
   if (ids.length) {
-    const [{ data: reportData, error: reportError }, { data: photoData, error: photoError }] = await Promise.all([
+    const [{ data: reportData, error: reportError }, { data: photoData, error: photoError },productPhotoResult] = await Promise.all([
       supabase.from("fit_reports").select("closet_item_id,fit,would_buy_again,created_at").in("closet_item_id", ids).order("created_at", { ascending: false }),
       supabase.from("fit_reference_photos").select("closet_item_id,storage_path,photo_role").in("closet_item_id", ids),
+      productIds.length?supabase.from("product_photo_evidence").select("product_id,public_url,source_status,created_at").in("product_id",productIds).neq("source_status","rejected").order("created_at",{ascending:false}):Promise.resolve({data:[],error:null}),
     ]);
-    if (reportError || photoError) throw new Error("Could not load Closet evidence.");
+    if (reportError || photoError || productPhotoResult.error) throw new Error("Could not load Closet evidence.");
     reports = (reportData ?? []) as FitReport[];
     photos = (photoData ?? []) as FitPhoto[];
+    productPhotos=(productPhotoResult.data??[]) as ProductPhotoEvidence[];
   }
 
   const latestReportByItem = new Map<string, FitReport>();
   for (const report of reports) if (!latestReportByItem.has(report.closet_item_id)) latestReportByItem.set(report.closet_item_id, report);
-  const photoByItem = new Map<string, string>();
-  for (const row of [...photos].sort((a, b) => Number(a.photo_role !== "front") - Number(b.photo_role !== "front"))) if (!photoByItem.has(row.closet_item_id)) photoByItem.set(row.closet_item_id, row.storage_path);
-  const signedPhotos = new Map<string, string>();
-  await Promise.all(items.map(async (item) => {
-    const path = photoByItem.get(item.id);
-    if (!path) return;
-    const { data: signed } = await supabase.storage.from("fit-reference-photos").createSignedUrl(path, 60 * 30);
-    if (signed?.signedUrl) signedPhotos.set(item.id, signed.signedUrl);
-  }));
+  const productPhotoByProduct=new Map<string,string>();
+  for(const row of productPhotos)if(!productPhotoByProduct.has(row.product_id)&&row.public_url)productPhotoByProduct.set(row.product_id,row.public_url);
+  const fitPhotosByItem=new Map<string,FitPhoto[]>();
+  for(const row of photos)fitPhotosByItem.set(row.closet_item_id,[...(fitPhotosByItem.get(row.closet_item_id)??[]),row]);
+  const signedFitPhotos = new Map<string, string>();
+  await Promise.all(photos.map(async(row)=>{const {data:signed}=await supabase.storage.from("fit-reference-photos").createSignedUrl(row.storage_path,60*30);if(signed?.signedUrl)signedFitPhotos.set(row.storage_path,signed.signedUrl);}));
+  const privateProductPhotoByItem=new Map<string,string>();
+  await Promise.all(items.map(async(item)=>{const submission=one<PendingView>(item.submission);const path=submission?.product_photo_storage_path;if(!path)return;const {data:signed}=await supabase.storage.from("catalog-submission-photos").createSignedUrl(path,60*30);if(signed?.signedUrl)privateProductPhotoByItem.set(item.id,signed.signedUrl);}));
+  const displayPhotoByItem=new Map<string,string>();
+  for(const item of items){
+    const product=one<ProductView>(item.product);
+    const fitRows=fitPhotosByItem.get(item.id)??[];
+    const front=fitRows.find((row)=>row.photo_role==="front");
+    const back=fitRows.find((row)=>row.photo_role==="back");
+    const frontUrl=front?signedFitPhotos.get(front.storage_path):undefined;
+    const productUrl=product?.image_url||(product?productPhotoByProduct.get(product.id):undefined)||privateProductPhotoByItem.get(item.id);
+    const backUrl=back?signedFitPhotos.get(back.storage_path):undefined;
+    const chosen=frontUrl||productUrl||backUrl;
+    if(chosen)displayPhotoByItem.set(item.id,chosen);
+  }
 
   return <main className="pageShell">
     <div className="pageTitle rowTitle"><div><span className="eyebrow">MY CLOSET</span><h1>Everything you wear, in one place.</h1></div><Link className="primaryButton" href="/closet/add">+ Add garment</Link></div>
@@ -155,13 +171,13 @@ export default async function ClosetPage({ searchParams }: { searchParams: Searc
       const brand = one<BrandView>(product?.brand);
       const submission = one<PendingView>(item.submission);
       const report = latestReportByItem.get(item.id);
-      const photo = signedPhotos.get(item.id);
+      const photo = displayPhotoByItem.get(item.id);
       const followup = followupByItem.get(item.id);
       const displayBrand = brand?.name || submission?.brand_text || "Brand";
       const displayName = product?.name || submission?.model_text || "Garment";
       const displayType = product?.garment_type_key || submission?.garment_type_key;
       return <div className="closetRow" key={item.id}>
-        {photo ? <img className="garmentPhoto" src={photo} alt="Fit reference" /> : <div className="garmentThumb">{displayBrand.slice(0, 1).toUpperCase()}</div>}
+        {photo ? <img className="garmentPhoto" src={photo} alt="Fit Report display" /> : <div className="garmentThumb">{displayBrand.slice(0, 1).toUpperCase()}</div>}
         <div className="closetMain"><span className="muted">{displayBrand}</span><strong>{displayName}</strong><span>{product ? (CATEGORY_LABELS[product.category] || "Other") : (displayType ? displayType.replaceAll("_", " ") : "Garment")}{product && displayType ? ` · ${displayType.replaceAll("_", " ")}` : ""}</span>{followup ? <div><small className="muted"><b>More information needed.</b> We couldn’t confidently identify this item yet. You still have full use of it in your Closet and Styles, but it won’t appear in garment searches for other members until it can be verified.</small><br /><Link className="textLink" href={`/closet/${item.id}/edit?evidence=1#identity-evidence`}>Add More Information →</Link></div> : null}</div>
         <div><span className="muted">SIZE</span><strong>{item.size_label}</strong></div>
         <div><span className="muted">LATEST FIT</span><strong>{FIT_LABELS[report?.fit || ""] || "—"}</strong></div>

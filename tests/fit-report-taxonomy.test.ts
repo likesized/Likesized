@@ -110,8 +110,9 @@ test("final confirmation reviews only main Fit Report fields before server submi
  assert.match(form,/\[data-review-label\], input\[name='size_normalized_label'\]/);
  assert.match(intake,/data-review-label="Overall Fit Result"/);
  assert.match(intake,/data-review-label="Condition"/);
- assert.match(photoFields,/data-review-label="Front Fit Photo"/);
- assert.match(photoFields,/data-review-label="Back Fit Photo"/);
+ assert.match(photoFields,/data-review-label=\{label\}/);
+ assert.match(photoFields,/FitPhotoCard label="Front Fit Photo"/);
+ assert.match(photoFields,/FitPhotoCard label="Back Fit Photo"/);
  assert.match(form,/data-review-label="Fit notes"/);
  assert.match(catalog,/data-review-label="Retail link"/);
  assert.doesNotMatch(catalog,/name="purchased_from"[^>]*data-review-label/);

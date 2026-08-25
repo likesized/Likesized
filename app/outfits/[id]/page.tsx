@@ -9,6 +9,7 @@ import { OUTFIT_OCCASION_LABELS } from "@/lib/outfit-taxonomy";
 import { currentProfilePhotoUrl } from "@/lib/profile-photo";
 import { createClient } from "@/lib/supabase/server";
 import CommentComposer from "./CommentComposer";
+import CommentThread from "./CommentThread";
 import ConfirmDeleteOutfit from "./ConfirmDeleteOutfit";
 import OutfitEngagementClient from "./OutfitEngagementClient";
 import OutfitGallery, { type GalleryGarment, type GalleryPhoto } from "./OutfitGallery";
@@ -17,7 +18,6 @@ import TaggedItemsPanel, { type TaggedItem } from "./TaggedItemsPanel";
 import styles from "./outfitDetail.module.css";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const FIT_LABELS: Record<string, string> = { too_small: "Too small", snug: "Snug", just_right: "Just right", relaxed: "Relaxed", too_big: "Too big" };
 const TYPE_LABELS = new Map(GARMENT_TYPES.map((item)=>[item.key,item.label]));
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -207,7 +207,7 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
     const brand = product ? brandById.get(product.brand_id) : null;
     if(!report||!product)return [];
     const typeLabel=product.garment_type_key?(TYPE_LABELS.get(product.garment_type_key)??product.garment_type_key.replaceAll("_"," ")):"Garment";
-    return [{ id: link.closet_item_id, label: `${brand?.name || "Brand"} · ${product.name}`, detail: `${typeLabel} · ${report.size_label} · ${FIT_LABELS[report.fit] || report.fit}`, href: `/item/${product.slug}`,imageUrl:product.image_url }];
+    return [{ id: link.closet_item_id, label: `${brand?.name || "Brand"} · ${product.name}`, detail: typeLabel, href: `/item/${product.slug}`,imageUrl:product.image_url }];
   });
   const galleryPhotos: GalleryPhoto[] = photoRows.flatMap((photo) => {
     const url = photoUrls.get(photo.id);
@@ -217,42 +217,49 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
     const report=latestByCloset.get(garment.id);const product=report?.product_id?productById.get(report.product_id):null;
     return product?[{closetItemId:garment.id,productId:product.id,label:garment.label,detail:garment.detail,href:garment.href,imageUrl:product.image_url,liked:productLiked.has(product.id),wished:productWished.has(product.id),canShop:retailerByProduct.has(product.id)}]:[];
   });
-  const taggedItems:TaggedItem[]=viewerId?memberTaggedItems:publicTeasers.map((product)=>({closetItemId:`product-${product.product_id}`,productId:product.product_id,label:`${product.brand_name} · ${product.product_name}`,detail:"Sign in to see size worn and Fit Result",href:`/item/${product.product_slug}`,imageUrl:product.image_url,liked:false,wished:false,canShop:false}));
+  const taggedItems:TaggedItem[]=viewerId?memberTaggedItems:publicTeasers.map((product)=>({closetItemId:`product-${product.product_id}`,productId:product.product_id,label:`${product.brand_name} · ${product.product_name}`,detail:"Garment",href:`/item/${product.product_slug}`,imageUrl:product.image_url,liked:false,wished:false,canShop:false}));
 
   const returnTo = `/outfits/${id}`;
-  const commentsReturnTo=`/outfits/${id}?tab=comments`;
+  const commentsReturnTo=`/outfits/${id}?tab=comments&comments=1`;
   const publishedAt = outfit.published_at || outfit.created_at;
   const published = first(query.published) === "1";
   const updated = first(query.updated) === "1";
   const reported = first(query.reported) === "1";
   const commentError = first(query.comment_error) === "1";
+  const commentsOpen = first(query.comments) === "1";
   const creatorTwin=viewerId&&!owner&&following?fitTwinLabel(fitTwinDesignation({overall:overallMatch,tops:topsMatch,bottoms:bottomsMatch},threshold)):null;
 
   const styleNotes=<div className={styles.styleNotes}>
-    <div><span className={styles.tabEyebrow}>OUTFIT TITLE</span><h1>{outfit.headline||"Outfit"}</h1></div>
-    <div><span className={styles.tabEyebrow}>OUTFIT TAGS</span><div className={styles.pills}>{(occasionsResult.data??[]).map((row)=><span key={row.occasion}>{OUTFIT_OCCASION_LABELS.get(row.occasion)??row.occasion}</span>)}{(stylesResult.data??[]).map((row)=><span key={row.display_tag}>#{row.display_tag}</span>)}</div></div>
-    <div><span className={styles.tabEyebrow}>OUTFIT DESCRIPTION</span>{outfit.story?<p className={styles.storyText}>{outfit.story}</p>:<p className="muted">No Style Notes added.</p>}</div>
+    <h1>{outfit.headline||"Outfit"}</h1>
+    <div className={styles.pills}>{(occasionsResult.data??[]).map((row)=><span key={row.occasion}>{OUTFIT_OCCASION_LABELS.get(row.occasion)??row.occasion}</span>)}{(stylesResult.data??[]).map((row)=><span key={row.display_tag}>#{row.display_tag}</span>)}</div>
+    {outfit.story?<p className={styles.storyText}>{outfit.story}</p>:<p className="muted">No Style Notes added.</p>}
   </div>;
 
-  const commentsPanel=<div className={styles.commentsPanel}>
-    {outfit.comments_enabled?<>
-      {viewerId?<CommentComposer postId={id} returnTo={commentsReturnTo}/>:<Link className={styles.compactSecondary} href={`/login?next=${encodeURIComponent(commentsReturnTo)}`}>Sign in to comment</Link>}
-      {commentError?<div className="authMessage error">Comment must be plain text, 500 characters or less, with no external links.</div>:null}
-      <div className={styles.commentList}>{comments.length?comments.map((comment)=>{
-        const authorName=comment.profile?.display_name?.trim()||comment.profile?.username||"LikeSized member";
-        const canDelete=Boolean(viewerId&&(owner||comment.user_id===viewerId));
-        const isLiked=commentLiked.has(comment.id);
-        return <article className={styles.comment} key={comment.id}>
-          {comment.avatarUrl?<img className={styles.commentAvatar} src={comment.avatarUrl} alt=""/>:<div className={styles.commentAvatarFallback}>{authorName.slice(0,1).toUpperCase()}</div>}
-          <div className={styles.commentBody}><div className={styles.commentIdentity}>{comment.profile?.username?<Link href={`/people/${comment.profile.username}`}><strong>{authorName}</strong> <span>@{comment.profile.username}</span></Link>:<strong>{authorName}</strong>}<small>{formatDate(comment.created_at)}</small></div><p>{comment.body}</p><div className={styles.commentActions}>
-            {viewerId?<form action={isLiked?unlikeOutfitComment:likeOutfitComment}><input type="hidden" name="comment_id" value={comment.id}/><input type="hidden" name="post_id" value={id}/><input type="hidden" name="return_to" value={commentsReturnTo}/><button type="submit" aria-label={isLiked?"Unlike comment":"Like comment"} title={isLiked?"Unlike comment":"Like comment"}>{isLiked?"♥":"♡"}{comment.like_count?` ${comment.like_count}`:""}</button></form>:<span>♡{comment.like_count?` ${comment.like_count}`:""}</span>}
-            {viewerId?<ReportContentForm targetType="outfit_comment" targetId={comment.id} returnTo={commentsReturnTo} summaryLabel="Report comment" iconOnly/>:<span title="Sign in to report">⚑</span>}
-            {canDelete?<form action={deleteOutfitComment}><input type="hidden" name="comment_id" value={comment.id}/><input type="hidden" name="post_id" value={id}/><input type="hidden" name="return_to" value={commentsReturnTo}/><button type="submit">Delete</button></form>:null}
-          </div></div>
-        </article>;
-      }):<p className="muted">No comments yet.</p>}</div>
-    </>:<p className="muted">Comments are off for this Outfit.</p>}
-  </div>;
+  const commentNodes=comments.map((comment)=>{
+    const authorName=comment.profile?.display_name?.trim()||comment.profile?.username||"LikeSized member";
+    const canDelete=Boolean(viewerId&&(owner||comment.user_id===viewerId));
+    const isLiked=commentLiked.has(comment.id);
+    return <article className={styles.comment} key={comment.id}>
+      {comment.avatarUrl?<img className={styles.commentAvatar} src={comment.avatarUrl} alt=""/>:<div className={styles.commentAvatarFallback}>{authorName.slice(0,1).toUpperCase()}</div>}
+      <div className={styles.commentBody}>
+        <div className={styles.commentIdentity}>{comment.profile?.username?<Link href={`/people/${comment.profile.username}`}><strong>{authorName}</strong><span>@{comment.profile.username}</span></Link>:<strong>{authorName}</strong>}<small>{formatDate(comment.created_at)}</small></div>
+        <div className={styles.commentTextRow}><p>{comment.body}</p><div className={styles.commentActions}>
+          {viewerId?<form action={isLiked?unlikeOutfitComment:likeOutfitComment}><input type="hidden" name="comment_id" value={comment.id}/><input type="hidden" name="post_id" value={id}/><input type="hidden" name="return_to" value={commentsReturnTo}/><button type="submit" aria-label={isLiked?"Unlike comment":"Like comment"} title={isLiked?"Unlike comment":"Like comment"}>{isLiked?"♥":"♡"}{comment.like_count?` ${comment.like_count}`:""}</button></form>:<span>♡{comment.like_count?` ${comment.like_count}`:""}</span>}
+          {viewerId?<ReportContentForm targetType="outfit_comment" targetId={comment.id} returnTo={commentsReturnTo} summaryLabel="Report comment" iconOnly/>:<span title="Sign in to report">⚑</span>}
+          {canDelete?<form action={deleteOutfitComment}><input type="hidden" name="comment_id" value={comment.id}/><input type="hidden" name="post_id" value={id}/><input type="hidden" name="return_to" value={commentsReturnTo}/><button type="submit">Delete</button></form>:null}
+        </div></div>
+      </div>
+    </article>;
+  });
+  const commentErrorNode=commentError?<div className="authMessage error">Comment must be plain text, 500 characters or less, with no external links.</div>:null;
+  const commentsPanel=outfit.comments_enabled?<CommentThread
+    comments={commentNodes}
+    commentCount={outfit.comment_count}
+    initialOpen={commentsOpen}
+    composer={viewerId?<CommentComposer postId={id} returnTo={commentsReturnTo}/>:null}
+    signIn={!viewerId?<Link className={styles.compactSecondary} href={`/login?next=${encodeURIComponent(commentsReturnTo)}`}>Sign in to comment</Link>:null}
+    error={commentErrorNode}
+  />:<p className="muted">Comments are off for this Outfit.</p>;
 
   return <main className="pageShell">
     {published?<div className="authMessage">Outfit published.</div>:updated?<div className="authMessage">Outfit updated.</div>:reported?<div className="authMessage">Report sent.</div>:null}
@@ -269,14 +276,15 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
       <OutfitGallery photos={galleryPhotos} garments={garments} canViewTags={Boolean(viewerId)}/>
 
       <div className={styles.outfitActionBar}>
-        {viewerId?<form action={liked?unlikeOutfit:likeOutfit}><input type="hidden" name="post_id" value={id}/><input type="hidden" name="return_to" value={returnTo}/><button className={styles.iconAction} type="submit" aria-label={liked?"Unlike Outfit":"Like Outfit"} title={liked?"Unlike Outfit":"Like Outfit"}>{liked?"♥":"♡"}</button></form>:<Link className={styles.iconAction} href={`/login?next=${encodeURIComponent(returnTo)}`} aria-label="Sign in to Like Outfit" title="Sign in to Like Outfit">♡</Link>}
-        {viewerId&&!owner?following?<button className={styles.iconAction} type="button" aria-label="Following" title="Following" disabled>👤✓</button>:<form action={followFromOutfit}><input type="hidden" name="post_id" value={id}/><input type="hidden" name="return_to" value={returnTo}/><button className={styles.iconAction} type="submit" aria-label={`Follow @${profile?.username??creatorName}`} title="Follow">👤+</button></form>:null}
-        <OutfitEngagementClient postId={id} headline={outfit.headline||"Outfit"}/>
-        {viewerId&&!owner?<ReportContentForm targetType="outfit_post" targetId={id} returnTo={returnTo} summaryLabel="Report Outfit" iconOnly/>:null}
+        {!owner?<>
+          {viewerId?<form action={liked?unlikeOutfit:likeOutfit}><input type="hidden" name="post_id" value={id}/><input type="hidden" name="return_to" value={returnTo}/><button className={styles.iconAction} type="submit" aria-label={liked?"Unlike Outfit":"Like Outfit"} title={liked?"Unlike Outfit":"Like Outfit"}><span aria-hidden="true">{liked?"♥":"♡"}</span><span className={styles.actionCount}>{outfit.like_count}</span></button></form>:<Link className={styles.iconAction} href={`/login?next=${encodeURIComponent(returnTo)}`} aria-label="Sign in to Like Outfit" title="Sign in to Like Outfit"><span aria-hidden="true">♡</span><span className={styles.actionCount}>{outfit.like_count}</span></Link>}
+          {viewerId?following?<button className={styles.iconAction} type="button" aria-label="Following" title="Following" disabled>👤✓</button>:<form action={followFromOutfit}><input type="hidden" name="post_id" value={id}/><input type="hidden" name="return_to" value={returnTo}/><button className={styles.iconAction} type="submit" aria-label={`Follow @${profile?.username??creatorName}`} title="Follow">👤+</button></form>:<Link className={styles.iconAction} href={`/login?next=${encodeURIComponent(returnTo)}`} aria-label="Sign in to Follow" title="Sign in to Follow">👤+</Link>}
+        </>:null}
+        <OutfitEngagementClient postId={id} headline={outfit.headline||"Outfit"} shareCount={outfit.share_count}/>
+        {!owner?(viewerId?<ReportContentForm targetType="outfit_post" targetId={id} returnTo={returnTo} summaryLabel="Report Outfit" iconOnly/>:<Link className={styles.iconAction} href={`/login?next=${encodeURIComponent(returnTo)}`} aria-label="Sign in to Report Outfit" title="Sign in to Report Outfit">⚑</Link>):null}
       </div>
-      <div className={styles.engagementCounts}><span>♥ {outfit.like_count}</span><span>💬 {outfit.comment_count}</span><span>↗ {outfit.share_count}</span></div>
 
-      <OutfitTabs initialTab={initialTab} styleNotes={styleNotes} comments={commentsPanel} taggedItems={<TaggedItemsPanel items={taggedItems} postId={id} signedIn={Boolean(viewerId)}/>}/>
+      <OutfitTabs initialTab={initialTab} commentCount={outfit.comment_count} styleNotes={styleNotes} comments={commentsPanel} taggedItems={<TaggedItemsPanel items={taggedItems} postId={id} signedIn={Boolean(viewerId)}/>}/>
 
       {owner?<section className={styles.ownerTools}>
         <div><strong>{outfit.view_count}</strong><span>Views</span></div><div><strong>{outfit.follows_generated_count}</strong><span>Follows generated</span></div>

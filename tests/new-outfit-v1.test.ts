@@ -108,15 +108,13 @@ test("opened Outfit is a direct-navigation one-photo gallery with no secondary t
  assert.doesNotMatch(gallery,/thumbnail/i);
 });
 
-test("opened Outfit uses Style Notes, Comments, and Tagged Items tabs",()=>{
+test("opened Outfit uses Style Notes, Comments, and Tagged Items tabs without redundant Style Note labels",()=>{
  assert.match(detailPage,/OutfitTabs/);
  assert.match(tabs,/\["style","Style Notes"\]/);
- assert.match(tabs,/\["comments","Comments"\]/);
+ assert.match(tabs,/\["comments",`Comments · \$\{commentCount\}`\]/);
  assert.match(tabs,/\["tagged","Tagged Items"\]/);
  assert.match(tabs,/initialTab="style"/);
- assert.match(detailPage,/OUTFIT TITLE/);
- assert.match(detailPage,/OUTFIT TAGS/);
- assert.match(detailPage,/OUTFIT DESCRIPTION/);
+ assert.doesNotMatch(detailPage,/OUTFIT TITLE|OUTFIT TAGS|OUTFIT DESCRIPTION/);
 });
 
 test("opened Outfit creator header and social row stay compact and contextual",()=>{
@@ -132,11 +130,11 @@ test("opened Outfit creator header and social row stay compact and contextual",(
  assert.doesNotMatch(detailPage,/blockMemberFromOutfit/);
 });
 
-test("Tagged Items preview before navigation and uses Like, Wish Locker, and cart actions",()=>{
+test("Tagged Items preview before navigation uses Like, Wish Locker, Shop, Share, and Report",()=>{
  assert.match(tagged,/setSelectedId/);
  assert.match(tagged,/Full details →/);
  assert.match(tagged,/Wish Locker/);
- assert.match(tagged,/🛒/);
+ assert.match(tagged,/>Shop<\/Link>/);
  assert.match(tagged,/\/api\/outfits\/\$\{postId\}\/shop\?product_id=/);
  assert.match(shopRoute,/retailer_listings/);
  assert.match(shopRoute,/product_url/);

@@ -43,21 +43,39 @@ Going forward:
 - Current production application merge: **`41c92a5c94a8d03d59b627f8f5b55e37bdcf482f`**, squash merge of PR #77 **Complete Roadmap 12 live-review repairs**.
 - Exact PR #77 final head: **`2a6ada938db7772bf27819593d97f5d3556e4312`**.
 - Full LikeSized CI #853 (`32791915054`) passed on that exact head: canonical integrity, exact dependencies, TypeScript, all focused application safeguards, production build, complete fresh migration replay and complete database behavior/privacy suite.
-- Owner explicitly authorized production deployment of the finished batch on 2026-08-24.
+- Owner explicitly authorized production deployment of the finished PR #77 batch on 2026-08-24.
 - Three additive PR #77 migrations were applied and smoke-verified in production Supabase before application cutover.
 - PR #77 production Vercel deployment: **`dpl_3EUNtQettqxv8LwvTt9FGer8FaJL`**.
 - That deployment reached READY, owned **`likesized.com`**, returned live HTTP 200, and the checked deployment-scoped error/fatal runtime window was clean.
 - Post-production canonical reconciliation PR #78 exact head **`b088784773c192a09cb42d00ce10d7ac2c1c2b93`** passed full LikeSized CI #855 (`32792808295`) and squash merged as **`3618632c75f502469d9f7d49254d3edd85211aa1`**.
 - PR #78 docs-only Vercel deployment **`dpl_DCh7D9gSFKjmCY1rJGwvwhF5HnRJ`** reached READY and owned `likesized.com`; PR #78 changed no application/database behavior.
-- **No active product implementation branch is open now.** The next branch begins only from a new owner-directed live-review batch or the next authorized roadmap step.
+- **Active implementation line:** `agent/roadmap12-live-audit-2`, PR #79 **Complete Roadmap 12 live-audit follow-up**. This branch is not merged and is not production-live.
+- PR #79 production/main merge and deployment remain separately owner-gated; the owner's instruction to fix the review queue authorized implementation, not production deployment.
 - Applied database migrations are immutable; future corrections use later ordered migrations.
 - No paid Supabase branches.
 
-## Roadmap 12 — New Outfit — DEPLOYED THROUGH PR #77 / OWNER LIVE RE-AUDIT REMAINS THE GATE
-Roadmap 12 foundation and successive live-repair batches are production-live through PR #77. The owner has already exercised create/draft/preview/publish/opened-Outfit behavior and supplied the latest repair batch. Continue owner live re-audit on the new production. **Do not advance to Roadmap 13 until the owner finishes the New Outfit audit.**
+## Roadmap 12 — New Outfit — PR #79 FOLLOW-UP IMPLEMENTED / EXACT-HEAD VERIFICATION IS THE CURRENT GATE
+Roadmap 12 foundation and prior repair batches remain production-live through PR #77. The owner completed another rapid live-review pass and explicitly directed the accumulated follow-up queue implemented on PR #79. The PR #79 source now carries that follow-up behavior; it must pass the full required exact-head verification and still requires explicit owner production authorization before merge/deploy. **Do not advance to Roadmap 13 until the owner finishes the New Outfit audit.**
+
+# PR #79 OWNER LIVE-REVIEW FOLLOW-UP — IMPLEMENTED ON BRANCH / NOT PRODUCTION-LIVE
+Owner-approved follow-up behavior now implemented on `agent/roadmap12-live-audit-2`:
+1. **Outfit social actions:** another member's Outfit shows Like · Follow · Share · Flag; the creator's own Outfit shows Share only. Social actions sit directly under the media, right-aligned on desktop, with each count directly beside its corresponding action rather than in a separate count row.
+2. **Universal social-density rule:** social controls and their counts remain visually attached to the content they act on; disconnected count rows and unnecessary dead space are not canonical.
+3. **Compact Outfit detail:** desktop media/content width and vertical spacing are restrained; the gallery ends with the rendered image instead of a large empty container before actions. Mobile remains touch-usable without inheriting giant desktop/mobile controls.
+4. **Comments:** the Outfit tab shows a small comment preview; **View all X comments** opens a dedicated comments sheet with progressive batches and a sticky bottom composer. Comment identity stacks Display Name with `@username` underneath; actions remain tight to the comment. The visible “Plain text only / no images, GIFs, or external links” helper is removed while server-side plain-text/link restrictions remain enforced.
+5. **Style Notes:** redundant `OUTFIT TITLE`, `OUTFIT TAGS`, and `OUTFIT DESCRIPTION` labels are removed. The actual Headline, tags and Story provide their own meaning.
+6. **Tagged Items card:** the compact card shows only Product photo, Brand · Item Name, Category/Garment Type (for example **Bra**), and **Matching Fit Reports: X**. Wearer-specific Size/Fit Result such as `M · Just Right` is not presented as viewer advice on this card.
+7. **Tagged Item quick view:** the modal is the middle layer between card and full Product page. It shows identity/category/report count plus a short FITuition result when evidence is strong; weak evidence is stated plainly with a link to the evidence LikeSized does have. Full details remains the complete Product/evidence page.
+8. **Tagged Product actions:** quick view exposes **Like Locker · Wish Locker · Shop · Share · Report**. Shop appears only with a valid retailer destination. Like Locker and Wish Locker update in place and do not dismiss the quick view.
+9. **Photo-tag regression:** the single-image gallery remains canonical, and each active photo again renders only the tag hotspots belonging to that photo.
+10. **My Closet responsiveness:** the corrected Closet/Outfits layout applies across desktop, tablet and mobile rather than stopping at desktop.
+11. **Compact-control rule:** LikeSized controls default compact/content-sized with restrained height/padding/radius. Oversized CTA-like dropdowns, random full-width buttons and giant cards/modals are not the default. Full-width controls are deliberate exceptions, primarily where a mobile primary action truly needs them.
+12. **Homepage FAQ copy:** the owner approved simpler customer-facing wording for Fit Twins and the LikeSized differentiation answer. Fit Twin copy now explains that anyone can be followed, that a Fit Twin is especially similar across both tops and bottoms, and that one-area matches may show as Tops Twin or Bottoms Twin without exposing internal threshold/Overall-Match mechanics. The differentiation answer now centers on garment-relevant measurements, fit tracked to the specific item because sizing varies, and FITuition combining how the item fit similar people with what LikeSized has learned from the user's own Closet history.
+
+PR #79 adds focused safeguards for these owner-approved behaviors. No new database migration is required for this follow-up batch.
 
 # PR #77 OWNER LIVE-REVIEW BATCH — DEPLOYED / VERIFIED
-The corrected rapid live-review queue is now implemented, verified and production-live. The prior mistaken interpretation that the owner wanted tagged-garment detail fields “less stacked” was invalid and is not canonical. The actual stacking issue was the Outfit feed collapsing into a single vertical column instead of the intended pinboard layout.
+The corrected prior rapid live-review queue is implemented, verified and production-live. The prior mistaken interpretation that the owner wanted tagged-garment detail fields “less stacked” was invalid and is not canonical. The actual stacking issue was the Outfit feed collapsing into a single vertical column instead of the intended pinboard layout.
 
 Deployed corrections:
 1. **Photo Tags / Use Cover Photo Tags:** rendered as an obvious interactive action/button rather than passive-looking text.
@@ -70,11 +88,11 @@ Deployed corrections:
 8. **Save Draft responsiveness:** keeps explicit pending/saved feedback, avoids unnecessary photo re-upload/reprocessing and does not intentionally freeze/reload the editor after a successful save.
 9. **Preview scroll:** Preview Publish starts at the top rather than inheriting a bottom scroll position.
 10. **Opened Outfit gallery:** one-photo viewer on **mobile and desktop**; secondary images stay hidden behind the active image; no visible thumbnail/secondary strip is the primary navigation. Mobile swipe/tap and desktop click/pointer-drag/keyboard navigation are supported where applicable.
-11. **Tagged garment details:** include Garment Category/Type, such as **Bra**, alongside Brand/Item, Size and Fit Result.
+11. **Tagged garment context:** signed-in opened Outfit data may resolve the tagged canonical Product/category and underlying Fit Report evidence, but PR #79 supersedes the visible Tagged Items card presentation: the compact viewer-facing card no longer leads with the wearer's Size/Fit Result.
 12. **Outfit feed layout:** uses the intended responsive multi-column masonry/pinboard rhythm rather than unnecessary one-column stacking.
 13. **Creator analytics:** separate creator analytics expose **Views + Follows generated** only. Likes/Comments/Shares are not duplicated because those social counts are already visible. Shop-click attribution stays internal LikeSized data and is not a creator-facing metric/explanatory block.
 14. **Delete safety:** deleting a published Outfit requires explicit confirmation.
-15. **Tagged Product action layout:** Product identity and View/Like/Wish Locker/Shop actions are grouped in a compact balanced responsive card on mobile and desktop instead of large dead spacing.
+15. **Tagged Product action foundation:** canonical Product actions and retailer-listing routing are available from the opened Outfit; PR #79 supersedes the visible quick-view grouping/copy with Like Locker · Wish Locker · Shop · Share · Report.
 16. **Comments:** **plain text only** — no rich text, markup/formatting controls, embedded media or nested reply system.
 
 Additional production-live PR #77 work tied to the same owner review:
@@ -137,8 +155,8 @@ Optional Additional Information remains collapsed: Purchased From, Price Paid, P
 - Color never defines tracked variation;
 - `lib/garment-taxonomy.ts` owns the one current map.
 
-## Shopping / wishlist
-Like, Wishlist and Shop/Cart remain independent. Shop appears only with a valid retailer destination. No destination = no Shop. Canonical shopping destinations are `retailer_listings`; affiliate commission never changes relevance/Match/recommendation.
+## Shopping / lockers
+Like Locker, Wish Locker and Shop/Cart remain independent. Shop appears only with a valid retailer destination. No destination = no Shop. Canonical shopping destinations are `retailer_listings`; affiliate commission never changes relevance/Match/recommendation.
 
 ## Product Detail evidence — ROADMAP DEFERRED
 Exact tracked-variation evidence comes first. Related variation evidence is secondary and must identify the actual variation difference. Strong reports aggregate only the exact same variation. Body Match remains body similarity, not garment-fit probability.
@@ -147,7 +165,7 @@ Exact tracked-variation evidence comes first. Related variation evidence is seco
 FITuition combines Size Match evidence with Closet History to recommend size. Exact-variation evidence is strongest; related variation is fallback/supporting evidence. Closet History is weighted by garment relevance. Confidence is separate from recommendation score and reflects evidence quantity/quality/agreement/separation. Member-facing UI shows recommendation, confidence and understandable evidence—not the internal numeric FITuition score.
 
 # ROADMAP / OWNER RE-AUDIT ORDER
-1. Homepage + FAQ — live; exact sex/body-specific measurement FAQ wording still pending owner approval.
+1. Homepage + FAQ — production-live baseline; owner-approved Fit Twin and LikeSized-difference copy refinements are implemented on PR #79 and are not production-live yet; exact sex/body-specific measurement FAQ wording still pending owner approval.
 2. Global header / member menu / admin entry — broader owner interaction audit remains.
 3. Auth — owner confirmed.
 4. Fit Profile / My Measurements — broader audit remains.
@@ -159,7 +177,7 @@ FITuition combines Size Match evidence with Closet History to recommend size. Ex
 10. My Circle / Following / system-generated Fit Twin — broader ranking/activity audit remains; regional Twin rule is production-live.
 11. New Fit Report — current evidence-first flow and suggestion-speed fixes deployed.
 11A. **Garment-question variation classification — COMPLETE / DEPLOYED.**
-12. **New Outfit — production deployed through PR #77; authenticated owner live re-audit remains the current gate.**
+12. **New Outfit — production remains live through PR #77; PR #79 owner follow-up is implemented on the active branch and awaiting final verification + separate production authorization.**
 13. Outfits / Style Feed — follows Roadmap 12; full discovery/ranking audit remains after owner finishes Roadmap 12 audit.
 14. Garment/Product detail — Exact Variation consumes the canonical 11A map when reached.
 15. Explore.
@@ -187,7 +205,8 @@ PR #77 mappings:
 Production smoke verification after these migrations proved `profile-photos` public identity storage, the comment-Like table and the corrected public comment projection were live before application cutover.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Continue owner live re-audit of PR #77 production across create → Draft/resume → Preview → Publish → opened Outfit/detail/gallery/hotspots → edit → comments/social → practical mobile/desktop behavior. New findings belong to the next review batch.
+- Finish exact-head verification for PR #79 and keep it off `main`/production until the owner explicitly authorizes deployment.
+- After deployment authorization and live cutover, continue the owner New Outfit re-audit across create → Draft/resume → Preview → Publish → opened Outfit/detail/gallery/hotspots → edit → comments/social → practical mobile/desktop behavior.
 - **Roadmap 13 remains blocked until the owner says the Roadmap 12/New Outfit audit is complete.**
 - Future work must preserve the owner-locked app-transition direction and avoid needless browser-only coupling.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification.
@@ -210,7 +229,7 @@ Recent relevant lineage:
 - `agent/outfit-ios-photo-encoding-repair` — RECOVERED via PR #76 / DEPLOYED.
 - `agent/roadmap-app-transition-live-review` — RECOVERED via **PR #77 / DEPLOYED**.
 - `agent/post-pr77-production-reconciliation` — RECOVERED via **PR #78 / DEPLOYED docs-only**.
-- **No active implementation line.**
+- `agent/roadmap12-live-audit-2` — **ACTIVE via PR #79 / NOT DEPLOYED**.
 
 # CONDENSED DEPLOYMENT LEDGER
 - 2026-08-21 CANONICAL RECOVERY established one clean source-of-truth line; PR #43 promoted it.
@@ -227,10 +246,11 @@ Recent relevant lineage:
 - PR #72 fixed signed-in published Outfit Product reads/shopping source; deployed.
 - PR #74 shipped New Outfit live-audit batch 2; deployed.
 - PR #76 fixed iOS/Safari Outfit photo conversion fallback; exact head `36d5a433a16d844ada1e5cfdd67264f8caf5a918`, CI #801, merge `e4af3074806a0e2307d7e8d0c21e821c70425eaa`, Vercel `dpl_AU3ZyuW84yEi5X1G27kCd3mX6iX6` READY.
-- **PR #77 completed the current Roadmap 12 live-review repair batch**: exact head `2a6ada938db7772bf27819593d97f5d3556e4312`; full CI #853 (`32791915054`) passed; production migrations `20260825000654`, `20260825000708`, `20260825000722` applied/smoke-verified; squash merge **`41c92a5c94a8d03d59b627f8f5b55e37bdcf482f`**; Vercel **`dpl_3EUNtQettqxv8LwvTt9FGer8FaJL`** READY and serving `likesized.com`; live HTTP 200; checked deployment-scoped error/fatal logs clean.
+- **PR #77 completed the prior Roadmap 12 live-review repair batch**: exact head `2a6ada938db7772bf27819593d97f5d3556e4312`; full CI #853 (`32791915054`) passed; production migrations `20260825000654`, `20260825000708`, `20260825000722` applied/smoke-verified; squash merge **`41c92a5c94a8d03d59b627f8f5b55e37bdcf482f`**; Vercel **`dpl_3EUNtQettqxv8LwvTt9FGer8FaJL`** READY and serving `likesized.com`; live HTTP 200; checked deployment-scoped error/fatal logs clean.
 - **PR #78 reconciled canonical production truth after PR #77**: exact head `b088784773c192a09cb42d00ce10d7ac2c1c2b93`; full CI #855 (`32792808295`) passed; squash merge **`3618632c75f502469d9f7d49254d3edd85211aa1`**; docs-only Vercel **`dpl_DCh7D9gSFKjmCY1rJGwvwhF5HnRJ`** READY and serving `likesized.com`; no application/database behavior change.
+- **PR #79 is the current owner-approved Roadmap 12 follow-up implementation batch. It is open, under exact-head verification, and not deployed.**
 
 # EXACT NEXT ACTION — CURRENT
-1. Return `likesized.com` to the owner for continued live testing of the PR #77 repair batch.
-2. New owner findings become the next live-review batch and may be implemented on one new active branch when directed.
+1. Finish full exact-head CI for PR #79 and correct any real regression without reverting owner-approved behavior merely to satisfy stale tests.
+2. Do not merge/deploy PR #79 until the owner explicitly authorizes production.
 3. Keep Roadmap 13 blocked until the owner explicitly finishes the New Outfit/Roadmap 12 audit.

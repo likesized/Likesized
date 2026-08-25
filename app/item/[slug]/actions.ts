@@ -12,11 +12,12 @@ export async function reportProductItem(formData:FormData){
   const reason=String(formData.get("reason")??"");
   const details=String(formData.get("details")??"").trim().slice(0,500);
   const returnTo=String(formData.get("return_to")??"");
+  const stayOpen=String(formData.get("stay_open")??"")==="1";
   if(!UUID.test(productId)||!REPORT_REASONS.has(reason))throw new Error("Choose a valid report reason.");
 
   const supabase=await createClient();
   const {data:claims,error:claimsError}=await supabase.auth.getClaims();
-  if(claimsError||!claims?.claims?.sub)redirect(`/login?next=${encodeURIComponent(returnTo.startsWith("/item/")?returnTo:"/search")}`);
+  if(claimsError||!claims?.claims?.sub)redirect(`/login?next=${encodeURIComponent(returnTo.startsWith("/item/")||returnTo.startsWith("/outfits/")?returnTo:"/search")}`);
 
   const {error}=await supabase.rpc("report_product_item",{
     p_product_id:productId,
@@ -26,6 +27,10 @@ export async function reportProductItem(formData:FormData){
   if(error)throw new Error(error.message);
 
   revalidatePath("/moderation");
+  if(stayOpen){
+    if(returnTo.startsWith("/outfits/")&&!returnTo.startsWith("//"))revalidatePath(returnTo.split("?")[0]);
+    return;
+  }
   if(returnTo.startsWith("/item/")&&!returnTo.startsWith("//")){
     redirect(`${returnTo}${returnTo.includes("?")?"&":"?"}reported=1`);
   }

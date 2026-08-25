@@ -306,6 +306,7 @@ LikeSized has one canonical member Closet meaning, not separate My Closet and Sh
 - Unconfirmed/Needs More Evidence garments remain usable by the owner in Styles/Outfits while unresolved identity/review state stays private.
 - FITuition in My Closet explains/reuses the same canonical Fit Report and Closet-history recommendation evidence; it is not a second recommendation engine.
 - Broader Closet lifecycle/mutation behavior remains a later Closet audit; it must not reintroduce a second visibility system.
+- My Closet layout and behavior are responsive across desktop, tablet and mobile. A correction to the canonical Closet surface is not considered complete when only one breakpoint receives it.
 
 # 13. Controlled taxonomy — LOCKED
 Top-level categories:
@@ -474,18 +475,28 @@ Outfits are member-created mini editorial posts built from owned Closet garments
 
 ## Published Outfit detail and public sharing
 - Every published Outfit has one canonical shareable detail URL at `/outfits/[id]` with social-preview metadata using the Main Photo, Headline, creator identity and LikeSized branding.
+- The opened Outfit defaults to a **compact social-post scale**, not a giant billboard. Desktop uses a restrained content/media width and tight vertical rhythm; mobile remains touch-friendly without arbitrarily inflating cards, controls or modals. LikeSized controls default compact/content-sized unless a deliberate mobile primary action genuinely needs full width.
 - The opened gallery is a **single-image viewer on both mobile and desktop**. Secondary photos stay hidden behind the active image instead of appearing as a thumbnail/secondary strip. Touch swipe/drag and tap advance work on mobile; desktop click plus pointer/trackpad drag-style navigation and keyboard arrows work where applicable.
+- The gallery container ends with the rendered media instead of reserving dead space beneath it. Social actions sit immediately below the media and are right-aligned on desktop.
+- Photo hotspots remain attached to the specific active photo they belong to. Combining the photos into a one-image viewer never removes or merges away the active photo's tag overlays.
 - Logged-out visitors may read the published editorial layer: gallery, Headline, creator display identity/handle, Occasion, Style Tags, Outfit Story, social counts, readable comments, and teasers for already-resolved canonical tagged Products.
 - Creator/comment profile identity is resolved live from the member's current public profile identity/photo; old profile photos are not snapshotted onto Outfit/comment records.
-- Logged-out visitors do **not** receive Size Worn, Fit Result, Fit Report/body-match evidence, Closet linkage, unresolved candidate/review state, LikeLocker/Product-like state or authenticated shopping actions.
-- Signed-in members may receive the detailed garment layer: Product link/image, Garment Type, Size Worn, Fit Result, photo hotspots and normal Product Like/Wishlist/Shop actions when valid retailer destinations exist.
-- Tagged-item Product actions use a compact responsive grouping rather than large dead spacing between Product identity and actions.
+- Logged-out visitors do **not** receive private Closet linkage, raw body data, unresolved candidate/review state or authenticated member action state.
+- The **Style Notes** tab presents the actual Headline, tags and Story directly. Redundant labels such as `OUTFIT TITLE`, `OUTFIT TAGS` and `OUTFIT DESCRIPTION` are not shown.
+- The **Tagged Items** compact card is viewer-facing Product identification, not a dump of the poster's Fit Report. It shows only **Product photo · Brand + Item Name · Category/Garment Type · Matching Fit Reports count**. The poster's Size Worn/Fit Result is not presented as the card's primary takeaway for another viewer.
+- Opening a Tagged Item creates a useful middle-layer quick view rather than simply enlarging the same card. It adds a short personalized **FITuition** snippet when evidence is strong; when LikeSized lacks strong useful evidence, it says so plainly and offers a link to the evidence available. **Full details** opens the full Product/evidence page, where complete Fit Report/evidence breakdown belongs.
+- Tagged Product quick-view actions are **Like Locker · Wish Locker · Shop · Share · Report**. Shop exists only with a valid `retailer_listings` destination. Like Locker and Wish Locker update in place and do not dismiss the quick view; the modal closes only from an intentional dismissal/back/outside action or navigation such as Full details.
 - An Unconfirmed or Needs More Evidence garment may be used by its owner in an Outfit, but unresolved identity/admin-review state never leaks and never creates a public/searchable Product teaser until resolved.
 - Raw body measurements remain private in every Outfit context.
 
 ## Social controls
-- V1 Outfit actions are **Like · Comment · Follow · Share**. Follow reuses the one canonical `follows` graph.
-- Comments are **plain text only** in V1: no rich-text editor, markup/formatting controls, embedded media or nested replies. Logged-out visitors may read visible comments but must sign in to comment.
+- On **another member's Outfit**, the visible social row is **Like · Follow · Share · Flag**. Follow reuses the one canonical `follows` graph.
+- On the **creator's own Outfit**, self-Like, self-Follow and self-Flag are hidden; the social row exposes **Share only**. Owner management controls such as Edit, comments on/off, delete and creator analytics remain separate from the social row.
+- Social controls stay visually tight to the media/content they act on. A count is rendered directly beside its corresponding action/icon rather than in a separate count line.
+- Comments are **plain text only** in V1: no rich-text editor, markup/formatting controls, embedded media or nested replies. The restriction is enforced without permanently displaying a noisy “plain text only / no GIFs / no external links” helper under the composer.
+- The Outfit Comments tab shows a compact preview rather than an unbounded vertical thread. **View all X comments** opens the dedicated full comments view/sheet; comments are revealed progressively in manageable batches and the comment composer remains sticky at the bottom.
+- Comment identity is compact: avatar, Display Name, `@username` directly underneath, then comment text. Like/Flag/Delete actions stay tight to the comment they affect; Delete appears only when the viewer is authorized.
+- Logged-out visitors may read visible comments but must sign in to comment.
 - Signed-in members may Like visible comments. Comment-Like state is private to the liking member while the safe aggregate count is visible.
 - Members may delete their own comments; an Outfit creator may remove comments on their Outfit. Outfit posts/comments support reporting; signed-in members may block another member from that member's profile context.
 - Creators may turn comments off and back on without deleting the preserved thread.

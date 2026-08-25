@@ -86,9 +86,9 @@ const faqs = [
   {
     question: "What makes LikeSized different from other sizing and fashion tools?",
     answer: <div className={styles.faqAnswer}>
-      <p className={styles.faqLead}>Many sizing tools start with size charts, general reviews, or a predicted size. LikeSized starts with real Fit Reports from people whose bodies are similar to yours and uses the measurements that matter for the garment you’re looking at.</p>
-      <p>LikeSized also tracks fit down to the individual item whenever real Fit Reports exist. Two pairs of pants from the same brand can fit completely differently, so we don’t assume a brand, clothing category, or printed size fits the same across every product.</p>
-      <p className={styles.faqTakeaway}>If someone built like you has already worn the exact item, you can see what size they wore and how it actually fit them. That’s a lot more useful than assuming every item from the same brand fits the same.</p>
+      <p>We compare the <strong>measurements that matter for the type of clothing you’re looking at</strong>, because the measurements that matter for jeans aren’t necessarily the same ones that matter for a bra, jacket, or pair of shoes.</p>
+      <p>We also track fit down to the <strong>specific item</strong>, because a size Medium—or even two Mediums from the same brand—can fit very differently.</p>
+      <p>Then <strong>FITuition</strong> combines how the item has fit people similar to you with what we’ve learned from your own Closet history. Together, that helps us make a better size recommendation.</p>
     </div>,
   },
   {
@@ -98,9 +98,9 @@ const faqs = [
   {
     question: "What is a Fit Twin, and do I have to be Fit Twins to follow someone?",
     answer: <div className={styles.faqAnswer}>
-      <p><strong>No.</strong> Following and Twin status are different. You can follow anyone whose style or fit activity you want to keep up with.</p>
-      <p>LikeSized compares your current <strong>Tops Match</strong> and <strong>Bottoms Match</strong> separately. When a person you follow clears the current strong-match threshold in both regions, they qualify as a <strong>Fit Twin</strong>. If only Tops clears it, they can be a <strong>Tops Twin</strong>; if only Bottoms clears it, they can be a <strong>Bottoms Twin</strong>.</p>
-      <p>Your <strong>Overall Match</strong> still shows your general body similarity. A high Overall Match by itself does not create a Fit Twin designation.</p>
+      <p><strong>No.</strong> You can follow anyone on LikeSized whose style or clothing you want to keep up with.</p>
+      <p>A <strong>Fit Twin</strong> is someone whose body measurements are especially similar to yours for both tops and bottoms. If you’re a strong match in only one area, they may show as a <strong>Tops Twin</strong> or <strong>Bottoms Twin</strong> instead.</p>
+      <p>Fit Twin status is simply LikeSized’s way of pointing out the people whose clothing experiences may be especially useful to you.</p>
     </div>,
   },
   {

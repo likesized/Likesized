@@ -26,7 +26,11 @@ async function viewer() {
 async function change(table: "product_likes" | "wish_locker_items" | "product_evidence_notifications", add: boolean, formData: FormData) {
   const productId = value(formData, "product_id");
   const destination = returnTo(formData);
-  if (!productId) redirect(destination);
+  const stayOpen = value(formData, "stay_open") === "1";
+  if (!productId) {
+    if (stayOpen) return;
+    redirect(destination);
+  }
   const { supabase, userId } = await viewer();
   const operation = add
     ? supabase.from(table).upsert({ user_id: userId, product_id: productId }, { onConflict: "user_id,product_id" })
@@ -36,6 +40,7 @@ async function change(table: "product_likes" | "wish_locker_items" | "product_ev
   revalidatePath("/explore");
   revalidatePath("/likelocker");
   if (destination.startsWith("/outfits/")) revalidatePath(destination.split("?")[0]);
+  if (stayOpen) return;
   redirect(destination);
 }
 

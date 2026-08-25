@@ -12,7 +12,7 @@ type BrandRecord = { name: string };
 type FitReport = { closet_item_id: string; fit: string; created_at: string };
 type StyleSuggestionRow = { display_tag: string | null };
 type OutfitRow = { id: string; status: "draft" | "published"; headline: string | null; story: string | null; comments_enabled: boolean };
-type OutfitPhotoRow = { id: string; bucket: "outfit-photos" | "outfit-draft-photos"; display_path: string; sort_order: number; is_main: boolean };
+type OutfitPhotoRow = { id: string; bucket: "outfit-photos" | "outfit-draft-photos"; display_path: string; sort_order: number; is_main: boolean; caption:string|null };
 type OutfitPhotoTag = { photo_id: string; closet_item_id: string; x: number; y: number };
 type AttributeRow={product_id:string;attribute_key:string;option_key:string};
 type VariantRow={id:string;color_label:string|null};
@@ -68,7 +68,7 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
       supabase.from("outfit_post_items").select("closet_item_id").eq("post_id", requestedId),
       supabase.from("outfit_occasions").select("occasion,sort_order").eq("post_id", requestedId).order("sort_order"),
       supabase.from("outfit_style_tags").select("display_tag,sort_order").eq("post_id", requestedId).order("sort_order"),
-      supabase.from("outfit_photos").select("id,bucket,display_path,sort_order,is_main").eq("post_id", requestedId).order("sort_order"),
+      supabase.from("outfit_photos").select("id,bucket,display_path,sort_order,is_main,caption").eq("post_id", requestedId).order("sort_order"),
     ])
     : Promise.resolve(null);
 
@@ -100,19 +100,21 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
     }).slice(0,4);
     const fitPhotoUrls=(fitPhotosByItem.get(item.id)??[]).sort((a,b)=>a.photo_role.localeCompare(b.photo_role)).flatMap((row)=>{const url=signedFitPhotoByPath.get(row.storage_path);return url?[url]:[];});
     const photoUrls=[...(product?.image_url?[product.image_url]:[]),...fitPhotoUrls];
+    const garmentTypeLabel=TYPE_LABELS.get(garmentType) ?? garmentType.replaceAll("_", " ");
+    const color=item.variant_id?variantById.get(item.variant_id)?.color_label??null:null;
     return {
       id: item.id,
       label: `${brand?.name || "Brand"} · ${product?.name || "Garment"}`,
-      detail: `Size ${item.size_label}${report ? ` · ${FIT_LABELS[report.fit] || report.fit}` : ""}`,
+      detail: [garmentTypeLabel,`Size ${item.size_label}`,color].filter(Boolean).join(" · "),
       brand: brand?.name || "Brand",
       itemName: product?.name || "Garment",
       garmentType,
-      garmentTypeLabel: TYPE_LABELS.get(garmentType) ?? garmentType.replaceAll("_", " "),
+      garmentTypeLabel,
       category,
       categoryLabel: CATEGORY_LABELS.get(category) ?? category.replaceAll("_", " "),
       size:item.size_label,
       fit:report?FIT_LABELS[report.fit]||report.fit:"Not listed",
-      color:item.variant_id?variantById.get(item.variant_id)?.color_label??null:null,
+      color,
       photoUrls,
       answers,
       createdAt: item.created_at,
@@ -137,7 +139,7 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
     if (photoTagsResult.error) throw new Error(`Could not load Outfit photo tags: ${photoTagsResult.error.message}`);
     const photoTags = (photoTagsResult.data ?? []) as OutfitPhotoTag[];
     const urlByPhoto = new Map<string, string>(photoUrls);
-    initial = { id: row.id, status: row.status, headline: row.headline ?? "", story: row.story ?? "", commentsEnabled: row.comments_enabled, closetItemIds: (itemsResult.data ?? []).map((item) => String(item.closet_item_id)), occasions: (occasionsResult.data ?? []).map((item) => String(item.occasion)), styleTags: (stylesResult.data ?? []).map((item) => String(item.display_tag)), photos: photoRows.flatMap((photo) => { const url = urlByPhoto.get(photo.id); return url ? [{ id: photo.id, url, isMain: photo.is_main, sortOrder: photo.sort_order, tags: photoTags.filter((tag) => tag.photo_id === photo.id).map((tag) => ({ closetItemId: tag.closet_item_id, x: Number(tag.x), y: Number(tag.y) })) }] : []; }) };
+    initial = { id: row.id, status: row.status, headline: row.headline ?? "", story: row.story ?? "", commentsEnabled: row.comments_enabled, closetItemIds: (itemsResult.data ?? []).map((item) => String(item.closet_item_id)), occasions: (occasionsResult.data ?? []).map((item) => String(item.occasion)), styleTags: (stylesResult.data ?? []).map((item) => String(item.display_tag)), photos: photoRows.flatMap((photo) => { const url = urlByPhoto.get(photo.id); return url ? [{ id: photo.id, url, isMain: photo.is_main, sortOrder: photo.sort_order, caption:photo.caption??"", tags: photoTags.filter((tag) => tag.photo_id === photo.id).map((tag) => ({ closetItemId: tag.closet_item_id, x: Number(tag.x), y: Number(tag.y) })) }] : []; }) };
   } else if (preselectedClosetItemId) {
     initial = { id: "", status: "draft", headline: "", story: "", commentsEnabled: true, closetItemIds: [preselectedClosetItemId], occasions: [], styleTags: [], photos: [] };
   }

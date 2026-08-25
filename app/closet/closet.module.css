@@ -16,7 +16,7 @@
 .outfitMeta{display:flex;align-items:center;justify-content:space-between;gap:6px;color:#6b6b6b;font-size:.72rem}
 .status{font-weight:900;text-transform:uppercase;letter-spacing:.05em;font-size:.62rem}
 .outfitTitle{font-size:.9rem;line-height:1.2}
-.outfitCounts{display:flex;gap:9px;font-size:.74rem;color:#555}
+.outfitCounts{display:flex;align-items:center;gap:10px;font-size:.74rem;color:#555}.outfitCounts span{display:inline-flex;align-items:center;gap:4px;line-height:1}.outfitCounts svg{display:block;width:14px;height:14px;flex:0 0 14px;fill:currentColor}.outfitCounts b{font:inherit;font-weight:800}
 .fituition{display:grid;gap:14px;max-width:720px}
 .fituitionCard{border:1px solid var(--line);border-radius:12px;padding:15px;background:#fff;display:grid;gap:7px}
 .fituitionCard h2,.fituitionCard p{margin:0}

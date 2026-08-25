@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 const tabs=readFileSync(new URL("../app/outfits/[id]/OutfitTabs.tsx",import.meta.url),"utf8");
 const taggedFit=readFileSync(new URL("../app/api/outfits/[id]/tagged-fit/route.ts",import.meta.url),"utf8");
+const taggedPanel=readFileSync(new URL("../app/outfits/[id]/TaggedItemsPanel.tsx",import.meta.url),"utf8");
 const css=readFileSync(new URL("../app/outfits/[id]/outfitDetail.module.css",import.meta.url),"utf8");
 
 test("photo hotspots can open the canonical tagged quick view from any detail tab",()=>{
@@ -14,12 +15,18 @@ test("photo hotspots can open the canonical tagged quick view from any detail ta
   assert.match(css,/\.taggedTabDormant \.taggedGrid\{display:none\}/);
 });
 
-test("viewer-owned exact Product Fit Reports cannot disappear from Matching Fit Reports",()=>{
-  assert.match(taggedFit,/ownExactReports=ownReports\.filter/);
-  assert.match(taggedFit,/report\.product_id===product\.id&&report\.garment_condition==="normal"/);
-  assert.match(taggedFit,/usefulExactIds=new Set/);
-  assert.match(taggedFit,/usefulExactIds\.add\(report\.id\)/);
-  assert.match(taggedFit,/matchingFitReports:usefulExactIds\.size/);
+test("Matching Fit Reports and recommendation evidence collapse repeat reports by tracked variation",()=>{
+  assert.match(taggedFit,/newestUniqueVariationEvidence/);
+  assert.match(taggedFit,/objective_variant_key/);
+  assert.match(taggedFit,/usefulExactVariations=new Set/);
+  assert.match(taggedFit,/variationEvidenceKey\(report\.user_id,report\.product_id,report\.objective_variant_key,report\.id\)/);
+  assert.match(taggedFit,/matchingFitReports:usefulExactVariations\.size/);
+});
+
+test("insufficient FITuition copy agrees with a positive matching-evidence count",()=>{
+  assert.match(taggedPanel,/FITuition isn’t confident enough yet\./);
+  assert.match(taggedPanel,/We found \{meta\.matchingFitReports\} relevant fit/);
+  assert.doesNotMatch(taggedPanel,/No useful exact-item Fit Reports match your Fit Profile yet/);
 });
 
 test("mobile tagged quick view stays readable and Report stays in the viewport",()=>{

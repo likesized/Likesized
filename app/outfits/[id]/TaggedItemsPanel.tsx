@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { reportProductItem } from "@/app/item/[slug]/actions";
 import { addToWishLocker, likeProduct, removeFromWishLocker, unlikeProduct } from "@/app/likelocker/actions";
 import styles from "./outfitDetail.module.css";
+import polishStyles from "./outfitPolish.module.css";
 
 export type TaggedItem={
   closetItemId:string;
@@ -100,14 +101,14 @@ export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedIt
         </div>
         <div className={`${styles.fitSnippet} ${meta?.strong?styles.fitSnippetStrong:""}`}>
           {!meta?<><strong>Checking your fit evidence…</strong><span>Comparing this item with your Fit Profile and Closet history.</span></>:!meta.profileReady?<><strong>Build your Fit Profile to use FITuition.</strong><span>Your measurements stay private.</span></>:<>
-            {meta.bestMatch?<span><b>{meta.bestMatch.bodyMatch}% Body Match</b> · Size {meta.bestMatch.sizeLabel} · {meta.bestMatch.fitLabel}</span>:<span>No useful exact-item Fit Reports match your Fit Profile yet.</span>}
-            {meta.fitSnippet?<strong>{meta.fitSnippet}</strong>:<><strong>FITuition needs more useful evidence.</strong><span>Your own Closet history and useful reports from similar people are included when available.</span></>}
+            {meta.bestMatch?<span><b>{meta.bestMatch.bodyMatch}% Body Match</b> · Size {meta.bestMatch.sizeLabel} · {meta.bestMatch.fitLabel}</span>:null}
+            {meta.fitSnippet?<strong>{meta.fitSnippet}</strong>:meta.matchingFitReports>0?<><strong>FITuition isn’t confident enough yet.</strong><span>We found {meta.matchingFitReports} relevant fit {meta.matchingFitReports===1?"match":"matches"}, but not enough strong evidence to recommend a size yet.</span></>:<><strong>FITuition needs more evidence.</strong><span>We don’t have enough relevant Fit Reports to recommend a size yet.</span></>}
           </>}
           <Link className="textLink" href={selected.href}>See fit evidence →</Link>
         </div>
         <div className={styles.itemPreviewActions} aria-label="Item actions">
           <button type="button" disabled={pending} aria-pressed={Boolean(liked[selected.productId])} aria-label={liked[selected.productId]?"Remove from Like Locker":"Add to Like Locker"} title="Like Locker" onClick={()=>runLike(selected)}>{liked[selected.productId]?"♥":"♡"}</button>
-          <button type="button" disabled={pending} aria-pressed={Boolean(wished[selected.productId])} aria-label={wished[selected.productId]?"Remove from Wish Locker":"Add to Wish Locker"} title="Wish Locker" onClick={()=>runWish(selected)}>{wished[selected.productId]?"✦":"✧"}</button>
+          <button className={polishStyles.wishLockerAction} type="button" disabled={pending} aria-pressed={Boolean(wished[selected.productId])} aria-label={wished[selected.productId]?"Remove from Wish Locker":"Add to Wish Locker"} title="Wish Locker" onClick={()=>runWish(selected)}><span aria-hidden="true">{wished[selected.productId]?"✦":"✧"}</span><span>Wish Locker</span></button>
           {selected.canShop?<Link className={styles.previewActionLink} href={`/api/outfits/${postId}/shop?product_id=${selected.productId}`} target="_blank" rel="noopener noreferrer" aria-label="Shop this item" title="Shop">🛒</Link>:null}
           <button type="button" aria-label="Share this item" title="Share" onClick={()=>void share(selected)}>↗</button>
           <details className={styles.itemReport}><summary aria-label="Report this item" title="Report">⚑</summary><form action={reportProductItem}>

@@ -83,7 +83,7 @@ export default async function ClosetPage({ searchParams }: { searchParams: Searc
             <div className={styles.ownerIdentity}>{profilePhoto ? <img className={styles.ownerAvatar} src={profilePhoto} alt=""/> : <span className={styles.ownerAvatarFallback}>{displayName.slice(0, 1).toUpperCase()}</span>}<span>{displayName}</span></div>
             <div className={styles.outfitMeta}><span className={styles.status}>{outfit.status}</span><span>{formatDate(outfit.published_at || outfit.created_at)}</span></div>
             <Link className={styles.outfitTitle} href={href}><strong>{outfit.headline || "Untitled Outfit"}</strong></Link>
-            {outfit.status === "published" ? <div className={styles.outfitCounts}><span>♥ {outfit.like_count}</span><span>💬 {outfit.comment_count}</span></div> : <span className="muted">Continue editing this draft.</span>}
+            {outfit.status === "published" ? <div className={styles.outfitCounts}><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.2-4.5-9.5-8.6C.7 9.2 2.1 5.2 5.7 4.2c2.1-.6 4.4.2 5.8 2 1.4-1.8 3.7-2.6 5.8-2 3.6 1 5 5 3.2 8.2C18.2 16.5 12 21 12 21Z"/></svg><b>{outfit.like_count}</b></span><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5h16v11H9l-5 4v-15Zm2 2v8.9l2.3-1.9H18v-7H6Z"/></svg><b>{outfit.comment_count}</b></span></div> : <span className="muted">Continue editing this draft.</span>}
           </div>
         </article>;
       })}</div> : <div className="emptyState"><span className="eyebrow">NO OUTFITS YET</span><h2>Build a look from your Closet.</h2><p>Your Outfits live here alongside the garments you own.</p><Link className="primaryButton" href="/outfits/new">Create my first Outfit →</Link></div>}

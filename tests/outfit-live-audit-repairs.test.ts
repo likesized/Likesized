@@ -35,8 +35,8 @@ test("My Closet owns member Garments, Outfits, and FITuition",()=>{
  assert.match(closetPage,/Published looks and drafts/);
  assert.match(outfitsIndex,/\/closet\?tab=outfits/);
  assert.doesNotMatch(outfitsIndex,/outfit_posts|feed=following/);
- assert.match(closetCss,/@media\(max-width:620px\).*outfitGrid\{grid-template-columns:repeat\(2/s);
- assert.match(closetCss,/@media\(max-width:420px\).*outfitCard\{display:grid/s);
+ assert.match(closetCss,/@media\(max-width:620px\)[\s\S]*outfitGrid\{grid-template-columns:repeat\(2/);
+ assert.match(closetCss,/@media\(max-width:420px\)[\s\S]*outfitCard\{display:grid/);
 });
 
 test("current profile identity resolves live across owned, discovered, opened, and commented Outfits",()=>{
@@ -171,8 +171,8 @@ test("comments preview scales into a dedicated progressive sheet with a bottom c
 });
 
 test("compact controls are the site default instead of oversized pills",()=>{
- assert.match(globals,/\.primaryButton, \.secondaryButton \{[^}]*padding:9px 14px/s);
- assert.match(globals,/input, select, textarea \{[^}]*padding:10px 12px/s);
+ assert.match(globals,/\.primaryButton, \.secondaryButton \{[^}]*padding:9px 14px/);
+ assert.match(globals,/input, select, textarea \{[^}]*padding:10px 12px/);
  assert.match(globals,/\.pageShell \{ padding:52px 7vw/);
 });
 

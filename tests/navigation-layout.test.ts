@@ -10,8 +10,8 @@ const fitProfileForm = readFileSync(new URL("../app/onboarding/FitProfileForm.ts
 const fitProfileActions = readFileSync(new URL("../app/onboarding/actions.ts", import.meta.url), "utf8");
 const fitProfileHeroCss = readFileSync(new URL("../app/onboarding/FitProfileHero.module.css", import.meta.url), "utf8");
 const settingsPage = readFileSync(new URL("../app/settings/page.tsx", import.meta.url), "utf8");
+const settingsForm = readFileSync(new URL("../app/settings/ProfileSettingsForm.tsx", import.meta.url), "utf8");
 const settingsActions = readFileSync(new URL("../app/settings/actions.ts", import.meta.url), "utf8");
-const locationForm = readFileSync(new URL("../app/settings/ProfileLocationForm.tsx", import.meta.url), "utf8");
 const locationNormalizer = readFileSync(new URL("../lib/profile-location.ts", import.meta.url), "utf8");
 const locationMigration = readFileSync(new URL("../supabase/migrations/20260825183000_private_profile_location_metadata.sql", import.meta.url), "utf8");
 const peoplePage = readFileSync(new URL("../app/people/page.tsx", import.meta.url), "utf8");
@@ -60,18 +60,24 @@ test("Fit Profile gives username rules up front and keeps the mobile update hero
   assert.match(fitProfileHeroCss, /\.revisitShell \{[\s\S]*?min-height: 0;[\s\S]*?grid-template-rows: auto auto;[\s\S]*?align-content: start;/);
 });
 
-test("initial Fit Profile collects private city/state once and Settings owns later edits", () => {
+test("initial Fit Profile collects required private city/state once and Settings owns later edits", () => {
   assert.match(fitProfilePage, /profile_locations/);
   assert.match(fitProfileForm, /isInitialSetup\?<><div className="fieldPair"><label>City/);
   assert.match(fitProfileForm, /name="city"/);
   assert.match(fitProfileForm, /name="state_region"/);
-  assert.match(fitProfileForm, /City and state stay private and can be changed later in Settings/);
+  assert.match(fitProfileForm, /City and state stay private/);
+  assert.doesNotMatch(fitProfileForm, /City <span className="muted inlineMuted">optional/);
+  assert.doesNotMatch(fitProfileForm, /State <span className="muted inlineMuted">optional/);
   assert.match(fitProfileActions, /if\(isInitialSetup\)[\s\S]*profile_locations/);
   assert.match(fitProfileActions, /normalizeProfileLocation/);
-  assert.match(settingsPage, /ProfileLocationForm/);
-  assert.match(locationForm, /Save location/);
-  assert.match(locationForm, /anonymous regional trends and demand insights/);
-  assert.match(settingsActions, /saveProfileLocationSettings/);
+  assert.match(settingsPage, /ProfileSettingsForm/);
+  assert.doesNotMatch(settingsPage, /ProfileLocationForm|UsernameSettingsForm|Save Fit Community/);
+  assert.match(settingsForm, /Edit My Profile/);
+  assert.match(settingsForm, /name="city"[\s\S]*required/);
+  assert.match(settingsForm, /name="state_region"[\s\S]*required/);
+  assert.match(settingsForm, /City and state stay private\./);
+  assert.doesNotMatch(settingsForm, /regional trends|demand insights/i);
+  assert.match(settingsActions, /saveUnifiedProfileSettings/);
   assert.match(settingsActions, /normalizeProfileLocation/);
   assert.match(settingsActions, /profile_locations/);
   assert.match(locationNormalizer, /\["NY", "New York"\]/);
@@ -92,7 +98,8 @@ test("Fit Community is a saved default with reversible social-view filters", () 
   assert.match(fitProfileForm, /value="both">Both<\/option>/);
   assert.match(fitProfileForm, /does not change your body Match %/);
   assert.match(fitProfileActions, /p_fit_community:community/);
-  assert.match(settingsPage, /Save Fit Community/);
+  assert.match(settingsForm, /name="fit_community"/);
+  assert.match(settingsActions, /fit_community:community/);
   assert.match(peoplePage, /p_fit_community:community/);
   assert.match(peoplePage, /Switching this view does not change your saved preference/);
   assert.match(circlePage, /p_fit_community:override/);
@@ -100,7 +107,7 @@ test("Fit Community is a saved default with reversible social-view filters", () 
 });
 
 test("direct Product search is global and does not require a Men or Women filter switch", () => {
-  assert.match(searchPage, /supabase\.rpc\("search_catalog_products",[\s\S]*?p_query: q,[\s\S]*?p_result_limit: 24,[\s\S]*?\}\)/);
+  assert.match(searchPage, /supabase\.rpc\("search_catalog_products",[\s\S]*?p_query:q,[\s\S]*?p_result_limit:24/);
   assert.doesNotMatch(searchPage, /search_catalog_products[\s\S]{0,180}p_fit_community/);
   assert.doesNotMatch(searchPage, /search_catalog_products[\s\S]{0,180}department/);
 });

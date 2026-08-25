@@ -9,10 +9,16 @@ const detailCss=readFileSync(new URL("../app/outfits/[id]/outfitDetail.module.cs
 const gallery=readFileSync(new URL("../app/outfits/[id]/OutfitGallery.tsx",import.meta.url),"utf8");
 const tabs=readFileSync(new URL("../app/outfits/[id]/OutfitTabs.tsx",import.meta.url),"utf8");
 const tagged=readFileSync(new URL("../app/outfits/[id]/TaggedItemsPanel.tsx",import.meta.url),"utf8");
+const taggedFit=readFileSync(new URL("../app/api/outfits/[id]/tagged-fit/route.ts",import.meta.url),"utf8");
+const commentThread=readFileSync(new URL("../app/outfits/[id]/CommentThread.tsx",import.meta.url),"utf8");
+const commentComposer=readFileSync(new URL("../app/outfits/[id]/CommentComposer.tsx",import.meta.url),"utf8");
+const lockerActions=readFileSync(new URL("../app/likelocker/actions.ts",import.meta.url),"utf8");
 const actions=readFileSync(new URL("../app/outfits/actions.ts",import.meta.url),"utf8");
 const peopleActions=readFileSync(new URL("../app/people/actions.ts",import.meta.url),"utf8");
 const profile=readFileSync(new URL("../app/people/[username]/page.tsx",import.meta.url),"utf8");
 const closetPage=readFileSync(new URL("../app/closet/page.tsx",import.meta.url),"utf8");
+const closetCss=readFileSync(new URL("../app/closet/closet.module.css",import.meta.url),"utf8");
+const globals=readFileSync(new URL("../app/globals.css",import.meta.url),"utf8");
 const outfitsIndex=readFileSync(new URL("../app/outfits/page.tsx",import.meta.url),"utf8");
 const explore=readFileSync(new URL("../app/explore/page.tsx",import.meta.url),"utf8");
 const profilePhoto=readFileSync(new URL("../lib/profile-photo.ts",import.meta.url),"utf8");
@@ -29,6 +35,8 @@ test("My Closet owns member Garments, Outfits, and FITuition",()=>{
  assert.match(closetPage,/Published looks and drafts/);
  assert.match(outfitsIndex,/\/closet\?tab=outfits/);
  assert.doesNotMatch(outfitsIndex,/outfit_posts|feed=following/);
+ assert.match(closetCss,/@media\(max-width:620px\).*outfitGrid\{grid-template-columns:repeat\(2/s);
+ assert.match(closetCss,/@media\(max-width:420px\).*outfitCard\{display:grid/s);
 });
 
 test("current profile identity resolves live across owned, discovered, opened, and commented Outfits",()=>{
@@ -83,16 +91,20 @@ test("embedded Brand and Item suggestions stay anchored and lightweight",()=>{
  assert.match(catalogRoute,/briefProducts/);
 });
 
-test("opened gallery hides secondary photos and navigates directly on the active photo",()=>{
- assert.match(gallery,/Click, drag, or swipe the photo/);
+test("opened gallery is one compact active image and restores tags on that exact image",()=>{
+ assert.match(gallery,/galleryMedia/);
+ assert.match(gallery,/current\.tags\.map/);
+ assert.match(gallery,/galleryTagToggle/);
  assert.match(gallery,/onPointerDown/);
  assert.match(gallery,/onPointerUp/);
  assert.match(gallery,/ArrowRight/);
  assert.match(gallery,/ArrowLeft/);
  assert.doesNotMatch(gallery,/galleryThumb|previewThumb/);
+ assert.match(detailCss,/\.galleryMedia\{position:relative;display:inline-block/);
+ assert.match(detailCss,/max-height:min\(66vh,580px\)/);
 });
 
-test("opened Outfit hierarchy is compact header, photo, actions, then three exclusive tabs",()=>{
+test("opened Outfit hierarchy is compact header, photo-attached actions, then three exclusive tabs",()=>{
  assert.match(detail,/outfitIdentityHeader/);
  assert.match(detail,/outfitIdentityPhoto/);
  assert.match(detail,/% Fit Match/);
@@ -100,16 +112,18 @@ test("opened Outfit hierarchy is compact header, photo, actions, then three excl
  assert.match(detail,/outfitActionBar/);
  assert.match(detail,/OutfitTabs/);
  assert.match(tabs,/Style Notes/);
- assert.match(tabs,/Comments/);
+ assert.match(tabs,/Comments ·/);
  assert.match(tabs,/Tagged Items/);
- assert.match(detail,/OUTFIT TITLE/);
- assert.match(detail,/OUTFIT TAGS/);
- assert.match(detail,/OUTFIT DESCRIPTION/);
- assert.match(detailCss,/\.outfitTabBar/);
+ assert.doesNotMatch(detail,/OUTFIT TITLE|OUTFIT TAGS|OUTFIT DESCRIPTION/);
+ assert.doesNotMatch(detail,/engagementCounts/);
+ assert.match(detailCss,/\.openOutfit\{width:min\(100%,680px\)/);
+ assert.match(detailCss,/\.outfitActionBar\{display:flex;align-items:center;justify-content:flex-end/);
 });
 
-test("Outfit social controls are icon-first and blocking lives on the profile",()=>{
- assert.match(detail,/aria-label=\{liked\?"Unlike Outfit":"Like Outfit"\}/);
+test("Outfit social controls stay with media, counts stay with actions, and owners get Share only",()=>{
+ assert.match(detail,/!owner\?<></);
+ assert.match(detail,/actionCount\}\>\{outfit\.like_count\}/);
+ assert.match(detail,/shareCount=\{outfit\.share_count\}/);
  assert.match(detail,/title="Follow"/);
  assert.match(detail,/summaryLabel="Report Outfit" iconOnly/);
  assert.doesNotMatch(detail,/Follow \{creatorName\}/);
@@ -118,23 +132,48 @@ test("Outfit social controls are icon-first and blocking lives on the profile",(
  assert.match(profile,/Block @\{profile\.username\}/);
 });
 
-test("Tagged Items and photo hotspots preview in place before Full details navigation",()=>{
- assert.match(gallery,/setActiveGarment/);
- assert.match(gallery,/Full details →/);
- assert.match(tagged,/setSelectedId/);
- assert.match(tagged,/role="dialog"/);
- assert.match(tagged,/Full details →/);
- assert.match(tagged,/Wish Locker/);
- assert.match(tagged,/🛒/);
+test("Tagged Items cards show identity, category, photo, and matching Fit Report count only",()=>{
+ assert.match(tagged,/Matching Fit Reports:/);
+ assert.match(tagged,/meta\?\.category/);
+ assert.match(tagged,/item\.imageUrl/);
+ assert.doesNotMatch(tagged,/Just right|size worn|Fit Result/);
+ assert.match(taggedFit,/get_product_fit_summary/);
 });
 
-test("comments are compact plain text with Like, flag, and owner-or-author delete",()=>{
- assert.match(detail,/commentAvatar/);
+test("Tagged quick view adds FITuition and actions without closing on Like or Wish Locker",()=>{
+ assert.match(tagged,/FITuition needs more useful evidence/);
+ assert.match(tagged,/See the evidence we have/);
+ assert.match(tagged,/Wish Locker/);
+ assert.match(tagged,/>Shop<\/Link>/);
+ assert.match(tagged,/>Share<\/button>/);
+ assert.match(tagged,/<summary>Report<\/summary>/);
+ assert.match(tagged,/stay_open","1"/);
+ assert.match(lockerActions,/stayOpen/);
+ assert.match(lockerActions,/if \(stayOpen\) return/);
+ assert.match(taggedFit,/recommendSize/);
+ assert.match(taggedFit,/recommendation\.confidence>=45/);
+});
+
+test("comments preview scales into a dedicated progressive sheet with a bottom composer",()=>{
+ assert.match(commentThread,/PAGE_SIZE=20/);
+ assert.match(commentThread,/View all \$\{commentCount\}/);
+ assert.match(commentThread,/Load earlier comments/);
+ assert.match(commentThread,/commentsSheetFooter/);
+ assert.match(detail,/comments=1/);
+ assert.match(detail,/commentTextRow/);
  assert.match(detail,/comment\.profile\.username/);
  assert.match(detail,/likeOutfitComment/);
  assert.match(detail,/summaryLabel="Report comment" iconOnly/);
  assert.match(detail,/owner\|\|comment\.user_id===viewerId/);
- assert.doesNotMatch(detail,/blockMemberFromOutfit/);
+ assert.doesNotMatch(commentComposer,/Plain text only|GIFs|external links/);
+ assert.match(detailCss,/\.commentIdentity a\{display:grid/);
+ assert.match(detailCss,/\.commentsSheetFooter\{position:sticky;bottom:0/);
+});
+
+test("compact controls are the site default instead of oversized pills",()=>{
+ assert.match(globals,/\.primaryButton, \.secondaryButton \{[^}]*padding:9px 14px/s);
+ assert.match(globals,/input, select, textarea \{[^}]*padding:10px 12px/s);
+ assert.match(globals,/\.pageShell \{ padding:52px 7vw/);
 });
 
 test("creator tools expose only incremental analytics and destructive confirmation",()=>{

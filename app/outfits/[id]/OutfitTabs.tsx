@@ -14,7 +14,9 @@ export default function OutfitTabs({initialTab="style",styleNotes,comments,tagge
       {options.map(([key,label])=><button key={key} type="button" role="tab" aria-selected={tab===key} className={tab===key?styles.outfitTabActive:styles.outfitTabButton} onClick={()=>setTab(key)}>{label}</button>)}
     </div>
     <div className={styles.outfitTabPanel} role="tabpanel">
-      {tab==="style"?styleNotes:tab==="comments"?comments:taggedItems}
+      {tab==="style"?styleNotes:null}
+      {tab==="comments"?comments:null}
+      <div className={tab==="tagged"?styles.taggedTabHost:`${styles.taggedTabHost} ${styles.taggedTabDormant}`}>{taggedItems}</div>
     </div>
   </section>;
 }

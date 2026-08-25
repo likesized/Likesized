@@ -1,6 +1,6 @@
-export type ProfileLocation = { city: string | null; state_region: string | null };
+export type ProfileLocation = { city: string; state_region: string };
 
-const US_STATES = [
+export const US_STATE_OPTIONS = [
   ["AL", "Alabama"], ["AK", "Alaska"], ["AZ", "Arizona"], ["AR", "Arkansas"],
   ["CA", "California"], ["CO", "Colorado"], ["CT", "Connecticut"], ["DE", "Delaware"],
   ["FL", "Florida"], ["GA", "Georgia"], ["HI", "Hawaii"], ["ID", "Idaho"],
@@ -21,7 +21,7 @@ function alias(value: string) {
 }
 
 const STATE_CODE_BY_ALIAS = new Map<string, string>();
-for (const [code, name] of US_STATES) {
+for (const [code, name] of US_STATE_OPTIONS) {
   STATE_CODE_BY_ALIAS.set(alias(code), code);
   STATE_CODE_BY_ALIAS.set(alias(name), code);
 }
@@ -31,7 +31,6 @@ STATE_CODE_BY_ALIAS.set("district columbia", "DC");
 export function normalizeProfileLocation(cityRaw: string, stateRaw: string): ProfileLocation | null {
   const city = cityRaw.trim().replace(/\s+/g, " ");
   const stateInput = alias(stateRaw);
-  if (!city && !stateInput) return { city: null, state_region: null };
   if (!city || !stateInput || city.length > 80) return null;
   const stateCode = STATE_CODE_BY_ALIAS.get(stateInput);
   if (!stateCode) return null;

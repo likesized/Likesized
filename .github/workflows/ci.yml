@@ -67,6 +67,9 @@ jobs:
       - name: Grouped navigation safeguards
         run: node --test tests/navigation-layout.test.ts
 
+      - name: Settings profile consolidation safeguards
+        run: node --test tests/settings-profile-consolidation.test.ts
+
       - name: Explore, My Circle, and LikeLocker safeguards
         run: node --test tests/explore-circle-likelocker.test.ts
 

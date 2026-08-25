@@ -1,227 +1,324 @@
-.settingsSection {
-  padding: 32px 0;
+.settingsPage {
+  width: min(100%, 980px);
+  margin: 0 auto;
+  padding: 38px clamp(18px, 4vw, 44px) 56px;
 }
 
-.firstSettingsSection {
-  padding-top: 0;
-}
-
-.settingsSection > :global(.sectionHeading) {
-  margin-bottom: 24px;
-}
-
-.settingsEvidence {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-}
-
-.settingsEvidence > :first-child {
-  min-width: 0;
-}
-
-.settingsEvidence form {
-  margin: 0;
-}
-
-.settingsEvidence :global(.secondaryButton),
-.profilePhotoControls :global(.secondaryButton) {
-  color: var(--ink);
-}
-
-.profileForm,
-.usernameForm {
-  display: grid;
-  gap: 20px;
-  padding: 30px;
-  border: 1px solid var(--line);
-  border-radius: 24px;
-  background: var(--white);
-}
-
-.bioLabelRow {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.characterCount {
-  flex: 0 0 auto;
-  font-weight: 700;
-  color: var(--muted);
-}
-
-.profileForm > button,
-.usernameForm > button {
-  justify-self: start;
-}
-
-.usernameForm input[readonly] {
-  opacity: .72;
-  cursor: default;
-}
-
-.usernameActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.profilePhotoBlock {
-  display: grid;
-  grid-template-columns: 132px minmax(0, 1fr);
-  gap: 26px;
-  align-items: start;
+.settingsHeader {
   margin-bottom: 18px;
-  padding: 30px;
-  border: 1px solid var(--line);
-  border-radius: 24px;
-  background: var(--white);
 }
 
-.profilePhotoPreview {
-  width: 132px;
-  height: 132px;
-  border-radius: 50%;
+.settingsHeader h1 {
+  margin: 2px 0 0;
+  font-size: clamp(28px, 4vw, 38px);
+  line-height: 1.05;
+  letter-spacing: -1.2px;
+}
+
+.sectionKicker {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+}
+
+.profileCard {
+  display: grid;
+  gap: 0;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--white);
+  box-shadow: 0 8px 24px rgba(18, 18, 18, .045);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 18px;
+}
+
+.cardHeader h2,
+.secondarySection h2,
+.privacyStatement h2 {
+  margin: 3px 0 0;
+  font-size: 20px;
+  line-height: 1.15;
+  letter-spacing: -.45px;
+}
+
+.editButton,
+.saveButton,
+.cancelButton,
+.notificationButton,
+.fileButton,
+.textButton {
+  appearance: none;
+  width: auto;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+.editButton,
+.saveButton {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--white);
+}
+
+.saveButton {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.profileTop {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.avatar {
+  width: 88px;
+  height: 88px;
   overflow: hidden;
   display: grid;
   place-items: center;
+  border-radius: 50%;
   background: var(--ink);
   color: var(--secondary);
-  font-size: 48px;
+  font-size: 30px;
   font-weight: 900;
 }
 
-.profilePhotoPreview img {
+.avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.profilePhotoControls {
+.photoArea {
+  min-width: 0;
   display: grid;
-  gap: 10px;
+  gap: 5px;
+}
+
+.photoArea > strong {
+  font-size: 14px;
+}
+
+.helpText,
+.photoStatus,
+.field small,
+.secondarySection p,
+.privacyStatement p {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.photoActions,
+.formActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.fileButton {
+  display: inline-flex;
+  align-items: center;
+}
+
+.fileButton input {
+  display: none;
+}
+
+.textButton {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+.profileGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 18px;
+  padding-top: 20px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
   min-width: 0;
 }
 
-.profilePhotoControls > strong {
-  font-size: 15px;
+.field > span {
+  font-size: 12px;
+  font-weight: 900;
 }
 
-.profilePhotoControls form {
+.fullField {
+  grid-column: 1 / -1;
+}
+
+.profileCard input,
+.profileCard select,
+.profileCard textarea {
+  width: 100%;
+  min-width: 0;
   margin: 0;
-}
-
-.photoUploadForm {
-  display: grid;
-  gap: 10px;
-  margin-top: 4px !important;
-}
-
-.photoPicker input {
-  margin-top: 8px;
-}
-
-.photoUploadForm > button,
-.profilePhotoControls > form > button {
-  justify-self: start;
-}
-
-.photoUploadForm > button:disabled {
-  opacity: .45;
-  cursor: not-allowed;
-}
-
-.notificationSection {
-  scroll-margin-top: 110px;
-}
-
-.privacySection {
-  padding-bottom: 0;
-}
-
-.privacySection > :global(.eyebrow) {
-  margin-bottom: 10px;
-}
-
-.privacyFyi {
-  max-width: 760px;
-  padding: 18px 20px;
+  padding: 9px 10px;
   border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--white);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.3;
 }
 
-.privacyFyi strong {
-  display: block;
-  font-size: 15px;
-  margin-bottom: 6px;
+.profileCard input,
+.profileCard select {
+  min-height: 40px;
 }
 
-.privacyFyi p {
-  margin: 0;
+.profileCard textarea {
+  min-height: 82px;
+  resize: vertical;
+}
+
+.profileCard input[readonly],
+.profileCard textarea[readonly],
+.profileCard select:disabled {
+  opacity: 1;
+  background: #f1ede5;
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.5;
+  cursor: default;
 }
 
-@media (max-width: 700px) {
-  .settingsSection {
-    padding: 24px 0;
+.formActions {
+  justify-content: flex-end;
+  padding-top: 20px;
+}
+
+.saveButton:disabled {
+  opacity: .55;
+  cursor: default;
+}
+
+.secondarySection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 22px;
+  padding: 20px 2px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.secondarySection p,
+.privacyStatement p {
+  max-width: 680px;
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+
+.secondarySection form {
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.notificationButton {
+  min-width: 108px;
+}
+
+.privacyStatement {
+  padding: 20px 2px 0;
+}
+
+.privacyStatement h2 {
+  font-size: 17px;
+}
+
+@media (max-width: 680px) {
+  .settingsPage {
+    padding: 26px 16px 42px;
   }
 
-  .firstSettingsSection {
-    padding-top: 0;
+  .settingsHeader {
+    margin-bottom: 14px;
   }
 
-  .settingsSection > :global(.sectionHeading) {
-    margin-bottom: 18px;
+  .settingsHeader h1 {
+    font-size: 28px;
   }
 
-  .settingsEvidence {
-    grid-template-columns: 1fr;
-    align-items: start;
+  .profileCard {
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  .cardHeader {
+    align-items: flex-start;
+    padding-bottom: 14px;
+  }
+
+  .profileTop {
+    grid-template-columns: 66px minmax(0, 1fr);
     gap: 14px;
-    padding: 20px;
+    padding: 15px 0;
   }
 
-  .settingsEvidence > form,
-  .settingsEvidence > a {
-    justify-self: start;
+  .avatar {
+    width: 66px;
+    height: 66px;
+    font-size: 24px;
   }
 
-  .profileForm,
-  .usernameForm {
-    gap: 16px;
-    padding: 22px;
-  }
-
-  .profileForm > button,
-  .usernameForm > button {
-    margin-top: 2px;
-  }
-
-  .profilePhotoBlock {
+  .profileGrid {
     grid-template-columns: 1fr;
-    gap: 18px;
-    padding: 22px;
+    gap: 14px;
+    padding-top: 16px;
   }
 
-  .profilePhotoPreview {
-    width: 112px;
-    height: 112px;
+  .fullField {
+    grid-column: auto;
   }
 
-  .usernameActions {
-    display: grid;
-    grid-template-columns: 1fr;
+  .formActions {
+    justify-content: stretch;
   }
 
-  .usernameActions button {
-    width: 100%;
+  .formActions button {
+    flex: 1;
   }
 
-  .privacyFyi {
-    padding: 16px;
+  .secondarySection {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 2px;
+  }
+
+  .notificationButton {
+    min-width: 0;
   }
 }

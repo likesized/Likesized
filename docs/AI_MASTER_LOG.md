@@ -48,23 +48,23 @@ Going forward:
 
 # CURRENT STATUS — 2026-08-24
 
-## Canonical production line — LIVE THROUGH PR #79
+## Canonical production line — LIVE THROUGH PR #80
 - PR #77 prior Roadmap 12 repair batch: exact head **`2a6ada938db7772bf27819593d97f5d3556e4312`**; full LikeSized CI #853 (`32791915054`) passed; three additive migrations applied/smoke-verified; squash merge **`41c92a5c94a8d03d59b627f8f5b55e37bdcf482f`**; Vercel **`dpl_3EUNtQettqxv8LwvTt9FGer8FaJL`** READY and production-live.
 - PR #78 post-PR77 canonical reconciliation: exact head **`b088784773c192a09cb42d00ce10d7ac2c1c2b93`**; full CI #855 (`32792808295`) passed; squash merge **`3618632c75f502469d9f7d49254d3edd85211aa1`**; docs-only Vercel **`dpl_DCh7D9gSFKjmCY1rJGwvwhF5HnRJ`** READY; no application/database behavior change.
-- PR #79 **Complete Roadmap 12 live-audit follow-up** is merged and production-live. Exact PR head: **`ec4bebec4f2743cb8461a724d50e2cb7c1b1529e`**. Full LikeSized CI #869 (`32799021871`) passed on that exact head, including canonical integrity, dependencies, TypeScript, all focused safeguards, production build, fresh replay of all canonical migrations and database behavior/privacy tests.
-- PR #79 squash merge / current production baseline before the checkpoint repair: **`8835a413680daef0b78ec890ffa50c84424bdc37`**. Its Git tree is identical to the verified PR #79 head tree (`0b621976c2508af51b9dddc607e0b2010860ea31`).
-- PR #79 Vercel production deployment: **`dpl_3aSPoi4UwKgZHHDyMQKdosatgYVh`**. It reached READY, served `likesized.com`, returned HTTP 200, and the checked post-deployment runtime-error window was clean.
-- Owner explicitly authorized PR #79 production deployment during live review after clarifying that production is required for owner verification.
-- **Active implementation line:** `agent/roadmap12-checkpoint-repair`, PR #80 **Repair Roadmap 12 checkpoint findings**. PR #80 is branch-only, draft, not merged and **not production-live**.
-- PR #80 contains one new additive migration, `20260825021000_outfit_comment_cursor_pagination.sql`. It is not applied to production. If PR #80 receives production authorization, this migration must be applied and smoke-verified before the application cutover because the repaired comment API depends on it.
+- PR #79 **Complete Roadmap 12 live-audit follow-up**: exact head **`ec4bebec4f2743cb8461a724d50e2cb7c1b1529e`**; full LikeSized CI #869 (`32799021871`) passed; squash merge **`8835a413680daef0b78ec890ffa50c84424bdc37`**; Vercel **`dpl_3aSPoi4UwKgZHHDyMQKdosatgYVh`** READY and production-live.
+- PR #80 **Repair Roadmap 12 checkpoint findings** is merged and production-live. Exact PR head: **`5540cd9b31d2a4bff2c6e13fa2c3a03031d42527`**. Full LikeSized CI #878 (`32802733649`) passed on that exact head, including canonical integrity, exact dependencies, TypeScript, all focused safeguards, production build, fresh replay of all canonical migrations and database behavior/privacy tests.
+- PR #80 additive migration `20260825021000_outfit_comment_cursor_pagination.sql` was applied to production Supabase and recorded by Supabase as **`20260825025014 outfit_comment_cursor_pagination`**. Smoke verification confirmed `public.get_outfit_comments_page(uuid,timestamptz,uuid,integer)` exists as the intended security-definer cursor-paginated comment projection.
+- PR #80 squash merge / current production application commit: **`2856b77dda00b7d8bf373579cef2acb36d21cf69`**.
+- PR #80 Vercel production deployment: **`dpl_4QfH5QhtRcDn4gXLuAQXau1jyCDJ`**. It reached READY, owns `likesized.com`, returned HTTP 200, and the checked post-deploy runtime-error window was clean.
+- Owner explicitly authorized PR #80 production deployment on 2026-08-24 so the live audit could continue.
 - Applied database migrations are immutable; future corrections use later ordered migrations.
 - No paid Supabase branches.
 
-## Roadmap 12 — New Outfit — PRODUCTION THROUGH PR #79 / PR #80 CHECKPOINT REPAIR IS CURRENT GATE
-Roadmap 12 foundation and successive owner-review batches are production-live through PR #79. A deliberate stopping-point audit of production commit `8835a413...` found semantic defects that automated CI had not caught. The owner then supplied live screenshots and approved the combined repair queue. PR #80 is the one current repair line. **Do not advance to Roadmap 13 until the owner finishes the New Outfit audit and accepts a clean production stopping point.**
+## Roadmap 12 — New Outfit — PRODUCTION THROUGH PR #80 / OWNER LIVE AUDIT CONTINUES
+Roadmap 12 foundation and successive owner-review/repair batches are production-live through PR #80. The stopping-point defects found after PR #79 were repaired and deployed in PR #80. **Roadmap 13 remains blocked until the owner explicitly finishes the New Outfit audit and accepts the production stopping point.**
 
-# PR #80 STOPPING-POINT REPAIR — IMPLEMENTED ON ACTIVE BRANCH / NOT PRODUCTION-LIVE
-Owner-approved checkpoint and live-screenshot corrections now implemented on `agent/roadmap12-checkpoint-repair`:
+# PR #80 STOPPING-POINT REPAIR — DEPLOYED / VERIFIED
+Owner-approved checkpoint and live-screenshot corrections shipped in PR #80:
 1. **Real comment pagination:** PR #79's comment sheet only revealed slices of an already-loaded oldest-first 200-comment array. PR #80 removes the eager 200-comment page load and adds a newest-first cursor-paginated database RPC + API. The tab loads a small newest preview, the full sheet loads bounded newest-first pages, and **Load earlier comments** requests the next server/database cursor page. The sticky bottom composer and compact comment identity/actions remain.
 2. **Session-safe Outfit Views restored:** PR #79 accidentally replaced the browser-session guard with a mount-only ref, causing refresh/reopen inflation. PR #80 restores one View attempt per Outfit per browser session, while allowing a failed request to clear the marker for retry.
 3. **Matching Fit Reports corrected:** the PR #79 UI mislabeled total Product Fit Report count as `Matching Fit Reports`. Total raw count is not useful and is no longer substituted. `Matching Fit Reports: X` now means useful personalized exact-item evidence for that viewer.
@@ -78,10 +78,28 @@ Owner-approved checkpoint and live-screenshot corrections now implemented on `ag
 11. **Global page-shell scope creep reversed:** the prior attempt to make controls compact had also reduced global `.pageShell` vertical spacing across unrelated pages. PR #80 restores the prior general page-shell spacing while retaining compact controls where intended.
 12. **Canonical privacy/product wording restored and clarified:** public Outfit content remains viewable, raw/private body/Closet/admin state remains protected, and personalized tagged-item intelligence is gated rather than being silently exposed or falsely evaluated.
 
-PR #80 has focused source safeguards for these corrected meanings. It is still under exact-head checkpoint verification and still requires separate owner authorization for production merge/deploy.
+# OWNER-LOCKED STYLE FEED DIRECTION — 2026-08-24
+The owner locked the next social-feed direction after PR #80 went live. This is product meaning to preserve when Roadmap 13 / Style Feed is implemented; it is not yet an implementation/deployment claim.
+
+1. **Rename `My Circle` to `Style Feed`.** The old My Circle name should not remain as competing current UX terminology once this change is implemented.
+2. **Purpose:** Style Feed is a generic Instagram/Pinterest-like rolling Outfit feed for passive inspiration — fresh fits selected/ranked algorithmically for the viewer to scroll. It is not the place for specific Product/garment hunting.
+3. **Following-only source:** Style Feed contains Outfits only from people the viewer already follows. It does not become an open global discovery feed.
+4. **Top relationship switch:** the primary feed switch is **All | Fit Twins**.
+   - **All** = Outfits from everyone the viewer follows.
+   - **Fit Twins** = followed people who currently qualify as **Fit Twin, Tops Twin, or Bottoms Twin**. All three twin designations are included in this filter.
+5. **Only additional feed filter:** **Occasion**. There is **no Style Tag filter** in Style Feed.
+6. **Search/Explore boundary:** Browse/Explore/Search remain the intentional tools when the user wants something specific. Style Feed is for fresh algorithmic inspiration and scrolling, not a duplicate search/filter surface.
+7. **Homepage `WHAT LIKESIZED DOES` third card:** replace the prior Build Your Circle framing with:
+   - Eyebrow/title: **FIT YOUR STYLE**
+   - Main line: **Follow people whose fit and style you trust.**
+   - Supporting meaning: see what they wear, how they style it, what they recommend, and how they put it all together.
+   - CTA: **Get Inspired →**
+8. The three homepage feature ideas should now read conceptually as: **Find People My Size → See What Works for Them → Fit Your Style.**
+
+Do not invent extra Style Feed filters. Specifically, **Style Tags are not a Style Feed filter** under the current owner lock.
 
 # PR #79 OWNER LIVE-REVIEW FOLLOW-UP — DEPLOYED / SUPERSEDED WHERE PR #80 CORRECTS IT
-PR #79 shipped these owner-approved visible directions and remains the production baseline until PR #80 is authorized/deployed:
+PR #79 shipped these owner-approved visible directions:
 1. another member's Outfit: Like · Follow · Share · Flag; creator's own Outfit: Share only;
 2. social actions directly below media with counts attached to their corresponding actions;
 3. compact opened Outfit/media rhythm with no dead media container below the actual image;
@@ -94,7 +112,7 @@ PR #79 shipped these owner-approved visible directions and remains the productio
 10. compact-control direction;
 11. owner-approved homepage FAQ wording for Fit Twin and the LikeSized differentiation/FITuition explanation.
 
-The stopping-point audit showed that several PR #79 implementations were semantically incomplete despite full green CI: comment paging was not true paging, View semantics drifted, the tagged count used total reports, the viewer's own evidence was discarded, FITuition was incomplete, logged-out personalized messaging was false, privacy wording loosened, and generic page-shell spacing was changed outside the intended control scope. Those specific implementations are superseded by PR #80; the rest of PR #79 remains canonical.
+The stopping-point audit showed that several PR #79 implementations were semantically incomplete despite full green CI: comment paging was not true paging, View semantics drifted, the tagged count used total reports, the viewer's own evidence was discarded, FITuition was incomplete, logged-out personalized messaging was false, privacy wording loosened, and generic page-shell spacing was changed outside the intended control scope. Those specific implementations were superseded by deployed PR #80; the rest of PR #79 remains canonical.
 
 # PR #77 OWNER LIVE-REVIEW BATCH — DEPLOYED / VERIFIED
 The corrected prior rapid live-review queue is implemented, verified and production-live. The prior mistaken interpretation that the owner wanted tagged-garment detail fields “less stacked” was invalid and is not canonical. The actual stacking issue was the Outfit feed collapsing into a single vertical column instead of the intended pinboard layout.
@@ -190,7 +208,7 @@ FITuition combines Size Match evidence with Closet History to recommend size. Ex
 `Matching Fit Reports: X` is a personalized useful-evidence count, never a raw Product report total. Logged-out visitors do not receive a personalized count until LikeSized can evaluate them. A signed-in viewer's own eligible exact-item Fit Report can count as useful evidence.
 
 # ROADMAP / OWNER RE-AUDIT ORDER
-1. Homepage + FAQ — production-live through PR #79; exact sex/body-specific measurement FAQ wording still pending owner approval.
+1. Homepage + FAQ — production-live through PR #80; owner has newly locked the `FIT YOUR STYLE` third homepage card direction but that copy is not implemented yet; exact sex/body-specific measurement FAQ wording still pending owner approval.
 2. Global header / member menu / admin entry — broader owner interaction audit remains.
 3. Auth — owner confirmed.
 4. Fit Profile / My Measurements — broader audit remains.
@@ -199,11 +217,11 @@ FITuition combines Size Match evidence with Closet History to recommend size. Ex
 7. Unified Closet/member profile Closet — canonical visibility meaning reconciled; broader lifecycle/mutation audit remains.
 8. Post-submit Fit Report mutation/lifecycle model — remains.
 9. People My Size — broader audit remains; regional Twin rule is production-live.
-10. My Circle / Following / system-generated Fit Twin — broader ranking/activity audit remains; regional Twin rule is production-live.
+10. **Style Feed / Following / system-generated Fit Twin** — owner has locked the Style Feed purpose/filter model above; implementation/ranking audit remains. The old `My Circle` terminology is superseded for future current UX by `Style Feed`.
 11. New Fit Report — current evidence-first flow and suggestion-speed fixes deployed.
 11A. **Garment-question variation classification — COMPLETE / DEPLOYED.**
-12. **New Outfit — production-live through PR #79; PR #80 stopping-point repair is active, branch-only and awaiting exact-head verification + separate production authorization.**
-13. Outfits / Style Feed — follows Roadmap 12; full discovery/ranking audit remains after owner finishes Roadmap 12 audit.
+12. **New Outfit — production-live through PR #80; owner live audit continues.**
+13. **Outfits / Style Feed — next broader discovery/ranking implementation after the owner finishes Roadmap 12.** Preserve the locked Following-only `All | Fit Twins` + Occasion model and do not add a Style Tag filter.
 14. Garment/Product detail — Exact Variation consumes the canonical 11A map when reached.
 15. Explore.
 16. Search + `/browse` compatibility.
@@ -227,24 +245,23 @@ PR #77 mappings:
 - `20260824234500_live_profile_identity.sql` → hosted **`20260825000708 live_profile_identity`**.
 - `20260825000500_fix_live_comment_like_count_projection.sql` → hosted **`20260825000722 fix_live_comment_like_count_projection`**.
 
-Production smoke verification after these migrations proved `profile-photos` public identity storage, the comment-Like table and the corrected public comment projection were live before application cutover.
+PR #80 mapping:
+- `20260825021000_outfit_comment_cursor_pagination.sql` → hosted **`20260825025014 outfit_comment_cursor_pagination`**.
 
-PR #80 branch-only migration:
-- `20260825021000_outfit_comment_cursor_pagination.sql` — **NOT APPLIED TO PRODUCTION**. Adds newest-first cursor-paginated Outfit comment projection with live profile identity and safe viewer Like/delete booleans. Apply/smoke-verify before PR #80 application cutover if production deployment is authorized.
+Production smoke verification after PR #77 proved `profile-photos` public identity storage, the comment-Like table and corrected public comment projection. PR #80 smoke verification additionally proved the cursor-paginated Outfit comment function exists in production before application cutover.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Finish full exact-head verification for PR #80. Do not merge/deploy it until the owner explicitly authorizes production.
-- If production is authorized, apply/smoke-verify the PR #80 cursor-pagination migration first, then merge/deploy the exact verified PR head and perform live/runtime checks.
-- Continue the owner New Outfit re-audit on the resulting production across create → Draft/resume → Preview → Publish → opened Outfit/detail/gallery/hotspots → edit → comments/social → practical mobile/desktop behavior.
+- Continue the owner New Outfit re-audit on production commit `2856b77dda00b7d8bf373579cef2acb36d21cf69` across create → Draft/resume → Preview → Publish → opened Outfit/detail/gallery/hotspots → edit → comments/social → practical mobile/desktop behavior.
 - **Roadmap 13 remains blocked until the owner says the Roadmap 12/New Outfit audit is complete.**
-- After the owner accepts a stopping point, perform the cold production diff/canonical audit and record the exact accepted production SHA as the new known-good checkpoint.
+- The newly locked **Style Feed** rename/purpose/filter model and homepage **FIT YOUR STYLE** third card are documented decisions, not yet implemented. Preserve them for the next implementation pass; do not silently add a Style Tag filter.
+- After the owner accepts a stopping point, perform the cold production diff/canonical audit and record the exact accepted production SHA as the next known-good checkpoint.
 - Future work must preserve the owner-locked app-transition direction and avoid needless browser-only coupling.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
 - Full Admin all-Products priority/filter/merge/split presentation remains.
 - Purchase-context aggregate/admin reporting UI remains open.
 - Broader Closet mutation/lifecycle semantics and exact post-submit Fit Report mutation model remain open.
-- Full My Circle Following / Fit Twins / Discover ranking and richer Outfit discovery/search remain later roadmap work.
+- Full Style Feed ranking and richer Outfit discovery/search remain later roadmap work beyond the locked source/filter semantics above.
 - Product merge/split, richer alias management, spam handling, broader Product-photo moderation, field lock/reopen, external barcode-provider evaluation, SerpAPI admin UX and starter-catalog enrichment remain open where previously scoped.
 - `main` is currently not branch-protected; required PR + CI protection remains a separate owner decision and must not be changed silently.
 
@@ -260,7 +277,8 @@ Recent relevant lineage:
 - `agent/roadmap-app-transition-live-review` — RECOVERED via **PR #77 / DEPLOYED**.
 - `agent/post-pr77-production-reconciliation` — RECOVERED via **PR #78 / DEPLOYED docs-only**.
 - `agent/roadmap12-live-audit-2` — RECOVERED via **PR #79 / DEPLOYED**.
-- `agent/roadmap12-checkpoint-repair` — **ACTIVE via PR #80 / NOT DEPLOYED**.
+- `agent/roadmap12-checkpoint-repair` — RECOVERED via **PR #80 / DEPLOYED**.
+- `agent/roadmap12-handoff-style-feed-lock` — **documentation-only reconciliation branch created after PR #80; no application behavior change and not production-live.**
 
 # CONDENSED DEPLOYMENT LEDGER
 - 2026-08-21 CANONICAL RECOVERY established one clean source-of-truth line; PR #43 promoted it.
@@ -279,11 +297,12 @@ Recent relevant lineage:
 - PR #76 fixed iOS/Safari Outfit photo conversion fallback; exact head `36d5a433a16d844ada1e5cfdd67264f8caf5a918`, CI #801, merge `e4af3074806a0e2307d7e8d0c21e821c70425eaa`, Vercel `dpl_AU3ZyuW84yEi5X1G27kCd3mX6iX6` READY.
 - **PR #77 completed the prior Roadmap 12 live-review repair batch**: exact head `2a6ada938db7772bf27819593d97f5d3556e4312`; full CI #853 (`32791915054`) passed; production migrations `20260825000654`, `20260825000708`, `20260825000722` applied/smoke-verified; squash merge **`41c92a5c94a8d03d59b627f8f5b55e37bdcf482f`**; Vercel **`dpl_3EUNtQettqxv8LwvTt9FGer8FaJL`** READY and serving `likesized.com`; live HTTP 200; checked deployment-scoped error/fatal logs clean.
 - **PR #78 reconciled canonical production truth after PR #77**: exact head `b088784773c192a09cb42d00ce10d7ac2c1c2b93`; full CI #855 (`32792808295`) passed; squash merge **`3618632c75f502469d9f7d49254d3edd85211aa1`**; docs-only Vercel **`dpl_DCh7D9gSFKjmCY1rJGwvwhF5HnRJ`** READY and serving `likesized.com`; no application/database behavior change.
-- **PR #79 completed the next Roadmap 12 live-audit follow-up**: exact head `ec4bebec4f2743cb8461a724d50e2cb7c1b1529e`; full CI #869 (`32799021871`) passed; squash merge **`8835a413680daef0b78ec890ffa50c84424bdc37`**; Vercel **`dpl_3aSPoi4UwKgZHHDyMQKdosatgYVh`** READY and serving `likesized.com`; live HTTP 200; checked runtime-error window clean. A later stopping-point audit found semantic defects now being repaired on PR #80.
-- **PR #80 is the active stopping-point repair. It is not merged, its new migration is not applied to production, and it is not production-live.**
+- **PR #79 completed the next Roadmap 12 live-audit follow-up**: exact head `ec4bebec4f2743cb8461a724d50e2cb7c1b1529e`; full CI #869 (`32799021871`) passed; squash merge **`8835a413680daef0b78ec890ffa50c84424bdc37`**; Vercel **`dpl_3aSPoi4UwKgZHHDyMQKdosatgYVh`** READY and serving `likesized.com`; live HTTP 200; checked runtime-error window clean. A later stopping-point audit found semantic defects repaired by PR #80.
+- **PR #80 repaired the stopping-point defects and is production-live**: exact head **`5540cd9b31d2a4bff2c6e13fa2c3a03031d42527`**; full CI #878 (`32802733649`) passed; production migration **`20260825025014 outfit_comment_cursor_pagination`** applied/smoke-verified; squash merge **`2856b77dda00b7d8bf373579cef2acb36d21cf69`**; Vercel **`dpl_4QfH5QhtRcDn4gXLuAQXau1jyCDJ`** READY and serving `likesized.com`; live HTTP 200; checked runtime-error window clean.
 
 # EXACT NEXT ACTION — CURRENT
-1. Finish exact-head full CI for PR #80 after canonical source/docs reconciliation; correct only real regressions or stale safeguards without reintroducing the audited defects.
-2. When the exact PR #80 head is green, report the verified candidate state. Do not merge/deploy until the owner explicitly authorizes production.
-3. After authorization: apply/smoke-verify `20260825021000_outfit_comment_cursor_pagination.sql` in production Supabase, merge the exact verified PR #80 head, wait for Vercel READY, verify live HTTP/runtime state, then return `likesized.com` for owner review.
-4. Keep Roadmap 13 blocked until the owner explicitly finishes the New Outfit/Roadmap 12 audit.
+1. In the next conversation/tab, start from production commit **`2856b77dda00b7d8bf373579cef2acb36d21cf69`** and continue the owner live Roadmap 12/New Outfit audit. Do not assume Roadmap 12 is complete until the owner says so.
+2. Preserve the newly locked **Style Feed** direction: rename My Circle → Style Feed; Following-only rolling Outfit feed; top switch **All | Fit Twins** where Fit Twins includes Fit Twin + Tops Twin + Bottoms Twin; **Occasion is the only additional feed filter; no Style Tag filter**; Search/Explore remain for intentional specific discovery.
+3. Preserve the newly locked homepage third feature-card direction: **FIT YOUR STYLE** / **Follow people whose fit and style you trust.** / supporting see-what-they-wear/style/recommend meaning / **Get Inspired →**.
+4. The documentation-only branch carrying this reconciliation is `agent/roadmap12-handoff-style-feed-lock`. It is not merged/deployed; do not treat that branch itself as a new production application state.
+5. Keep Roadmap 13 blocked until the owner explicitly finishes the New Outfit/Roadmap 12 audit.

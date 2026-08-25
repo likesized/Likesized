@@ -22,7 +22,7 @@ export default async function OnboardingPage({searchParams}:{searchParams:Search
 
   const params=await searchParams;
   const error=first(params.error);
-  const errorMessage=error==="invalid_username"?"Choose a username with 3–32 letters, numbers, or underscores.":error==="username_taken"?"That username is already taken. Try another one.":error==="invalid_fit_community"?"Choose Men, Women, or Both for your Fit Community.":error==="invalid_location"?"Enter both city and state, or leave both blank.":error==="invalid_measurements"?"Check the measurements you entered and try again.":error==="save_failed"?"Your Fit Profile could not be saved.":null;
+  const errorMessage=error==="invalid_username"?"Choose a username with 3–32 letters, numbers, or underscores.":error==="username_taken"?"That username is already taken. Try another one.":error==="invalid_fit_community"?"Choose Men, Women, or Both for your Fit Community.":error==="invalid_location"?"City and state are required.":error==="invalid_measurements"?"Check the measurements you entered and try again.":error==="save_failed"?"Your Fit Profile could not be saved.":null;
   const unitSystem=fitProfile?.preferred_unit_system==="metric"?"metric":"imperial";
   const fitCommunity=(fitProfile?.fit_community==="men"||fitProfile?.fit_community==="women")?fitProfile.fit_community:"both";
   const isInitialSetup=!fitProfile?.completed_at;

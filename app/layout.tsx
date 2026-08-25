@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { GlobalEntityQuickViewLayer } from "@/components/GlobalEntityQuickViewLayer";
 import { Header } from "@/components/Header";
 
 export const metadata: Metadata = {
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <Header />
         {children}
+        <GlobalEntityQuickViewLayer />
       </body>
     </html>
   );

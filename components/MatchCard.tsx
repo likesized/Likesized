@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { EntityQuickView } from "@/components/EntityQuickView";
+import { PersonQuickView } from "@/components/PersonQuickView";
 
 type MatchCardProps = {
   name: string;
@@ -32,7 +34,10 @@ export function MatchCard({
   linkLabel,
   footer,
 }: MatchCardProps) {
-  const resolvedLinkLabel = linkLabel ?? (item ? "See fit details →" : "View profile →");
+  const resolvedLinkLabel = linkLabel ?? (item ? "Quick view →" : "View profile →");
+  const personUsername = href.startsWith("/people/") ? href.slice("/people/".length).split(/[?#]/)[0] : "";
+  const garmentHref = href.startsWith("/item/") ? href : "";
+  const trigger = <span className="textLink">{resolvedLinkLabel}</span>;
 
   return (
     <article className="matchCard">
@@ -58,14 +63,14 @@ export function MatchCard({
             </span>
           </div>
         ) : description ? (
-          <div className="garment">
-            <span>{description}</span>
-          </div>
+          <div className="garment"><span>{description}</span></div>
         ) : null}
-        {href ? (
-          <Link href={href} className="textLink">
-            {resolvedLinkLabel}
-          </Link>
+        {personUsername ? (
+          <PersonQuickView username={personUsername} displayName={name} avatarUrl={avatarUrl} inline>{trigger}</PersonQuickView>
+        ) : garmentHref ? (
+          <EntityQuickView kind="garment" title={item || name} subtitle={secondary} imageUrl={avatarUrl} details={[{label:"Match",value:typeof match==="number"?`${match}%`:null},{label:"Size",value:size},{label:"Fit",value:fit}]} href={garmentHref} fullLabel="View Garment" inline>{trigger}</EntityQuickView>
+        ) : href ? (
+          <Link href={href} className="textLink">{resolvedLinkLabel}</Link>
         ) : null}
         {footer ? <div className="authActions">{footer}</div> : null}
       </div>

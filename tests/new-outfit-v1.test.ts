@@ -173,7 +173,7 @@ test("Tagged Items preview uses universal garment actions and full-size swipe-di
  assert.doesNotMatch(shopRoute,/retailer_url/);
 });
 
-test("comments remain plain text and paginated comments preserve Like, flag, and authorized delete",()=>{
+test("comments remain plain text and paginated comments preserve Like, flag, authorized delete, and commenter quick view",()=>{
  assert.match(commentComposer,/textarea/);
  assert.doesNotMatch(commentComposer,/contentEditable|execCommand|rich text/i);
  assert.match(commentApi,/LINK_PATTERN/);
@@ -183,7 +183,8 @@ test("comments remain plain text and paginated comments preserve Like, flag, and
  assert.doesNotMatch(commentThread,/likeOutfitComment|unlikeOutfitComment/);
  assert.match(commentThread,/reportContent/);
  assert.match(commentThread,/comment\.canDelete/);
- assert.match(commentThread,/\/people\/\$\{comment\.username\}/);
+ assert.match(commentThread,/PersonQuickView/);
+ assert.match(commentThread,/username=\{comment\.username\}/);
  assert.match(commentApi,/get_outfit_comments_sorted_page/);
  assert.match(commentPageMigration,/order by oc\.created_at desc,oc\.id desc/);
  assert.match(commentPageMigration,/can_delete boolean/);

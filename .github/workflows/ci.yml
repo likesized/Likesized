@@ -61,11 +61,17 @@ jobs:
       - name: Outfit live-audit repair safeguards
         run: node --test tests/outfit-live-audit-repairs.test.ts
 
+      - name: Comment sheet and global quick-view safeguards
+        run: node --test tests/comments-global-quickview.test.ts
+
       - name: Public homepage content safeguards
         run: node --test tests/public-homepage-content.test.ts
 
       - name: Grouped navigation safeguards
         run: node --test tests/navigation-layout.test.ts
+
+      - name: Settings profile consolidation safeguards
+        run: node --test tests/settings-profile-consolidation.test.ts
 
       - name: Explore, My Circle, and LikeLocker safeguards
         run: node --test tests/explore-circle-likelocker.test.ts

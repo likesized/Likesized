@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 const catalog = readFileSync("app/closet/add/CatalogGarmentFields.tsx", "utf8");
 const actions = readFileSync("app/closet/actions.ts", "utf8");
 const form = readFileSync("app/closet/add/FitReportForm.tsx", "utf8");
+const photoFields = readFileSync("app/closet/add/FitReportPhotoFields.tsx", "utf8");
 const fitCss = readFileSync("app/closet/add/fitReport.module.css", "utf8");
 const settings = readFileSync("app/settings/page.tsx", "utf8");
 const settingsCss = readFileSync("app/settings/settings.module.css", "utf8");
@@ -118,13 +119,16 @@ test("uncertainty modal heading and spacing are locally constrained", () => {
   assert.match(fitCss, /@media \(max-width: 640px\)[\s\S]*?\.identityHelpCard h2\s*\{[\s\S]*?font-size: 26px;/);
 });
 
-test("Product Photo remains at the bottom of Optional Additional Information", () => {
+test("Product Photo stays in the primary Photos section after the Fit Photos", () => {
   const enrichmentStart = catalog.indexOf("export function CatalogCommunityEnrichment");
   const garmentStart = catalog.indexOf("export function CatalogGarmentFields");
   const enrichment = catalog.slice(enrichmentStart, garmentStart);
 
-  assert.match(enrichment, /Product Photo/);
+  assert.doesNotMatch(enrichment, /Product Photo/);
   assert.doesNotMatch(enrichment, /Product Label \/ Tag Photo/);
+  assert.match(photoFields, /Product Photo \(not being worn\)/);
+  assert.ok(photoFields.indexOf('label="Front Fit Photo"') < photoFields.indexOf('label="Back Fit Photo"'));
+  assert.ok(photoFields.indexOf('label="Back Fit Photo"') < photoFields.indexOf('Product Photo (not being worn)'));
 });
 
 test("Fit Report confirmation uses actual form pending state instead of disabling itself on click", () => {

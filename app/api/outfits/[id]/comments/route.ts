@@ -100,3 +100,17 @@ export async function PATCH(request:Request,{params}:{params:Promise<{id:string}
   const {data:updated}=await supabase.from("outfit_comments").select("like_count").eq("id",commentId).maybeSingle();
   return Response.json({liked,likeCount:Number(updated?.like_count)||0});
 }
+
+export async function DELETE(request:Request,{params}:{params:Promise<{id:string}>}){
+  const {id:postId}=await params;
+  if(!UUID.test(postId))return Response.json({error:"Invalid Outfit."},{status:400});
+  const payload=await request.json().catch(()=>null) as {commentId?:unknown}|null;
+  const commentId=typeof payload?.commentId==="string"?payload.commentId:"";
+  if(!UUID.test(commentId))return Response.json({error:"Invalid comment."},{status:400});
+  const supabase=await createClient();
+  const {data:claims}=await supabase.auth.getClaims();
+  if(!claims?.claims?.sub)return Response.json({error:"Sign in to delete comments."},{status:401});
+  const {data,error}=await supabase.from("outfit_comments").delete().eq("id",commentId).eq("post_id",postId).select("id").maybeSingle();
+  if(error||!data)return Response.json({error:"Could not delete comment."},{status:403});
+  return Response.json({ok:true});
+}

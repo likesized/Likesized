@@ -9,6 +9,7 @@ const catalog=readFileSync("app/closet/add/CatalogGarmentFields.tsx","utf8");
 const catalogSearch=readFileSync("app/api/catalog/search/route.ts","utf8");
 const size=readFileSync("app/closet/add/GarmentSizeFields.tsx","utf8");
 const form=readFileSync("app/closet/add/FitReportForm.tsx","utf8");
+const photoFields=readFileSync("app/closet/add/FitReportPhotoFields.tsx","utf8");
 const actions=readFileSync("app/closet/actions.ts","utf8");
 const outfits=readFileSync("app/outfits/new/page.tsx","utf8");
 const domain=readFileSync("lib/domain.ts","utf8");
@@ -61,7 +62,8 @@ test("category-first intake narrows garment type before item details",()=>{
 });
 
 test("final intake order keeps the normal Fit Report clear and collapses additional information",()=>{
- for(const required of ["Brand / Make","Item / Style / Model","Overall category","Specific garment type","Color","Overall Fit Result","Condition","Fit photos","Fit notes"])assert.match(intake+catalog+form,new RegExp(required));
+ for(const required of ["Brand / Make","Item / Style / Model","Overall category","Specific garment type","Color","Overall Fit Result","Condition","Fit notes"])assert.match(intake+catalog+form,new RegExp(required));
+ for(const requiredPhoto of ["<legend>Photos ","Product Photo","Front Fit Photo","Back Fit Photo","at least one required"])assert.match(photoFields,new RegExp(requiredPhoto));
  assert.match(catalog,/Department <span className="muted inlineMuted">optional<\/span>/);
  assert.match(catalog,/Retail link <span className="muted inlineMuted">optional<\/span>/);
  assert.match(catalog,/<details className=\{styles\.optionalDetails\}>/);
@@ -79,8 +81,8 @@ test("final intake order keeps the normal Fit Report clear and collapses additio
  assert.match(catalog,/PURCHASE_YEARS/);
  assert.match(catalog,/list="retailer-options"/);
  assert.ok(intake.indexOf("Overall Fit Result") < intake.indexOf("Condition"));
- assert.ok(intake.indexOf("Condition") < intake.indexOf("Fit photos"));
- assert.ok(intake.indexOf("Fit photos") < intake.indexOf("<FitNotesField"));
+ assert.ok(intake.indexOf("Condition") < intake.indexOf("<FitReportPhotoFields"));
+ assert.ok(intake.indexOf("<FitReportPhotoFields") < intake.indexOf("<FitNotesField"));
  assert.ok(intake.indexOf("<FitNotesField") < intake.indexOf("<CatalogRetailLinkField"));
  assert.ok(intake.indexOf("<CatalogRetailLinkField") < intake.indexOf("<CatalogCommunityEnrichment"));
  assert.ok(intake.indexOf("<CatalogCommunityEnrichment") < intake.indexOf("Add Fit Report →"));
@@ -107,8 +109,8 @@ test("final confirmation reviews only main Fit Report fields before server submi
  assert.match(form,/\[data-review-label\], input\[name='size_normalized_label'\]/);
  assert.match(intake,/data-review-label="Overall Fit Result"/);
  assert.match(intake,/data-review-label="Condition"/);
- assert.match(intake,/data-review-label="Front Fit Photo"/);
- assert.match(intake,/data-review-label="Back Fit Photo"/);
+ assert.match(photoFields,/data-review-label="Front Fit Photo"/);
+ assert.match(photoFields,/data-review-label="Back Fit Photo"/);
  assert.match(form,/data-review-label="Fit notes"/);
  assert.match(catalog,/data-review-label="Retail link"/);
  assert.doesNotMatch(catalog,/name="purchased_from"[^>]*data-review-label/);
@@ -277,7 +279,7 @@ test("invalid submit is explicit and successful submit offers working Closet, st
 test("fixture-mode intake can sanity-check the full review without writing preview data",()=>{
  assert.match(intake,/allowExploreFixtures/);
  assert.match(intake,/EXPLORE_FIXTURE_PRODUCTS/);
- assert.match(intake,/action=\{fixtureMode \? undefined : addGarment\}/);
+ assert.match(intake,/action=\{fixtureMode \? undefined : addGarmentWithPhotoRequirement\}/);
  assert.match(intake,/previewOnly=\{fixtureMode\}/);
  assert.match(intake,/nothing here will save or write to Supabase/);
  assert.match(intake,/Review Fit Report →/);

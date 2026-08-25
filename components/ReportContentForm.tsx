@@ -1,11 +1,12 @@
 import { reportContent } from "@/app/moderation/actions";
+import { UniversalActionSummary } from "@/components/UniversalActionBar";
 
 type Target = "outfit_post" | "outfit_comment" | "fit_reference_photo";
 
 export function ReportContentForm({ targetType, targetId, returnTo, summaryLabel = "Report", iconOnly = false }: { targetType: Target; targetId: string; returnTo: string; summaryLabel?: string; iconOnly?: boolean }) {
   const outfitReasons = targetType === "outfit_post" || targetType === "outfit_comment";
   return <details className={iconOnly ? "reportFlagControl" : undefined}>
-    <summary title={iconOnly ? summaryLabel : undefined} aria-label={iconOnly ? summaryLabel : undefined}>{iconOnly ? "⚑" : summaryLabel}</summary>
+    {iconOnly ? <UniversalActionSummary action="report" ariaLabel={summaryLabel} title={summaryLabel}/> : <summary>{summaryLabel}</summary>}
     <form action={reportContent}>
       <input type="hidden" name="target_type" value={targetType}/>
       <input type="hidden" name="target_id" value={targetId}/>

@@ -73,6 +73,18 @@ Latest production database mappings relevant to Roadmap 12:
 - `20260825122000_outfit_photo_captions.sql` → **`20260825133233 outfit_photo_captions`**;
 - `20260825152000_outfit_public_hotspots_and_comment_sorting.sql` → **`20260825155645 outfit_public_hotspots_and_comment_sorting`**.
 
+## Current primary active line — COMPLETION REPAIR + ROADMAP RECORDING
+Active branch: **`agent/canonical-product-image-roadmap`**.
+
+This line contains the owner-locked Roadmap 13A canonical Product-image-scoring plan plus the current owner-directed completion repairs. It is **not production-live** and has no production authorization merely because implementation is present.
+
+Current completion-repair scope:
+1. replace the invalid composed Wishlist emoji/glyph with one deterministic shopping-bag + heart SVG whose active state fills the heart;
+2. simplify Outfit creator quick view to **Overall Match** alone, then **Tops Match | Bottoms Match**, then **Total Garments | Total Outfits**, with no boxed table/grid chrome;
+3. make Total Garments count distinct garment/Fit Report associations rather than relabeling raw Fit Report count;
+4. collect optional **City + State** only during initial Fit Profile setup, keep it private, make it editable later in Settings, and do not re-show it on My Measurements updates;
+5. add owner-private database storage for city/state so future anonymous regional aggregates such as wishlist demand can be built without exposing location on public/member profile surfaces.
+
 ## Roadmap 12 — New Outfit — CURRENT OWNER AUDIT GATE
 Roadmap 12 is production-live through PR #87 and is still under owner audit.
 
@@ -86,6 +98,8 @@ Roadmap 12 is production-live through PR #87 and is still under owner audit.
 - Current-person Match is separate from historical garment Match.
 - There is **no current V1 1–5-star Fit Rating UI**. Fit Result remains Too Small / Snug / Just Right / Relaxed / Too Big.
 - A profile photo, when uploaded, is public current identity. Outfit/comment/profile surfaces resolve current identity rather than snapshotting an old avatar.
+- City/state is private member metadata, not a public profile field and not part of Body Match. It may support future anonymous regional aggregate insights such as regional wishlist demand.
+- Initial setup may ask City + State once. After completion, city/state is edited in Settings and does not reappear on My Measurements.
 
 ## Fit Community / Following / Twin status
 - Fit Community = Men / Women / Both; it is wearer/social relevance metadata and never changes Match math.
@@ -157,7 +171,7 @@ When evidence exists but confidence is insufficient, current quick-view directio
 LikeLocker, Wish Locker and Shop are independent.
 - LikeLocker = product affinity/save state.
 - Wish Locker = purchase-intent wishlist state.
-- The compact garment Wishlist action uses a dedicated **shopping-bag + heart** visual; do not substitute an unexplained generic emoji/bookmark.
+- The compact garment Wishlist action uses **one deterministic shopping-bag + heart vector/SVG**. Do not compose multiple Unicode/emoji symbols, and do not substitute a generic bookmark. The inactive state is outlined; the active state uses the same icon with the heart filled.
 - When the Wish Locker page is built/audited, the same Wishlist symbol must be prominent enough to connect the garment action with the destination.
 - Garment utility actions do **not** show public counts. No Wishlist count, Share count, Shop count, Report count or other utility-action clutter on garment surfaces.
 - Social counts belong only where the count itself is meaningful, such as Outfit Likes/Comments or profile follower context.
@@ -186,7 +200,9 @@ Raw/private body data, private Closet linkage, unresolved candidate/review state
 - Tagged quick view has one full-Product navigation action: **View Garment →**. Do not restore competing **See fit evidence** / **Full details** links.
 - Report reason starts unselected; Other is deliberate, never silently defaulted.
 - Outfit-content actions are **LikeLocker · Share · Report**. Follow/Notify belong to creator/profile context.
-- Creator quick view may show Overall/Tops/Bottoms Match, Total Fit Reports, Total Outfits, View Full Profile, Follow and notification state without exposing raw measurements.
+- Creator quick view hierarchy is **Overall Match** on its own row, **Tops Match | Bottoms Match**, then **Total Garments | Total Outfits**. Do not render these stats as a boxed table/grid with cell borders.
+- Total Garments means distinct garment evidence/items, not a relabeled raw Fit Report count.
+- Creator quick view may also show View Full Profile, Follow and notification state without exposing raw measurements.
 - Comments default to **Top** and may switch to **Newest**. Top = Like count descending, newest tie-break. Newest = newest first.
 - Comment submit, Like/unlike and sort switching use the API/local interaction path rather than whole-Outfit navigation for every action.
 - Owner management controls—Edit, comments on/off, delete, Views, Follows generated—remain separate from viewer content actions.
@@ -397,8 +413,8 @@ An admin-locked image always wins. A newly uploaded photo may score 100 and stil
 1. Homepage + FAQ — current public copy live; exact sex/body-specific measurement FAQ wording remains pending owner approval.
 2. Global header / member menu / admin entry — current Roadmap 12 interaction repairs are live; broader audit may continue afterward.
 3. Auth — owner-confirmed baseline.
-4. Fit Profile / My Measurements — broader audit remains.
-5. Profile Settings — Fit Community editor live.
+4. **Fit Profile / My Measurements — OWNER-COMPLETE.** The current active completion repair adds private City/State only to first-time setup and Settings; it does not reopen the My Measurements surface.
+5. Profile Settings — Fit Community editor live; private City/State editor is included in the current active completion repair.
 6. Notifications — audit remains.
 7. Unified Closet/member profile Closet — canonical visibility meaning reconciled; broader lifecycle/mutation audit remains.
 8. Post-submit Fit Report mutation/lifecycle model — remains.
@@ -435,9 +451,10 @@ Later Roadmap 12 mappings:
 - `20260825122000_outfit_photo_captions.sql` → hosted **`20260825133233 outfit_photo_captions`**.
 - `20260825152000_outfit_public_hotspots_and_comment_sorting.sql` → hosted **`20260825155645 outfit_public_hotspots_and_comment_sorting`**.
 
-Applied migrations are immutable. PR #86 and PR #87 added no migration.
+Applied migrations are immutable. PR #86 and PR #87 added no migration. The current active completion repair proposes new ordered migration `20260825183000_private_profile_location_metadata.sql`; it is not production-applied until the owner authorizes and the exact tested batch is merged/deployed.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
+- Verify the current completion-repair branch as one exact candidate, including TypeScript, focused safeguards, production build, complete fresh migration replay and database behavior/privacy tests before any merge.
 - Continue the owner New Outfit/Roadmap 12 re-audit on production. **Roadmap 13 remains blocked until the owner says Roadmap 12/New Outfit is complete.**
 - Roadmap 13A Automatic Canonical Product Image Scoring is owner-locked and planned; do not implement it opportunistically before its roadmap turn unless the owner explicitly changes the order.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification.
@@ -461,11 +478,12 @@ Recent production lineage:
 - PR #85 — Outfit interaction/Fit Report photo batch — DEPLOYED, merge `95cd89724ab01d85ab2ea3732af4c4f552d700b8`.
 - PR #86 — Roadmap 12 interaction consistency — DEPLOYED, merge `6dccf40032d12fd68c5fc5ee85ad4a4e75a8db19`.
 - PR #87 — Fit Report/Outfit live interaction regression repair — DEPLOYED, merge `96905b411dcef2b2a7b0cd55ef379986eff402db`.
-- `agent/canonical-product-image-roadmap` — **CURRENT PRIMARY DECISION LINE** for the owner-locked Roadmap 13A canonical Product image-scoring plan; docs-only, not production-live until explicitly authorized for merge/deployment.
+- `agent/canonical-product-image-roadmap` — **CURRENT PRIMARY ACTIVE LINE** containing Roadmap 13A owner-locked planning plus the current owner-directed Wishlist/creator-quick-view/private-location completion repairs. Not production-live.
 
 # EXACT NEXT ACTION — CURRENT
-1. Continue the owner's production New Outfit/Roadmap 12 audit from PR #87.
-2. Keep Roadmap 13 blocked until the owner explicitly closes Roadmap 12/New Outfit.
-3. Preserve the Roadmap 13A Automatic Canonical Product Image Scoring specification on the current primary decision line and carry it forward canonically with the next authorized production batch.
-4. When Roadmap 13A is reached, design the ordered database migration, deterministic scoring worker/function, image-recognition boundary, moderation/eligibility logic, variation fallback hierarchy and Admin set/lock/unlock controls before implementation.
-5. Do not create a competing Explore/Search/Wish Locker image-selection implementation before Roadmap 13A establishes the shared canonical Product-image source.
+1. Verify the exact current active-line candidate across canonical integrity, TypeScript, focused application safeguards, production build, fresh migration replay and database behavior/privacy tests.
+2. Review the complete diff against `main` for only the owner-directed completion repair plus Roadmap 13A canonical recording; no opportunistic scope drift.
+3. Do not merge/deploy this new batch without explicit production authorization for this batch.
+4. After any authorized production deployment, verify `likesized.com` and reconcile the exact merge/deployment/migration facts here.
+5. Keep Roadmap 13 blocked until the owner explicitly closes Roadmap 12/New Outfit.
+6. Preserve Roadmap 13A as the shared future canonical Product-image system; do not create competing Explore/Search/Wish Locker image selection before its roadmap turn.

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { saveFitCommunitySettings, saveFollowingNotificationSettings } from "@/app/settings/actions";
 import { ProfileIdentityForm } from "@/app/settings/ProfileIdentityForm";
+import { ProfileLocationForm } from "@/app/settings/ProfileLocationForm";
 import { ProfilePhotoForm } from "@/app/settings/ProfilePhotoForm";
 import { UsernameSettingsForm } from "@/app/settings/UsernameSettingsForm";
 import styles from "@/app/settings/settings.module.css";
@@ -17,12 +18,13 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
   const userId=claimsData?.claims?.sub;
   if(claimsError||!userId)redirect("/login?next=/settings");
 
-  const [{data:profile,error:profileError},{data:fitProfile,error:fitError},{data:notificationSettings,error:notificationSettingsError}]=await Promise.all([
+  const [{data:profile,error:profileError},{data:fitProfile,error:fitError},{data:notificationSettings,error:notificationSettingsError},{data:location,error:locationError}]=await Promise.all([
     supabase.from("profiles").select("username,display_name,bio,avatar_url").eq("id",userId).maybeSingle(),
     supabase.from("fit_profiles").select("completed_at,fit_community").eq("user_id",userId).maybeSingle(),
     supabase.rpc("get_fit_twin_notification_settings"),
+    supabase.from("profile_locations").select("city,state_region").eq("user_id",userId).maybeSingle(),
   ]);
-  if(profileError||fitError||notificationSettingsError)throw new Error("Could not load profile settings.");
+  if(profileError||fitError||notificationSettingsError||locationError)throw new Error("Could not load profile settings.");
   if(!profile?.username||!fitProfile?.completed_at)redirect("/onboarding");
 
   let currentPhotoUrl:string|null=null;
@@ -35,20 +37,22 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
   const saved=first(params.saved)==="1";
   const usernameSaved=first(params.username)==="saved";
   const communitySaved=first(params.community)==="saved";
+  const locationSaved=first(params.location)==="saved";
   const photoState=first(params.photo);
   const notificationState=first(params.notifications);
   const error=first(params.error);
-  const errorMessage=error==="invalid_profile"?"Display name or bio is too long.":error==="save_failed"?"Your profile settings could not be saved.":error==="username_locked"?"Click Change username before editing your username.":error==="invalid_username"?"Choose a username with 3–32 letters, numbers, or underscores.":error==="username_taken"?"That username is already taken or temporarily reserved. Try another one.":error==="username_save_failed"?"Your username could not be changed.":error==="invalid_fit_community"?"Choose Men, Women, or Both for your Fit Community.":error==="fit_community_save_failed"?"Your Fit Community could not be saved.":error==="invalid_profile_photo"?"Choose a valid profile photo and try again.":error==="profile_photo_save_failed"?"Your profile photo could not be saved. Try again in a moment.":error==="notification_save_failed"?"Your notification preference could not be saved.":null;
+  const errorMessage=error==="invalid_profile"?"Display name or bio is too long.":error==="save_failed"?"Your profile settings could not be saved.":error==="username_locked"?"Click Change username before editing your username.":error==="invalid_username"?"Choose a username with 3–32 letters, numbers, or underscores.":error==="username_taken"?"That username is already taken or temporarily reserved. Try another one.":error==="username_save_failed"?"Your username could not be changed.":error==="invalid_fit_community"?"Choose Men, Women, or Both for your Fit Community.":error==="fit_community_save_failed"?"Your Fit Community could not be saved.":error==="invalid_location"?"Enter both city and state, or leave both blank.":error==="location_save_failed"?"Your location could not be saved.":error==="invalid_profile_photo"?"Choose a valid profile photo and try again.":error==="profile_photo_save_failed"?"Your profile photo could not be saved. Try again in a moment.":error==="notification_save_failed"?"Your notification preference could not be saved.":null;
   const notificationsEnabled=notificationSettings?.[0]?.fit_twin_activity_enabled===true;
   const fitCommunity=communityValue(fitProfile.fit_community);
   const fallbackInitial=(profile.display_name?.trim()||profile.username).slice(0,1).toUpperCase();
 
   return <main className="pageShell">
-    <div className="pageTitle"><span className="eyebrow">PROFILE & PRIVACY</span><h1>Control what represents you.</h1><p>Your profile identity and your Fit Profile are intentionally separate. Editing your username, display name, bio, or profile photo never changes body measurements, matching history, or garment evidence.</p></div>
+    <div className="pageTitle"><span className="eyebrow">PROFILE & PRIVACY</span><h1>Control what represents you.</h1><p>Your profile identity and your Fit Profile are intentionally separate. Editing your username, display name, bio, profile photo, or private location never changes body measurements, matching history, or garment evidence.</p></div>
 
     {saved?<div className="authMessage">Profile settings saved.</div>:null}
     {usernameSaved?<div className="authMessage">Username updated.</div>:null}
     {communitySaved?<div className="authMessage">Fit Community updated.</div>:null}
+    {locationSaved?<div className="authMessage">Location updated.</div>:null}
     {photoState==="saved"?<div className="authMessage">Profile photo updated.</div>:null}
     {photoState==="removed"?<div className="authMessage">Profile photo removed.</div>:null}
     {notificationState==="on"?<div className="authMessage">Following notifications turned on.</div>:null}
@@ -59,6 +63,7 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
       <div className="sectionHeading"><div><span className="eyebrow">PROFILE</span><h2>Member-facing identity</h2></div></div>
       <ProfilePhotoForm currentPhotoUrl={currentPhotoUrl} fallbackInitial={fallbackInitial} />
       <ProfileIdentityForm displayName={profile.display_name??""} bio={profile.bio??""} />
+      <ProfileLocationForm city={location?.city??""} stateRegion={location?.state_region??""} />
     </section>
 
     <section className={styles.settingsSection}>
@@ -90,7 +95,7 @@ export default async function SettingsPage({searchParams}:{searchParams:SearchPa
       <span className="eyebrow">PRIVACY</span>
       <div className={styles.privacyFyi}>
         <strong>Privacy</strong>
-        <p>Your exact body measurements are always private. Your profile information, posted garments, outfits, photos, and LikeSized match percentages may be visible to signed-in members. Raw measurements are never shown.</p>
+        <p>Your exact body measurements and saved city/state are private. Your profile information, posted garments, outfits, photos, and LikeSized match percentages may be visible to signed-in members. Raw measurements and private location are never shown.</p>
       </div>
     </section>
   </main>;

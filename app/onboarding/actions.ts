@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { normalizeProfileLocation } from "@/lib/profile-location";
 import { createClient } from "@/lib/supabase/server";
 
 type MeasurementType = { key:string; dimension:"length"|"weight" };
@@ -55,6 +56,13 @@ export async function saveFitProfile(formData:FormData){
   // any existing legacy rows unchanged when the member updates measurements.
   const sizeReferences=((existingSizeReferences??[]) as ExistingSizeReference[]).map((row)=>({reference_type:row.reference_type,original_size_label:row.original_size_label,sizing_system:row.sizing_system,band_size:row.band_size,cup_designation:row.cup_designation,shoe_size:row.shoe_size}));
   const fitPreferences=((existingFitPreferences??[]) as ExistingFitPreference[]).map((row)=>({garment_type_key:row.garment_type_key,preference:row.preference}));
+
+  if(isInitialSetup){
+    const location=normalizeProfileLocation(text(formData,"city"),text(formData,"state_region"));
+    if(!location)fail("invalid_location");
+    const {error:locationError}=await supabase.from("profile_locations").upsert({user_id:userId,...location,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+    if(locationError)fail("save_failed");
+  }
 
   const {error}=await supabase.rpc("save_fit_profile",{p_username:username,p_unit_system:unitSystem,p_measurements:rows,p_size_references:sizeReferences,p_fit_preferences:fitPreferences,p_fit_community:community});
   if(error){

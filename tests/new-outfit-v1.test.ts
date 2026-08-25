@@ -133,8 +133,10 @@ test("opened Outfit creator identity opens one compact member quick view",()=>{
  assert.match(creatorQuickView,/Overall Match/);
  assert.match(creatorQuickView,/Tops Match/);
  assert.match(creatorQuickView,/Bottoms Match/);
- assert.match(creatorQuickView,/Total Fit Reports/);
+ assert.match(creatorQuickView,/Total Garments/);
  assert.match(creatorQuickView,/Total Outfits/);
+ assert.match(detailPage,/creatorGarmentCount/);
+ assert.match(detailPage,/new Set\(\(garmentRowsResult\.data\?\?\[\]\)\.map/);
  assert.match(creatorQuickView,/View Full Profile/);
  assert.match(creatorQuickView,/action="follow"/);
  assert.match(creatorQuickView,/action="notify"/);

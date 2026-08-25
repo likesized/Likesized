@@ -10,6 +10,10 @@ const fitProfileForm = readFileSync(new URL("../app/onboarding/FitProfileForm.ts
 const fitProfileActions = readFileSync(new URL("../app/onboarding/actions.ts", import.meta.url), "utf8");
 const fitProfileHeroCss = readFileSync(new URL("../app/onboarding/FitProfileHero.module.css", import.meta.url), "utf8");
 const settingsPage = readFileSync(new URL("../app/settings/page.tsx", import.meta.url), "utf8");
+const settingsActions = readFileSync(new URL("../app/settings/actions.ts", import.meta.url), "utf8");
+const locationForm = readFileSync(new URL("../app/settings/ProfileLocationForm.tsx", import.meta.url), "utf8");
+const locationNormalizer = readFileSync(new URL("../lib/profile-location.ts", import.meta.url), "utf8");
+const locationMigration = readFileSync(new URL("../supabase/migrations/20260825183000_private_profile_location_metadata.sql", import.meta.url), "utf8");
 const peoplePage = readFileSync(new URL("../app/people/page.tsx", import.meta.url), "utf8");
 const circlePage = readFileSync(new URL("../app/circle/page.tsx", import.meta.url), "utf8");
 const searchPage = readFileSync(new URL("../app/search/page.tsx", import.meta.url), "utf8");
@@ -54,6 +58,31 @@ test("Fit Profile gives username rules up front and keeps the mobile update hero
   assert.match(fitProfileHeroCss, /3–32 characters\. Letters, numbers, and underscores only — no spaces\./);
   assert.match(fitProfilePage, /heroStyles\.revisitShell/);
   assert.match(fitProfileHeroCss, /\.revisitShell \{[\s\S]*?min-height: 0;[\s\S]*?grid-template-rows: auto auto;[\s\S]*?align-content: start;/);
+});
+
+test("initial Fit Profile collects private city/state once and Settings owns later edits", () => {
+  assert.match(fitProfilePage, /profile_locations/);
+  assert.match(fitProfileForm, /isInitialSetup\?<><div className="fieldPair"><label>City/);
+  assert.match(fitProfileForm, /name="city"/);
+  assert.match(fitProfileForm, /name="state_region"/);
+  assert.match(fitProfileForm, /City and state stay private and can be changed later in Settings/);
+  assert.match(fitProfileActions, /if\(isInitialSetup\)[\s\S]*profile_locations/);
+  assert.match(fitProfileActions, /normalizeProfileLocation/);
+  assert.match(settingsPage, /ProfileLocationForm/);
+  assert.match(locationForm, /Save location/);
+  assert.match(locationForm, /anonymous regional trends and demand insights/);
+  assert.match(settingsActions, /saveProfileLocationSettings/);
+  assert.match(settingsActions, /normalizeProfileLocation/);
+  assert.match(settingsActions, /profile_locations/);
+  assert.match(locationNormalizer, /\["NY", "New York"\]/);
+  assert.match(locationNormalizer, /STATE_CODE_BY_ALIAS/);
+  assert.match(locationNormalizer, /state_region: stateCode/);
+  assert.match(locationMigration, /create table public\.profile_locations/);
+  assert.match(locationMigration, /profile_locations_state_region_code/);
+  assert.match(locationMigration, /state_region in \(/);
+  assert.match(locationMigration, /enable row level security/);
+  assert.match(locationMigration, /owner reads own profile location/);
+  assert.doesNotMatch(locationMigration, /grant select[^;]*to anon/);
 });
 
 test("Fit Community is a saved default with reversible social-view filters", () => {

@@ -96,11 +96,11 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
   const photoUrls = new Map<string, string>();
   for (const photo of photoRows) if (photo.bucket === "outfit-photos") photoUrls.set(photo.id, supabase.storage.from("outfit-photos").getPublicUrl(photo.display_path).data.publicUrl);
 
-  const [fitReportCountResult,outfitCountResult]=await Promise.all([
-    viewerId?supabase.from("fit_reports").select("id",{count:"exact",head:true}).eq("user_id",outfit.user_id):Promise.resolve({count:null,error:null}),
+  const [garmentRowsResult,outfitCountResult]=await Promise.all([
+    viewerId?supabase.from("fit_reports").select("closet_item_id").eq("user_id",outfit.user_id):Promise.resolve({data:[],error:null}),
     supabase.from("outfit_posts").select("id",{count:"exact",head:true}).eq("user_id",outfit.user_id).eq("status","published"),
   ]);
-  const creatorFitReportCount=fitReportCountResult.error?null:fitReportCountResult.count;
+  const creatorGarmentCount=garmentRowsResult.error?null:new Set((garmentRowsResult.data??[]).map((row)=>row.closet_item_id)).size;
   const creatorOutfitCount=outfitCountResult.error?null:outfitCountResult.count;
 
   let liked = false;
@@ -207,7 +207,7 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
         topsMatch={topsMatch}
         bottomsMatch={bottomsMatch}
         twinLabel={creatorTwin}
-        fitReportCount={creatorFitReportCount}
+        garmentCount={creatorGarmentCount}
         outfitCount={creatorOutfitCount}
       />
 

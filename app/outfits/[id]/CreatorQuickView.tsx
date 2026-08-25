@@ -23,7 +23,7 @@ type Props = {
   topsMatch?: number;
   bottomsMatch?: number;
   twinLabel?: string | null;
-  fitReportCount: number | null;
+  garmentCount: number | null;
   outfitCount: number | null;
 };
 
@@ -31,7 +31,7 @@ function stat(value: number | undefined, suffix = "%") {
   return typeof value === "number" ? `${value}${suffix}` : "—";
 }
 
-export default function CreatorQuickView({ postId, creatorUserId, username, displayName, avatarUrl, publishedDate, signedIn, owner, following, notificationsOn, overallMatch, topsMatch, bottomsMatch, twinLabel, fitReportCount, outfitCount }: Props) {
+export default function CreatorQuickView({ postId, creatorUserId, username, displayName, avatarUrl, publishedDate, signedIn, owner, following, notificationsOn, overallMatch, topsMatch, bottomsMatch, twinLabel, garmentCount, outfitCount }: Props) {
   const [open, setOpen] = useState(false);
   const returnTo = `/outfits/${postId}`;
   const profileHref = username ? `/people/${username}` : "/people";
@@ -65,10 +65,10 @@ export default function CreatorQuickView({ postId, creatorUserId, username, disp
           <div><strong>{displayName}</strong>{username ? <small>@{username}</small> : null}</div>
         </div>
         <div className={styles.stats}>
-          <div><strong>{owner ? "—" : stat(overallMatch)}</strong><span>Overall Match</span></div>
+          <div className={styles.overallStat}><strong>{owner ? "—" : stat(overallMatch)}</strong><span>Overall Match</span></div>
           <div><strong>{owner ? "—" : stat(topsMatch)}</strong><span>Tops Match</span></div>
           <div><strong>{owner ? "—" : stat(bottomsMatch)}</strong><span>Bottoms Match</span></div>
-          <div><strong>{fitReportCount ?? "—"}</strong><span>Total Fit Reports</span></div>
+          <div><strong>{garmentCount ?? "—"}</strong><span>Total Garments</span></div>
           <div><strong>{outfitCount ?? "—"}</strong><span>Total Outfits</span></div>
         </div>
         {!signedIn && !owner ? <p className={styles.helper}>Sign in to see how closely your measurements match.</p> : null}

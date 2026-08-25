@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { normalizeProfileLocation } from "@/lib/profile-location";
 import { createClient } from "@/lib/supabase/server";
 
 const PROFILE_PHOTO_MAX_BYTES = 400 * 1024;
@@ -33,6 +34,16 @@ export async function saveProfileSettings(formData:FormData){
   const {error}=await supabase.from("profiles").update({display_name:displayName||null,bio:bio||null,updated_at:new Date().toISOString()}).eq("id",userId);
   if(error){if(error.code==="23514")fail("invalid_profile");fail("save_failed");}
   revalidateProfileSurfaces();redirect("/settings?saved=1");
+}
+
+export async function saveProfileLocationSettings(formData:FormData){
+  const location=normalizeProfileLocation(text(formData,"city"),text(formData,"state_region"));
+  if(!location)fail("invalid_location");
+  const {supabase,userId}=await authenticatedSettingsClient();
+  const {error}=await supabase.from("profile_locations").upsert({user_id:userId,...location,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+  if(error)fail("location_save_failed");
+  revalidatePath("/settings");
+  redirect("/settings?location=saved");
 }
 
 export async function saveFitCommunitySettings(formData:FormData){

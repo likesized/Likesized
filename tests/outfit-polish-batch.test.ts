@@ -6,6 +6,8 @@ const newPage=readFileSync(new URL("../app/outfits/new/page.tsx",import.meta.url
 const composer=readFileSync(new URL("../app/outfits/new/OutfitComposer.tsx",import.meta.url),"utf8");
 const gallery=readFileSync(new URL("../app/outfits/[id]/OutfitGallery.tsx",import.meta.url),"utf8");
 const detailPage=readFileSync(new URL("../app/outfits/[id]/page.tsx",import.meta.url),"utf8");
+const creatorQuickView=readFileSync(new URL("../app/outfits/[id]/CreatorQuickView.tsx",import.meta.url),"utf8");
+const creatorQuickViewCss=readFileSync(new URL("../app/outfits/[id]/CreatorQuickView.module.css",import.meta.url),"utf8");
 const tagged=readFileSync(new URL("../app/outfits/[id]/TaggedItemsPanel.tsx",import.meta.url),"utf8");
 const universalActions=readFileSync(new URL("../components/UniversalActionBar.tsx",import.meta.url),"utf8");
 const captionAction=readFileSync(new URL("../app/outfits/photo-caption-actions.ts",import.meta.url),"utf8");
@@ -32,13 +34,27 @@ test("Outfit photos support optional 200-character captions without permanently 
   assert.match(gallery,/current\.caption&&showCaption/);
 });
 
-test("Wish Locker remains an explicit garment action with a shopping-bag-plus-heart symbol and never renders a count",()=>{
+test("Wish Locker uses one deterministic bag-and-heart SVG and never renders a count",()=>{
   assert.match(tagged,/UniversalActionButton action="wishLocker"/);
-  assert.match(universalActions,/wishLocker:\s*\{[^}]*icon:\s*"🛍♡"[^}]*activeIcon:\s*"🛍♥"[^}]*label:\s*"Wish Locker"/);
+  assert.match(universalActions,/function WishLockerIcon/);
+  assert.match(universalActions,/viewBox="0 0 24 24"/);
+  assert.match(universalActions,/fill=\{active\?"currentColor":"none"\}/);
+  assert.match(universalActions,/wishLocker:\s*\{\s*label:\s*"Wish Locker"/);
   assert.match(universalActions,/inactiveAria:\s*"Add to Wish Locker"/);
   assert.match(universalActions,/activeAria:\s*"Remove from Wish Locker"/);
   assert.match(universalActions,/const visibleCount = action === "wishLocker" \? undefined : count;/);
+  assert.doesNotMatch(universalActions,/🛍/);
   assert.doesNotMatch(tagged,/action="wishLocker"[^>]*count=/);
+});
+
+test("creator quick view uses a clean hierarchy instead of table-grid chrome",()=>{
+  assert.match(creatorQuickView,/className=\{styles\.overallStat\}/);
+  assert.match(creatorQuickView,/Total Garments/);
+  assert.match(creatorQuickView,/Total Outfits/);
+  assert.match(creatorQuickViewCss,/\.stats\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(creatorQuickViewCss,/\.stats \.overallStat\{grid-column:1\/-1/);
+  assert.doesNotMatch(creatorQuickViewCss,/\.stats\{[^}]*border:/);
+  assert.doesNotMatch(creatorQuickViewCss,/\.stats>div\{[^}]*border/);
 });
 
 test("Tagged garment quick view has one clear garment-page destination",()=>{

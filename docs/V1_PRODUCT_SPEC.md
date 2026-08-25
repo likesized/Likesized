@@ -18,6 +18,8 @@ Current-state wording here must match owner-approved product meaning. Superseded
 - Raw current/historical measurements and private size references are never exposed to other members.
 - Current-person Match and historical garment Match return safe derived scores/context only.
 - A member profile photo, when uploaded, is public current identity. Outfit, Explore and comment surfaces resolve the member's current profile photo rather than snapshotting an old avatar onto historical content.
+- City and State are optional **private profile metadata**, not body measurements, not Match inputs and not public member-profile fields.
+- City/State may support future privacy-safe aggregate insights such as regional wishlist demand, but individual member location is never exposed merely to produce those aggregates.
 
 # 2. Current-person Match vs historical garment Match — LOCKED
 1. **Current-person Match** compares the viewer's current body with another member's current body. Overall/Tops/Bottoms and Twin designation live here.
@@ -25,7 +27,7 @@ Current-state wording here must match owner-approved product meaning. Superseded
 
 Match % means **garment-relevant body similarity**, not probability a garment will fit.
 
-# 3. Fit Community, Following and Fit Twin — LOCKED
+# 3. Fit Community, private profile location, Following and Fit Twin — LOCKED
 ## Fit Community
 - Member preference is **Men / Women / Both**.
 - It is owner-private relevance metadata for people/wearer discovery, not a body measurement and not Product Department.
@@ -33,6 +35,13 @@ Match % means **garment-relevant body similarity**, not probability a garment wi
 - People My Size and Style Feed may default to the saved preference and allow a temporary view switch without rewriting it.
 - The community belongs to the person wearing/posting the garment. Wearing a men's or women's Department item does not change the member's community.
 - Fit Community is asked during first-time profile setup. After onboarding it is managed in Profile Settings, not My Measurements.
+
+## Private City / State
+- First-time Fit Profile setup may ask optional **City + State** alongside the initial setup information.
+- City and State are collected as a pair: both may be left blank, but one is not stored without the other.
+- After the first Fit Profile is completed, City/State does **not** appear again on My Measurements. Later changes belong in Profile Settings.
+- City/State remains private to the member at the ordinary application/data-access layer.
+- Future regional analytics may use this metadata only through separately designed aggregate/privacy-safe boundaries—for example “people in New York are wishlisting this Product”—without exposing which individual members live there.
 
 ## Following / Twin designation
 - Following is member-controlled.
@@ -444,10 +453,14 @@ Help Me Size It is fallback sizing assistance and reuses the canonical recommend
 
 # 22. Product actions / notifications / shopping — LOCKED
 Independent actions:
-- Heart — Like Locker
-- Shooting star — Wish Locker
+- Heart — LikeLocker
+- **Shopping bag + heart vector — Wishlist / Wish Locker destination**
 - Bell — one-shot exact-Product Match notification
 - Cart — Shop only when a valid retailer destination exists
+
+The Wishlist visual is one deterministic SVG/vector: one shopping-bag outline with the heart integrated inside it. The inactive state is outlined; the active state uses the same icon with the heart filled. Do not compose multiple Unicode/emoji glyphs and do not substitute a generic bookmark.
+
+Garment utility actions do **not** show public counts. Wishlist, Share, Shop and Report never need public count clutter on garment surfaces. Counts remain for genuinely social engagement where useful, such as Outfit Likes/Comments.
 
 No action silently performs another. Product bell is separate from person bell. One valid listing routes direct; multiple show a compact retailer picker; zero hides Shop. Commission never affects Match, recommendation, Product identity, search rank or retailer choice.
 
@@ -489,24 +502,24 @@ Outfits are member-created mini editorial posts built from owned Closet garments
 - Safe already-resolved photo hotspots remain visible to logged-out visitors on published Outfits. Clicking one keeps public Product identification available while personalized fit intelligence remains authenticated/Fit-Profile gated.
 - Logged-out visitors may view the published Outfit normally: gallery, Headline, creator public identity/handle, Occasion, Style Tags, Outfit Story, social counts, readable comments and safe already-resolved tagged-Product identification remain visible. Logging out does not turn the Outfit itself into a crippled teaser page.
 - Creator/comment profile identity is resolved live from the member's current public profile identity/photo; old profile photos are not snapshotted onto Outfit/comment records.
-- The creator avatar/name opens one compact member quick view. It may show current **Overall Match, Tops Match, Bottoms Match, Total Fit Reports, Total Outfits**, a **View Full Profile** link and the appropriate Follow/notification controls. Raw measurements never appear there.
-- Raw body measurements, historical body snapshots, private Closet linkage, unresolved candidate/review state and authenticated member action state remain protected in every Outfit context.
+- The creator avatar/name opens one compact member quick view. The stat hierarchy is **Overall Match** alone, then **Tops Match | Bottoms Match**, then **Total Garments | Total Outfits**. These stats are not rendered as a bordered table/grid. Total Garments means distinct garment evidence/items rather than a relabeled raw Fit Report count. The quick view also provides **View Full Profile** and appropriate Follow/notification controls. Raw measurements never appear there.
+- Raw body measurements, historical body snapshots, private Closet linkage, unresolved candidate/review state, private City/State and authenticated member action state remain protected in every Outfit context.
 - Personalized tagged-item intelligence is account/Fit-Profile gated. A logged-out visitor who clicks a tagged item is kept in Outfit context and receives a compact **create account / sign in** gate instead of a fake personalized quick view. Before authentication LikeSized does **not** claim a Matching Fit Report count, Body Match result, FITuition result or “not enough personalized evidence” state for that visitor.
 - The **Style Notes** tab presents the actual Headline, tags and Story directly. Redundant labels such as `OUTFIT TITLE`, `OUTFIT TAGS` and `OUTFIT DESCRIPTION` are not shown.
 - The **Tagged Items** compact signed-in card is viewer-facing Product identification, not a dump of the poster's Fit Report. It shows Product photo, Brand + Item Name, Category/Garment Type and **Matching Fit Reports: X**. The poster's Size Worn/Fit Result is not presented as the card's primary takeaway for another viewer.
 - **Matching Fit Reports: X means useful personalized exact-item Fit Report evidence for the current viewer. It never means the total number of Fit Reports attached to the Product.** If seven reports exist but only two are useful personalized exact-item evidence, the viewer sees `Matching Fit Reports: 2`; the raw total is not substituted because it is not useful to this decision.
 - The viewer's own eligible Fit Report is useful evidence and must not be discarded merely because the viewer authored it. The viewer's relevant Closet/Fit Report history participates in FITuition alongside useful reports from similar people. Exact-item own history is especially relevant evidence; broader own history is weighted through the same canonical relevance hierarchy rather than becoming a second recommendation engine.
 - Repeated evidence from the **same person + same Product + same tracked fit variation** is one recommendation evidence unit. Distinct people remain independent; distinct tracked variations may remain distinct. Size and Color do not create tracked fit variations.
-- Opening a tagged item uses **one canonical middle-layer quick view** whether the action began from Tagged Items or an on-photo hotspot. There is no second impoverished hotspot popup. The quick view shows Product identity/category, useful Matching Fit Reports, useful Body Match/size/Fit Result context when available, and the FITuition recommendation/confidence context. **Full details** opens the complete Product/evidence page.
+- Opening a tagged item uses **one canonical middle-layer quick view** whether the action began from Tagged Items or an on-photo hotspot. There is no second impoverished hotspot popup. The quick view shows Product identity/category, useful Matching Fit Reports, useful Body Match/size/Fit Result context when available, and the FITuition recommendation/confidence context. It has one full-Product navigation action: **View Garment →**. Do not restore competing **See fit evidence** or **Full details** links.
 - The tagged garment image is expandable into the shared full-size viewer with swipe-down dismissal rather than a separate one-off image interaction.
 - When personalized evidence is genuinely insufficient for a signed-in viewer with a completed Fit Profile, the quick view says so plainly. Lack of a logged-in viewer is never mislabeled as lack of evidence.
-- Tagged Product quick-view actions use the shared compact action vocabulary: **LikeLocker · Wish Locker · Shop · Share · Report**. Shop exists only with a valid `retailer_listings` destination. LikeLocker and Wish Locker update in place and do not dismiss the quick view; the modal closes only from an intentional dismissal/back/outside action or navigation such as Full details.
+- Tagged Product quick-view actions use the shared compact garment vocabulary: **LikeLocker · Wishlist · Shop · Share · Report**, with no garment-action counts. The Wishlist visual is the canonical shopping-bag + heart vector. Shop exists only with a valid `retailer_listings` destination. LikeLocker and Wishlist update in place and do not dismiss the quick view; the modal closes only from an intentional dismissal/back/outside action or navigation such as **View Garment**.
 - An Unconfirmed or Needs More Evidence garment may be used by its owner in an Outfit, but unresolved identity/admin-review state never leaks and never creates a public/searchable Product teaser until resolved.
 
 ## Social controls
 - On **another member's Outfit**, the Outfit-content action row is **LikeLocker · Share · Report**. Follow is a person relationship, so Follow/notification controls belong in creator/profile context, including the creator quick view, rather than being mixed into the Outfit-content action row.
 - On the **creator's own Outfit**, self-LikeLocker and self-Report are hidden; **Share** remains available. Owner management controls such as Edit, comments on/off, delete and creator analytics remain separate from the content action row.
-- Social controls stay visually tight to the media/content they act on. A count is rendered directly beside its corresponding action/icon rather than in a separate count line.
+- Social controls stay visually tight to the media/content they act on. A count is rendered directly beside its corresponding social action/icon rather than in a separate count line. This does not create garment utility-action counts.
 - Reports start with no preselected reason. The member must deliberately choose a reason; **Other** is never silently selected by default.
 - Comments are **plain text only** in V1: no rich-text editor, markup/formatting controls, embedded media or nested replies. The restriction is enforced without permanently displaying a noisy “plain text only / no GIFs / no external links” helper under the composer.
 - Outfit comments default to **Top** with **Newest** as the alternate sort. **Top** sorts by comment Like count descending, then newest first as the tie-break. Newest sorts newest first.
@@ -535,9 +548,25 @@ Outfits are member-created mini editorial posts built from owned Closet garments
 - Fit Report/Closet display image priority is **Front Fit Photo → Product Photo → Back Fit Photo**. This display priority never changes the underlying evidence roles.
 - Scanner Product-identification priority is separate: **Product/catalog photo → shared Front Fit Photo → other shared Fit Photo → placeholder**.
 - Profile Photo = public current member identity when uploaded; social/editorial surfaces resolve the current profile photo rather than storing content-time avatar snapshots.
-- Product/catalog imagery is preferred on Product-identification surfaces.
-- A public/shared member Fit Photo used as scanner fallback never becomes generic/canonical Product imagery.
+- A public/shared member Fit Photo used as scanner fallback never becomes generic/canonical Product imagery merely because it was used for recognition.
 - Shared image expansion should use the canonical full-size viewer behavior, including swipe-down dismissal on touch where appropriate, rather than proliferating one-off lightbox implementations.
+
+## Planned automatic canonical Product image selection — ROADMAP 13A OWNER LOCKED
+Fit Report imagery stays permanently attached to the report/member that supplied it. Generic Product representation is a separate selection layer used by Search, Explore, recommendations, Wish Locker and other general Product cards.
+
+General priority:
+1. Admin-locked image.
+2. Highest-scoring eligible real Fit Report photo.
+3. Official/imported retailer or brand image as fallback.
+4. Placeholder.
+
+A good real Fit Report image outranks retailer imagery by tier; it does not need to beat the retailer image's numeric score. When no eligible real wear image exists yet, retailer/brand imagery may represent the Product temporarily.
+
+Fit Report candidates are scored deterministically from normalized garment visibility, sharpness, resolution, framing and exposure components, with perceptual duplicate detection. Starting weighting is **35 / 20 / 15 / 20 / 10** respectively. AI/image recognition may locate the relevant garment but does not invent the final quality score.
+
+Do not switch Fit Report canonical candidates for trivial score changes. Starting replacement rule is approximately **new score ≥ current score + 5**, configurable later. Admin locks always override automatic replacement until explicitly unlocked.
+
+For a specific tracked variation, the hierarchy is: admin-locked exact-variation image → eligible exact-variation Fit Report image → broader garment-family Fit Report canonical → exact-variation official image → garment-family official image → placeholder. This image relevance layer must consume the canonical tracked-variation model rather than inventing a second variation definition.
 
 # 25. Admin catalog target — LOCKED
 Admin must expose Products/candidates, identity-trust tier, distinct confirmation counts, open flags, flag priority, identifiers/barcode confidence, retailer links, Product Photo/Label evidence history and system-vs-admin resolution provenance.
@@ -549,6 +578,8 @@ Unconfirmed active review is an exception queue prioritized by requested identit
 Admin work is exception-driven: duplicate/identity conflict, explicit member uncertainty, incorrect information, member reports, content/photo problems, identifier/listing collisions and evidence disagreements—not mandatory approval of every clean new garment.
 
 When variation tooling is reached, Admin must distinguish base Product identity, tracked fit variation, descriptive metadata, cosmetic fields and report-specific Size/Color/Fit Result. Admin tooling must consume the canonical variation-definition map and must not accidentally promote Size or Color into variation identity.
+
+When Roadmap 13A canonical Product image selection is implemented, Admin must also expose intentional **Set as Product Image**, **Lock Product Image** and unlock controls plus enough score/eligibility/moderation context to audit why an automatic candidate did or did not win.
 
 # 26. SerpAPI — ADMIN RESEARCH ONLY
 SerpAPI checks private cache first, dedupes queries, respects caps and requires explicit resolution. Raw results never write directly to Product truth. Ordinary member search/intake/scanner does not use it.

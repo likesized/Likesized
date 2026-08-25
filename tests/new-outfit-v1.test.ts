@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 const composer=readFileSync(new URL("../app/outfits/new/OutfitComposer.tsx",import.meta.url),"utf8");
 const newPage=readFileSync(new URL("../app/outfits/new/page.tsx",import.meta.url),"utf8");
 const detailPage=readFileSync(new URL("../app/outfits/[id]/page.tsx",import.meta.url),"utf8");
+const creatorQuickView=readFileSync(new URL("../app/outfits/[id]/CreatorQuickView.tsx",import.meta.url),"utf8");
 const gallery=readFileSync(new URL("../app/outfits/[id]/OutfitGallery.tsx",import.meta.url),"utf8");
 const tabs=readFileSync(new URL("../app/outfits/[id]/OutfitTabs.tsx",import.meta.url),"utf8");
 const tagged=readFileSync(new URL("../app/outfits/[id]/TaggedItemsPanel.tsx",import.meta.url),"utf8");
@@ -19,6 +20,8 @@ const closetPage=readFileSync(new URL("../app/closet/page.tsx",import.meta.url),
 const outfitsIndex=readFileSync(new URL("../app/outfits/page.tsx",import.meta.url),"utf8");
 const explorePage=readFileSync(new URL("../app/explore/page.tsx",import.meta.url),"utf8");
 const profilePhoto=readFileSync(new URL("../lib/profile-photo.ts",import.meta.url),"utf8");
+const universalActions=readFileSync(new URL("../components/UniversalActionBar.tsx",import.meta.url),"utf8");
+const swipeLightbox=readFileSync(new URL("../components/SwipeDismissImageLightbox.tsx",import.meta.url),"utf8");
 const migration=readFileSync(new URL("../supabase/migrations/20260824133500_new_outfit_v1_social_foundation.sql",import.meta.url),"utf8");
 const commentLikesMigration=readFileSync(new URL("../supabase/migrations/20260824231500_outfit_comment_likes.sql",import.meta.url),"utf8");
 const liveIdentityMigration=readFileSync(new URL("../supabase/migrations/20260824234500_live_profile_identity.sql",import.meta.url),"utf8");
@@ -83,6 +86,7 @@ test("My Closet is the canonical owned-content hub",()=>{
  assert.match(closetPage,/FITuition combines the Fit Reports and garment history in your Closet/);
  assert.match(outfitsIndex,/redirect\(`\/closet\?tab=outfits/);
  assert.doesNotMatch(outfitsIndex,/outfit_posts|feed=following|YOUR DRAFTS/);
+ assert.match(newPage,/href="\/closet\?tab=outfits">← Back to My Closet<\/Link>/);
 });
 
 test("profile photos are live identity instead of Outfit or comment snapshots",()=>{
@@ -122,27 +126,43 @@ test("opened Outfit uses Style Notes, Comments, and Tagged Items tabs without re
  assert.doesNotMatch(detailPage,/OUTFIT TITLE|OUTFIT TAGS|OUTFIT DESCRIPTION/);
 });
 
-test("opened Outfit creator header and social row stay compact and contextual",()=>{
- assert.match(detailPage,/outfitIdentityPhoto/);
- assert.match(detailPage,/outfitNameLine/);
- assert.match(detailPage,/% Fit Match/);
+test("opened Outfit creator identity opens one compact member quick view",()=>{
+ assert.match(detailPage,/CreatorQuickView/);
+ assert.match(creatorQuickView,/Quick view \$\{displayName\}/);
+ assert.match(creatorQuickView,/Overall Match/);
+ assert.match(creatorQuickView,/Tops Match/);
+ assert.match(creatorQuickView,/Bottoms Match/);
+ assert.match(creatorQuickView,/Total Fit Reports/);
+ assert.match(creatorQuickView,/Total Outfits/);
+ assert.match(creatorQuickView,/View Full Profile/);
+ assert.match(creatorQuickView,/action="follow"/);
+ assert.match(creatorQuickView,/action="notify"/);
  assert.match(detailPage,/creatorTwin/);
- assert.match(detailPage,/outfitActionBar/);
- assert.match(detailPage,/aria-label=\{liked\?"Unlike Outfit":"Like Outfit"\}/);
- assert.match(detailPage,/title="Follow"/);
- assert.match(detailPage,/summaryLabel="Report Outfit" iconOnly/);
- assert.doesNotMatch(detailPage,/Follow \{creatorName\}/);
  assert.doesNotMatch(detailPage,/blockMemberFromOutfit/);
 });
 
-test("Tagged Items preview before navigation uses symbol Like, Wish Locker, Shop, Share, and Report actions",()=>{
+test("universal Outfit action row is LikeLocker, Share, Report and stays separate from profile Follow",()=>{
+ assert.match(detailPage,/UniversalActionBar className=\{styles\.outfitActionBar\}/);
+ assert.match(detailPage,/action="likeLocker"/);
+ assert.match(detailPage,/OutfitEngagementClient/);
+ assert.match(detailPage,/summaryLabel="Report Outfit" iconOnly/);
+ assert.match(universalActions,/likeLocker:/);
+ assert.match(universalActions,/share:/);
+ assert.match(universalActions,/report:/);
+ assert.doesNotMatch(detailPage,/action="follow"/);
+});
+
+test("Tagged Items preview uses universal garment actions and full-size swipe-dismiss imagery",()=>{
  assert.match(tagged,/setSelectedId/);
  assert.match(tagged,/Full details →/);
- assert.match(tagged,/title="Like Locker"/);
- assert.match(tagged,/title="Wish Locker"/);
- assert.match(tagged,/title="Shop">🛒<\/Link>/);
- assert.match(tagged,/title="Share"/);
- assert.match(tagged,/title="Report">⚑<\/summary>/);
+ assert.match(tagged,/action="likeLocker"/);
+ assert.match(tagged,/action="wishLocker"/);
+ assert.match(tagged,/action="shop"/);
+ assert.match(tagged,/action="share"/);
+ assert.match(tagged,/UniversalActionSummary action="report"/);
+ assert.match(tagged,/SwipeDismissImageLightbox/);
+ assert.match(swipeLightbox,/dy >= 70/);
+ assert.match(swipeLightbox,/Escape/);
  assert.match(tagged,/\/api\/outfits\/\$\{postId\}\/shop\?product_id=/);
  assert.match(shopRoute,/retailer_listings/);
  assert.match(shopRoute,/product_url/);

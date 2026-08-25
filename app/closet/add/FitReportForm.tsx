@@ -8,6 +8,25 @@ type ServerAction = (formData: FormData) => void | Promise<void>;
 type ReviewRow = { label: string; value: string };
 
 const FIT_REPORT_FORM_ID = "fit-report-form";
+const REQUIRED_PHOTO_NAMES = new Set(["product_photo", "photo_front", "photo_back"]);
+
+function hasSelectedFile(form:HTMLFormElement,name:string){
+  const field=form.elements.namedItem(name);
+  return field instanceof HTMLInputElement&&Boolean(field.files?.length);
+}
+
+function validatePhotoRequirement(form:HTMLFormElement){
+  const hasPhoto=[...REQUIRED_PHOTO_NAMES].some((name)=>hasSelectedFile(form,name));
+  const front=form.elements.namedItem("photo_front");
+  if(front instanceof HTMLInputElement)front.setCustomValidity(hasPhoto?"":"Add a Product Photo, Front Fit Photo, or Back Fit Photo to continue.");
+  const group=form.querySelector<HTMLElement>("[data-photo-requirement]");
+  group?.classList.toggle("fieldInvalid",!hasPhoto);
+  if(group){
+    if(hasPhoto)group.removeAttribute("aria-invalid");
+    else group.setAttribute("aria-invalid","true");
+  }
+  return hasPhoto;
+}
 
 function clearInvalidState(form: HTMLFormElement) {
   form.querySelectorAll(".fieldInvalid").forEach((node) => node.classList.remove("fieldInvalid"));
@@ -24,6 +43,7 @@ function clearFieldInvalidState(field: HTMLInputElement | HTMLSelectElement | HT
 
 function showInvalidState(form: HTMLFormElement, scroll: boolean) {
   clearInvalidState(form);
+  validatePhotoRequirement(form);
   const invalid = Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input:invalid, select:invalid, textarea:invalid"));
   for (const field of invalid) {
     field.setAttribute("aria-invalid", "true");
@@ -121,6 +141,7 @@ export function FitReportForm({ action, previewOnly = false, children }: { actio
       const form = event.currentTarget;
       normalizeRetailLink(form);
       validateBarcodeFields(form);
+      validatePhotoRequirement(form);
       if (!form.checkValidity()) {
         event.preventDefault();
         confirmedRef.current = false;
@@ -147,6 +168,7 @@ export function FitReportForm({ action, previewOnly = false, children }: { actio
       if (target instanceof HTMLInputElement && (target.name === "upc" || target.name === "identity_issue_barcode")) {
         validateBarcodeField(target);
       }
+      if(target instanceof HTMLInputElement&&target.type==="file"&&REQUIRED_PHOTO_NAMES.has(target.name))validatePhotoRequirement(form);
       if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement) {
         if (target.validity.valid) clearFieldInvalidState(target);
       }

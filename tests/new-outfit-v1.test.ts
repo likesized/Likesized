@@ -91,7 +91,7 @@ test("profile photos are live identity instead of Outfit or comment snapshots",(
  assert.match(detailPage,/currentProfilePhotoUrl/);
  assert.match(detailPage,/get_public_outfit_creator/);
  assert.match(commentApi,/currentProfilePhotoUrl/);
- assert.match(commentApi,/get_outfit_comments_page/);
+ assert.match(commentApi,/get_outfit_comments_sorted_page/);
  assert.match(commentPageMigration,/p\.avatar_url/);
  assert.match(explorePage,/profile:profiles\(username,display_name,avatar_url\)/);
  assert.match(explorePage,/outfitProfilePhotos/);
@@ -152,14 +152,15 @@ test("Tagged Items preview before navigation uses symbol Like, Wish Locker, Shop
 test("comments remain plain text and paginated comments preserve Like, flag, and authorized delete",()=>{
  assert.match(commentComposer,/textarea/);
  assert.doesNotMatch(commentComposer,/contentEditable|execCommand|rich text/i);
- assert.match(actions,/LINK_PATTERN/);
- assert.match(actions,/likeOutfitComment/);
- assert.match(actions,/unlikeOutfitComment/);
- assert.match(commentThread,/likeOutfitComment/);
+ assert.match(commentApi,/LINK_PATTERN/);
+ assert.match(commentApi,/export async function POST/);
+ assert.match(commentApi,/export async function PATCH/);
+ assert.match(commentThread,/method:"PATCH"/);
+ assert.doesNotMatch(commentThread,/likeOutfitComment|unlikeOutfitComment/);
  assert.match(commentThread,/reportContent/);
  assert.match(commentThread,/comment\.canDelete/);
  assert.match(commentThread,/\/people\/\$\{comment\.username\}/);
- assert.match(commentApi,/get_outfit_comments_page/);
+ assert.match(commentApi,/get_outfit_comments_sorted_page/);
  assert.match(commentPageMigration,/order by oc\.created_at desc,oc\.id desc/);
  assert.match(commentPageMigration,/can_delete boolean/);
  assert.match(commentLikesMigration,/create table public\.outfit_comment_likes/);

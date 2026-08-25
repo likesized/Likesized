@@ -37,10 +37,10 @@ async function change(table: "product_likes" | "wish_locker_items" | "product_ev
     : supabase.from(table).delete().eq("user_id", userId).eq("product_id", productId);
   const { error } = await operation;
   if (error) throw new Error("Could not update LikeLocker.");
+  if (stayOpen) return;
   revalidatePath("/explore");
   revalidatePath("/likelocker");
   if (destination.startsWith("/outfits/")) revalidatePath(destination.split("?")[0]);
-  if (stayOpen) return;
   redirect(destination);
 }
 

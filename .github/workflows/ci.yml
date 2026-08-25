@@ -49,6 +49,9 @@ jobs:
       - name: Outfit polish batch safeguards
         run: node --test tests/outfit-polish-batch.test.ts
 
+      - name: Outfit interaction and Fit Report photo safeguards
+        run: node --test tests/outfit-interaction-photo-requirement.test.ts
+
       - name: Tagged-item quick-view safeguards
         run: node --test tests/outfit-tagged-quickview-regression.test.ts
 

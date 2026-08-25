@@ -8,7 +8,6 @@ import { GARMENT_TYPES } from "@/lib/garment-taxonomy";
 import { OUTFIT_OCCASION_LABELS } from "@/lib/outfit-taxonomy";
 import { currentProfilePhotoUrl } from "@/lib/profile-photo";
 import { createClient } from "@/lib/supabase/server";
-import CommentComposer from "./CommentComposer";
 import CommentThread from "./CommentThread";
 import ConfirmDeleteOutfit from "./ConfirmDeleteOutfit";
 import OutfitEngagementClient from "./OutfitEngagementClient";
@@ -24,11 +23,8 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 type Profile = { id?: string; username: string; display_name: string | null; avatar_url?: string | null };
 type Outfit = { id: string; user_id: string; headline: string | null; story: string | null; status: "draft" | "published"; comments_enabled: boolean; published_at: string | null; created_at: string; like_count: number; comment_count: number; share_count: number; view_count: number; follows_generated_count: number };
 type Photo = { id: string; bucket: "outfit-photos" | "outfit-draft-photos"; display_path: string; sort_order: number; is_main: boolean; caption:string|null };
-type PhotoTag = { photo_id: string; closet_item_id: string; x: number; y: number };
-type FitReport = { closet_item_id: string; size_label: string; fit: string; created_at: string; product_id: string | null };
-type Product = { id: string; name: string; slug: string; image_url: string | null; brand_id: string; garment_type_key: string | null };
-type Brand = { id: string; name: string };
-type PublicTeaser = { product_id: string; product_slug: string; brand_name: string; product_name: string; image_url: string | null };
+type PublicTaggedItem = { closet_item_id:string; product_id:string; product_slug:string; brand_name:string; product_name:string; image_url:string|null; garment_type_key:string|null };
+type PublicHotspot = { photo_id:string; closet_item_id:string; x:number|string; y:number|string };
 type MatchRecord={user_id:string;match_score:number};
 function first(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
 function formatDate(value: string) { return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value)); }
@@ -73,112 +69,86 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
     notFound();
   }
 
-  const [creatorResult, photosResult, occasionsResult, stylesResult, teaserResult] = await Promise.all([
+  const [creatorResult, photosResult, occasionsResult, stylesResult, publicItemsResult, hotspotsResult] = await Promise.all([
     supabase.rpc("get_public_outfit_creator", { p_post_id: id }),
     supabase.from("outfit_photos").select("id,bucket,display_path,sort_order,is_main,caption").eq("post_id", id).order("sort_order"),
     supabase.from("outfit_occasions").select("occasion,sort_order").eq("post_id", id).order("sort_order"),
     supabase.from("outfit_style_tags").select("display_tag,sort_order").eq("post_id", id).order("sort_order"),
-    supabase.rpc("get_public_outfit_product_teasers", { p_post_id: id }),
+    supabase.rpc("get_public_outfit_tagged_items", { p_post_id: id }),
+    supabase.rpc("get_public_outfit_hotspots", { p_post_id: id }),
   ]);
   if (creatorResult.error) throw new Error(`Could not load Outfit creator: ${creatorResult.error.message}`);
   if (photosResult.error) throw new Error(`Could not load Outfit photos: ${photosResult.error.message}`);
   if (occasionsResult.error) throw new Error(`Could not load Outfit occasions: ${occasionsResult.error.message}`);
   if (stylesResult.error) throw new Error(`Could not load Outfit style tags: ${stylesResult.error.message}`);
-  if (teaserResult.error) throw new Error(`Could not load Outfit Product teasers: ${teaserResult.error.message}`);
+  if (publicItemsResult.error) throw new Error(`Could not load Outfit tagged items: ${publicItemsResult.error.message}`);
+  if (hotspotsResult.error) throw new Error(`Could not load Outfit hotspots: ${hotspotsResult.error.message}`);
 
   const profile = ((creatorResult.data ?? [])[0] as Profile | undefined) ?? null;
   const creatorName = profile?.display_name?.trim() || profile?.username || "LikeSized member";
   const creatorAvatar=currentProfilePhotoUrl(supabase,profile?.avatar_url);
   const photoRows = (photosResult.data ?? []) as Photo[];
-  const publicTeasers = (teaserResult.data ?? []) as PublicTeaser[];
+  const publicItems=(publicItemsResult.data??[]) as PublicTaggedItem[];
+  const photoTags=(hotspotsResult.data??[]) as PublicHotspot[];
   const photoUrls = new Map<string, string>();
   for (const photo of photoRows) if (photo.bucket === "outfit-photos") photoUrls.set(photo.id, supabase.storage.from("outfit-photos").getPublicUrl(photo.display_path).data.publicUrl);
 
-  let garmentLinks: { post_id: string; closet_item_id: string }[] = [];
-  let reports: FitReport[] = [];
-  let photoTags: PhotoTag[] = [];
   let liked = false;
   let following = false;
   let overallMatch:number|undefined;
   let topsMatch:number|undefined;
   let bottomsMatch:number|undefined;
   let threshold=85;
-  const productById = new Map<string, Product>();
-  const brandById = new Map<string, Brand>();
   const retailerByProduct = new Map<string, string>();
   const productLiked = new Set<string>();
   const productWished = new Set<string>();
+  const productIds=[...new Set(publicItems.map((item)=>item.product_id))];
 
   if (viewerId) {
-    const [linksResult, likesResult, followResult,settingsResult] = await Promise.all([
-      supabase.from("outfit_post_items").select("post_id,closet_item_id").eq("post_id", id),
+    const [likesResult, followResult,settingsResult] = await Promise.all([
       supabase.from("outfit_likes").select("post_id").eq("post_id", id).eq("user_id", viewerId).maybeSingle(),
       viewerId !== outfit.user_id ? supabase.from("follows").select("followed_id").eq("follower_id", viewerId).eq("followed_id", outfit.user_id).maybeSingle() : Promise.resolve({ data: null, error: null }),
       viewerId!==outfit.user_id?supabase.from("fit_twin_settings").select("threshold_percent").eq("singleton",true).maybeSingle():Promise.resolve({data:null,error:null}),
     ]);
-    if (linksResult.error||likesResult.error||followResult.error||settingsResult.error) throw new Error("Could not load Outfit member state.");
-    garmentLinks = linksResult.data ?? [];
+    if (likesResult.error||followResult.error||settingsResult.error) throw new Error("Could not load Outfit member state.");
     liked = Boolean(likesResult.data);
     following = Boolean(followResult.data);
     threshold=settingsResult.data?.threshold_percent??85;
 
     if(!owner){[overallMatch,topsMatch,bottomsMatch]=await Promise.all([scoreFor(supabase,outfit.user_id,"overall"),scoreFor(supabase,outfit.user_id,"tops"),scoreFor(supabase,outfit.user_id,"bottoms")]);}
 
-    const closetIds = garmentLinks.map((row) => row.closet_item_id);
-    if (closetIds.length) {
-      const { data, error } = await supabase.from("fit_reports").select("closet_item_id,size_label,fit,created_at,product_id").in("closet_item_id", closetIds).order("created_at", { ascending: false });
-      if (error) throw new Error(`Could not load Outfit garment details: ${error.message}`);
-      reports = (data ?? []) as FitReport[];
-    }
-    if (photoRows.length) {
-      const { data, error } = await supabase.from("outfit_photo_tags").select("photo_id,closet_item_id,x,y").in("photo_id", photoRows.map((row) => row.id));
-      if (error) throw new Error(`Could not load Outfit hotspots: ${error.message}`);
-      photoTags = (data ?? []) as PhotoTag[];
+    if(productIds.length){
+      const [listingResult, likeResult, wishResult] = await Promise.all([
+        supabase.from("retailer_listings").select("product_id,product_url").in("product_id", productIds),
+        supabase.from("product_likes").select("product_id").eq("user_id", viewerId).in("product_id", productIds),
+        supabase.from("wish_locker_items").select("product_id").eq("user_id", viewerId).in("product_id", productIds),
+      ]);
+      if (listingResult.error||likeResult.error||wishResult.error) throw new Error("Could not load Outfit Product actions.");
+      for (const row of listingResult.data ?? []) if (!retailerByProduct.has(row.product_id) && row.product_url) retailerByProduct.set(row.product_id, row.product_url);
+      for (const row of likeResult.data ?? []) productLiked.add(row.product_id);
+      for (const row of wishResult.data ?? []) productWished.add(row.product_id);
     }
   }
 
-  const latestByCloset = new Map<string, FitReport>();
-  for (const report of reports) if (!latestByCloset.has(report.closet_item_id)) latestByCloset.set(report.closet_item_id, report);
-  const productIds = [...new Set([...latestByCloset.values()].map((report) => report.product_id).filter((value): value is string => Boolean(value)))];
-
-  if (viewerId && productIds.length) {
-    const { data: productRows, error: productError } = await supabase.from("products").select("id,name,slug,image_url,brand_id,garment_type_key").in("id", productIds);
-    if (productError) throw new Error(`Could not load Outfit Products: ${productError.message}`);
-    for (const product of (productRows ?? []) as Product[]) productById.set(product.id, product);
-    const brandIds = [...new Set([...productById.values()].map((product) => product.brand_id).filter(Boolean))];
-    if (brandIds.length) {
-      const { data: brandRows, error: brandError } = await supabase.from("brands").select("id,name").in("id", brandIds);
-      if (brandError) throw new Error(`Could not load Outfit Brands: ${brandError.message}`);
-      for (const brand of (brandRows ?? []) as Brand[]) brandById.set(brand.id, brand);
-    }
-    const [listingResult, likeResult, wishResult] = await Promise.all([
-      supabase.from("retailer_listings").select("product_id,product_url").in("product_id", productIds),
-      supabase.from("product_likes").select("product_id").eq("user_id", viewerId).in("product_id", productIds),
-      supabase.from("wish_locker_items").select("product_id").eq("user_id", viewerId).in("product_id", productIds),
-    ]);
-    if (listingResult.error||likeResult.error||wishResult.error) throw new Error("Could not load Outfit Product actions.");
-    for (const row of listingResult.data ?? []) if (!retailerByProduct.has(row.product_id) && row.product_url) retailerByProduct.set(row.product_id, row.product_url);
-    for (const row of likeResult.data ?? []) productLiked.add(row.product_id);
-    for (const row of wishResult.data ?? []) productWished.add(row.product_id);
-  }
-
-  const garments: GalleryGarment[] = garmentLinks.flatMap((link) => {
-    const report = latestByCloset.get(link.closet_item_id);
-    const product = report?.product_id ? productById.get(report.product_id) : null;
-    const brand = product ? brandById.get(product.brand_id) : null;
-    if(!report||!product)return [];
-    const typeLabel=product.garment_type_key?(TYPE_LABELS.get(product.garment_type_key)??product.garment_type_key.replaceAll("_"," ")):"Garment";
-    return [{ id: link.closet_item_id, label: `${brand?.name || "Brand"} · ${product.name}`, detail: typeLabel, href: `/item/${product.slug}`,imageUrl:product.image_url }];
+  const garments: GalleryGarment[] = publicItems.map((item) => {
+    const typeLabel=item.garment_type_key?(TYPE_LABELS.get(item.garment_type_key)??item.garment_type_key.replaceAll("_"," ")):"Garment";
+    return {id:item.closet_item_id,label:`${item.brand_name} · ${item.product_name}`,detail:typeLabel,href:`/item/${item.product_slug}`,imageUrl:item.image_url};
   });
   const galleryPhotos: GalleryPhoto[] = photoRows.flatMap((photo) => {
     const url = photoUrls.get(photo.id);
     return url ? [{ id: photo.id, url, caption:photo.caption, tags: photoTags.filter((tag) => tag.photo_id === photo.id).map((tag) => ({ closetItemId: tag.closet_item_id, x: Number(tag.x), y: Number(tag.y) })) }] : [];
   });
-  const memberTaggedItems:TaggedItem[]=garments.flatMap((garment)=>{
-    const report=latestByCloset.get(garment.id);const product=report?.product_id?productById.get(report.product_id):null;
-    return product?[{closetItemId:garment.id,productId:product.id,label:garment.label,detail:garment.detail,href:garment.href,imageUrl:product.image_url,liked:productLiked.has(product.id),wished:productWished.has(product.id),canShop:retailerByProduct.has(product.id)}]:[];
-  });
-  const taggedItems:TaggedItem[]=viewerId?memberTaggedItems:publicTeasers.map((product)=>({closetItemId:`product-${product.product_id}`,productId:product.product_id,label:`${product.brand_name} · ${product.product_name}`,detail:"Garment",href:`/item/${product.product_slug}`,imageUrl:product.image_url,liked:false,wished:false,canShop:false}));
+  const taggedItems:TaggedItem[]=publicItems.map((item)=>({
+    closetItemId:item.closet_item_id,
+    productId:item.product_id,
+    label:`${item.brand_name} · ${item.product_name}`,
+    detail:item.garment_type_key?(TYPE_LABELS.get(item.garment_type_key)??item.garment_type_key.replaceAll("_"," ")):"Garment",
+    href:`/item/${item.product_slug}`,
+    imageUrl:item.image_url,
+    liked:productLiked.has(item.product_id),
+    wished:productWished.has(item.product_id),
+    canShop:Boolean(viewerId)&&retailerByProduct.has(item.product_id),
+  }));
 
   const returnTo = `/outfits/${id}`;
   const commentsReturnTo=`/outfits/${id}?tab=comments&comments=1`;
@@ -198,10 +168,10 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
 
   const commentErrorNode=commentError?<div className="authMessage error">Comment must be plain text, 500 characters or less, with no external links.</div>:null;
   const commentsPanel=outfit.comments_enabled?<CommentThread
-    comments={[]}
+    postId={id}
     commentCount={outfit.comment_count}
     initialOpen={commentsOpen}
-    composer={viewerId?<CommentComposer postId={id} returnTo={commentsReturnTo}/>:null}
+    signedIn={Boolean(viewerId)}
     signIn={!viewerId?<Link className={styles.compactSecondary} href={`/login?next=${encodeURIComponent(commentsReturnTo)}`}>Sign in to comment</Link>:null}
     error={commentErrorNode}
   />:<p className="muted">Comments are off for this Outfit.</p>;
@@ -218,7 +188,7 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
         </div>
       </header>
 
-      <OutfitGallery photos={galleryPhotos} garments={garments} canViewTags={Boolean(viewerId)}/>
+      <OutfitGallery photos={galleryPhotos} garments={garments}/>
 
       <div className={styles.outfitActionBar}>
         {!owner?<>

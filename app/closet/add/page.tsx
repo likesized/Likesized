@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
-import { addGarment } from "@/app/closet/actions";
+import { addGarmentWithPhotoRequirement } from "@/app/closet/add/actions";
 import { CatalogColorField, CatalogCommunityEnrichment, CatalogGarmentFields, CatalogRetailLinkField } from "@/app/closet/add/CatalogGarmentFields";
 import { FitNotesField, FitReportForm } from "@/app/closet/add/FitReportForm";
+import FitReportPhotoFields from "@/app/closet/add/FitReportPhotoFields";
 import { FitReportSuccessModal } from "@/app/closet/add/FitReportSuccessModal";
 import { GarmentSizeFields } from "@/app/closet/add/GarmentSizeFields";
 import styles from "@/app/closet/add/fitReport.module.css";
@@ -84,15 +85,17 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
     ? "Something still needs your attention. Review the highlighted fields below and try again."
     : error === "invalid_photo"
       ? "Photos must be JPEG, PNG, or WebP and no larger than 8 MB each."
-      : error === "save_failed"
-        ? "That Fit Report could not be saved. Please try again."
-        : null;
+      : error === "photo_required"
+        ? "Add at least one Product Photo, Front Fit Photo, or Back Fit Photo before saving your Fit Report."
+        : error === "save_failed"
+          ? "That Fit Report could not be saved. Please try again."
+          : null;
 
   return <main className="pageShell addGarmentShell">
     {successClosetItemId ? <FitReportSuccessModal closetItemId={successClosetItemId} wasUpdated={wasUpdated} underReview={underReview} /> : null}
 
     <div className={`pageTitle ${styles.hero}`}><span className="eyebrow">MY CLOSET · NEW FIT REPORT</span><h1>Share how an item actually fits.</h1><p>Tell us a little about the garment so we can make your Fit Report useful to others.</p></div>
-    <FitReportForm action={fixtureMode ? undefined : addGarment} previewOnly={fixtureMode}>
+    <FitReportForm action={fixtureMode ? undefined : addGarmentWithPhotoRequirement} previewOnly={fixtureMode}>
       {fixtureMode ? <div className="authMessage"><b>Owner-review test environment.</b> You can complete the form and open the final review, but nothing here will save or write to Supabase.</div> : null}
       {errorMessage ? <div className="authMessage error">{errorMessage}</div> : null}
       <CatalogGarmentFields
@@ -104,14 +107,7 @@ export default async function AddGarmentPage({ searchParams }: { searchParams: S
         <GarmentSizeFields />
         <label>Overall Fit Result<select name="fit" defaultValue="" required data-review-label="Overall Fit Result"><option value="" disabled>Select physical fit</option><option value="too_small">Too small</option><option value="snug">Snug</option><option value="just_right">Just right</option><option value="relaxed">Relaxed</option><option value="too_big">Too big</option></select><span className="fieldHelp">Bad fits are useful evidence too.</span></label>
         <label>Condition<select name="reported_condition" defaultValue="" required data-review-label="Condition"><option value="" disabled>Select condition</option><option value="new">New</option><option value="used">Used</option><option value="altered">Altered</option></select><span className="fieldHelp">Altered items stay in Fit History but are not treated as normal sizing evidence for other people.</span></label>
-        <fieldset className={styles.itemDetailsFieldset}>
-          <legend>Fit photos <span className="muted inlineMuted">optional</span></legend>
-          <div className={styles.photoEvidenceGrid}>
-            <label>Front photo<input name="photo_front" type="file" accept="image/jpeg,image/png,image/webp" data-review-label="Front Fit Photo" /></label>
-            <label>Back photo<input name="photo_back" type="file" accept="image/jpeg,image/png,image/webp" data-review-label="Back Fit Photo" /></label>
-          </div>
-          <span className="fieldHelp"><b>Fit photos are shared with the LikeSized community. Don’t upload a photo you do not want other people to see.</b></span>
-        </fieldset>
+        <FitReportPhotoFields />
         <FitNotesField />
         <CatalogRetailLinkField />
 

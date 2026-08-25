@@ -6,8 +6,10 @@ import OutfitComposer, { type ClosetOption, type InitialOutfit } from "./OutfitC
 import styles from "../outfits.module.css";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
-type ClosetRow = { id: string; size_label: string; variant_id:string|null; created_at: string; product: unknown };
+type ClosetRow = { id: string; size_label: string; variant_id:string|null; created_at: string; product: unknown; submission:unknown };
 type ProductRecord = { id:string;name: string; image_url:string|null;garment_type_key: string | null; category: string; brand: unknown };
+type SubmissionRecord={product_photo_storage_path:string|null};
+type ProductPhotoEvidence={product_id:string;public_url:string;source_status:string;created_at:string};
 type BrandRecord = { name: string };
 type FitReport = { closet_item_id: string; fit: string; created_at: string };
 type StyleSuggestionRow = { display_tag: string | null };
@@ -41,7 +43,7 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
 
   const [profileResult, closetResult, styleSuggestionResult, outfitResult] = await Promise.all([
     supabase.from("profiles").select("username").eq("id", userId).maybeSingle(),
-    supabase.from("closet_items").select("id,size_label,variant_id,created_at,product:products(id,name,image_url,garment_type_key,category,brand:brands(name))").eq("user_id", userId).order("created_at", { ascending: false }),
+    supabase.from("closet_items").select("id,size_label,variant_id,created_at,product:products(id,name,image_url,garment_type_key,category,brand:brands(name)),submission:garment_submissions(product_photo_storage_path)").eq("user_id", userId).order("created_at", { ascending: false }),
     supabase.rpc("get_outfit_style_tag_suggestions", { p_query: null, p_result_limit: 50 }),
     outfitRequest,
   ]);
@@ -63,6 +65,7 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
   const attributesRequest=productIds.length?supabase.from("product_attribute_values").select("product_id,attribute_key,option_key").in("product_id",productIds):Promise.resolve({data:[],error:null});
   const variantsRequest=variantIds.length?supabase.from("product_variants").select("id,color_label").in("id",variantIds):Promise.resolve({data:[],error:null});
   const fitPhotosRequest=closetIds.length?supabase.from("fit_reference_photos").select("closet_item_id,storage_path,photo_role").in("closet_item_id",closetIds):Promise.resolve({data:[],error:null});
+  const productPhotosRequest=productIds.length?supabase.from("product_photo_evidence").select("product_id,public_url,source_status,created_at").in("product_id",productIds).neq("source_status","rejected").order("created_at",{ascending:false}):Promise.resolve({data:[],error:null});
   const outfitPartsRequest = requestedId
     ? Promise.all([
       supabase.from("outfit_post_items").select("closet_item_id").eq("post_id", requestedId),
@@ -72,9 +75,9 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
     ])
     : Promise.resolve(null);
 
-  const [reportsResult,attributesResult,variantsResult,fitPhotosResult,outfitParts] = await Promise.all([reportsRequest,attributesRequest,variantsRequest,fitPhotosRequest,outfitPartsRequest]);
+  const [reportsResult,attributesResult,variantsResult,fitPhotosResult,productPhotosResult,outfitParts] = await Promise.all([reportsRequest,attributesRequest,variantsRequest,fitPhotosRequest,productPhotosRequest,outfitPartsRequest]);
   if (reportsResult.error) throw new Error(`Could not load Closet fit evidence: ${reportsResult.error.message}`);
-  if(attributesResult.error||variantsResult.error||fitPhotosResult.error)throw new Error("Could not load Closet garment details.");
+  if(attributesResult.error||variantsResult.error||fitPhotosResult.error||productPhotosResult.error)throw new Error("Could not load Closet garment details.");
   const reports = (reportsResult.data ?? []) as FitReport[];
   const reportByItem = new Map<string, FitReport>();
   for (const report of reports) if (!reportByItem.has(report.closet_item_id)) reportByItem.set(report.closet_item_id, report);
@@ -83,8 +86,12 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
   for(const row of (attributesResult.data??[]) as AttributeRow[])attributesByProduct.set(row.product_id,[...(attributesByProduct.get(row.product_id)??[]),row]);
   const fitPhotosByItem=new Map<string,FitPhotoRow[]>();
   for(const row of (fitPhotosResult.data??[]) as FitPhotoRow[])fitPhotosByItem.set(row.closet_item_id,[...(fitPhotosByItem.get(row.closet_item_id)??[]),row]);
+  const productPhotoByProduct=new Map<string,string>();
+  for(const row of (productPhotosResult.data??[]) as ProductPhotoEvidence[])if(!productPhotoByProduct.has(row.product_id)&&row.public_url)productPhotoByProduct.set(row.product_id,row.public_url);
   const signedFitPhotoByPath=new Map<string,string>();
   await Promise.all(((fitPhotosResult.data??[]) as FitPhotoRow[]).map(async(row)=>{const {data}=await supabase.storage.from("fit-reference-photos").createSignedUrl(row.storage_path,60*30);if(data?.signedUrl)signedFitPhotoByPath.set(row.storage_path,data.signedUrl);}));
+  const privateProductPhotoByItem=new Map<string,string>();
+  await Promise.all(closetRows.map(async(item)=>{const submission=one<SubmissionRecord>(item.submission);const path=submission?.product_photo_storage_path;if(!path)return;const {data}=await supabase.storage.from("catalog-submission-photos").createSignedUrl(path,60*30);if(data?.signedUrl)privateProductPhotoByItem.set(item.id,data.signedUrl);}));
 
   const closet: ClosetOption[] = closetRows.map((item) => {
     const product = one<ProductRecord>(item.product);
@@ -98,8 +105,13 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
       const option=question?.options.find((candidate)=>candidate.value===attribute.option_key);
       return question&&option?[{label:question.label,value:option.label}]:[];
     }).slice(0,4);
-    const fitPhotoUrls=(fitPhotosByItem.get(item.id)??[]).sort((a,b)=>a.photo_role.localeCompare(b.photo_role)).flatMap((row)=>{const url=signedFitPhotoByPath.get(row.storage_path);return url?[url]:[];});
-    const photoUrls=[...(product?.image_url?[product.image_url]:[]),...fitPhotoUrls];
+    const fitRows=fitPhotosByItem.get(item.id)??[];
+    const frontRow=fitRows.find((row)=>row.photo_role==="front");
+    const backRow=fitRows.find((row)=>row.photo_role==="back");
+    const frontUrl=frontRow?signedFitPhotoByPath.get(frontRow.storage_path):undefined;
+    const productUrl=product?.image_url||(product?productPhotoByProduct.get(product.id):undefined)||privateProductPhotoByItem.get(item.id);
+    const backUrl=backRow?signedFitPhotoByPath.get(backRow.storage_path):undefined;
+    const photoUrls=[...new Set([frontUrl,productUrl,backUrl].filter((value):value is string=>Boolean(value)))];
     const garmentTypeLabel=TYPE_LABELS.get(garmentType) ?? garmentType.replaceAll("_", " ");
     const color=item.variant_id?variantById.get(item.variant_id)?.color_label??null:null;
     return {

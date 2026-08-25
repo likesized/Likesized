@@ -46,6 +46,15 @@ jobs:
       - name: New Outfit V1 safeguards
         run: node --test tests/new-outfit-v1.test.ts
 
+      - name: Outfit polish batch safeguards
+        run: node --test tests/outfit-polish-batch.test.ts
+
+      - name: Tagged-item quick-view safeguards
+        run: node --test tests/outfit-tagged-quickview-regression.test.ts
+
+      - name: Tracked Outfit variation evidence safeguards
+        run: node --test tests/outfit-variation-evidence.test.ts
+
       - name: Outfit live-audit repair safeguards
         run: node --test tests/outfit-live-audit-repairs.test.ts
 

@@ -13,6 +13,7 @@ const tabs=readFileSync(new URL("../app/outfits/[id]/OutfitTabs.tsx",import.meta
 const tagged=readFileSync(new URL("../app/outfits/[id]/TaggedItemsPanel.tsx",import.meta.url),"utf8");
 const taggedFit=readFileSync(new URL("../app/api/outfits/[id]/tagged-fit/route.ts",import.meta.url),"utf8");
 const commentThread=readFileSync(new URL("../app/outfits/[id]/CommentThread.tsx",import.meta.url),"utf8");
+const commentThreadCss=readFileSync(new URL("../app/outfits/[id]/CommentThread.module.css",import.meta.url),"utf8");
 const commentComposer=readFileSync(new URL("../app/outfits/[id]/CommentComposer.tsx",import.meta.url),"utf8");
 const commentApi=readFileSync(new URL("../app/api/outfits/[id]/comments/route.ts",import.meta.url),"utf8");
 const commentPageMigration=readFileSync(new URL("../supabase/migrations/20260825021000_outfit_comment_cursor_pagination.sql",import.meta.url),"utf8");
@@ -189,7 +190,7 @@ test("comments default to Top with Newest available and use local API mutations"
  assert.match(commentThread,/>Top<\/button>/);
  assert.match(commentThread,/>Newest<\/button>/);
  assert.match(commentThread,/before_like_count/);
- assert.match(commentThread,/commentsSheetFooter/);
+ assert.match(commentThread,/className=\{styles\.footer\}/);
  assert.match(detail,/comments=1/);
  assert.doesNotMatch(detail,/limit\(200\)|get_public_outfit_comments/);
  assert.match(commentApi,/get_outfit_comments_sorted_page/);
@@ -202,8 +203,8 @@ test("comments default to Top with Newest available and use local API mutations"
  assert.match(commentThread,/comment\.canDelete/);
  assert.doesNotMatch(commentComposer,/action=\{addOutfitComment\}/);
  assert.match(commentComposer,/onChange=\{\(event\)=>setBody/);
- assert.match(detailCss,/\.commentIdentity a\{display:grid/);
- assert.match(detailCss,/\.commentsSheetFooter\{position:sticky;bottom:0/);
+ assert.match(commentThreadCss,/\.footer \{[\s\S]*env\(safe-area-inset-bottom\)/);
+ assert.match(commentThreadCss,/\.composer textarea \{[\s\S]*font-size: 16px/);
 });
 
 test("compact controls stay compact without shrinking every page shell",()=>{

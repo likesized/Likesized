@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 const addPage=readFileSync(new URL("../app/closet/add/page.tsx",import.meta.url),"utf8");
 const addAction=readFileSync(new URL("../app/closet/add/actions.ts",import.meta.url),"utf8");
+const catalogFields=readFileSync(new URL("../app/closet/add/CatalogGarmentFields.tsx",import.meta.url),"utf8");
 const photoFields=readFileSync(new URL("../app/closet/add/FitReportPhotoFields.tsx",import.meta.url),"utf8");
 const fitForm=readFileSync(new URL("../app/closet/add/FitReportForm.tsx",import.meta.url),"utf8");
 const closet=readFileSync(new URL("../app/closet/page.tsx",import.meta.url),"utf8");
@@ -22,7 +23,9 @@ const migration=readFileSync(new URL("../supabase/migrations/20260825152000_outf
 test("new Fit Reports require one identification or Fit Photo on client and server",()=>{
   assert.match(addPage,/addGarmentWithPhotoRequirement/);
   assert.match(addPage,/FitReportPhotoFields/);
-  for(const name of ["product_photo","photo_front","photo_back"]){assert.match(photoFields,new RegExp(name));assert.match(addAction,new RegExp(name));assert.match(fitForm,new RegExp(name));}
+  assert.match(catalogFields,/name="product_photo"/);
+  for(const name of ["photo_front","photo_back"]){assert.match(photoFields,new RegExp(name));}
+  for(const name of ["product_photo","photo_front","photo_back"]){assert.match(addAction,new RegExp(name));assert.match(fitForm,new RegExp(name));}
   assert.match(photoFields,/at least one required/);
   assert.match(photoFields,/Product Photo, Front Fit Photo, or Back Fit Photo/);
   assert.match(addAction,/photo_required/);

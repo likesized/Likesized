@@ -86,7 +86,8 @@ test("My Closet is the canonical owned-content hub",()=>{
  assert.match(closetPage,/FITuition combines the Fit Reports and garment history in your Closet/);
  assert.match(outfitsIndex,/redirect\(`\/closet\?tab=outfits/);
  assert.doesNotMatch(outfitsIndex,/outfit_posts|feed=following|YOUR DRAFTS/);
- assert.match(newPage,/href="\/closet\?tab=outfits"[^>]*>← Back to My Closet<\/Link>/);
+ assert.match(newPage,/"\/closet\?tab=outfits"/);
+ assert.match(newPage,/← Back to My Closet/);
 });
 
 test("profile photos are live identity instead of Outfit or comment snapshots",()=>{

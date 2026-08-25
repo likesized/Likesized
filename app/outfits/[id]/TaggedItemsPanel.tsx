@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { reportProductItem } from "@/app/item/[slug]/actions";
 import { addToWishLocker, likeProduct, removeFromWishLocker, unlikeProduct } from "@/app/likelocker/actions";
 import styles from "./outfitDetail.module.css";
@@ -27,7 +27,9 @@ export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedIt
   const [fitMeta,setFitMeta]=useState<Record<string,FitMeta>>({});
   const [liked,setLiked]=useState<Record<string,boolean>>(()=>Object.fromEntries(items.map((item)=>[item.productId,item.liked])));
   const [wished,setWished]=useState<Record<string,boolean>>(()=>Object.fromEntries(items.map((item)=>[item.productId,item.wished])));
-  const [pending,startTransition]=useTransition();
+  const [likePending,setLikePending]=useState<Record<string,boolean>>({});
+  const [wishPending,setWishPending]=useState<Record<string,boolean>>({});
+  const [actionError,setActionError]=useState("");
   const selected=items.find((item)=>item.closetItemId===selectedId)??null;
   const returnTo=`/outfits/${postId}?tab=tagged`;
   const productKey=useMemo(()=>[...new Set(items.map((item)=>item.productId))].sort().join(","),[items]);
@@ -59,21 +61,27 @@ export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedIt
     if(!signedIn){setGateItem(item);return;}
     setSelectedId(item.closetItemId);
   }
-  function runLike(item:TaggedItem){
+  async function runLike(item:TaggedItem){
+    if(likePending[item.productId])return;
     const next=!liked[item.productId];
+    setActionError("");
     setLiked((current)=>({...current,[item.productId]:next}));
-    startTransition(async()=>{
-      const formData=new FormData();formData.set("product_id",item.productId);formData.set("return_to",returnTo);formData.set("stay_open","1");
-      try{await (next?likeProduct:unlikeProduct)(formData);}catch{setLiked((current)=>({...current,[item.productId]:!next}));}
-    });
+    setLikePending((current)=>({...current,[item.productId]:true}));
+    const formData=new FormData();formData.set("product_id",item.productId);formData.set("return_to",returnTo);formData.set("stay_open","1");
+    try{await (next?likeProduct:unlikeProduct)(formData);}
+    catch{setLiked((current)=>({...current,[item.productId]:!next}));setActionError("Like Locker could not update. Try again.");}
+    finally{setLikePending((current)=>({...current,[item.productId]:false}));}
   }
-  function runWish(item:TaggedItem){
+  async function runWish(item:TaggedItem){
+    if(wishPending[item.productId])return;
     const next=!wished[item.productId];
+    setActionError("");
     setWished((current)=>({...current,[item.productId]:next}));
-    startTransition(async()=>{
-      const formData=new FormData();formData.set("product_id",item.productId);formData.set("return_to",returnTo);formData.set("stay_open","1");
-      try{await (next?addToWishLocker:removeFromWishLocker)(formData);}catch{setWished((current)=>({...current,[item.productId]:!next}));}
-    });
+    setWishPending((current)=>({...current,[item.productId]:true}));
+    const formData=new FormData();formData.set("product_id",item.productId);formData.set("return_to",returnTo);formData.set("stay_open","1");
+    try{await (next?addToWishLocker:removeFromWishLocker)(formData);}
+    catch{setWished((current)=>({...current,[item.productId]:!next}));setActionError("Wish Locker could not update. Try again.");}
+    finally{setWishPending((current)=>({...current,[item.productId]:false}));}
   }
   async function share(item:TaggedItem){
     const url=new URL(item.href,window.location.origin).toString();
@@ -106,14 +114,15 @@ export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedIt
           </>}
           <Link className="textLink" href={selected.href}>See fit evidence →</Link>
         </div>
+        {actionError?<small role="status" className="muted">{actionError}</small>:null}
         <div className={styles.itemPreviewActions} aria-label="Item actions">
-          <button type="button" disabled={pending} aria-pressed={Boolean(liked[selected.productId])} aria-label={liked[selected.productId]?"Remove from Like Locker":"Add to Like Locker"} title="Like Locker" onClick={()=>runLike(selected)}>{liked[selected.productId]?"♥":"♡"}</button>
-          <button className={polishStyles.wishLockerAction} type="button" disabled={pending} aria-pressed={Boolean(wished[selected.productId])} aria-label={wished[selected.productId]?"Remove from Wish Locker":"Add to Wish Locker"} title="Wish Locker" onClick={()=>runWish(selected)}><span aria-hidden="true">{wished[selected.productId]?"✦":"✧"}</span><span>Wish Locker</span></button>
+          <button type="button" disabled={Boolean(likePending[selected.productId])} aria-pressed={Boolean(liked[selected.productId])} aria-label={liked[selected.productId]?"Remove from Like Locker":"Add to Like Locker"} title="Like Locker" onClick={()=>void runLike(selected)}>{liked[selected.productId]?"♥":"♡"}</button>
+          <button className={polishStyles.wishLockerAction} type="button" disabled={Boolean(wishPending[selected.productId])} aria-pressed={Boolean(wished[selected.productId])} aria-label={wished[selected.productId]?"Remove from Wish Locker":"Add to Wish Locker"} title="Wish Locker" onClick={()=>void runWish(selected)}><span aria-hidden="true">{wished[selected.productId]?"✦":"✧"}</span><span>Wish Locker</span></button>
           {selected.canShop?<Link className={styles.previewActionLink} href={`/api/outfits/${postId}/shop?product_id=${selected.productId}`} target="_blank" rel="noopener noreferrer" aria-label="Shop this item" title="Shop">🛒</Link>:null}
           <button type="button" aria-label="Share this item" title="Share" onClick={()=>void share(selected)}>↗</button>
           <details className={styles.itemReport}><summary aria-label="Report this item" title="Report">⚑</summary><form action={reportProductItem}>
             <input type="hidden" name="product_id" value={selected.productId}/><input type="hidden" name="return_to" value={returnTo}/><input type="hidden" name="stay_open" value="1"/>
-            <label>Reason<select name="reason" defaultValue="incorrect_information"><option value="inappropriate_content">Inappropriate content</option><option value="image_mismatch">Image mismatch</option><option value="incorrect_information">Incorrect information</option><option value="other">Other</option></select></label>
+            <label>Reason<select name="reason" defaultValue="" required><option value="" disabled>Select a reason</option><option value="inappropriate_content">Inappropriate content</option><option value="image_mismatch">Image mismatch</option><option value="incorrect_information">Incorrect information</option><option value="other">Other</option></select></label>
             <label>Details <span className="muted inlineMuted">optional</span><textarea name="details" maxLength={500} rows={2}/></label><button type="submit">Send report</button>
           </form></details>
         </div>

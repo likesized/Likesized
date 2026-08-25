@@ -18,6 +18,7 @@ const commentComposer=readFileSync(new URL("../app/outfits/[id]/CommentComposer.
 const commentApi=readFileSync(new URL("../app/api/outfits/[id]/comments/route.ts",import.meta.url),"utf8");
 const lockerActions=readFileSync(new URL("../app/likelocker/actions.ts",import.meta.url),"utf8");
 const reportForm=readFileSync(new URL("../components/ReportContentForm.tsx",import.meta.url),"utf8");
+const swipeLightbox=readFileSync(new URL("../components/SwipeDismissImageLightbox.tsx",import.meta.url),"utf8");
 const migration=readFileSync(new URL("../supabase/migrations/20260825152000_outfit_public_hotspots_and_comment_sorting.sql",import.meta.url),"utf8");
 
 test("new Fit Reports require one identification or Fit Photo on client and server",()=>{
@@ -27,9 +28,21 @@ test("new Fit Reports require one identification or Fit Photo on client and serv
   for(const name of ["photo_front","photo_back"]){assert.match(photoFields,new RegExp(name));}
   for(const name of ["product_photo","photo_front","photo_back"]){assert.match(addAction,new RegExp(name));assert.match(fitForm,new RegExp(name));}
   assert.match(photoFields,/at least one required/);
-  assert.match(photoFields,/Product Photo, Front Fit Photo, or Back Fit Photo/);
+  assert.match(photoFields,/Front Fit Photo, Back Fit Photo, or Product Photo/);
+  assert.match(photoFields,/Product Photo \(not being worn\)/);
+  assert.match(photoFields,/visible to the LikeSized community/);
   assert.match(addAction,/photo_required/);
   assert.match(fitForm,/validatePhotoRequirement/);
+});
+
+test("Fit Report photo controls use one canonical Product Photo input and consistent choose/replace UI",()=>{
+  assert.equal((catalogFields.match(/name="product_photo"/g)??[]).length,1);
+  assert.doesNotMatch(catalogFields,/A clear photo of the item by itself helps LikeSized identify the exact product/);
+  assert.match(photoFields,/Choose Photo/);
+  assert.match(photoFields,/Replace Photo/);
+  assert.match(photoFields,/No file chosen/);
+  assert.match(catalogFields,/SwipeDismissImageLightbox/);
+  assert.match(swipeLightbox,/dy >= 70/);
 });
 
 test("Fit Report display images prefer Front then Product then Back",()=>{

@@ -70,6 +70,7 @@ Owner-approved follow-up behavior now implemented on `agent/roadmap12-live-audit
 9. **Photo-tag regression:** the single-image gallery remains canonical, and each active photo again renders only the tag hotspots belonging to that photo.
 10. **My Closet responsiveness:** the corrected Closet/Outfits layout applies across desktop, tablet and mobile rather than stopping at desktop.
 11. **Compact-control rule:** LikeSized controls default compact/content-sized with restrained height/padding/radius. Oversized CTA-like dropdowns, random full-width buttons and giant cards/modals are not the default. Full-width controls are deliberate exceptions, primarily where a mobile primary action truly needs them.
+12. **Homepage FAQ copy:** the owner approved simpler customer-facing wording for Fit Twins and the LikeSized differentiation answer. Fit Twin copy now explains that anyone can be followed, that a Fit Twin is especially similar across both tops and bottoms, and that one-area matches may show as Tops Twin or Bottoms Twin without exposing internal threshold/Overall-Match mechanics. The differentiation answer now centers on garment-relevant measurements, fit tracked to the specific item because sizing varies, and FITuition combining how the item fit similar people with what LikeSized has learned from the user's own Closet history.
 
 PR #79 adds focused safeguards for these owner-approved behaviors. No new database migration is required for this follow-up batch.
 
@@ -164,7 +165,7 @@ Exact tracked-variation evidence comes first. Related variation evidence is seco
 FITuition combines Size Match evidence with Closet History to recommend size. Exact-variation evidence is strongest; related variation is fallback/supporting evidence. Closet History is weighted by garment relevance. Confidence is separate from recommendation score and reflects evidence quantity/quality/agreement/separation. Member-facing UI shows recommendation, confidence and understandable evidence—not the internal numeric FITuition score.
 
 # ROADMAP / OWNER RE-AUDIT ORDER
-1. Homepage + FAQ — live; exact sex/body-specific measurement FAQ wording still pending owner approval.
+1. Homepage + FAQ — production-live baseline; owner-approved Fit Twin and LikeSized-difference copy refinements are implemented on PR #79 and are not production-live yet; exact sex/body-specific measurement FAQ wording still pending owner approval.
 2. Global header / member menu / admin entry — broader owner interaction audit remains.
 3. Auth — owner confirmed.
 4. Fit Profile / My Measurements — broader audit remains.

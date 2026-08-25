@@ -14,7 +14,7 @@ type ActionPresentation = {
 
 export const UNIVERSAL_ACTIONS: Record<UniversalActionKind, ActionPresentation> = {
   likeLocker: { icon: "♡", activeIcon: "♥", label: "LikeLocker", activeLabel: "In LikeLocker", inactiveAria: "Add to LikeLocker", activeAria: "Remove from LikeLocker" },
-  wishLocker: { icon: "🛍♡", activeIcon: "🛍♥", label: "Wishlist", activeLabel: "In Wishlist", inactiveAria: "Add to Wishlist", activeAria: "Remove from Wishlist" },
+  wishLocker: { icon: "🛍♡", activeIcon: "🛍♥", label: "Wish Locker", activeLabel: "In Wish Locker", inactiveAria: "Add to Wish Locker", activeAria: "Remove from Wish Locker" },
   like: { icon: "♡", activeIcon: "♥", label: "Like", activeLabel: "Unlike", inactiveAria: "Like", activeAria: "Unlike" },
   shop: { icon: "🛒", label: "Shop" },
   share: { icon: "↗", label: "Share" },

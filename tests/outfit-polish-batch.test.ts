@@ -32,11 +32,11 @@ test("Outfit photos support optional 200-character captions without permanently 
   assert.match(gallery,/current\.caption&&showCaption/);
 });
 
-test("Wishlist remains an explicit garment action with a shopping-bag-plus-heart symbol and never renders a count",()=>{
+test("Wish Locker remains an explicit garment action with a shopping-bag-plus-heart symbol and never renders a count",()=>{
   assert.match(tagged,/UniversalActionButton action="wishLocker"/);
-  assert.match(universalActions,/wishLocker:\s*\{[^}]*icon:\s*"🛍♡"[^}]*activeIcon:\s*"🛍♥"[^}]*label:\s*"Wishlist"/);
-  assert.match(universalActions,/inactiveAria:\s*"Add to Wishlist"/);
-  assert.match(universalActions,/activeAria:\s*"Remove from Wishlist"/);
+  assert.match(universalActions,/wishLocker:\s*\{[^}]*icon:\s*"🛍♡"[^}]*activeIcon:\s*"🛍♥"[^}]*label:\s*"Wish Locker"/);
+  assert.match(universalActions,/inactiveAria:\s*"Add to Wish Locker"/);
+  assert.match(universalActions,/activeAria:\s*"Remove from Wish Locker"/);
   assert.match(universalActions,/const visibleCount = action === "wishLocker" \? undefined : count;/);
   assert.doesNotMatch(tagged,/action="wishLocker"[^>]*count=/);
 });

@@ -8,6 +8,9 @@ const detailPage=readFileSync(new URL("../app/outfits/[id]/page.tsx",import.meta
 const gallery=readFileSync(new URL("../app/outfits/[id]/OutfitGallery.tsx",import.meta.url),"utf8");
 const tabs=readFileSync(new URL("../app/outfits/[id]/OutfitTabs.tsx",import.meta.url),"utf8");
 const tagged=readFileSync(new URL("../app/outfits/[id]/TaggedItemsPanel.tsx",import.meta.url),"utf8");
+const commentThread=readFileSync(new URL("../app/outfits/[id]/CommentThread.tsx",import.meta.url),"utf8");
+const commentApi=readFileSync(new URL("../app/api/outfits/[id]/comments/route.ts",import.meta.url),"utf8");
+const commentPageMigration=readFileSync(new URL("../supabase/migrations/20260825021000_outfit_comment_cursor_pagination.sql",import.meta.url),"utf8");
 const confirmDelete=readFileSync(new URL("../app/outfits/[id]/ConfirmDeleteOutfit.tsx",import.meta.url),"utf8");
 const actions=readFileSync(new URL("../app/outfits/actions.ts",import.meta.url),"utf8");
 const commentComposer=readFileSync(new URL("../app/outfits/[id]/CommentComposer.tsx",import.meta.url),"utf8");
@@ -87,8 +90,9 @@ test("profile photos are live identity instead of Outfit or comment snapshots",(
  assert.match(profilePhoto,/getPublicUrl/);
  assert.match(detailPage,/currentProfilePhotoUrl/);
  assert.match(detailPage,/get_public_outfit_creator/);
- assert.match(detailPage,/get_public_outfit_comments/);
- assert.match(detailPage,/avatar_url/);
+ assert.match(commentApi,/currentProfilePhotoUrl/);
+ assert.match(commentApi,/get_outfit_comments_page/);
+ assert.match(commentPageMigration,/p\.avatar_url/);
  assert.match(explorePage,/profile:profiles\(username,display_name,avatar_url\)/);
  assert.match(explorePage,/outfitProfilePhotos/);
  assert.match(liveIdentityMigration,/set public = true/);
@@ -98,12 +102,13 @@ test("profile photos are live identity instead of Outfit or comment snapshots",(
  assert.doesNotMatch(migration,/comment_avatar|outfit_avatar/);
 });
 
-test("opened Outfit is a direct-navigation one-photo gallery with no secondary thumbnail strip",()=>{
+test("opened Outfit is a direct-navigation one-photo gallery with one canonical tagged-item quick view",()=>{
  assert.match(gallery,/onPointerDown=\{pointerDown\}/);
  assert.match(gallery,/onPointerUp=\{pointerUp\}/);
  assert.match(gallery,/move\(1\)/);
  assert.match(gallery,/ArrowLeft/);
- assert.match(gallery,/Full details →/);
+ assert.match(gallery,/likesized:open-tagged-item/);
+ assert.doesNotMatch(gallery,/Full details →/);
  assert.doesNotMatch(gallery,/galleryThumb/);
  assert.doesNotMatch(gallery,/thumbnail/i);
 });
@@ -130,27 +135,33 @@ test("opened Outfit creator header and social row stay compact and contextual",(
  assert.doesNotMatch(detailPage,/blockMemberFromOutfit/);
 });
 
-test("Tagged Items preview before navigation uses Like, Wish Locker, Shop, Share, and Report",()=>{
+test("Tagged Items preview before navigation uses symbol Like, Wish Locker, Shop, Share, and Report actions",()=>{
  assert.match(tagged,/setSelectedId/);
  assert.match(tagged,/Full details →/);
- assert.match(tagged,/Wish Locker/);
- assert.match(tagged,/>Shop<\/Link>/);
+ assert.match(tagged,/title="Like Locker"/);
+ assert.match(tagged,/title="Wish Locker"/);
+ assert.match(tagged,/title="Shop">🛒<\/Link>/);
+ assert.match(tagged,/title="Share"/);
+ assert.match(tagged,/title="Report">⚑<\/summary>/);
  assert.match(tagged,/\/api\/outfits\/\$\{postId\}\/shop\?product_id=/);
  assert.match(shopRoute,/retailer_listings/);
  assert.match(shopRoute,/product_url/);
  assert.doesNotMatch(shopRoute,/retailer_url/);
 });
 
-test("comments remain plain text and each comment has Like, flag, and authorized delete",()=>{
+test("comments remain plain text and paginated comments preserve Like, flag, and authorized delete",()=>{
  assert.match(commentComposer,/textarea/);
  assert.doesNotMatch(commentComposer,/contentEditable|execCommand|rich text/i);
  assert.match(actions,/LINK_PATTERN/);
  assert.match(actions,/likeOutfitComment/);
  assert.match(actions,/unlikeOutfitComment/);
- assert.match(detailPage,/targetType="outfit_comment"/);
- assert.match(detailPage,/summaryLabel="Report comment" iconOnly/);
- assert.match(detailPage,/owner\|\|comment\.user_id===viewerId/);
- assert.match(detailPage,/\/people\/\$\{comment\.profile\.username\}/);
+ assert.match(commentThread,/likeOutfitComment/);
+ assert.match(commentThread,/reportContent/);
+ assert.match(commentThread,/comment\.canDelete/);
+ assert.match(commentThread,/\/people\/\$\{comment\.username\}/);
+ assert.match(commentApi,/get_outfit_comments_page/);
+ assert.match(commentPageMigration,/order by oc\.created_at desc,oc\.id desc/);
+ assert.match(commentPageMigration,/can_delete boolean/);
  assert.match(commentLikesMigration,/create table public\.outfit_comment_likes/);
  assert.match(commentLikesMigration,/add column like_count/);
 });

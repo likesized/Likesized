@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./outfitDetail.module.css";
 
 export default function OutfitEngagementClient({postId,headline,shareCount}:{postId:string;headline:string;shareCount:number}){
-  const viewed=useRef(false);
   const [shared,setShared]=useState(false);
   const [count,setCount]=useState(shareCount);
   useEffect(()=>{
-    if(viewed.current)return;viewed.current=true;
-    void fetch(`/api/outfits/${postId}/view`,{method:"POST",keepalive:true}).catch(()=>{});
+    const key=`likesized:outfit-view:${postId}`;
+    if(sessionStorage.getItem(key))return;
+    sessionStorage.setItem(key,"1");
+    void fetch(`/api/outfits/${postId}/view`,{method:"POST",keepalive:true}).catch(()=>{sessionStorage.removeItem(key);});
   },[postId]);
   async function share(){
     const url=window.location.href;

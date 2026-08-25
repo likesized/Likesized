@@ -36,8 +36,8 @@ nav { display:flex; align-items:center; gap:26px; font-size:14px; font-weight:70
 .proofStrip span::before { content:""; width:9px; height:9px; border-radius:50%; background:var(--secondary); flex:0 0 auto; }
 .proofStrip span + span { border-left:1px solid var(--line); }
 .proofStrip b { color:var(--ink); }
-.section { padding:80px 7vw; }
-.pageShell { padding:52px 7vw; min-height:calc(100vh - 72px); }
+.section, .pageShell { padding:80px 7vw; }
+.pageShell { min-height:calc(100vh - 72px); }
 .sectionHeading, .rowTitle { display:flex; justify-content:space-between; gap:24px; align-items:flex-end; margin-bottom:30px; }
 .sectionHeading > div { max-width:1050px; }
 .sectionHeading .eyebrow { margin-bottom:9px; }
@@ -194,7 +194,6 @@ summary { cursor:pointer; font-weight:900; }
   .header { padding:0 18px; }
   .brandLogo { width:142px; }
   .hero, .section, .pageShell { padding-left:20px; padding-right:20px; }
-  .pageShell { padding-top:34px; padding-bottom:34px; }
   .hero { padding-bottom:40px; }
   .heroEyebrow { font-size:11px; line-height:1.3; letter-spacing:1.25px; }
   .heroEyebrowLine { display:block; }

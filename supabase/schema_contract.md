@@ -14,9 +14,9 @@ This file owns current database behavior/privacy plus explicit implementation de
 # Production checkpoint — 2026-08-24
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-Current Roadmap 12 application/database behavior is production-live through PR #77 squash merge `41c92a5c94a8d03d59b627f8f5b55e37bdcf482f`. Exact PR head `2a6ada938db7772bf27819593d97f5d3556e4312` passed full LikeSized CI #853 (`32791915054`): canonical integrity, exact dependency install, TypeScript, all focused application safeguards, production Next.js build, complete fresh replay of every canonical migration and the complete database behavior/privacy suite all passed.
+Current application behavior is production-live through PR #79 squash merge `8835a413680daef0b78ec890ffa50c84424bdc37`. Exact PR #79 head `ec4bebec4f2743cb8461a724d50e2cb7c1b1529e` passed full LikeSized CI #869 (`32799021871`): canonical integrity, exact dependency install, TypeScript, all focused application safeguards, production Next.js build, complete fresh replay of every canonical migration and the complete database behavior/privacy suite all passed. PR #79 added no production database migration.
 
-The owner explicitly authorized this production batch on 2026-08-24. The three PR #77 additive migrations were applied database-first and smoke-verified before application cutover:
+PR #77 remains the most recent production database migration batch. The owner explicitly authorized that production batch on 2026-08-24, and its three additive migrations were applied database-first and smoke-verified before application cutover:
 - `supabase/migrations/20260824231500_outfit_comment_likes.sql` → production `20260825000654 outfit_comment_likes`;
 - `supabase/migrations/20260824234500_live_profile_identity.sql` → production `20260825000708 live_profile_identity`;
 - `supabase/migrations/20260825000500_fix_live_comment_like_count_projection.sql` → production `20260825000722 fix_live_comment_like_count_projection`.
@@ -36,7 +36,12 @@ After PR #77 database application, hosted smoke verification confirmed:
 - `public.outfit_comment_likes` exists;
 - `public.get_public_outfit_comments(uuid,integer)` executes cleanly with its declared `bigint` Like-count projection.
 
-Production application deployment `dpl_3EUNtQettqxv8LwvTt9FGer8FaJL` reached READY for merge `41c92a5c94a8d03d59b627f8f5b55e37bdcf482f`, aliases `likesized.com`, and the live homepage returned HTTP 200 from that deployment. The checked deployment-scoped error/fatal runtime window was clean.
+PR #79 application deployment `dpl_3aSPoi4UwKgZHHDyMQKdosatgYVh` reached READY for merge `8835a413680daef0b78ec890ffa50c84424bdc37`, aliases `likesized.com`, the live site returned HTTP 200, and the checked runtime-error window was clean.
+
+## PR #80 branch-only database change — NOT PRODUCTION APPLIED
+Active repair PR #80 adds `supabase/migrations/20260825021000_outfit_comment_cursor_pagination.sql`.
+
+This migration is **not applied to production**. It creates `public.get_outfit_comments_page(uuid,timestamptz,uuid,integer)` for real newest-first cursor pagination of published Outfit comments. If PR #80 receives production authorization, this migration must be applied and smoke-verified before the PR #80 application cutover because the repaired comment API depends on it.
 
 # 1. Privacy / body-state foundations — LOCKED
 - `profiles` stores member identity; exact Fit Profile/body measurements are not stored there.
@@ -197,7 +202,7 @@ Twin designation is calculated from current Tops and Bottoms regional Match qual
 
 Follow alone does not enable person notifications. Person notifications and Product one-shot Match notifications remain separate from Following, Like and Wish state.
 
-# 13. LikeLocker / Wish Locker / Outfit foundations — ROADMAP 12 DEPLOYED
+# 13. LikeLocker / Wish Locker / Outfit foundations — ROADMAP 12 DEPLOYED THROUGH PR #79
 Product likes, Outfit likes, comment likes and Wish Locker purchase intent are distinct states. Outfits reuse canonical Closet/Product/taxonomy foundations; no second garment or shopping system exists.
 
 Core Outfit schema:
@@ -228,10 +233,26 @@ Comments remain plain text only at the product layer; the schema stores text con
 ## Safe published Outfit identity projections
 Anonymous published Outfit access remains deliberately narrow:
 - direct anon access to private/member tables is not broadened merely to render a public page;
-- `get_public_outfit_creator`, `get_public_outfit_comments` and `get_public_outfit_product_teasers` expose minimum published fields;
-- unresolved candidate/review state, Size/Fit/body evidence, private Closet linkage and authenticated shopping state do not leak.
+- `get_public_outfit_creator`, `get_public_outfit_comments` and `get_public_outfit_product_teasers` remain production-safe minimum-field projections;
+- unresolved candidate/review state, raw private body data, private Closet linkage and authenticated member state do not leak merely because the Outfit URL is public.
 
 `get_public_outfit_comments(uuid,integer)` resolves current `profiles.username`, `display_name` and `avatar_url` at query time and returns the comment aggregate Like count as declared `bigint`. The later additive migration explicitly casts the stored integer counter to `bigint`, preserving immutable migration history while fixing the projection contract.
+
+## PR #80 newest-first cursor comment projection — BRANCH ONLY UNTIL DEPLOYED
+`public.get_outfit_comments_page(uuid,timestamptz,uuid,integer)` is the PR #80 replacement read path for scalable opened-Outfit comment browsing.
+
+- the Outfit must be published and comments enabled;
+- signed-in blocked-member rules are preserved;
+- results are ordered newest-first by `(created_at,id)`;
+- the optional `(before_created_at,before_id)` cursor loads strictly earlier rows;
+- each request is bounded to 1–50 comments;
+- current public commenter `username`, `display_name` and `avatar_url` are resolved live;
+- aggregate `like_count` remains safe;
+- `liked_by_viewer` and `can_delete` are safe booleans calculated from the authenticated viewer, without exposing raw interaction identities or private profile/body data;
+- anon callers receive public comments with viewer-specific booleans false;
+- the application API turns the last row into the next cursor rather than preloading a fixed 200-comment array.
+
+This function is not production authority until its migration is applied. The current production projection remains `get_public_outfit_comments` until PR #80 receives production authorization and database-first cutover.
 
 Blocking suppresses signed-in social interaction between blocked members but does not make an otherwise public Outfit URL disappear from anonymous web access.
 
@@ -251,12 +272,15 @@ Recommendation evidence hierarchy remains:
 
 Help Me Size It is fallback sizing assistance and reuses the same canonical recommendation architecture. `Would Buy Again` does not affect size recommendation/confidence. Pending/unmapped candidate reports do not count as exact canonical Product evidence until mapped.
 
+The viewer's own eligible Fit Report/Closet history is valid recommendation evidence; it must not be discarded merely because the evidence belongs to the current viewer. Tagged-Outfit `Matching Fit Reports` is a personalized useful exact-item count, not `get_product_fit_summary.total_fit_count` or another raw Product total.
+
 Before Product Detail consumes `exact_variant`, recommendation/evidence/Admin behavior must consume `GARMENT_VARIATION_DEFINITION_MAP`. Size and Color must never become exact-variation key fields. Body Match remains body similarity and must not be collapsed with Fit Result into a synthetic fit percentage.
 
 # 15. Current implementation debt / open verification
-- Roadmap 12 application/database is production-live through PR #77 merge `41c92a5c94a8d03d59b627f8f5b55e37bdcf482f`; exact tested PR head `2a6ada938db7772bf27819593d97f5d3556e4312` passed full CI #853 (`32791915054`).
-- The three PR #77 migrations are production-live with hosted mappings recorded in the Production checkpoint above and were smoke-verified before application cutover.
-- Owner live re-audit remains the Roadmap 12 gate. New findings after PR #77 belong to the next owner-review batch; Roadmap 13 must not be treated as unblocked until the owner finishes the New Outfit audit.
+- Production application is live through PR #79 merge `8835a413680daef0b78ec890ffa50c84424bdc37`; exact tested PR head `ec4bebec4f2743cb8461a724d50e2cb7c1b1529e` passed full CI #869 (`32799021871`).
+- The PR #77 migrations remain the latest production database changes and were smoke-verified before their application cutover.
+- PR #80 is the active owner-approved stopping-point repair and is **not production-live**. Its `20260825021000_outfit_comment_cursor_pagination.sql` migration is not applied to production and must remain marked branch-only until explicit production authorization.
+- Owner live re-audit remains the Roadmap 12 gate; Roadmap 13 must not be treated as unblocked until the owner finishes the New Outfit audit.
 - The legacy physical `closet_items.visibility` column remains intentionally in immutable replay history and locked to compatibility `shared`; broader Closet lifecycle/mutation rules remain future audit work.
 - Historical counted-report fingerprint reconciliation for retired questions remains separate from tracked-variation/Outfit work.
 - Full My Circle Following / Fit Twins / Discover ranking and richer Outfit discovery/search remain later roadmap work.

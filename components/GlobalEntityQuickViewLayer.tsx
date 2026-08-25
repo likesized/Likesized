@@ -44,19 +44,20 @@ export function GlobalEntityQuickViewLayer(){
   },[]);
 
   useEffect(()=>{
-    if(!view?.loading)return;
+    const active=view;
+    if(!active?.loading)return;
     let cancelled=false;
     async function load(){
-      const endpoint=view.kind==="person"?`/api/people/${encodeURIComponent(view.key)}/quick-view`:view.kind==="garment"?`/api/items/${encodeURIComponent(view.key)}/quick-view`:`/api/outfits/${encodeURIComponent(view.key)}/quick-view`;
+      const endpoint=active.kind==="person"?`/api/people/${encodeURIComponent(active.key)}/quick-view`:active.kind==="garment"?`/api/items/${encodeURIComponent(active.key)}/quick-view`:`/api/outfits/${encodeURIComponent(active.key)}/quick-view`;
       try{
         const response=await fetch(endpoint,{cache:"no-store"});
         if(!response.ok)throw new Error();
         const payload=await response.json() as Record<string,unknown>;
         if(cancelled)return;
-        if(view.kind==="person"){
-          const name=(typeof payload.displayName==="string"&&payload.displayName.trim())||String(payload.username??view.key);
+        if(active.kind==="person"){
+          const name=(typeof payload.displayName==="string"&&payload.displayName.trim())||String(payload.username??active.key);
           const detail=(label:string,value:unknown):Detail=>({label,value:typeof value==="number"?value:value===null?null:String(value??"")});
-          setView((current)=>current?{...current,title:name,subtitle:`@${String(payload.username??view.key)}`,imageUrl:typeof payload.avatarUrl==="string"?payload.avatarUrl:null,details:[detail("Overall Match",typeof payload.overallMatch==="number"?`${payload.overallMatch}%`:null),detail("Tops Match",typeof payload.topsMatch==="number"?`${payload.topsMatch}%`:null),detail("Bottoms Match",typeof payload.bottomsMatch==="number"?`${payload.bottomsMatch}%`:null),detail("Total Garments",payload.totalGarments),detail("Total Outfits",payload.totalOutfits)],loading:false}:current);
+          setView((current)=>current?{...current,title:name,subtitle:`@${String(payload.username??active.key)}`,imageUrl:typeof payload.avatarUrl==="string"?payload.avatarUrl:null,details:[detail("Overall Match",typeof payload.overallMatch==="number"?`${payload.overallMatch}%`:null),detail("Tops Match",typeof payload.topsMatch==="number"?`${payload.topsMatch}%`:null),detail("Bottoms Match",typeof payload.bottomsMatch==="number"?`${payload.bottomsMatch}%`:null),detail("Total Garments",payload.totalGarments),detail("Total Outfits",payload.totalOutfits)],loading:false}:current);
         }else{
           setView((current)=>current?{...current,title:typeof payload.title==="string"?payload.title:current.title,subtitle:typeof payload.subtitle==="string"?payload.subtitle:null,imageUrl:typeof payload.imageUrl==="string"?payload.imageUrl:null,description:typeof payload.description==="string"?payload.description:null,details:Array.isArray(payload.details)?payload.details as Detail[]:[],loading:false}:current);
         }

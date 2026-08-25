@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { followFromOutfit, likeOutfit, toggleOutfitComments, unlikeOutfit } from "@/app/outfits/actions";
+import { likeOutfit, toggleOutfitComments, unlikeOutfit } from "@/app/outfits/actions";
 import { ReportContentForm } from "@/components/ReportContentForm";
+import { UniversalActionBar, UniversalActionButton, UniversalActionLink } from "@/components/UniversalActionBar";
 import { fitTwinDesignation, fitTwinLabel } from "@/lib/fit-twin";
 import { GARMENT_TYPES } from "@/lib/garment-taxonomy";
 import { OUTFIT_OCCASION_LABELS } from "@/lib/outfit-taxonomy";
@@ -10,6 +11,7 @@ import { currentProfilePhotoUrl } from "@/lib/profile-photo";
 import { createClient } from "@/lib/supabase/server";
 import CommentThread from "./CommentThread";
 import ConfirmDeleteOutfit from "./ConfirmDeleteOutfit";
+import CreatorQuickView from "./CreatorQuickView";
 import OutfitEngagementClient from "./OutfitEngagementClient";
 import OutfitGallery, { type GalleryGarment, type GalleryPhoto } from "./OutfitGallery";
 import OutfitTabs, { type OutfitTabKey } from "./OutfitTabs";
@@ -26,6 +28,7 @@ type Photo = { id: string; bucket: "outfit-photos" | "outfit-draft-photos"; disp
 type PublicTaggedItem = { closet_item_id:string; product_id:string; product_slug:string; brand_name:string; product_name:string; image_url:string|null; garment_type_key:string|null };
 type PublicHotspot = { photo_id:string; closet_item_id:string; x:number|string; y:number|string };
 type MatchRecord={user_id:string;match_score:number};
+type NotificationSubscription={followed_id:string};
 function first(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
 function formatDate(value: string) { return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value)); }
 function tabKey(value:string|undefined):OutfitTabKey{return value==="comments"||value==="tagged"?value:"style";}
@@ -93,8 +96,16 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
   const photoUrls = new Map<string, string>();
   for (const photo of photoRows) if (photo.bucket === "outfit-photos") photoUrls.set(photo.id, supabase.storage.from("outfit-photos").getPublicUrl(photo.display_path).data.publicUrl);
 
+  const [fitReportCountResult,outfitCountResult]=await Promise.all([
+    viewerId?supabase.from("fit_reports").select("id",{count:"exact",head:true}).eq("user_id",outfit.user_id):Promise.resolve({count:null,error:null}),
+    supabase.from("outfit_posts").select("id",{count:"exact",head:true}).eq("user_id",outfit.user_id).eq("status","published"),
+  ]);
+  const creatorFitReportCount=fitReportCountResult.error?null:fitReportCountResult.count;
+  const creatorOutfitCount=outfitCountResult.error?null:outfitCountResult.count;
+
   let liked = false;
   let following = false;
+  let notificationsOn = false;
   let overallMatch:number|undefined;
   let topsMatch:number|undefined;
   let bottomsMatch:number|undefined;
@@ -105,14 +116,16 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
   const productIds=[...new Set(publicItems.map((item)=>item.product_id))];
 
   if (viewerId) {
-    const [likesResult, followResult,settingsResult] = await Promise.all([
+    const [likesResult, followResult,settingsResult,notificationResult] = await Promise.all([
       supabase.from("outfit_likes").select("post_id").eq("post_id", id).eq("user_id", viewerId).maybeSingle(),
       viewerId !== outfit.user_id ? supabase.from("follows").select("followed_id").eq("follower_id", viewerId).eq("followed_id", outfit.user_id).maybeSingle() : Promise.resolve({ data: null, error: null }),
       viewerId!==outfit.user_id?supabase.from("fit_twin_settings").select("threshold_percent").eq("singleton",true).maybeSingle():Promise.resolve({data:null,error:null}),
+      viewerId!==outfit.user_id?supabase.rpc("get_following_notification_subscriptions"):Promise.resolve({data:[],error:null}),
     ]);
-    if (likesResult.error||followResult.error||settingsResult.error) throw new Error("Could not load Outfit member state.");
+    if (likesResult.error||followResult.error||settingsResult.error||notificationResult.error) throw new Error("Could not load Outfit member state.");
     liked = Boolean(likesResult.data);
     following = Boolean(followResult.data);
+    notificationsOn=((notificationResult.data??[]) as NotificationSubscription[]).some((row)=>row.followed_id===outfit.user_id);
     threshold=settingsResult.data?.threshold_percent??85;
 
     if(!owner){[overallMatch,topsMatch,bottomsMatch]=await Promise.all([scoreFor(supabase,outfit.user_id,"overall"),scoreFor(supabase,outfit.user_id,"tops"),scoreFor(supabase,outfit.user_id,"bottoms")]);}
@@ -172,38 +185,45 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
     commentCount={outfit.comment_count}
     initialOpen={commentsOpen}
     signedIn={Boolean(viewerId)}
-    signIn={!viewerId?<Link className={styles.compactSecondary} href={`/login?next=${encodeURIComponent(commentsReturnTo)}`}>Sign in to comment</Link>:null}
+    signIn={!viewerId?<Link prefetch={false} className={styles.compactSecondary} href={`/login?next=${encodeURIComponent(commentsReturnTo)}`}>Sign in to comment</Link>:null}
     error={commentErrorNode}
   />:<p className="muted">Comments are off for this Outfit.</p>;
 
   return <main className="pageShell">
     {published?<div className="authMessage">Outfit published.</div>:updated?<div className="authMessage">Outfit updated.</div>:reported?<div className="authMessage">Report sent.</div>:null}
     <article className={styles.openOutfit}>
-      <header className={styles.outfitIdentityHeader}>
-        {creatorAvatar?<img className={styles.outfitIdentityPhoto} src={creatorAvatar} alt=""/>:<div className={styles.outfitIdentityFallback}>{creatorName.slice(0,1).toUpperCase()}</div>}
-        <div className={styles.outfitIdentityCopy}>
-          <div className={styles.outfitNameLine}>{profile?.username?<Link href={`/people/${profile.username}`}><strong>{creatorName}</strong> <span>@{profile.username}</span></Link>:<strong>{creatorName}</strong>}</div>
-          {!owner&&typeof overallMatch==="number"?<div className={styles.outfitMatchLine}><strong>{overallMatch}% Fit Match</strong>{creatorTwin?<span> · {creatorTwin}</span>:null}</div>:null}
-          <small>{formatDate(publishedAt)}</small>
-        </div>
-      </header>
+      <CreatorQuickView
+        postId={id}
+        creatorUserId={outfit.user_id}
+        username={profile?.username??null}
+        displayName={creatorName}
+        avatarUrl={creatorAvatar}
+        publishedDate={formatDate(publishedAt)}
+        signedIn={Boolean(viewerId)}
+        owner={owner}
+        following={following}
+        notificationsOn={notificationsOn}
+        overallMatch={overallMatch}
+        topsMatch={topsMatch}
+        bottomsMatch={bottomsMatch}
+        twinLabel={creatorTwin}
+        fitReportCount={creatorFitReportCount}
+        outfitCount={creatorOutfitCount}
+      />
 
       <OutfitGallery photos={galleryPhotos} garments={garments}/>
 
-      <div className={styles.outfitActionBar}>
-        {!owner?<>
-          {viewerId?<form action={liked?unlikeOutfit:likeOutfit}><input type="hidden" name="post_id" value={id}/><input type="hidden" name="return_to" value={returnTo}/><button className={styles.iconAction} type="submit" aria-label={liked?"Unlike Outfit":"Like Outfit"} title={liked?"Unlike Outfit":"Like Outfit"}><span aria-hidden="true">{liked?"♥":"♡"}</span><span className={styles.actionCount}>{outfit.like_count}</span></button></form>:<Link className={styles.iconAction} href={`/login?next=${encodeURIComponent(returnTo)}`} aria-label="Sign in to Like Outfit" title="Sign in to Like Outfit"><span aria-hidden="true">♡</span><span className={styles.actionCount}>{outfit.like_count}</span></Link>}
-          {viewerId?following?<button className={styles.iconAction} type="button" aria-label="Following" title="Following" disabled>👤✓</button>:<form action={followFromOutfit}><input type="hidden" name="post_id" value={id}/><input type="hidden" name="return_to" value={returnTo}/><button className={styles.iconAction} type="submit" aria-label={`Follow @${profile?.username??creatorName}`} title="Follow">👤+</button></form>:<Link className={styles.iconAction} href={`/login?next=${encodeURIComponent(returnTo)}`} aria-label="Sign in to Follow" title="Sign in to Follow">👤+</Link>}
-        </>:null}
+      <UniversalActionBar className={styles.outfitActionBar} ariaLabel="Outfit actions">
+        {!owner?(viewerId?<form action={liked?unlikeOutfit:likeOutfit}><input type="hidden" name="post_id" value={id}/><input type="hidden" name="return_to" value={returnTo}/><UniversalActionButton className={styles.iconAction} action="likeLocker" active={liked} type="submit" count={outfit.like_count} countClassName={styles.actionCount}/></form>:<UniversalActionLink className={styles.iconAction} action="likeLocker" href={`/login?next=${encodeURIComponent(returnTo)}`} ariaLabel="Sign in to add Outfit to LikeLocker" count={outfit.like_count} countClassName={styles.actionCount}/>):null}
         <OutfitEngagementClient postId={id} headline={outfit.headline||"Outfit"} shareCount={outfit.share_count}/>
-        {!owner?(viewerId?<ReportContentForm targetType="outfit_post" targetId={id} returnTo={returnTo} summaryLabel="Report Outfit" iconOnly/>:<Link className={styles.iconAction} href={`/login?next=${encodeURIComponent(returnTo)}`} aria-label="Sign in to Report Outfit" title="Sign in to Report Outfit">⚑</Link>):null}
-      </div>
+        {!owner?(viewerId?<ReportContentForm targetType="outfit_post" targetId={id} returnTo={returnTo} summaryLabel="Report Outfit" iconOnly/>:<UniversalActionLink className={styles.iconAction} action="report" href={`/login?next=${encodeURIComponent(returnTo)}`} ariaLabel="Sign in to Report Outfit"/>):null}
+      </UniversalActionBar>
 
       <OutfitTabs initialTab={initialTab} commentCount={outfit.comment_count} styleNotes={styleNotes} comments={commentsPanel} taggedItems={<TaggedItemsPanel items={taggedItems} postId={id} signedIn={Boolean(viewerId)}/>}/>
 
       {owner?<section className={styles.ownerTools}>
         <div><strong>{outfit.view_count}</strong><span>Views</span></div><div><strong>{outfit.follows_generated_count}</strong><span>Follows generated</span></div>
-        <Link className={styles.compactSecondary} href={`/outfits/new?edit=${id}`}>Edit Outfit</Link>
+        <Link prefetch={false} className={styles.compactSecondary} href={`/outfits/new?edit=${id}`}>Edit Outfit</Link>
         <form action={toggleOutfitComments}><input type="hidden" name="post_id" value={id}/><input type="hidden" name="return_to" value={returnTo}/><input type="hidden" name="enabled" value={String(!outfit.comments_enabled)}/><button type="submit">{outfit.comments_enabled?"Turn comments off":"Turn comments on"}</button></form>
         <ConfirmDeleteOutfit postId={id}/>
       </section>:null}

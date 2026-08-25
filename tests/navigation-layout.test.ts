@@ -12,6 +12,7 @@ const fitProfileHeroCss = readFileSync(new URL("../app/onboarding/FitProfileHero
 const settingsPage = readFileSync(new URL("../app/settings/page.tsx", import.meta.url), "utf8");
 const settingsActions = readFileSync(new URL("../app/settings/actions.ts", import.meta.url), "utf8");
 const locationForm = readFileSync(new URL("../app/settings/ProfileLocationForm.tsx", import.meta.url), "utf8");
+const locationNormalizer = readFileSync(new URL("../lib/profile-location.ts", import.meta.url), "utf8");
 const locationMigration = readFileSync(new URL("../supabase/migrations/20260825183000_private_profile_location_metadata.sql", import.meta.url), "utf8");
 const peoplePage = readFileSync(new URL("../app/people/page.tsx", import.meta.url), "utf8");
 const circlePage = readFileSync(new URL("../app/circle/page.tsx", import.meta.url), "utf8");
@@ -66,12 +67,19 @@ test("initial Fit Profile collects private city/state once and Settings owns lat
   assert.match(fitProfileForm, /name="state_region"/);
   assert.match(fitProfileForm, /City and state stay private and can be changed later in Settings/);
   assert.match(fitProfileActions, /if\(isInitialSetup\)[\s\S]*profile_locations/);
+  assert.match(fitProfileActions, /normalizeProfileLocation/);
   assert.match(settingsPage, /ProfileLocationForm/);
   assert.match(locationForm, /Save location/);
   assert.match(locationForm, /anonymous regional trends and demand insights/);
   assert.match(settingsActions, /saveProfileLocationSettings/);
+  assert.match(settingsActions, /normalizeProfileLocation/);
   assert.match(settingsActions, /profile_locations/);
+  assert.match(locationNormalizer, /\["NY", "New York"\]/);
+  assert.match(locationNormalizer, /STATE_CODE_BY_ALIAS/);
+  assert.match(locationNormalizer, /state_region: stateCode/);
   assert.match(locationMigration, /create table public\.profile_locations/);
+  assert.match(locationMigration, /profile_locations_state_region_code/);
+  assert.match(locationMigration, /state_region in \(/);
   assert.match(locationMigration, /enable row level security/);
   assert.match(locationMigration, /owner reads own profile location/);
   assert.doesNotMatch(locationMigration, /grant select[^;]*to anon/);

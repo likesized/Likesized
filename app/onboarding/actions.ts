@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { normalizeProfileLocation } from "@/lib/profile-location";
 import { createClient } from "@/lib/supabase/server";
 
 type MeasurementType = { key:string; dimension:"length"|"weight" };
@@ -12,7 +13,6 @@ function fail(code:string):never{redirect(`/onboarding?error=${encodeURIComponen
 function text(formData:FormData,name:string){return String(formData.get(name)??"").trim();}
 function isCanonicalImperialLength(key:string,value:number){const multiplier=key==="height"?1:4;return Math.abs(value*multiplier-Math.round(value*multiplier))<0.000001;}
 function fitCommunity(value:string):FitCommunity|null{return value==="men"||value==="women"||value==="both"?value:null;}
-function profileLocation(formData:FormData){const city=text(formData,"city");const stateRegion=text(formData,"state_region");if(city.length>80||stateRegion.length>80||Boolean(city)!==Boolean(stateRegion))return null;return{city:city||null,state_region:stateRegion||null};}
 
 export async function saveFitProfile(formData:FormData){
   const unitSystem=text(formData,"unit_system")==="metric"?"metric":"imperial";
@@ -58,7 +58,7 @@ export async function saveFitProfile(formData:FormData){
   const fitPreferences=((existingFitPreferences??[]) as ExistingFitPreference[]).map((row)=>({garment_type_key:row.garment_type_key,preference:row.preference}));
 
   if(isInitialSetup){
-    const location=profileLocation(formData);
+    const location=normalizeProfileLocation(text(formData,"city"),text(formData,"state_region"));
     if(!location)fail("invalid_location");
     const {error:locationError}=await supabase.from("profile_locations").upsert({user_id:userId,...location,updated_at:new Date().toISOString()},{onConflict:"user_id"});
     if(locationError)fail("save_failed");

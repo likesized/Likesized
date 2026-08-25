@@ -11,8 +11,10 @@ create table public.profile_locations (
   constraint profile_locations_city_length check (
     city is null or char_length(btrim(city)) between 1 and 80
   ),
-  constraint profile_locations_state_region_length check (
-    state_region is null or char_length(btrim(state_region)) between 1 and 80
+  constraint profile_locations_state_region_code check (
+    state_region is null or state_region in (
+      'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC'
+    )
   ),
   constraint profile_locations_pair check (
     (city is null and state_region is null)
@@ -21,11 +23,11 @@ create table public.profile_locations (
 );
 
 create index profile_locations_region_idx
-  on public.profile_locations (lower(state_region), lower(city))
+  on public.profile_locations (state_region, lower(city))
   where city is not null and state_region is not null;
 
 comment on table public.profile_locations is
-  'Private member city/state metadata. Owner-readable/editable only; not part of public profile projections.';
+  'Private member city/state metadata. Owner-readable/editable only; state is stored as a canonical US postal code; not part of public profile projections.';
 
 alter table public.profile_locations enable row level security;
 

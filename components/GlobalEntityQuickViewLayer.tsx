@@ -47,17 +47,17 @@ export function GlobalEntityQuickViewLayer(){
     const active=view;
     if(!active?.loading)return;
     let cancelled=false;
-    async function load(){
-      const endpoint=active.kind==="person"?`/api/people/${encodeURIComponent(active.key)}/quick-view`:active.kind==="garment"?`/api/items/${encodeURIComponent(active.key)}/quick-view`:`/api/outfits/${encodeURIComponent(active.key)}/quick-view`;
+    async function load(activeView:ViewState){
+      const endpoint=activeView.kind==="person"?`/api/people/${encodeURIComponent(activeView.key)}/quick-view`:activeView.kind==="garment"?`/api/items/${encodeURIComponent(activeView.key)}/quick-view`:`/api/outfits/${encodeURIComponent(activeView.key)}/quick-view`;
       try{
         const response=await fetch(endpoint,{cache:"no-store"});
         if(!response.ok)throw new Error();
         const payload=await response.json() as Record<string,unknown>;
         if(cancelled)return;
-        if(active.kind==="person"){
-          const name=(typeof payload.displayName==="string"&&payload.displayName.trim())||String(payload.username??active.key);
+        if(activeView.kind==="person"){
+          const name=(typeof payload.displayName==="string"&&payload.displayName.trim())||String(payload.username??activeView.key);
           const detail=(label:string,value:unknown):Detail=>({label,value:typeof value==="number"?value:value===null?null:String(value??"")});
-          setView((current)=>current?{...current,title:name,subtitle:`@${String(payload.username??active.key)}`,imageUrl:typeof payload.avatarUrl==="string"?payload.avatarUrl:null,details:[detail("Overall Match",typeof payload.overallMatch==="number"?`${payload.overallMatch}%`:null),detail("Tops Match",typeof payload.topsMatch==="number"?`${payload.topsMatch}%`:null),detail("Bottoms Match",typeof payload.bottomsMatch==="number"?`${payload.bottomsMatch}%`:null),detail("Total Garments",payload.totalGarments),detail("Total Outfits",payload.totalOutfits)],loading:false}:current);
+          setView((current)=>current?{...current,title:name,subtitle:`@${String(payload.username??activeView.key)}`,imageUrl:typeof payload.avatarUrl==="string"?payload.avatarUrl:null,details:[detail("Overall Match",typeof payload.overallMatch==="number"?`${payload.overallMatch}%`:null),detail("Tops Match",typeof payload.topsMatch==="number"?`${payload.topsMatch}%`:null),detail("Bottoms Match",typeof payload.bottomsMatch==="number"?`${payload.bottomsMatch}%`:null),detail("Total Garments",payload.totalGarments),detail("Total Outfits",payload.totalOutfits)],loading:false}:current);
         }else{
           setView((current)=>current?{...current,title:typeof payload.title==="string"?payload.title:current.title,subtitle:typeof payload.subtitle==="string"?payload.subtitle:null,imageUrl:typeof payload.imageUrl==="string"?payload.imageUrl:null,description:typeof payload.description==="string"?payload.description:null,details:Array.isArray(payload.details)?payload.details as Detail[]:[],loading:false}:current);
         }
@@ -65,7 +65,7 @@ export function GlobalEntityQuickViewLayer(){
         if(!cancelled)setView((current)=>current?{...current,loading:false}:current);
       }
     }
-    void load();
+    void load(active);
     return()=>{cancelled=true;};
   },[view?.kind,view?.key,view?.loading]);
 

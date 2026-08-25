@@ -75,7 +75,7 @@ test("picker quick view identifies similar garment variations before selection",
  assert.match(composer,/closetPreview\.answers/);
  assert.match(newPage,/product_attribute_values/);
  assert.match(newPage,/fit_reference_photos/);
- assert.match(newPage,/color:item\.variant_id/);
+ assert.match(newPage,/const color=item\.variant_id\?variantById\.get\(item\.variant_id\)\?\.color_label\?\?null:null/);
 });
 
 test("cover-tag reuse, draft responsiveness, and Preview Publish scroll are explicit",()=>{
@@ -156,12 +156,15 @@ test("Matching Fit Reports means useful personalized exact-item evidence and inc
  assert.match(taggedFit,/report\.product_id===product\.id/);
 });
 
-test("Tagged quick view uses useful fit context, symbol actions, and a logged-out account gate",()=>{
+test("Tagged quick view uses useful fit context, compact actions, and a logged-out account gate",()=>{
  assert.match(tagged,/Body Match/);
- assert.match(tagged,/FITuition needs more useful evidence/);
- assert.match(tagged,/Your own Closet history and useful reports from similar people/);
+ assert.match(tagged,/FITuition isn’t confident enough yet/);
+ assert.match(tagged,/not enough strong evidence to recommend a size yet/);
+ assert.match(tagged,/FITuition needs more evidence/);
+ assert.match(tagged,/We don’t have enough relevant Fit Reports to recommend a size yet/);
  assert.match(tagged,/title="Like Locker"/);
  assert.match(tagged,/title="Wish Locker"/);
+ assert.match(tagged,/>Wish Locker<\/span>/);
  assert.match(tagged,/title="Shop">🛒<\/Link>/);
  assert.match(tagged,/title="Share"/);
  assert.match(tagged,/title="Report">⚑<\/summary>/);

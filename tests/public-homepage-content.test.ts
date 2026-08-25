@@ -53,14 +53,25 @@ test("expanded FAQ answers use scan-friendly hierarchy without changing approved
   assert.match(homeCss, /\.faqTakeaway\s*\{[\s\S]*?border-top: 1px solid var\(--line\);/);
 });
 
-test("public FAQ keeps approved privacy, regional Twin, community-catalog, and uncertainty meaning", () => {
+test("public FAQ keeps the owner-approved Fit Twin and LikeSized-difference copy", () => {
   assert.match(home, /Can other members see my measurements\?/);
   assert.match(home, /What is a Fit Twin, and do I have to be Fit Twins to follow someone\?/);
-  assert.match(home, /Tops Match/);
-  assert.match(home, /Bottoms Match/);
+  assert.match(home, /You can follow anyone on LikeSized whose style or clothing you want to keep up with/);
+  assert.match(home, /especially similar to yours for both tops and bottoms/);
   assert.match(home, /Tops Twin/);
   assert.match(home, /Bottoms Twin/);
-  assert.match(home, /A high Overall Match by itself does not create a Fit Twin designation/);
+  assert.match(home, /Fit Twin status is simply LikeSized’s way of pointing out the people whose clothing experiences may be especially useful to you/);
+  assert.doesNotMatch(home, /clears the current strong-match threshold/);
+  assert.doesNotMatch(home, /A high Overall Match by itself does not create a Fit Twin designation/);
+
+  assert.match(home, /What makes LikeSized different from other sizing and fashion tools\?/);
+  assert.match(home, /measurements that matter for the type of clothing you’re looking at/);
+  assert.match(home, /track fit down to the/);
+  assert.match(home, /specific item/);
+  assert.match(home, /Then <strong>FITuition<\/strong> combines how the item has fit people similar to you with what we’ve learned from your own Closet history/);
+  assert.match(home, /Together, that helps us make a better size recommendation/);
+  assert.doesNotMatch(home, /Many sizing tools start with size charts/);
+
   assert.match(home, /How does the community-built clothing catalog work\?/);
   assert.match(home, /What if I’m not sure of the item, style, or model\?/);
   assert.match(home, /I’m not sure this is the correct item\/style name/);

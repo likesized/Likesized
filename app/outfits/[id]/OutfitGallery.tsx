@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRef, useState } from "react";
 import styles from "./outfitDetail.module.css";
 
@@ -10,19 +9,18 @@ export type GalleryPhoto = { id: string; url: string; tags: { closetItemId: stri
 export default function OutfitGallery({ photos, garments, canViewTags }: { photos: GalleryPhoto[]; garments: GalleryGarment[]; canViewTags: boolean }) {
   const [index, setIndex] = useState(0);
   const [showTags, setShowTags] = useState(true);
-  const [activeGarment, setActiveGarment] = useState<string | null>(null);
   const pointerStart = useRef<{x:number;y:number}|null>(null);
   const suppressClick = useRef(false);
   const current = photos[index] ?? null;
   const garmentById = new Map(garments.map((garment) => [garment.id, garment]));
-  const selected = activeGarment ? garmentById.get(activeGarment) ?? null : null;
 
   function move(delta:number){
     if(photos.length<2)return;
     setIndex((currentIndex)=>(currentIndex+delta+photos.length)%photos.length);
-    setActiveGarment(null);
   }
-
+  function openTaggedItem(closetItemId:string){
+    window.dispatchEvent(new CustomEvent("likesized:open-tagged-item",{detail:{closetItemId}}));
+  }
   function pointerDown(event:React.PointerEvent<HTMLDivElement>){
     pointerStart.current={x:event.clientX,y:event.clientY};
     suppressClick.current=false;
@@ -61,20 +59,15 @@ export default function OutfitGallery({ photos, garments, canViewTags }: { photo
             className={styles.hotspot}
             style={{ left: `${tag.x*100}%`, top: `${tag.y*100}%` }}
             type="button"
-            aria-label={`Preview ${garment.label}`}
+            aria-label={`Open ${garment.label}`}
             onPointerDown={(event)=>event.stopPropagation()}
             onPointerUp={(event)=>event.stopPropagation()}
-            onClick={(event) => { event.stopPropagation(); setActiveGarment(tag.closetItemId); }}
+            onClick={(event) => { event.stopPropagation(); openTaggedItem(tag.closetItemId); }}
           >+</button>;
         }) : null}
-        {selected ? <div className={styles.hotspotCard} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>event.stopPropagation()}>
-          {selected.imageUrl?<img src={selected.imageUrl} alt=""/>:null}
-          <div><strong>{selected.label}</strong><span>{selected.detail}</span><Link href={selected.href}>Full details →</Link></div>
-          <button type="button" aria-label="Close item preview" onClick={() => setActiveGarment(null)}>×</button>
-        </div> : null}
       </div>
       {photos.length>1?<span className={styles.galleryCounter}>{index+1} / {photos.length}</span>:null}
-      {canViewTags && current.tags.length ? <button className={styles.galleryTagToggle} type="button" onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event) => {event.stopPropagation();setShowTags((value) => !value);setActiveGarment(null);}}>{showTags ? "Hide tags" : "Show tags"}</button> : null}
+      {canViewTags && current.tags.length ? <button className={styles.galleryTagToggle} type="button" onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event) => {event.stopPropagation();setShowTags((value) => !value);}}>{showTags ? "Hide tags" : "Show tags"}</button> : null}
     </div>
   </section>;
 }

@@ -7,7 +7,7 @@ import styles from "./outfitDetail.module.css";
 import tabStyles from "./OutfitTabs.module.css";
 
 export type OutfitTabKey="style"|"comments"|"tagged";
-const OCCASION_BY_LABEL=new Map(OUTFIT_OCCASIONS.map((item)=>[item.label,item.value]));
+const OCCASION_BY_LABEL:ReadonlyMap<string,string>=new Map(OUTFIT_OCCASIONS.map((item)=>[item.label,item.value]));
 function normalizedStyle(value:string){return value.replace(/^#+/,"").toLowerCase().replace(/[^a-z0-9]+/g,"").slice(0,30);}
 
 export default function OutfitTabs({initialTab="style",styleNotes,comments,taggedItems,commentCount=0}:{initialTab?:OutfitTabKey;styleNotes:ReactNode;comments:ReactNode;taggedItems:ReactNode;commentCount?:number}){

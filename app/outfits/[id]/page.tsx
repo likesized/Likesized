@@ -23,7 +23,7 @@ type Params = Promise<{ id: string }>;
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 type Profile = { id?: string; username: string; display_name: string | null; avatar_url?: string | null };
 type Outfit = { id: string; user_id: string; headline: string | null; story: string | null; status: "draft" | "published"; comments_enabled: boolean; published_at: string | null; created_at: string; like_count: number; comment_count: number; share_count: number; view_count: number; follows_generated_count: number };
-type Photo = { id: string; bucket: "outfit-photos" | "outfit-draft-photos"; display_path: string; sort_order: number; is_main: boolean };
+type Photo = { id: string; bucket: "outfit-photos" | "outfit-draft-photos"; display_path: string; sort_order: number; is_main: boolean; caption:string|null };
 type PhotoTag = { photo_id: string; closet_item_id: string; x: number; y: number };
 type FitReport = { closet_item_id: string; size_label: string; fit: string; created_at: string; product_id: string | null };
 type Product = { id: string; name: string; slug: string; image_url: string | null; brand_id: string; garment_type_key: string | null };
@@ -75,7 +75,7 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
 
   const [creatorResult, photosResult, occasionsResult, stylesResult, teaserResult] = await Promise.all([
     supabase.rpc("get_public_outfit_creator", { p_post_id: id }),
-    supabase.from("outfit_photos").select("id,bucket,display_path,sort_order,is_main").eq("post_id", id).order("sort_order"),
+    supabase.from("outfit_photos").select("id,bucket,display_path,sort_order,is_main,caption").eq("post_id", id).order("sort_order"),
     supabase.from("outfit_occasions").select("occasion,sort_order").eq("post_id", id).order("sort_order"),
     supabase.from("outfit_style_tags").select("display_tag,sort_order").eq("post_id", id).order("sort_order"),
     supabase.rpc("get_public_outfit_product_teasers", { p_post_id: id }),
@@ -172,7 +172,7 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
   });
   const galleryPhotos: GalleryPhoto[] = photoRows.flatMap((photo) => {
     const url = photoUrls.get(photo.id);
-    return url ? [{ id: photo.id, url, tags: photoTags.filter((tag) => tag.photo_id === photo.id).map((tag) => ({ closetItemId: tag.closet_item_id, x: Number(tag.x), y: Number(tag.y) })) }] : [];
+    return url ? [{ id: photo.id, url, caption:photo.caption, tags: photoTags.filter((tag) => tag.photo_id === photo.id).map((tag) => ({ closetItemId: tag.closet_item_id, x: Number(tag.x), y: Number(tag.y) })) }] : [];
   });
   const memberTaggedItems:TaggedItem[]=garments.flatMap((garment)=>{
     const report=latestByCloset.get(garment.id);const product=report?.product_id?productById.get(report.product_id):null;

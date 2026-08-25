@@ -35,7 +35,7 @@ export function MemberMenu({ unreadCount, isAdmin = false }: MemberMenuProps) {
           <div className={styles.sectionLabel}>Discover</div>
           <Link href="/explore" onClick={closeMenu}>Explore</Link>
           <Link href="/people" onClick={closeMenu}>People My Size</Link>
-          <Link href="/circle" onClick={closeMenu}>My Circle</Link>
+          <Link href="/circle" onClick={closeMenu}>Style Feed</Link>
           <Link href="/likelocker" onClick={closeMenu}>LikeLocker</Link>
 
           <div className={styles.sectionLabel}>My Closet</div>

@@ -31,8 +31,8 @@ test("insufficient FITuition copy agrees with a positive matching-evidence count
   assert.doesNotMatch(taggedPanel,/No useful exact-item Fit Reports match your Fit Profile yet/);
 });
 
-test("mobile tagged quick view stays readable and Report stays in the viewport",()=>{
+test("mobile tagged quick view stays readable inside the safe-area modal",()=>{
   assert.match(css,/\.itemPreviewInfo\{display:grid;gap:3px;min-width:0\}/);
+  assert.match(css,/@media\(max-width:640px\)[\s\S]*\.itemPreviewOverlay\{align-items:end;padding:10px 8px calc\(10px \+ env\(safe-area-inset-bottom\)\)\}/);
   assert.match(css,/@media\(max-width:640px\)[\s\S]*\.itemPreviewCard\{width:100%;max-height:min\(86dvh,720px\);padding:18px;border-radius:18px\}/);
-  assert.match(css,/@media\(max-width:640px\)[\s\S]*\.itemReport>form\{position:fixed/);
 });

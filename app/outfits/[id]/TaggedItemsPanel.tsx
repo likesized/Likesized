@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { reportProductItem } from "@/app/item/[slug]/actions";
 import { addToWishLocker, likeProduct, removeFromWishLocker, unlikeProduct } from "@/app/likelocker/actions";
 import styles from "./outfitDetail.module.css";
+import polishStyles from "./outfitPolish.module.css";
 
 export type TaggedItem={
   closetItemId:string;
@@ -107,7 +108,7 @@ export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedIt
         </div>
         <div className={styles.itemPreviewActions} aria-label="Item actions">
           <button type="button" disabled={pending} aria-pressed={Boolean(liked[selected.productId])} aria-label={liked[selected.productId]?"Remove from Like Locker":"Add to Like Locker"} title="Like Locker" onClick={()=>runLike(selected)}>{liked[selected.productId]?"♥":"♡"}</button>
-          <button className={styles.wishLockerAction} type="button" disabled={pending} aria-pressed={Boolean(wished[selected.productId])} aria-label={wished[selected.productId]?"Remove from Wish Locker":"Add to Wish Locker"} title="Wish Locker" onClick={()=>runWish(selected)}><span aria-hidden="true">{wished[selected.productId]?"✦":"✧"}</span><span>Wish Locker</span></button>
+          <button className={polishStyles.wishLockerAction} type="button" disabled={pending} aria-pressed={Boolean(wished[selected.productId])} aria-label={wished[selected.productId]?"Remove from Wish Locker":"Add to Wish Locker"} title="Wish Locker" onClick={()=>runWish(selected)}><span aria-hidden="true">{wished[selected.productId]?"✦":"✧"}</span><span>Wish Locker</span></button>
           {selected.canShop?<Link className={styles.previewActionLink} href={`/api/outfits/${postId}/shop?product_id=${selected.productId}`} target="_blank" rel="noopener noreferrer" aria-label="Shop this item" title="Shop">🛒</Link>:null}
           <button type="button" aria-label="Share this item" title="Share" onClick={()=>void share(selected)}>↗</button>
           <details className={styles.itemReport}><summary aria-label="Report this item" title="Report">⚑</summary><form action={reportProductItem}>

@@ -83,7 +83,7 @@ export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedIt
           <Link className="textLink" href={selected.href}>{fitMeta[selected.productId]?.strong?"See fit evidence →":"See the evidence we have →"}</Link>
         </div>
         {signedIn?<div className={styles.itemPreviewActions}>
-          <button type="button" disabled={pending} aria-pressed={Boolean(liked[selected.productId])} onClick={()=>runLike(selected)}>{liked[selected.productId]?"♥ Liked":"♡ Like"}</button>
+          <button type="button" disabled={pending} aria-pressed={Boolean(liked[selected.productId])} onClick={()=>runLike(selected)}>{liked[selected.productId]?"♥ Like Locker":"♡ Like Locker"}</button>
           <button type="button" disabled={pending} aria-pressed={Boolean(wished[selected.productId])} onClick={()=>runWish(selected)}>{wished[selected.productId]?"✓ Wish Locker":"+ Wish Locker"}</button>
           {selected.canShop?<Link className={styles.previewActionLink} href={`/api/outfits/${postId}/shop?product_id=${selected.productId}`} target="_blank" rel="noopener noreferrer">Shop</Link>:null}
           <button type="button" onClick={()=>void share(selected)}>Share</button>
@@ -92,7 +92,7 @@ export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedIt
             <label>Reason<select name="reason" defaultValue="incorrect_information"><option value="inappropriate_content">Inappropriate content</option><option value="image_mismatch">Image mismatch</option><option value="incorrect_information">Incorrect information</option><option value="other">Other</option></select></label>
             <label>Details <span className="muted inlineMuted">optional</span><textarea name="details" maxLength={500} rows={2}/></label><button type="submit">Send report</button>
           </form></details>
-        </div>:<Link className={styles.compactSecondary} href={`/login?next=${encodeURIComponent(returnTo)}`}>Sign in for Like, Wish Locker, Shop, Share, and Report</Link>}
+        </div>:<Link className={styles.compactSecondary} href={`/login?next=${encodeURIComponent(returnTo)}`}>Sign in for Like Locker, Wish Locker, Shop, Share, and Report</Link>}
         <Link className={styles.fullDetailsLink} href={selected.href}>Full details →</Link>
       </div>
     </div>:null}

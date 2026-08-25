@@ -18,7 +18,7 @@ function entityFrom(url:URL):{kind:Kind;key:string}|null{
 function explicitFullNavigation(anchor:HTMLAnchorElement){
   if(anchor.dataset.fullNavigation==="true")return true;
   const text=(anchor.textContent??"").replace(/\s+/g," ").trim();
-  return /^(View Full Profile|View Garment|View Full Outfit)\b/i.test(text);
+  return /^(View Full Profile|View Garment|View Detailed Garment Report|View Full Outfit)\b/i.test(text);
 }
 
 export function GlobalEntityQuickViewLayer(){
@@ -44,56 +44,27 @@ export function GlobalEntityQuickViewLayer(){
   },[]);
 
   useEffect(()=>{
-    const active=view;
-    if(!active?.loading)return;
-    let cancelled=false;
+    const active=view;if(!active?.loading)return;let cancelled=false;
     async function load(activeView:ViewState){
       const endpoint=activeView.kind==="person"?`/api/people/${encodeURIComponent(activeView.key)}/quick-view`:activeView.kind==="garment"?`/api/items/${encodeURIComponent(activeView.key)}/quick-view`:`/api/outfits/${encodeURIComponent(activeView.key)}/quick-view`;
       try{
-        const response=await fetch(endpoint,{cache:"no-store"});
-        if(!response.ok)throw new Error();
-        const payload=await response.json() as Record<string,unknown>;
-        if(cancelled)return;
+        const response=await fetch(endpoint,{cache:"no-store"});if(!response.ok)throw new Error();const payload=await response.json() as Record<string,unknown>;if(cancelled)return;
         if(activeView.kind==="person"){
-          const name=(typeof payload.displayName==="string"&&payload.displayName.trim())||String(payload.username??activeView.key);
-          const detail=(label:string,value:unknown):Detail=>({label,value:typeof value==="number"?value:value===null?null:String(value??"")});
+          const name=(typeof payload.displayName==="string"&&payload.displayName.trim())||String(payload.username??activeView.key);const detail=(label:string,value:unknown):Detail=>({label,value:typeof value==="number"?value:value===null?null:String(value??"")});
           setView((current)=>current?{...current,title:name,subtitle:`@${String(payload.username??activeView.key)}`,imageUrl:typeof payload.avatarUrl==="string"?payload.avatarUrl:null,details:[detail("Overall Match",typeof payload.overallMatch==="number"?`${payload.overallMatch}%`:null),detail("Tops Match",typeof payload.topsMatch==="number"?`${payload.topsMatch}%`:null),detail("Bottoms Match",typeof payload.bottomsMatch==="number"?`${payload.bottomsMatch}%`:null),detail("Total Garments",payload.totalGarments),detail("Total Outfits",payload.totalOutfits)],loading:false}:current);
         }else{
           setView((current)=>current?{...current,title:typeof payload.title==="string"?payload.title:current.title,subtitle:typeof payload.subtitle==="string"?payload.subtitle:null,imageUrl:typeof payload.imageUrl==="string"?payload.imageUrl:null,description:typeof payload.description==="string"?payload.description:null,details:Array.isArray(payload.details)?payload.details as Detail[]:[],loading:false}:current);
         }
-      }catch{
-        if(!cancelled)setView((current)=>current?{...current,loading:false}:current);
-      }
+      }catch{if(!cancelled)setView((current)=>current?{...current,loading:false}:current);}
     }
-    void load(active);
-    return()=>{cancelled=true;};
+    void load(active);return()=>{cancelled=true;};
   },[view?.kind,view?.key,view?.loading]);
 
-  useEffect(()=>{
-    if(!view)return;
-    const previous=document.body.style.overflow;
-    document.body.style.overflow="hidden";
-    const onKey=(event:KeyboardEvent)=>{if(event.key==="Escape")setView(null);};
-    window.addEventListener("keydown",onKey);
-    return()=>{window.removeEventListener("keydown",onKey);document.body.style.overflow=previous;};
-  },[Boolean(view)]);
+  useEffect(()=>{if(!view)return;const previous=document.body.style.overflow;document.body.style.overflow="hidden";const onKey=(event:KeyboardEvent)=>{if(event.key==="Escape")setView(null);};window.addEventListener("keydown",onKey);return()=>{window.removeEventListener("keydown",onKey);document.body.style.overflow=previous;};},[Boolean(view)]);
 
   if(!view)return null;
   const fallback=view.title.replace(/[^A-Za-z0-9]/g,"").slice(0,2).toUpperCase()||"LS";
-  const fullLabel=view.kind==="person"?"View Full Profile":view.kind==="garment"?"View Garment":"View Full Outfit";
+  const fullLabel=view.kind==="person"?"View Full Profile":view.kind==="garment"?"View Detailed Garment Report":"View Full Outfit";
   const visible=view.details.filter((detail)=>detail.value!==null&&detail.value!=="");
-
-  return <div className={styles.overlay} role="dialog" aria-modal="true" aria-label={`${view.title} quick view`} onClick={()=>setView(null)}>
-    <section className={styles.card} onClick={(event)=>event.stopPropagation()}>
-      <button className={styles.close} type="button" aria-label="Close quick view" onClick={()=>setView(null)}>×</button>
-      <div className={styles.identity}>
-        {view.imageUrl?<img className={`${styles.image}${view.kind==="person"?` ${styles.personImage}`:""}`} src={view.imageUrl} alt=""/>:<div className={`${styles.fallback}${view.kind==="person"?` ${styles.personFallback}`:""}`}>{fallback}</div>}
-        <div><span className={styles.kicker}>{view.kind}</span><h2 className={styles.title}>{view.title}</h2>{view.subtitle?<span className={styles.subtitle}>{view.subtitle}</span>:null}</div>
-      </div>
-      {view.loading?<p className={styles.loading}>Loading details…</p>:null}
-      {view.description?<p className={styles.description}>{view.description}</p>:null}
-      {visible.length?<div className={styles.stats}>{visible.map((detail)=><div className={styles.stat} key={detail.label}><strong>{detail.value}</strong><span>{detail.label}</span></div>)}</div>:null}
-      <a className={styles.full} href={view.href} data-full-navigation="true">{fullLabel}</a>
-    </section>
-  </div>;
+  return <div className={styles.overlay} role="dialog" aria-modal="true" aria-label={`${view.title} quick view`} onClick={()=>setView(null)}><section className={styles.card} onClick={(event)=>event.stopPropagation()}><button className={styles.close} type="button" aria-label="Close quick view" onClick={()=>setView(null)}>×</button><div className={styles.identity}>{view.imageUrl?<img className={`${styles.image}${view.kind==="person"?` ${styles.personImage}`:""}`} src={view.imageUrl} alt=""/>:<div className={`${styles.fallback}${view.kind==="person"?` ${styles.personFallback}`:""}`}>{fallback}</div>}<div><span className={styles.kicker}>{view.kind}</span><h2 className={styles.title}>{view.title}</h2>{view.subtitle?<span className={styles.subtitle}>{view.subtitle}</span>:null}</div></div>{view.loading?<p className={styles.loading}>Loading details…</p>:null}{view.description?<p className={styles.description}>{view.description}</p>:null}{visible.length?<div className={styles.stats}>{visible.map((detail)=><div className={styles.stat} key={detail.label}><strong>{detail.value}</strong><span>{detail.label}</span></div>)}</div>:null}<a className={styles.full} href={view.href} data-full-navigation="true">{fullLabel}</a></section></div>;
 }

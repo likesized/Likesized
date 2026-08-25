@@ -10,7 +10,8 @@ export function ReportContentForm({ targetType, targetId, returnTo, summaryLabel
       <input type="hidden" name="target_type" value={targetType}/>
       <input type="hidden" name="target_id" value={targetId}/>
       <input type="hidden" name="return_to" value={returnTo}/>
-      <label>Reason<select name="reason" defaultValue="other">
+      <label>Reason<select name="reason" defaultValue="" required>
+        <option value="" disabled>Select a reason</option>
         {outfitReasons ? <>
           <option value="spam">Spam</option>
           <option value="harassment">Harassment</option>

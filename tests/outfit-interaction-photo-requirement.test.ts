@@ -71,7 +71,7 @@ test("published Outfit hotspots remain public while personalized fit stays gated
   assert.doesNotMatch(outfitPage,/canViewTags=/);
   assert.doesNotMatch(gallery,/canViewTags/);
   assert.match(gallery,/current\.tags\.map/);
-  assert.match(tagged,/if\(signedIn\)setSelectedId\(item\.closetItemId\);else setGateItem\(item\)/);
+  assert.match(tagged,/if\(signedIn\)\{setEvidenceOpen\(false\);setSelectedId\(item\.closetItemId\);\}else setGateItem\(item\)/);
 });
 
 test("Outfit photos open a full-size viewer without stealing tag or Caption clicks",()=>{
@@ -100,8 +100,8 @@ test("tagged Like and Wish updates do not share a transition or revalidate the o
   assert.doesNotMatch(tagged,/useTransition/);
   assert.match(tagged,/likePending/);
   assert.match(tagged,/wishPending/);
-  assert.match(tagged,/setLiked[\s\S]*await \(next\?likeProduct:unlikeProduct\)/);
-  assert.match(tagged,/setWished[\s\S]*await \(next\?addToWishLocker:removeFromWishLocker\)/);
+  assert.match(tagged,/setLiked[\s\S]*await\(next\?likeProduct:unlikeProduct\)/);
+  assert.match(tagged,/setWished[\s\S]*await\(next\?addToWishLocker:removeFromWishLocker\)/);
   assert.ok(lockerActions.indexOf("if (stayOpen) return;")<lockerActions.indexOf('revalidatePath("/explore")'));
 });
 

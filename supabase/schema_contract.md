@@ -14,9 +14,11 @@ This file owns current database behavior/privacy plus explicit implementation de
 # Production checkpoint — 2026-08-25
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-Current application behavior is production-live through PR #85 squash merge **`95cd89724ab01d85ab2ea3732af4c4f552d700b8`**. Exact PR #85 head **`672c05cbb31b3f610fadb2ac1509b161e97b61d1`** passed full LikeSized CI #899 (`32868592544`): canonical integrity, exact dependency install, TypeScript, all focused application safeguards, production Next.js build, complete fresh replay of every canonical migration and the complete database behavior/privacy suite all passed. Post-merge CI #900 (`32869025001`) also passed.
+Current production application source is PR #87 squash merge **`96905b411dcef2b2a7b0cd55ef379986eff402db`**. Exact tested PR #87 head **`c0df62b3593c27dc61decdf5115e22d2c367bcd2`** passed full LikeSized CI #918 (`32882956817`): canonical integrity, exact dependency install, TypeScript, all focused application safeguards, production Next.js build, complete fresh replay of every canonical migration and the complete database behavior/privacy suite. Post-merge CI #919 (`32883274244`) also passed.
 
-PR #85 Vercel production deployment **`dpl_Fa29dikcTBi4zFoG8FAvV3zY6qLv`** reached READY for merge `95cd89724ab01d85ab2ea3732af4c4f552d700b8`, serves `likesized.com`, returned HTTP 200, and the checked deployment-scoped runtime error/fatal window was clean. Public logged-out Outfit smoke verification also confirmed safe published hotspots remain visible without exposing personalized Body Match/FITuition data.
+PR #87 Vercel production deployment **`dpl_FxhPv4KL3ecgQBghX2mwhsRoSHNL`** reached READY for merge `96905b411dcef2b2a7b0cd55ef379986eff402db`, serves `likesized.com`, returned HTTP 200, and the checked deployment-scoped runtime error/fatal window was clean. Public logged-out Outfit smoke verification also confirmed safe published hotspots remain visible without exposing personalized Body Match/FITuition data.
+
+PR #86 and PR #87 introduced no database migration. Their application-level interaction changes therefore do not alter the production database contract below.
 
 The established Roadmap 12 foundation migrations remain immutable production history:
 - `20260824133400_add_outfit_comment_moderation_target.sql` → production `20260824164156 add_outfit_comment_moderation_target`;
@@ -43,7 +45,7 @@ Hosted smoke verification across these production batches confirmed, among other
 - `public.get_public_outfit_tagged_items(uuid)` and `public.get_public_outfit_hotspots(uuid)` are security-definer minimum-field public projections available to `anon` and `authenticated` callers for published Outfit identification;
 - `public.get_outfit_comments_sorted_page(uuid,text,bigint,timestamptz,uuid,integer)` is the current sorted/paginated comment projection, with **Top** and **Newest** behavior described below.
 
-PR #86 is the current Roadmap 12 interaction-consistency application/docs batch. It adds no database migration; any current PR #86 application behavior must not be described as production-live until that PR is fully tested, merged and deployed.
+The current active completion-repair line proposes ordered migration **`20260825183000_private_profile_location_metadata.sql`**. Until that exact branch is verified, authorized, merged and deployed, `profile_locations` is branch-only and must not be described as production-applied.
 
 # 1. Privacy / body-state foundations — LOCKED
 - `profiles` stores member identity; exact Fit Profile/body measurements are not stored there.
@@ -63,6 +65,18 @@ A member profile photo, when uploaded, is public current identity rather than a 
 - Outfit/comment rows do not copy an avatar path merely to preserve the photo that existed when content was created.
 - A later profile-photo update therefore changes the identity photo shown on existing Outfit/comment surfaces without rewriting those historical content rows.
 - Raw body data remains private; making the profile photo public does not change Fit Profile privacy.
+
+## Private city/state profile metadata — OWNER LOCKED / ACTIVE MIGRATION
+`profile_locations` is the dedicated private owner-scoped location store introduced by proposed migration `20260825183000_private_profile_location_metadata.sql`.
+
+- City and State are optional, but are stored as a pair: both populated or both blank.
+- The table is keyed one-to-one by `user_id` and cascades with the owning profile.
+- RLS permits an authenticated member to read/insert/update only their own row.
+- `anon` receives no table access and ordinary authenticated members receive no cross-member read path.
+- City/state is not projected through public profile/Outfit/member identity helpers and is not a body measurement, Match input, Fit Twin input or Product identity field.
+- Initial Fit Profile setup may collect City + State once. Later edits belong to Profile Settings; My Measurements updates do not re-request location.
+- The `(state_region, city)` normalized index exists to support future controlled server/admin aggregate analysis such as regional wishlist demand without making member-level location public.
+- Any future regional statistic must expose aggregate output only through a separately reviewed privacy-safe boundary; this table itself is not a public analytics API.
 
 ## Fit Community
 `public.fit_community` controls Men / Women / Both. `fit_profiles.fit_community` stores the member's private default. Current-person/social RPCs accept an explicit view override without making this value part of body Match math.
@@ -166,6 +180,11 @@ Barcode confidence is separate from Product confidence.
 - Current new-Fit-Report application/server validation requires at least one of **Product Photo, Front Fit Photo or Back Fit Photo**. This requirement was intentionally not imposed as a blanket database constraint on historical reports that may predate the rule.
 - Fit Report/Closet presentation priority is **Front Fit Photo → Product Photo → Back Fit Photo**. This is separate from scanner Product-identification priority and does not change evidence roles.
 
+## Planned automatic canonical Product image scoring — ROADMAP 13A
+No Roadmap 13A scoring columns/table are production schema yet. When implemented, it must use a new ordered migration and preserve the distinction between report-specific imagery and generic Product representation.
+
+Planned hierarchy is admin-locked image → eligible scored Fit Report wear image → official/imported fallback → placeholder. Exact-variation selection has the more specific hierarchy recorded in `docs/AI_MASTER_LOG.md`. Scoring/eligibility fields such as quality component scores, duplicate relationship, canonical eligibility and lock state must remain auditable and must never overwrite the original photo attached to an individual Fit Report.
+
 # 8. Direct Product search — LOCKED
 `search_catalog_products` is the canonical broad textual Product search. Direct Product search does not accept Fit Community or Department as a hidden gate.
 
@@ -206,7 +225,7 @@ Twin designation is calculated from current Tops and Bottoms regional Match qual
 
 Follow alone does not enable person notifications. Person notifications and Product one-shot Match notifications remain separate from Following, Like and Wish state.
 
-# 13. LikeLocker / Wish Locker / Outfit foundations — ROADMAP 12 PRODUCTION THROUGH PR #85
+# 13. LikeLocker / Wish Locker / Outfit foundations — ROADMAP 12 PRODUCTION THROUGH PR #87
 Product likes, Outfit likes, comment likes and Wish Locker purchase intent are distinct states. Outfits reuse canonical Closet/Product/taxonomy foundations; no second garment or shopping system exists.
 
 Core Outfit schema:
@@ -284,10 +303,11 @@ Repeated reports from the same **person + Product + tracked fit variation** repr
 Before Product Detail consumes `exact_variant`, recommendation/evidence/Admin behavior must consume `GARMENT_VARIATION_DEFINITION_MAP`. Size and Color must never become exact-variation key fields. Body Match remains body similarity and must not be collapsed with Fit Result into a synthetic fit percentage.
 
 # 15. Current implementation debt / open verification
-- Production application is live through PR #85 merge **`95cd89724ab01d85ab2ea3732af4c4f552d700b8`**; exact tested PR head **`672c05cbb31b3f610fadb2ac1509b161e97b61d1`** passed full CI #899 (`32868592544`) and post-merge CI #900 (`32869025001`) passed.
+- Production application is live through PR #87 merge **`96905b411dcef2b2a7b0cd55ef379986eff402db`**; exact tested PR head **`c0df62b3593c27dc61decdf5115e22d2c367bcd2`** passed full CI #918 (`32882956817`) and post-merge CI #919 (`32883274244`) passed.
 - Latest production Outfit migrations are `20260825122000_outfit_photo_captions.sql` → `20260825133233 outfit_photo_captions` and `20260825152000_outfit_public_hotspots_and_comment_sorting.sql` → `20260825155645 outfit_public_hotspots_and_comment_sorting`.
-- PR #86 is the active owner-authorized Roadmap 12 interaction-consistency batch. It currently adds no migration; application/docs verification must complete before merge/deploy.
+- The active completion-repair branch proposes `20260825183000_private_profile_location_metadata.sql`; verify full replay/RLS behavior before any authorized merge. It is not production-applied yet.
 - Owner live re-audit remains the Roadmap 12 gate; Roadmap 13 full Style Feed behavior must not be treated as unblocked until the owner finishes the New Outfit audit.
+- Roadmap 13A canonical Product-image scoring remains planned. No scoring schema is production truth until a later ordered migration is designed, verified and applied.
 - The legacy physical `closet_items.visibility` column remains intentionally in immutable replay history and locked to compatibility `shared`; broader Closet lifecycle/mutation rules remain future audit work.
 - Historical counted-report fingerprint reconciliation for retired questions remains separate from tracked-variation/Outfit work.
 - The current `/circle` route has the Style Feed visible rename, but the locked Following-only rolling-feed behavior/ranking is later Roadmap 13 work. Do not invent ranking or add a Style Tag feed filter during Roadmap 12.

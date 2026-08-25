@@ -25,7 +25,7 @@ const capabilities = [
     link: "Shop Smarter →",
   },
   {
-    eyebrow: "BUILD YOUR CIRCLE",
+    eyebrow: "FIT YOUR STYLE",
     title: "Follow people whose fit and style you trust.",
     description: "See what they wear, how they style it, what they recommend, and how they put it all together.",
     href: "/circle",

@@ -63,7 +63,7 @@ function note(value: string | null) {
   return value.length > 220 ? `${value.slice(0, 217).trimEnd()}…` : value;
 }
 
-export default async function MyCirclePage({searchParams}:{searchParams:SearchParams}) {
+export default async function StyleFeedPage({searchParams}:{searchParams:SearchParams}) {
   const params=await searchParams;
   const override=requestedCommunity(first(params.community));
   const supabase = await createClient();
@@ -120,7 +120,7 @@ export default async function MyCirclePage({searchParams}:{searchParams:SearchPa
     bottomsMatchError ||
     settingsError
   )
-    throw new Error("Could not load My Circle.");
+    throw new Error("Could not load Style Feed.");
   if (!profile?.username || !fitProfile?.completed_at) redirect("/onboarding");
   const community=override??savedCommunity(fitProfile.fit_community);
   const threshold = settings?.threshold_percent ?? 85;
@@ -190,10 +190,10 @@ export default async function MyCirclePage({searchParams}:{searchParams:SearchPa
   return (
     <main className="pageShell">
       <div className="pageTitle">
-        <span className="eyebrow">MY CIRCLE</span>
+        <span className="eyebrow">STYLE FEED</span>
         <h1>Your Style Feed starts with your strongest body matches.</h1>
         <p>
-          My Circle contains everyone you follow. LikeSized shows full Fit Twins first,
+          Style Feed contains everyone you follow. LikeSized shows full Fit Twins first,
           then Tops Twins and Bottoms Twins, then fills the feed with everyone else you
           follow—without duplicates.
         </p>
@@ -370,7 +370,7 @@ export default async function MyCirclePage({searchParams}:{searchParams:SearchPa
       ) : (
         <div className="emptyState">
           <span className="eyebrow">YOUR STYLE FEED IS READY</span>
-          <h2>Follow people to bring their posts into My Circle.</h2>
+          <h2>Follow people to bring their posts into your Style Feed.</h2>
           <p>
             Full and regional Twin matches will automatically move ahead of other followed
             activity when their current Tops and Bottoms scores meet the threshold.

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import styles from "./outfitDetail.module.css";
+import polishStyles from "./outfitPolish.module.css";
 
 export type GalleryGarment = { id: string; label: string; detail: string; href: string; imageUrl?: string | null };
 export type GalleryPhoto = { id: string; url: string; caption:string|null; tags: { closetItemId: string; x: number; y: number }[] };
@@ -67,11 +68,11 @@ export default function OutfitGallery({ photos, garments, canViewTags }: { photo
             onClick={(event) => { event.stopPropagation(); openTaggedItem(tag.closetItemId); }}
           >+</button>;
         }) : null}
-        {current.caption&&showCaption?<div className={styles.galleryCaptionPanel} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>event.stopPropagation()}>{current.caption}</div>:null}
+        {current.caption&&showCaption?<div className={polishStyles.galleryCaptionPanel} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>event.stopPropagation()}>{current.caption}</div>:null}
       </div>
       {photos.length>1?<span className={styles.galleryCounter}>{index+1} / {photos.length}</span>:null}
       {canViewTags && current.tags.length ? <button className={styles.galleryTagToggle} type="button" onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event) => {event.stopPropagation();setShowTags((value) => !value);}}>{showTags ? "Hide tags" : "Show tags"}</button> : null}
-      {current.caption?<button className={styles.galleryCaptionToggle} type="button" aria-expanded={showCaption} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();setShowCaption((value)=>!value);}}>Caption</button>:null}
+      {current.caption?<button className={polishStyles.galleryCaptionToggle} type="button" aria-expanded={showCaption} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();setShowCaption((value)=>!value);}}>Caption</button>:null}
     </div>
   </section>;
 }

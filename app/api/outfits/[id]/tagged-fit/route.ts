@@ -1,4 +1,5 @@
 import { GARMENT_TYPE_BY_KEY } from "@/lib/garment-taxonomy";
+import { newestUniqueVariationEvidence, variationEvidenceKey } from "@/lib/outfit-variation-evidence";
 import { recommendSize, recommendationConfidenceLabel, type RecommendationEvidence } from "@/lib/recommendation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -9,35 +10,6 @@ type OwnReport={id:string;user_id:string;product_id:string;size_label:string;fit
 type ReportIdentity={id:string;user_id:string;product_id:string;objective_variant_key:string|null;created_at:string};
 type SnapshotMatch={fit_report_id:string;historical_match_score:number;historical_coverage_percent:number};
 const FIT_LABELS:Record<RecommendationEvidence["fit"],string>={too_small:"Too small",snug:"Snug",just_right:"Just right",relaxed:"Relaxed",too_big:"Too big"};
-
-function variationEvidenceKey(userId:string,productId:string,objectiveVariantKey:string|null|undefined,fallbackId:string){
-  return `${userId}:${productId}:${objectiveVariantKey||`report:${fallbackId}`}`;
-}
-
-function dedupeOwnReports(reports:OwnReport[]){
-  const seen=new Set<string>();
-  return reports.filter((report)=>{
-    const key=variationEvidenceKey(report.user_id,report.product_id,report.objective_variant_key,report.id);
-    if(seen.has(key))return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function dedupeCandidates(candidates:Candidate[],identityById:Map<string,ReportIdentity>){
-  const seen=new Set<string>();
-  return [...candidates].sort((a,b)=>{
-    const aCreated=identityById.get(a.fit_report_id)?.created_at??"";
-    const bCreated=identityById.get(b.fit_report_id)?.created_at??"";
-    return bCreated.localeCompare(aCreated);
-  }).filter((row)=>{
-    const identity=identityById.get(row.fit_report_id);
-    const key=variationEvidenceKey(row.user_id,row.evidence_product_id,identity?.objective_variant_key,row.fit_report_id);
-    if(seen.has(key))return false;
-    seen.add(key);
-    return true;
-  });
-}
 
 function evidenceForOwnReport(report:OwnReport,target:ProductRow,source:ProductRow,match:SnapshotMatch):RecommendationEvidence{
   const level:RecommendationEvidence["evidenceLevel"]=report.product_id===target.id
@@ -79,7 +51,7 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
   if(productError||ownReportError)return Response.json({error:"Could not load tagged-item fit evidence."},{status:500});
   const productById=new Map(((products??[]) as ProductRow[]).map((row)=>[row.id,row]));
   const profileReady=Boolean(fitProfile?.completed_at);
-  const ownReports=dedupeOwnReports((ownReportData??[]) as OwnReport[]);
+  const ownReports=newestUniqueVariationEvidence((ownReportData??[]) as OwnReport[],(report)=>({userId:report.user_id,productId:report.product_id,objectiveVariantKey:report.objective_variant_key,reportId:report.id,createdAt:report.created_at}));
   const ownProductIds=[...new Set(ownReports.map((row)=>row.product_id).filter(Boolean))];
   const ownProductRows=ownProductIds.length?await supabase.from("products").select("id,brand_id,product_family_id,garment_type_key,category").in("id",ownProductIds):{data:[],error:null};
   if(ownProductRows.error)return Response.json({error:"Could not load Closet history."},{status:500});
@@ -98,8 +70,12 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
     const rawCandidates=(candidateData??[]) as Candidate[];
     const candidateIds=[...new Set(rawCandidates.map((row)=>row.fit_report_id))];
     const identityResult=candidateIds.length?await supabase.from("fit_reports").select("id,user_id,product_id,objective_variant_key,created_at").in("id",candidateIds):{data:[],error:null};
+    if(identityResult.error)throw new Error("Could not resolve Fit Report variation identity.");
     const identityById=new Map(((identityResult.data??[]) as ReportIdentity[]).map((row)=>[row.id,row]));
-    const candidates=dedupeCandidates(rawCandidates,identityById);
+    const candidates=newestUniqueVariationEvidence(rawCandidates,(row)=>{
+      const identity=identityById.get(row.fit_report_id);
+      return{userId:row.user_id,productId:row.evidence_product_id,objectiveVariantKey:identity?.objective_variant_key,reportId:row.fit_report_id,createdAt:identity?.created_at??""};
+    });
     const usefulExact=candidates.filter((row)=>row.evidence_product_id===productId&&(row.evidence_level==="exact_product"||row.evidence_level==="exact_variant")&&row.historical_match_score>=50);
     const ownExactReports=ownReports.filter((report)=>report.product_id===product.id&&report.garment_condition==="normal");
     const usefulExactVariations=new Set(usefulExact.map((row)=>{

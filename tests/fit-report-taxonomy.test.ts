@@ -64,6 +64,8 @@ test("category-first intake narrows garment type before item details",()=>{
 test("final intake order keeps the normal Fit Report clear and collapses additional information",()=>{
  for(const required of ["Brand / Make","Item / Style / Model","Overall category","Specific garment type","Color","Overall Fit Result","Condition","Fit notes"])assert.match(intake+catalog+form,new RegExp(required));
  for(const requiredPhoto of ["<legend>Photos ","Product Photo","Front Fit Photo","Back Fit Photo","at least one required"])assert.match(photoFields,new RegExp(requiredPhoto));
+ assert.ok(photoFields.indexOf('label="Front Fit Photo"') < photoFields.indexOf('label="Back Fit Photo"'));
+ assert.ok(photoFields.indexOf('label="Back Fit Photo"') < photoFields.indexOf('Product Photo (not being worn)'));
  assert.match(catalog,/Department <span className="muted inlineMuted">optional<\/span>/);
  assert.match(catalog,/Retail link <span className="muted inlineMuted">optional<\/span>/);
  assert.match(catalog,/<details className=\{styles\.optionalDetails\}>/);
@@ -71,7 +73,7 @@ test("final intake order keeps the normal Fit Report clear and collapses additio
  assert.match(catalog,/<summary className=\{styles\.optionalSummary\}>Optional Additional Information<\/summary>/);
  assert.match(catalog,/Help us learn more about this item/);
  assert.match(catalog,/Every bit of information helps LikeSized build a better garment listing/);
- for(const optional of ["Purchased From","Price Paid","Purchase Method","Approx. Purchase Date","UPC / barcode","Manufacturer Style / Article Number","Material / Fabric Composition","Product Photo"])assert.match(catalog,new RegExp(optional));
+ for(const optional of ["Purchased From","Price Paid","Purchase Method","Approx. Purchase Date","UPC / barcode","Manufacturer Style / Article Number","Material / Fabric Composition"])assert.match(catalog,new RegExp(optional));
  assert.match(catalog,/Product Label \/ Tag Photo/);
  assert.match(catalog,/type="number" inputMode="decimal" min="0" max="999999\.99" step="0\.01"/);
  assert.match(catalog,/<option value="online">Online<\/option>/);
@@ -93,7 +95,6 @@ test("final intake order keeps the normal Fit Report clear and collapses additio
  assert.ok(catalog.indexOf("Approx. Purchase Date") < catalog.indexOf("UPC / barcode"));
  assert.ok(catalog.indexOf("UPC / barcode") < catalog.indexOf("Manufacturer Style / Article Number"));
  assert.ok(catalog.indexOf("Manufacturer Style / Article Number") < catalog.indexOf("Material / Fabric Composition"));
- assert.ok(catalog.indexOf("Material / Fabric Composition") < catalog.indexOf("Product Photo"));
  assert.ok(catalog.indexOf("Item / Style / Model") < catalog.indexOf("Product Label / Tag Photo"));
  assert.ok(catalog.indexOf("Product Label / Tag Photo") < catalog.indexOf("Overall category"));
  assert.match(catalog,/scannedBarcode[\s\S]*<input type="hidden" name="scanned_barcode" value=\{scannedBarcode\}/);
@@ -109,8 +110,9 @@ test("final confirmation reviews only main Fit Report fields before server submi
  assert.match(form,/\[data-review-label\], input\[name='size_normalized_label'\]/);
  assert.match(intake,/data-review-label="Overall Fit Result"/);
  assert.match(intake,/data-review-label="Condition"/);
- assert.match(photoFields,/data-review-label="Front Fit Photo"/);
- assert.match(photoFields,/data-review-label="Back Fit Photo"/);
+ assert.match(photoFields,/data-review-label=\{label\}/);
+ assert.match(photoFields,/FitPhotoCard label="Front Fit Photo"/);
+ assert.match(photoFields,/FitPhotoCard label="Back Fit Photo"/);
  assert.match(form,/data-review-label="Fit notes"/);
  assert.match(catalog,/data-review-label="Retail link"/);
  assert.doesNotMatch(catalog,/name="purchased_from"[^>]*data-review-label/);

@@ -30,7 +30,7 @@ Match % means **garment-relevant body similarity**, not probability a garment wi
 - Member preference is **Men / Women / Both**.
 - It is owner-private relevance metadata for people/wearer discovery, not a body measurement and not Product Department.
 - It never changes Match %.
-- People My Size and My Circle may default to the saved preference and allow a temporary view switch without rewriting it.
+- People My Size and Style Feed may default to the saved preference and allow a temporary view switch without rewriting it.
 - The community belongs to the person wearing/posting the garment. Wearing a men's or women's Department item does not change the member's community.
 - Fit Community is asked during first-time profile setup. After onboarding it is managed in Profile Settings, not My Measurements.
 
@@ -42,9 +42,9 @@ Match % means **garment-relevant body similarity**, not probability a garment wi
 - **Fit Twin** requires both Tops Match and Bottoms Match to clear that threshold.
 - **Tops Twin** means only Tops Match clears it. **Bottoms Twin** means only Bottoms Match clears it.
 - Overall Match remains the visible general body-similarity score but **does not grant Twin status by itself**.
-- My Circle ranks full/regional Twin designations ahead of ordinary Following while remaining Following-driven overall; Twin is a designation/filter/context, not a second relationship.
+- Style Feed is the current UX name for the social-following surface. Its full Following-only rolling-feed behavior/ranking remains a later Roadmap 13 implementation; the visible rename must not be mistaken for completion of that later behavior.
 - `/following` is compatibility-only and resolves to `/circle`.
-- Signed-in `/` enters My Circle; logged-out `/` is the public homepage.
+- Signed-in `/` currently resolves to `/circle`; logged-out `/` is the public homepage.
 - Follow alone does not enable person notifications.
 
 # 4. Controlled community Product catalog — LOCKED
@@ -115,9 +115,8 @@ Barcode confidence is separate from Product confidence.
 - Lookup checks canonical identifiers, unique provisional Product→barcode evidence and eligible unresolved candidate evidence, excluding Unconfirmed/Needs More Evidence.
 - Unique recognition pauses at **Is this the item?**.
 - Confirmation card shows Brand, Item, Category/Type, **Yes — this is the item**, and **No — enter manually**.
-- Scanner confirmation image priority is: **Product/catalog photo first → public/shared member Fit Photo second → default/placeholder if neither exists**.
-- When front/back Fit Photos both exist, Front is preferred for scanner fallback.
-- The confirmation image is click/tap expandable in an accessible lightbox.
+- Scanner confirmation image priority is: **Product/catalog photo first → shared Front Fit Photo second → other shared Fit Photo third → default/placeholder if none exists**.
+- The confirmation image is click/tap expandable in the shared accessible full-size viewer; Escape/background dismissal and swipe-down dismissal are supported where applicable.
 - A member Fit Photo used as scanner fallback remains personal wear evidence only; it is not promoted into canonical Product imagery or Product truth.
 - Physical garment questions stay in the Fit Report, not the barcode identity card.
 - Unknown/no match continues manual fallback while retaining barcode evidence.
@@ -166,9 +165,15 @@ Ordinary member intake never calls SerpAPI.
 9. Size — required structured size.
 10. Overall Fit Result — Too Small / Snug / Just Right / Relaxed / Too Big.
 11. Condition — New / Used / Altered.
-12. Front Fit Photo and Back Fit Photo — each optional, separate roles.
+12. **Photos — at least one required for every new Fit Report.** The controls appear in this order: **Front Fit Photo → Back Fit Photo → Product Photo (not being worn)**. Any one of the three satisfies the new-report photo requirement.
 13. Fit Notes — optional, up to 2,000 characters.
 14. Retail Link — optional.
+
+Photo-role rules:
+- Front Fit Photo and Back Fit Photo are separate controlled wear-evidence roles and are visible to the LikeSized community.
+- Product Photo is a separate Product/catalog-display evidence role; it is not a Fit Photo.
+- The UI must use one canonical Product Photo file input/evidence value even when different helpers can open that chooser. Do not create a second Product Photo field.
+- Fit Report/Closet display image priority is **Front Fit Photo → Product Photo → Back Fit Photo**. This is a presentation priority only and does not merge or relabel the evidence roles.
 
 Item / Style / Model stays required for new unresolved/manual items. Do not offer a generic blank **No model** escape. Examples must not duplicate the separate Brand field.
 
@@ -199,9 +204,8 @@ Exact order:
 5. UPC / barcode when not already scanned.
 6. Manufacturer Style / Article Number.
 7. Material / Fabric Composition.
-8. Product Photo — optional catalog-display evidence at the bottom of the collapsed section.
 
-Product Photo is catalog-display evidence. Product Label / Tag Photo is private identity-review evidence and remains separate from Product Photo.
+Product Photo is intentionally **not duplicated** in Optional Additional Information; its single canonical control lives in the required Photos block described above. Product Label / Tag Photo remains separate private identity-review evidence.
 
 If scanner already captured a barcode, retain it and do not ask again. Submit remains below/outside the optional area.
 
@@ -215,7 +219,7 @@ Purchased From, Price Paid, Purchase Method and Approx. Purchase Date describe *
 - Retail Link is separate reusable Product/catalog evidence about where the Product can be bought.
 
 ## Final review
-Before server submission show **Does this look right?** with main Fit Report information only: Brand/Item, Category, Garment Type, Department, controlled item details, Color, Size, Fit Result, Condition, Fit Photo added-state, Fit Notes and Retail Link when present.
+Before server submission show **Does this look right?** with main Fit Report information only: Brand/Item, Category, Garment Type, Department, controlled item details, Color, Size, Fit Result, Condition, photo added-state, Fit Notes and Retail Link when present.
 
 Do not repeat Optional Additional Information there. Actions are **Go Back & Edit** and **Confirm Fit Report**. Nothing submits before confirmation.
 
@@ -464,6 +468,7 @@ Outfits are member-created mini editorial posts built from owned Closet garments
 - Embedded Brand/Item suggestions stay anchored below the active field and use the same cached/prefetched fast search path as canonical Fit Report intake.
 - Accessories outside the V1 garment taxonomy may appear in photos and Outfit Story but are not separate Product/Closet tags.
 - Each photo may optionally map one or more master tagged garments to on-image hotspots. **Use Cover Photo Tags** is an explicit action when reusing cover tags rather than passive helper text.
+- **Back to My Closet** from a new Outfit returns directly to **My Closet → Outfits**; editing an existing published Outfit may return to that Outfit detail page.
 
 ## Draft / preview / publish
 - Drafts are unpublished owner-only work and are not private published Outfits.
@@ -478,27 +483,35 @@ Outfits are member-created mini editorial posts built from owned Closet garments
 - Every published Outfit has one canonical shareable detail URL at `/outfits/[id]` with social-preview metadata using the Main Photo, Headline, creator identity and LikeSized branding.
 - The opened Outfit defaults to a **compact social-post scale**, not a giant billboard. Desktop uses a restrained content/media width and tight vertical rhythm; mobile remains touch-friendly without arbitrarily inflating cards, controls or modals. LikeSized controls default compact/content-sized unless a deliberate mobile primary action genuinely needs full width.
 - The opened gallery is a **single-image viewer on both mobile and desktop**. Secondary photos stay hidden behind the active image instead of appearing as a thumbnail/secondary strip. Touch swipe/drag and tap advance work on mobile; desktop click plus pointer/trackpad drag-style navigation and keyboard arrows work where applicable.
+- Clicking/tapping the photo background opens a full-size viewer. Tag hotspots, Caption controls and other overlays remain independent and do not accidentally trigger the full-size viewer. The full-size view supports intentional close, keyboard dismissal/navigation where applicable and swipe-down dismissal on touch devices.
 - The gallery container ends with the rendered media instead of reserving dead space beneath it. Social actions sit immediately below the media and are right-aligned on desktop.
 - Photo hotspots remain attached to the specific active photo they belong to. Combining the photos into a one-image viewer never removes or merges away the active photo's tag overlays.
+- Safe already-resolved photo hotspots remain visible to logged-out visitors on published Outfits. Clicking one keeps public Product identification available while personalized fit intelligence remains authenticated/Fit-Profile gated.
 - Logged-out visitors may view the published Outfit normally: gallery, Headline, creator public identity/handle, Occasion, Style Tags, Outfit Story, social counts, readable comments and safe already-resolved tagged-Product identification remain visible. Logging out does not turn the Outfit itself into a crippled teaser page.
 - Creator/comment profile identity is resolved live from the member's current public profile identity/photo; old profile photos are not snapshotted onto Outfit/comment records.
+- The creator avatar/name opens one compact member quick view. It may show current **Overall Match, Tops Match, Bottoms Match, Total Fit Reports, Total Outfits**, a **View Full Profile** link and the appropriate Follow/notification controls. Raw measurements never appear there.
 - Raw body measurements, historical body snapshots, private Closet linkage, unresolved candidate/review state and authenticated member action state remain protected in every Outfit context.
 - Personalized tagged-item intelligence is account/Fit-Profile gated. A logged-out visitor who clicks a tagged item is kept in Outfit context and receives a compact **create account / sign in** gate instead of a fake personalized quick view. Before authentication LikeSized does **not** claim a Matching Fit Report count, Body Match result, FITuition result or “not enough personalized evidence” state for that visitor.
 - The **Style Notes** tab presents the actual Headline, tags and Story directly. Redundant labels such as `OUTFIT TITLE`, `OUTFIT TAGS` and `OUTFIT DESCRIPTION` are not shown.
 - The **Tagged Items** compact signed-in card is viewer-facing Product identification, not a dump of the poster's Fit Report. It shows Product photo, Brand + Item Name, Category/Garment Type and **Matching Fit Reports: X**. The poster's Size Worn/Fit Result is not presented as the card's primary takeaway for another viewer.
 - **Matching Fit Reports: X means useful personalized exact-item Fit Report evidence for the current viewer. It never means the total number of Fit Reports attached to the Product.** If seven reports exist but only two are useful personalized exact-item evidence, the viewer sees `Matching Fit Reports: 2`; the raw total is not substituted because it is not useful to this decision.
 - The viewer's own eligible Fit Report is useful evidence and must not be discarded merely because the viewer authored it. The viewer's relevant Closet/Fit Report history participates in FITuition alongside useful reports from similar people. Exact-item own history is especially relevant evidence; broader own history is weighted through the same canonical relevance hierarchy rather than becoming a second recommendation engine.
+- Repeated evidence from the **same person + same Product + same tracked fit variation** is one recommendation evidence unit. Distinct people remain independent; distinct tracked variations may remain distinct. Size and Color do not create tracked fit variations.
 - Opening a tagged item uses **one canonical middle-layer quick view** whether the action began from Tagged Items or an on-photo hotspot. There is no second impoverished hotspot popup. The quick view shows Product identity/category, useful Matching Fit Reports, useful Body Match/size/Fit Result context when available, and the FITuition recommendation/confidence context. **Full details** opens the complete Product/evidence page.
+- The tagged garment image is expandable into the shared full-size viewer with swipe-down dismissal rather than a separate one-off image interaction.
 - When personalized evidence is genuinely insufficient for a signed-in viewer with a completed Fit Profile, the quick view says so plainly. Lack of a logged-in viewer is never mislabeled as lack of evidence.
-- Tagged Product quick-view actions are compact **symbol/icon controls** for Like Locker · Wish Locker · Shop · Share · Report rather than a row of oversized text buttons. Accessible labels/titles preserve the action names. Shop exists only with a valid `retailer_listings` destination. Like Locker and Wish Locker update in place and do not dismiss the quick view; the modal closes only from an intentional dismissal/back/outside action or navigation such as Full details.
+- Tagged Product quick-view actions use the shared compact action vocabulary: **LikeLocker · Wish Locker · Shop · Share · Report**. Shop exists only with a valid `retailer_listings` destination. LikeLocker and Wish Locker update in place and do not dismiss the quick view; the modal closes only from an intentional dismissal/back/outside action or navigation such as Full details.
 - An Unconfirmed or Needs More Evidence garment may be used by its owner in an Outfit, but unresolved identity/admin-review state never leaks and never creates a public/searchable Product teaser until resolved.
 
 ## Social controls
-- On **another member's Outfit**, the visible social row is **Like · Follow · Share · Flag**. Follow reuses the one canonical `follows` graph.
-- On the **creator's own Outfit**, self-Like, self-Follow and self-Flag are hidden; the social row exposes **Share only**. Owner management controls such as Edit, comments on/off, delete and creator analytics remain separate from the social row.
+- On **another member's Outfit**, the Outfit-content action row is **LikeLocker · Share · Report**. Follow is a person relationship, so Follow/notification controls belong in creator/profile context, including the creator quick view, rather than being mixed into the Outfit-content action row.
+- On the **creator's own Outfit**, self-LikeLocker and self-Report are hidden; **Share** remains available. Owner management controls such as Edit, comments on/off, delete and creator analytics remain separate from the content action row.
 - Social controls stay visually tight to the media/content they act on. A count is rendered directly beside its corresponding action/icon rather than in a separate count line.
+- Reports start with no preselected reason. The member must deliberately choose a reason; **Other** is never silently selected by default.
 - Comments are **plain text only** in V1: no rich-text editor, markup/formatting controls, embedded media or nested replies. The restriction is enforced without permanently displaying a noisy “plain text only / no GIFs / no external links” helper under the composer.
-- The Outfit Comments tab shows the newest small preview rather than an unbounded vertical thread. **View all X comments** opens the dedicated full comments view/sheet. The full thread loads the newest comments first and uses real server/database cursor pagination in bounded batches for earlier comments; it must not fetch a fixed 200-comment oldest-first array and merely reveal pieces of it in memory. The comment composer remains sticky at the bottom.
+- Outfit comments default to **Top** with **Newest** as the alternate sort. **Top** sorts by comment Like count descending, then newest first as the tie-break. Newest sorts newest first.
+- The Outfit Comments tab shows a small bounded preview rather than an unbounded vertical thread. **View all X comments** opens the dedicated full comments view/sheet. Both sorts use real server/database cursor pagination in bounded batches; the client must not fetch a fixed giant thread and merely reveal pieces of it in memory. The comment composer remains sticky at the bottom.
+- Comment creation, comment Like/unlike and Top/Newest switching update through the local/API interaction path without forcing whole-Outfit navigation/refresh for each interaction.
 - Comment identity is compact: avatar, Display Name, `@username` directly underneath, then comment text. Like/Flag/Delete actions stay tight to the comment they affect; Delete appears only when the viewer is authorized.
 - Logged-out visitors may read visible comments but must sign in to comment.
 - Signed-in members may Like visible comments. Comment-Like state is private to the liking member while the safe aggregate count is visible.
@@ -509,17 +522,22 @@ Outfits are member-created mini editorial posts built from owned Closet garments
 
 ## Feed/discovery boundary
 - Outfit browsing is **image-first with a Pinterest-like masonry/pinboard rhythm**: natural Main Photo proportions, staggered multi-column layout, minimal card chrome and lightweight Headline/creator/Occasion/Style/social metadata beneath the image. Normal mobile widths keep a compact two-column visual feed. Outfits must not collapse into one unnecessary full-width vertical stack when the viewport supports the intended pinboard layout. This is a visual direction, not a copy of Pinterest product behavior.
-- Following activity may surface published Outfits in My Circle/Style Feed; drafts never create activity.
-- General Outfit discovery/search may use Occasion, normalized Style Tags, Headline/Story relevance, engagement and recency in the dedicated discovery work. Full Following / Twin / Discover ranking behavior remains a later My Circle/Style Feed roadmap audit rather than being silently invented inside New Outfit.
+- The current `/circle` surface is visibly named **Style Feed**, but full Roadmap 13 behavior remains intentionally not implemented yet.
+- Locked Roadmap 13 source/filter direction: Style Feed is a rolling inspiration feed of Outfits from people the viewer already follows; top controls are **All · Fit Twins · Occasion**. Fit Twins includes Fit Twin, Tops Twin and Bottoms Twin. There is **no Style Tag filter** in Style Feed. Explore/Search remain the intentional specific-discovery surfaces.
+- Drafts never create feed activity.
+- Exact Style Feed ranking remains undefined until Roadmap 13 and must not be invented during Roadmap 12.
 
 # 24. Images — LOCKED
-- Front Fit Photo and Back Fit Photo = separate optional member wear-evidence roles attached to the Closet/Fit Report garment; either may exist independently.
-- Product Photo = separate catalog-display evidence.
-- Product Label / Tag Photo = separate private identity-review evidence, never generic Product imagery.
+- Every **new Fit Report** requires at least one of **Front Fit Photo / Back Fit Photo / Product Photo**.
+- Front Fit Photo and Back Fit Photo are separate controlled member wear-evidence roles attached to the Closet/Fit Report garment; either may independently satisfy the new-report photo requirement and both are community-visible wear evidence.
+- Product Photo is separate catalog-display evidence and may independently satisfy the new-report photo requirement. The member-facing control is labeled **Product Photo (not being worn)** where the three photo choices are presented together.
+- Product Label / Tag Photo = separate private identity-review evidence, never generic Product imagery and never a substitute for one of the three new-report photo choices.
+- Fit Report/Closet display image priority is **Front Fit Photo → Product Photo → Back Fit Photo**. This display priority never changes the underlying evidence roles.
+- Scanner Product-identification priority is separate: **Product/catalog photo → shared Front Fit Photo → other shared Fit Photo → placeholder**.
 - Profile Photo = public current member identity when uploaded; social/editorial surfaces resolve the current profile photo rather than storing content-time avatar snapshots.
 - Product/catalog imagery is preferred on Product-identification surfaces.
-- A public/shared member Fit Photo may be used as the scanner **Is this the item?** fallback when no Product/catalog photo exists; Front is preferred when both fit-photo roles exist.
-- That fallback never promotes the Fit Photo into generic/canonical Product imagery.
+- A public/shared member Fit Photo used as scanner fallback never becomes generic/canonical Product imagery.
+- Shared image expansion should use the canonical full-size viewer behavior, including swipe-down dismissal on touch where appropriate, rather than proliferating one-off lightbox implementations.
 
 # 25. Admin catalog target — LOCKED
 Admin must expose Products/candidates, identity-trust tier, distinct confirmation counts, open flags, flag priority, identifiers/barcode confidence, retailer links, Product Photo/Label evidence history and system-vs-admin resolution provenance.
@@ -536,9 +554,11 @@ When variation tooling is reached, Admin must distinguish base Product identity,
 SerpAPI checks private cache first, dedupes queries, respects caps and requires explicit resolution. Raw results never write directly to Product truth. Ordinary member search/intake/scanner does not use it.
 
 # 27. Public homepage / FAQ — LOCKED
-Homepage remains useful logged out; signed-in `/` enters My Circle.
+Homepage remains useful logged out; signed-in `/` enters the current Style Feed route.
 
 Homepage order is Hero → distinct **WHAT LIKESIZED DOES** feature band → **THE LOOP** → FAQ. Published FAQ copy must be owner-approved and accurately explain current behavior without unverifiable competitor claims.
+
+The locked third feature card is **FIT YOUR STYLE** / **Follow people whose fit and style you trust.** / supporting see-what-they-wear/style/recommend meaning / **Get Inspired →**. The three conceptual cards are **Find People My Size → See What Works for Them → Fit Your Style**.
 
 The Fit Twin FAQ uses the current regional qualification rule: both Tops and Bottoms clearing the strong-match threshold qualify Fit Twin; one qualifying region yields Tops Twin or Bottoms Twin; Overall Match alone never grants Twin status.
 

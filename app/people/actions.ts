@@ -12,6 +12,7 @@ function safeReturnPath(value: FormDataEntryValue | null) {
     path.startsWith("/people/") ||
     path === "/following" ||
     path.startsWith("/following?") ||
+    path.startsWith("/outfits/") ||
     path === "/notifications"
   ) {
     return path;

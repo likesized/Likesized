@@ -1,8 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useCatalogGarment } from "./CatalogGarmentFields";
 import styles from "./fitReport.module.css";
+
+function FitPhotoCard({ label, name, fileName, setFileName }: { label: string; name: "photo_front" | "photo_back"; fileName: string; setFileName: (value: string) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return <div className={styles.photoEvidenceCard}>
+    <strong>{label}</strong>
+    <input ref={inputRef} className={styles.hiddenFileInput} name={name} type="file" accept="image/jpeg,image/png,image/webp" data-review-label={label} onChange={(event) => setFileName(event.target.files?.[0]?.name ?? "")} />
+    <button className="catalogManualButton" type="button" onClick={() => inputRef.current?.click()}>{fileName ? "Replace Photo" : "Choose Photo"}</button>
+    <small>{fileName || "No file chosen"}</small>
+  </div>;
+}
 
 export default function FitReportPhotoFields() {
   const { productPhotoName, chooseProductPhoto } = useCatalogGarment();
@@ -11,23 +21,16 @@ export default function FitReportPhotoFields() {
 
   return <fieldset className={styles.itemDetailsFieldset} data-photo-requirement>
     <legend>Photos <span className="muted inlineMuted">at least one required</span></legend>
-    <p className="fieldHelp">Add at least one photo so others can identify the item. A Product Photo, Front Fit Photo, or Back Fit Photo satisfies this requirement.</p>
+    <p className="fieldHelp">Add at least one photo. Choose a Front Fit Photo, Back Fit Photo, or Product Photo so others can clearly identify the item.</p>
     <div className={styles.photoEvidenceGrid}>
+      <FitPhotoCard label="Front Fit Photo" name="photo_front" fileName={frontName} setFileName={setFrontName}/>
+      <FitPhotoCard label="Back Fit Photo" name="photo_back" fileName={backName} setFileName={setBackName}/>
       <div className={styles.photoEvidenceCard}>
-        <strong>Product Photo</strong>
-        <span className="fieldHelp">A clear photo of the garment itself. This is Product evidence, not a Fit Photo.</span>
-        <button className="catalogManualButton" type="button" onClick={chooseProductPhoto}>{productPhotoName ? "Replace Product Photo" : "Add Product Photo"}</button>
-        {productPhotoName ? <small>{productPhotoName}</small> : null}
+        <strong>Product Photo (not being worn)</strong>
+        <button className="catalogManualButton" type="button" onClick={chooseProductPhoto}>{productPhotoName ? "Replace Photo" : "Choose Photo"}</button>
+        <small>{productPhotoName || "No file chosen"}</small>
       </div>
-      <label>Front Fit Photo
-        <input name="photo_front" type="file" accept="image/jpeg,image/png,image/webp" data-review-label="Front Fit Photo" onChange={(event)=>setFrontName(event.target.files?.[0]?.name??"")} />
-        {frontName ? <small>{frontName}</small> : null}
-      </label>
-      <label>Back Fit Photo
-        <input name="photo_back" type="file" accept="image/jpeg,image/png,image/webp" data-review-label="Back Fit Photo" onChange={(event)=>setBackName(event.target.files?.[0]?.name??"")} />
-        {backName ? <small>{backName}</small> : null}
-      </label>
     </div>
-    <span className="fieldHelp"><b>Front and Back Fit Photos are shared with the LikeSized community. Don’t upload a Fit Photo you do not want other people to see.</b></span>
+    <span className="fieldHelp"><b>Front and Back Fit Photos are visible to the LikeSized community. Only upload photos you’re comfortable sharing publicly.</b></span>
   </fieldset>;
 }

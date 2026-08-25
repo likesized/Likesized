@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 const composer=readFileSync(new URL("../app/outfits/new/OutfitComposer.tsx",import.meta.url),"utf8");
 const newPage=readFileSync(new URL("../app/outfits/new/page.tsx",import.meta.url),"utf8");
 const detail=readFileSync(new URL("../app/outfits/[id]/page.tsx",import.meta.url),"utf8");
+const creatorQuickView=readFileSync(new URL("../app/outfits/[id]/CreatorQuickView.tsx",import.meta.url),"utf8");
 const detailCss=readFileSync(new URL("../app/outfits/[id]/outfitDetail.module.css",import.meta.url),"utf8");
 const gallery=readFileSync(new URL("../app/outfits/[id]/OutfitGallery.tsx",import.meta.url),"utf8");
 const engagement=readFileSync(new URL("../app/outfits/[id]/OutfitEngagementClient.tsx",import.meta.url),"utf8");
@@ -30,6 +31,7 @@ const profilePhoto=readFileSync(new URL("../lib/profile-photo.ts",import.meta.ur
 const liveIdentityMigration=readFileSync(new URL("../supabase/migrations/20260824234500_live_profile_identity.sql",import.meta.url),"utf8");
 const catalogFields=readFileSync(new URL("../app/closet/add/CatalogGarmentFields.tsx",import.meta.url),"utf8");
 const catalogRoute=readFileSync(new URL("../app/api/catalog/search/route.ts",import.meta.url),"utf8");
+const universalActions=readFileSync(new URL("../components/UniversalActionBar.tsx",import.meta.url),"utf8");
 
 test("My Closet owns member Garments, Outfits, and FITuition",()=>{
  assert.match(closetPage,/My Closet sections/);
@@ -115,11 +117,12 @@ test("opened gallery is one compact active image and photo hotspots open the one
 });
 
 test("opened Outfit hierarchy is compact header, photo-attached actions, then three exclusive tabs",()=>{
- assert.match(detail,/outfitIdentityHeader/);
- assert.match(detail,/outfitIdentityPhoto/);
- assert.match(detail,/% Fit Match/);
- assert.match(detail,/creatorTwin/);
- assert.match(detail,/outfitActionBar/);
+ assert.match(detail,/CreatorQuickView/);
+ assert.match(creatorQuickView,/outfitIdentityHeader/);
+ assert.match(creatorQuickView,/outfitIdentityPhoto/);
+ assert.match(creatorQuickView,/% Fit Match/);
+ assert.match(detail,/twinLabel=\{creatorTwin\}/);
+ assert.match(detail,/UniversalActionBar className=\{styles\.outfitActionBar\}/);
  assert.match(detail,/OutfitTabs/);
  assert.match(tabs,/Style Notes/);
  assert.match(tabs,/Comments ·/);
@@ -131,10 +134,12 @@ test("opened Outfit hierarchy is compact header, photo-attached actions, then th
 });
 
 test("Outfit social controls stay with media, counts stay with actions, owners get Share only, and views count once per session",()=>{
- assert.match(detail,/!owner\?<>/);
- assert.match(detail,/actionCount\}\>\{outfit\.like_count\}/);
+ assert.match(detail,/UniversalActionBar className=\{styles\.outfitActionBar\}/);
+ assert.match(detail,/action="likeLocker" active=\{liked\}/);
+ assert.match(detail,/count=\{outfit\.like_count\}/);
  assert.match(detail,/shareCount=\{outfit\.share_count\}/);
- assert.match(detail,/title="Follow"/);
+ assert.match(creatorQuickView,/UniversalActionButton action="follow"/);
+ assert.match(creatorQuickView,/setFollowingNotificationSubscription/);
  assert.match(detail,/summaryLabel="Report Outfit" iconOnly/);
  assert.doesNotMatch(detail,/Follow \{creatorName\}/);
  assert.doesNotMatch(detail,/blockMemberFromOutfit/);
@@ -163,12 +168,12 @@ test("Tagged quick view uses useful fit context, compact actions, and a logged-o
  assert.match(tagged,/not enough strong evidence to recommend a size yet/);
  assert.match(tagged,/FITuition needs more evidence/);
  assert.match(tagged,/We don’t have enough relevant Fit Reports to recommend a size yet/);
- assert.match(tagged,/title="Like Locker"/);
- assert.match(tagged,/title="Wish Locker"/);
- assert.match(tagged,/>Wish Locker<\/span>/);
- assert.match(tagged,/title="Shop">🛒<\/Link>/);
- assert.match(tagged,/title="Share"/);
- assert.match(tagged,/title="Report">⚑<\/summary>/);
+ assert.match(tagged,/UniversalActionButton action="likeLocker"/);
+ assert.match(tagged,/UniversalActionButton action="wishLocker"/);
+ assert.match(tagged,/UniversalActionLink action="shop"/);
+ assert.match(tagged,/UniversalActionButton action="share"/);
+ assert.match(tagged,/UniversalActionSummary action="report"/);
+ assert.match(universalActions,/wishLocker:\s*\{[^}]*label:\s*"Wish Locker"/);
  assert.match(tagged,/stay_open","1"/);
  assert.match(tagged,/Create account/);
  assert.match(tagged,/Sign in to see your fit matches/);

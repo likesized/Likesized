@@ -29,9 +29,17 @@ test("single menu contains the owner-approved sections and links", () => {
   assert.match(menu, /href="\/circle"[^>]*>Style Feed/);
   assert.match(menu, /href="\/likelocker"[^>]*>LikeLocker/);
   assert.match(menu, />My Closet<\/div>/);
+  assert.match(menu, /href="\/closet\/add"[^>]*>Add a Garment/);
+  assert.match(menu, /href="\/outfits\/new"[^>]*>Style an Outfit/);
   assert.match(menu, />Account<\/div>/);
   assert.doesNotMatch(menu, /outfits\?feed=twins/);
   assert.doesNotMatch(menu, />Notifications/);
+});
+
+test("authenticated member navigation does not eagerly prefetch every expensive destination", () => {
+  const links = menu.match(/<Link[^>]+>/g) ?? [];
+  assert.ok(links.length >= 10);
+  for (const link of links) assert.match(link, /prefetch=\{false\}/);
 });
 
 test("shared member menu keeps close and compact layout safeguards", () => {

@@ -121,7 +121,7 @@ test("opened Outfit hierarchy is compact header, photo-attached actions, then th
 });
 
 test("Outfit social controls stay with media, counts stay with actions, and owners get Share only",()=>{
- assert.match(detail,/!owner\?<></);
+ assert.match(detail,/!owner\?<>/);
  assert.match(detail,/actionCount\}\>\{outfit\.like_count\}/);
  assert.match(detail,/shareCount=\{outfit\.share_count\}/);
  assert.match(detail,/title="Follow"/);

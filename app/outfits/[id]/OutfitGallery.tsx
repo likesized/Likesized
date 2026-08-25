@@ -51,31 +51,30 @@ export default function OutfitGallery({ photos, garments, canViewTags }: { photo
       onClick={()=>{if(suppressClick.current){suppressClick.current=false;return;}move(1);}}
       onKeyDown={(event)=>{if(event.key==="ArrowRight"||event.key==="Enter"||event.key===" "){event.preventDefault();move(1);}else if(event.key==="ArrowLeft"){event.preventDefault();move(-1);}}}
     >
-      <img className={styles.galleryMain} src={current.url} alt={`Outfit photo ${index+1}`} draggable={false}/>
+      <div className={styles.galleryMedia}>
+        <img className={styles.galleryMain} src={current.url} alt={`Outfit photo ${index+1}`} draggable={false}/>
+        {canViewTags && showTags ? current.tags.map((tag, tagIndex) => {
+          const garment = garmentById.get(tag.closetItemId);
+          if (!garment) return null;
+          return <button
+            key={`${tag.closetItemId}-${tagIndex}`}
+            className={styles.hotspot}
+            style={{ left: `${tag.x*100}%`, top: `${tag.y*100}%` }}
+            type="button"
+            aria-label={`Preview ${garment.label}`}
+            onPointerDown={(event)=>event.stopPropagation()}
+            onPointerUp={(event)=>event.stopPropagation()}
+            onClick={(event) => { event.stopPropagation(); setActiveGarment(tag.closetItemId); }}
+          >+</button>;
+        }) : null}
+        {selected ? <div className={styles.hotspotCard} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>event.stopPropagation()}>
+          {selected.imageUrl?<img src={selected.imageUrl} alt=""/>:null}
+          <div><strong>{selected.label}</strong><span>{selected.detail}</span><Link href={selected.href}>Full details →</Link></div>
+          <button type="button" aria-label="Close item preview" onClick={() => setActiveGarment(null)}>×</button>
+        </div> : null}
+      </div>
       {photos.length>1?<span className={styles.galleryCounter}>{index+1} / {photos.length}</span>:null}
-      {canViewTags && showTags ? current.tags.map((tag, tagIndex) => {
-        const garment = garmentById.get(tag.closetItemId);
-        if (!garment) return null;
-        return <button
-          key={`${tag.closetItemId}-${tagIndex}`}
-          className={styles.hotspot}
-          style={{ left: `${tag.x*100}%`, top: `${tag.y*100}%` }}
-          type="button"
-          aria-label={`Preview ${garment.label}`}
-          onPointerDown={(event)=>event.stopPropagation()}
-          onPointerUp={(event)=>event.stopPropagation()}
-          onClick={(event) => { event.stopPropagation(); setActiveGarment(tag.closetItemId); }}
-        >+</button>;
-      }) : null}
-      {selected ? <div className={styles.hotspotCard} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>event.stopPropagation()}>
-        {selected.imageUrl?<img src={selected.imageUrl} alt=""/>:null}
-        <div><strong>{selected.label}</strong><span>{selected.detail}</span><Link href={selected.href}>Full details →</Link></div>
-        <button type="button" aria-label="Close item preview" onClick={() => setActiveGarment(null)}>×</button>
-      </div> : null}
-    </div>
-    <div className={styles.galleryControls}>
-      {canViewTags && current.tags.length ? <button type="button" onClick={() => { setShowTags((value) => !value); setActiveGarment(null); }}>{showTags ? "Hide item tags" : "Show item tags"}</button> : null}
-      {photos.length>1?<span>Click, drag, or swipe the photo to move through the Outfit.</span>:null}
+      {canViewTags && current.tags.length ? <button className={styles.galleryTagToggle} type="button" onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event) => {event.stopPropagation();setShowTags((value) => !value);setActiveGarment(null);}}>{showTags ? "Hide tags" : "Show tags"}</button> : null}
     </div>
   </section>;
 }

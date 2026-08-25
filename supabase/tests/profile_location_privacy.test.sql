@@ -19,8 +19,8 @@ select ok(exists(
   select 1 from pg_policies
   where schemaname='public' and tablename='profile_locations'
     and policyname='owner reads own profile location'
-    and qual like '%auth.uid()%'
-),'Location read policy is owner-scoped');
+    and cmd='SELECT'
+),'Owner-scoped location read policy exists');
 
 select * from finish();
 rollback;

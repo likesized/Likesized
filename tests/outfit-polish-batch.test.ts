@@ -57,9 +57,9 @@ test("creator quick view uses a clean hierarchy instead of table-grid chrome",()
   assert.doesNotMatch(creatorQuickViewCss,/\.stats>div\{[^}]*border/);
 });
 
-test("Tagged garment quick view has one clear garment-page destination",()=>{
+test("Tagged garment quick view has one clear detailed garment report destination",()=>{
   assert.doesNotMatch(tagged,/See fit evidence/);
-  assert.match(tagged,/>View Garment →<\/Link>/);
+  assert.match(tagged,/>View Detailed Garment Report →<\/Link>/);
   assert.equal((tagged.match(/href=\{selected\.href\}/g)??[]).length,1);
 });
 

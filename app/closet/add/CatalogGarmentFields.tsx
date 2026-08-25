@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { SwipeDismissImageLightbox } from "@/components/SwipeDismissImageLightbox";
 import { COLOR_FAMILIES, GARMENT_CATEGORIES, GARMENT_TYPES, questionsForGarmentType, type GarmentCategoryKey } from "@/lib/garment-taxonomy";
 import type { GarmentSizeKind } from "@/lib/domain";
 import styles from "./fitReport.module.css";
@@ -108,15 +109,6 @@ function categoryForType(typeKey: string | null | undefined): GarmentCategoryKey
   return GARMENT_TYPES.find((item) => item.key === typeKey)?.category ?? "";
 }
 
-function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
-  return <div className={styles.imageLightbox} role="dialog" aria-modal="true" aria-label="Product image preview" onClick={onClose}>
-    <div className={styles.imageLightboxCard} onClick={(event) => event.stopPropagation()}>
-      <button className={styles.imageLightboxClose} type="button" aria-label="Close image preview" onClick={onClose}>×</button>
-      <img src={src} alt={alt}/>
-    </div>
-  </div>;
-}
-
 export function CatalogColorField() {
   const colors = [...COLOR_FAMILIES].sort((a, b) => a.label.localeCompare(b.label));
   return <label>Color<select name="color_family" defaultValue="" required data-review-label="Color"><option value="" disabled>Select a color</option>{colors.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>;
@@ -149,7 +141,7 @@ function CatalogDepartmentField({ departments }: { departments: CatalogOption[] 
 }
 
 export function CatalogCommunityEnrichment({ materials, retailers }: { materials: CatalogOption[]; retailers: CatalogRetailerOption[] }) {
-  const { product, scannedBarcode, productPhotoName, chooseProductPhoto } = useCatalogGarment();
+  const { product, scannedBarcode } = useCatalogGarment();
   const sortedMaterials = useMemo(() => [...materials]
     .filter((item) => item.key !== "other" && item.key !== "not_sure" && item.label.toLowerCase() !== "other")
     .sort((a, b) => a.label.localeCompare(b.label)), [materials]);
@@ -242,13 +234,6 @@ export function CatalogCommunityEnrichment({ materials, retailers }: { materials
         <button className="catalogManualButton" type="button" onClick={() => setMaterialRows((current) => [...current, { material_key: "", percentage: "" }])}>Add another material</button>
         <input type="hidden" name="materials_json" value={JSON.stringify(materialClaims)} />
       </fieldset>
-
-      <div className={styles.photoEvidenceCard}>
-        <strong>Product Photo <span className="muted inlineMuted">optional</span></strong>
-        <span className="fieldHelp">A clear photo of the item by itself helps LikeSized identify the exact product.</span>
-        <button className="catalogManualButton" type="button" onClick={chooseProductPhoto}>{productPhotoName ? "Replace Product Photo" : "Add Product Photo"}</button>
-        {productPhotoName ? <small>{productPhotoName}</small> : null}
-      </div>
     </div>
   </details>;
 }
@@ -289,7 +274,6 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
   const itemSuggestionCache = useRef(new Map<string, CatalogProduct>());
   const prefetchedBrandNames = useRef(new Set<string>());
 
-  const selectedType = GARMENT_TYPES.find((item) => item.key === type);
   const filteredTypes = category ? GARMENT_TYPES.filter((item) => item.category === category) : [];
   const questions = applicableQuestions(type, answers);
   const brandSuggestions = brand.trim()
@@ -301,12 +285,6 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
     scannerControls.current = null;
   }
   useEffect(() => () => stopScanner(), []);
-  useEffect(() => {
-    if (!lightboxImage) return;
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setLightboxImage(null); };
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
-  }, [lightboxImage]);
 
   function resetDetails() {
     setIntakeSource(null);
@@ -676,7 +654,7 @@ export function CatalogGarmentFields({ brands, departments, fixtureProducts = []
           <button className="catalogManualButton" type="button" disabled={loadingBarcode} onClick={enterManualAfterScan}>No — enter manually</button>
         </div>
       </section>
-      {lightboxImage ? <ImageLightbox src={lightboxImage} alt={`${matchBrand} ${matchName}`} onClose={() => setLightboxImage(null)}/> : null}
+      {lightboxImage ? <SwipeDismissImageLightbox src={lightboxImage} alt={`${matchBrand} ${matchName}`} label="Product image preview" onClose={() => setLightboxImage(null)}/> : null}
     </>;
   }
 

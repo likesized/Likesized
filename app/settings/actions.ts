@@ -11,6 +11,7 @@ type FitCommunity = "men"|"women"|"both";
 function text(formData:FormData,name:string){return String(formData.get(name)??"").trim();}
 function fail(code:string):never{redirect(`/settings?error=${encodeURIComponent(code)}`);}
 function fitCommunity(value:string):FitCommunity|null{return value==="men"||value==="women"||value==="both"?value:null;}
+function profileLocation(formData:FormData){const city=text(formData,"city");const stateRegion=text(formData,"state_region");if(city.length>80||stateRegion.length>80||Boolean(city)!==Boolean(stateRegion))return null;return{city:city||null,state_region:stateRegion||null};}
 async function authenticatedSettingsClient(){const supabase=await createClient();const {data:claimsData,error}=await supabase.auth.getClaims();const userId=claimsData?.claims?.sub;if(error||!userId)redirect("/login?next=/settings");return{supabase,userId};}
 function validProfilePhoto(formData:FormData){const entry=formData.get("profile_photo");return entry instanceof File&&entry.size>0&&entry.type==="image/webp"&&entry.size<=PROFILE_PHOTO_MAX_BYTES?entry:null;}
 function revalidateProfileSurfaces(){revalidatePath("/settings");revalidatePath("/people","layout");revalidatePath("/search");revalidatePath("/following");revalidatePath("/circle");revalidatePath("/explore");revalidatePath("/closet");revalidatePath("/outfits","layout");}
@@ -33,6 +34,16 @@ export async function saveProfileSettings(formData:FormData){
   const {error}=await supabase.from("profiles").update({display_name:displayName||null,bio:bio||null,updated_at:new Date().toISOString()}).eq("id",userId);
   if(error){if(error.code==="23514")fail("invalid_profile");fail("save_failed");}
   revalidateProfileSurfaces();redirect("/settings?saved=1");
+}
+
+export async function saveProfileLocationSettings(formData:FormData){
+  const location=profileLocation(formData);
+  if(!location)fail("invalid_location");
+  const {supabase,userId}=await authenticatedSettingsClient();
+  const {error}=await supabase.from("profile_locations").upsert({user_id:userId,...location,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+  if(error)fail("location_save_failed");
+  revalidatePath("/settings");
+  redirect("/settings?location=saved");
 }
 
 export async function saveFitCommunitySettings(formData:FormData){

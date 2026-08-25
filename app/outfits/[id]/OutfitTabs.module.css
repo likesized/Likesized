@@ -1,0 +1,1 @@
+.styleExploreHost :global(span[role="link"]){cursor:pointer;transition:border-color .12s ease,color .12s ease,background .12s ease}.styleExploreHost :global(span[role="link"]:hover),.styleExploreHost :global(span[role="link"]:focus-visible){border-color:var(--accent);color:var(--accent);outline:none}

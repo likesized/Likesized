@@ -1,3 +1,5 @@
+"use server";
+
 import { redirect } from "next/navigation";
 import { normalizeProfileLocation } from "@/lib/profile-location";
 import { createClient } from "@/lib/supabase/server";

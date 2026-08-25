@@ -34,7 +34,7 @@ test("Outfit photos support optional 200-character captions without permanently 
 
 test("Wish Locker remains an explicit universal garment action",()=>{
   assert.match(tagged,/UniversalActionButton action="wishLocker"/);
-  assert.match(universalActions,/wishLocker:\{label:"Wish Locker"/);
+  assert.match(universalActions,/wishLocker:\s*\{[^}]*label:\s*"Wish Locker"/);
   assert.match(universalActions,/Remove from Wish Locker/);
   assert.match(universalActions,/Add to Wish Locker/);
 });

@@ -33,7 +33,7 @@ test("Explore has grouped in-place search and strict type-aware filters",()=>{
  assert.match(taxonomy,/COLOR_FAMILIES/);
 });
 
-test("Explore retains fit evidence, batching, mini-browser, and preview safeguards",()=>{
+test("Explore retains fit evidence, batching, shared mini-detail quick views, and preview safeguards",()=>{
  assert.match(explore,/get_product_evidence_candidates/);
  assert.match(explore,/>=75/);
  assert.match(explore,/Garments/);
@@ -49,9 +49,9 @@ test("Explore retains fit evidence, batching, mini-browser, and preview safeguar
  assert.match(explore,/score<75/);
  assert.match(explore,/Notify me/);
  assert.match(evidenceNotifications,/notify_product_evidence_watchers_after_fit_report/);
- assert.match(miniBrowser,/← Back/);
- assert.match(miniBrowser,/aria-label="Close product browser"/);
- assert.match(miniBrowser,/iframe/);
+ assert.match(miniBrowser,/EntityQuickView/);
+ assert.match(miniBrowser,/fullLabel=\{kind==="outfit"\?"View Full Outfit":"View Garment"\}/);
+ assert.doesNotMatch(miniBrowser,/iframe|product browser|← Back/);
  assert.match(fixtures,/fixture: true/);
  assert.match(fixtures,/VERCEL_ENV === "preview"/);
  assert.doesNotMatch(explore,/\bstar(?:s)?\b/i);

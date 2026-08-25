@@ -32,11 +32,19 @@ test("Outfit photos support optional 200-character captions without permanently 
   assert.match(gallery,/current\.caption&&showCaption/);
 });
 
-test("Wish Locker remains an explicit universal garment action",()=>{
+test("Wish Locker remains an explicit garment action with a shopping-bag-plus-heart symbol and never renders a count",()=>{
   assert.match(tagged,/UniversalActionButton action="wishLocker"/);
-  assert.match(universalActions,/wishLocker:\s*\{[^}]*label:\s*"Wish Locker"/);
-  assert.match(universalActions,/Remove from Wish Locker/);
-  assert.match(universalActions,/Add to Wish Locker/);
+  assert.match(universalActions,/wishLocker:\s*\{[^}]*icon:\s*"🛍♡"[^}]*activeIcon:\s*"🛍♥"[^}]*label:\s*"Wish Locker"/);
+  assert.match(universalActions,/inactiveAria:\s*"Add to Wish Locker"/);
+  assert.match(universalActions,/activeAria:\s*"Remove from Wish Locker"/);
+  assert.match(universalActions,/const visibleCount = action === "wishLocker" \? undefined : count;/);
+  assert.doesNotMatch(tagged,/action="wishLocker"[^>]*count=/);
+});
+
+test("Tagged garment quick view has one clear garment-page destination",()=>{
+  assert.doesNotMatch(tagged,/See fit evidence/);
+  assert.match(tagged,/>View Garment →<\/Link>/);
+  assert.equal((tagged.match(/href=\{selected\.href\}/g)??[]).length,1);
 });
 
 test("Closet Outfit cards use matched vector icon boxes for likes and comments",()=>{

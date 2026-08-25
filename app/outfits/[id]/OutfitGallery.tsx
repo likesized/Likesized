@@ -13,9 +13,13 @@ export default function OutfitGallery({ photos, garments }: { photos: GalleryPho
   const [showTags, setShowTags] = useState(true);
   const [showCaption,setShowCaption]=useState(false);
   const [lightboxOpen,setLightboxOpen]=useState(false);
+  const [lightboxDragY,setLightboxDragY]=useState(0);
+  const [lightboxDragging,setLightboxDragging]=useState(false);
   const pointerStart = useRef<{x:number;y:number}|null>(null);
   const lightboxPointerStart=useRef<{x:number;y:number}|null>(null);
+  const lightboxPointerId=useRef<number|null>(null);
   const suppressClick = useRef(false);
+  const suppressLightboxClick=useRef(false);
   const current = photos[index] ?? null;
   const garmentById = new Map(garments.map((garment) => [garment.id, garment]));
 
@@ -43,12 +47,36 @@ export default function OutfitGallery({ photos, garments }: { photos: GalleryPho
       move(dx<0?1:-1);
     }
   }
-  function lightboxPointerDown(event:React.PointerEvent<HTMLDivElement>){if(event.isPrimary)lightboxPointerStart.current={x:event.clientX,y:event.clientY};}
-  function lightboxPointerUp(event:React.PointerEvent<HTMLDivElement>){
-    const start=lightboxPointerStart.current;lightboxPointerStart.current=null;
-    if(!start||!event.isPrimary)return;
-    const dx=event.clientX-start.x;const dy=event.clientY-start.y;
-    if(dy>=70&&Math.abs(dy)>Math.abs(dx))setLightboxOpen(false);
+  function lightboxPointerDown(event:React.PointerEvent<HTMLDivElement>){
+    if(!event.isPrimary)return;
+    lightboxPointerStart.current={x:event.clientX,y:event.clientY};
+    lightboxPointerId.current=event.pointerId;
+    suppressLightboxClick.current=false;
+    setLightboxDragging(true);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
+  function lightboxPointerMove(event:React.PointerEvent<HTMLDivElement>){
+    const start=lightboxPointerStart.current;
+    if(!start||!event.isPrimary||lightboxPointerId.current!==event.pointerId)return;
+    const dy=Math.max(0,event.clientY-start.y);
+    if(dy>6)suppressLightboxClick.current=true;
+    setLightboxDragY(dy);
+  }
+  function finishLightboxPointer(event:React.PointerEvent<HTMLDivElement>,cancelled=false){
+    const start=lightboxPointerStart.current;
+    if(!start||!event.isPrimary||lightboxPointerId.current!==event.pointerId)return;
+    const dx=event.clientX-start.x;
+    const dy=Math.max(0,event.clientY-start.y);
+    lightboxPointerStart.current=null;
+    lightboxPointerId.current=null;
+    setLightboxDragging(false);
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    if(!cancelled&&dy>=70&&dy>Math.abs(dx)){
+      setLightboxOpen(false);
+      setLightboxDragY(0);
+      return;
+    }
+    setLightboxDragY(0);
   }
 
   useEffect(()=>{
@@ -97,10 +125,28 @@ export default function OutfitGallery({ photos, garments }: { photos: GalleryPho
       {current.caption?<button className={polishStyles.galleryCaptionToggle} type="button" aria-expanded={showCaption} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();setShowCaption((value)=>!value);}}>Caption</button>:null}
     </div>
 
-    {lightboxOpen?<div className={interactionStyles.lightbox} role="dialog" aria-modal="true" aria-label={`Full-size Outfit photo ${index+1}`} onClick={()=>setLightboxOpen(false)} onPointerDown={lightboxPointerDown} onPointerUp={lightboxPointerUp}>
-      <button className={interactionStyles.lightboxClose} type="button" aria-label="Close full-size photo" onClick={(event)=>{event.stopPropagation();setLightboxOpen(false);}}>×</button>
+    {lightboxOpen?<div
+      className={interactionStyles.lightbox}
+      style={{touchAction:"pan-x pinch-zoom"}}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Full-size Outfit photo ${index+1}`}
+      onClick={()=>{if(suppressLightboxClick.current){suppressLightboxClick.current=false;return;}setLightboxOpen(false);}}
+      onPointerDown={lightboxPointerDown}
+      onPointerMove={lightboxPointerMove}
+      onPointerUp={(event)=>finishLightboxPointer(event)}
+      onPointerCancel={(event)=>finishLightboxPointer(event,true)}
+    >
+      <button className={interactionStyles.lightboxClose} type="button" aria-label="Close full-size photo" onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();setLightboxOpen(false);}}>×</button>
       {photos.length>1?<button className={`${interactionStyles.lightboxNav} ${interactionStyles.lightboxPrev}`} type="button" aria-label="Previous photo" onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();move(-1);}}>‹</button>:null}
-      <img className={interactionStyles.lightboxImage} src={current.url} alt={`Outfit photo ${index+1} full size`} draggable={false} onClick={(event)=>event.stopPropagation()}/>
+      <img
+        className={interactionStyles.lightboxImage}
+        src={current.url}
+        alt={`Outfit photo ${index+1} full size`}
+        draggable={false}
+        style={{transform:`translateY(${lightboxDragY}px)`,transition:lightboxDragging?"none":"transform 180ms ease",touchAction:"pan-x pinch-zoom"}}
+        onClick={(event)=>event.stopPropagation()}
+      />
       {photos.length>1?<button className={`${interactionStyles.lightboxNav} ${interactionStyles.lightboxNext}`} type="button" aria-label="Next photo" onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();move(1);}}>›</button>:null}
       {photos.length>1?<span className={interactionStyles.lightboxCount}>{index+1} / {photos.length}</span>:null}
     </div>:null}

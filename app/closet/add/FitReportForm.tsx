@@ -24,6 +24,8 @@ function validatePhotoRequirement(form:HTMLFormElement){
   if(group){
     if(hasPhoto)group.removeAttribute("aria-invalid");
     else group.setAttribute("aria-invalid","true");
+    const error=group.querySelector<HTMLElement>("[data-photo-error]");
+    if(error)error.hidden=hasPhoto;
   }
   return hasPhoto;
 }
@@ -43,7 +45,7 @@ function clearFieldInvalidState(field: HTMLInputElement | HTMLSelectElement | HT
 
 function showInvalidState(form: HTMLFormElement, scroll: boolean) {
   clearInvalidState(form);
-  validatePhotoRequirement(form);
+  const hasPhoto=validatePhotoRequirement(form);
   const invalid = Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input:invalid, select:invalid, textarea:invalid"));
   for (const field of invalid) {
     field.setAttribute("aria-invalid", "true");
@@ -53,9 +55,13 @@ function showInvalidState(form: HTMLFormElement, scroll: boolean) {
   }
   const summary = form.querySelector<HTMLElement>("[data-validation-summary]");
   if (summary) summary.hidden = invalid.length === 0;
-  if (scroll && invalid[0]) {
-    invalid[0].scrollIntoView({ behavior: "smooth", block: "center" });
-    window.setTimeout(() => invalid[0]?.focus({ preventScroll: true }), 250);
+  if (scroll) {
+    const photoGroup=hasPhoto?null:form.querySelector<HTMLElement>("[data-photo-requirement]");
+    const target=photoGroup??invalid[0];
+    if(target){
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      if(!photoGroup&&target instanceof HTMLElement)window.setTimeout(()=>target.focus({preventScroll:true}),250);
+    }
   }
 }
 

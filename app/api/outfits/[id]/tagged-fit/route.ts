@@ -5,9 +5,39 @@ import { createClient } from "@/lib/supabase/server";
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 type Candidate={fit_report_id:string;user_id:string;evidence_product_id:string;original_size_label:string;fit:RecommendationEvidence["fit"];historical_match_score:number;historical_coverage_percent:number;evidence_level:RecommendationEvidence["evidenceLevel"];attribute_overlap:number;directional_fit_support:number|null};
 type ProductRow={id:string;brand_id:string;product_family_id:string|null;garment_type_key:string|null;category:string};
-type OwnReport={id:string;product_id:string;size_label:string;fit:RecommendationEvidence["fit"];created_at:string;garment_condition:string};
+type OwnReport={id:string;user_id:string;product_id:string;size_label:string;fit:RecommendationEvidence["fit"];created_at:string;garment_condition:string;objective_variant_key:string|null};
+type ReportIdentity={id:string;user_id:string;product_id:string;objective_variant_key:string|null;created_at:string};
 type SnapshotMatch={fit_report_id:string;historical_match_score:number;historical_coverage_percent:number};
 const FIT_LABELS:Record<RecommendationEvidence["fit"],string>={too_small:"Too small",snug:"Snug",just_right:"Just right",relaxed:"Relaxed",too_big:"Too big"};
+
+function variationEvidenceKey(userId:string,productId:string,objectiveVariantKey:string|null|undefined,fallbackId:string){
+  return `${userId}:${productId}:${objectiveVariantKey||`report:${fallbackId}`}`;
+}
+
+function dedupeOwnReports(reports:OwnReport[]){
+  const seen=new Set<string>();
+  return reports.filter((report)=>{
+    const key=variationEvidenceKey(report.user_id,report.product_id,report.objective_variant_key,report.id);
+    if(seen.has(key))return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function dedupeCandidates(candidates:Candidate[],identityById:Map<string,ReportIdentity>){
+  const seen=new Set<string>();
+  return [...candidates].sort((a,b)=>{
+    const aCreated=identityById.get(a.fit_report_id)?.created_at??"";
+    const bCreated=identityById.get(b.fit_report_id)?.created_at??"";
+    return bCreated.localeCompare(aCreated);
+  }).filter((row)=>{
+    const identity=identityById.get(row.fit_report_id);
+    const key=variationEvidenceKey(row.user_id,row.evidence_product_id,identity?.objective_variant_key,row.fit_report_id);
+    if(seen.has(key))return false;
+    seen.add(key);
+    return true;
+  });
+}
 
 function evidenceForOwnReport(report:OwnReport,target:ProductRow,source:ProductRow,match:SnapshotMatch):RecommendationEvidence{
   const level:RecommendationEvidence["evidenceLevel"]=report.product_id===target.id
@@ -44,12 +74,12 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
   const [{data:fitProfile},{data:products,error:productError},{data:ownReportData,error:ownReportError}]=await Promise.all([
     supabase.from("fit_profiles").select("completed_at").eq("user_id",viewerId).maybeSingle(),
     supabase.from("products").select("id,brand_id,product_family_id,garment_type_key,category").in("id",productIds),
-    supabase.from("fit_reports").select("id,product_id,size_label,fit,created_at,garment_condition").eq("user_id",viewerId).order("created_at",{ascending:false}).limit(100),
+    supabase.from("fit_reports").select("id,user_id,product_id,size_label,fit,created_at,garment_condition,objective_variant_key").eq("user_id",viewerId).order("created_at",{ascending:false}).limit(100),
   ]);
   if(productError||ownReportError)return Response.json({error:"Could not load tagged-item fit evidence."},{status:500});
   const productById=new Map(((products??[]) as ProductRow[]).map((row)=>[row.id,row]));
   const profileReady=Boolean(fitProfile?.completed_at);
-  const ownReports=(ownReportData??[]) as OwnReport[];
+  const ownReports=dedupeOwnReports((ownReportData??[]) as OwnReport[]);
   const ownProductIds=[...new Set(ownReports.map((row)=>row.product_id).filter(Boolean))];
   const ownProductRows=ownProductIds.length?await supabase.from("products").select("id,brand_id,product_family_id,garment_type_key,category").in("id",ownProductIds):{data:[],error:null};
   if(ownProductRows.error)return Response.json({error:"Could not load Closet history."},{status:500});
@@ -65,11 +95,18 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
     if(!profileReady)return [productId,{category,profileReady:false,matchingFitReports:0,strong:false,fitSnippet:null,bestMatch:null}] as const;
 
     const {data:candidateData}=await supabase.rpc("get_product_evidence_candidates",{p_product_id:productId,p_variant_id:null,p_result_limit:160});
-    const candidates=(candidateData??[]) as Candidate[];
+    const rawCandidates=(candidateData??[]) as Candidate[];
+    const candidateIds=[...new Set(rawCandidates.map((row)=>row.fit_report_id))];
+    const identityResult=candidateIds.length?await supabase.from("fit_reports").select("id,user_id,product_id,objective_variant_key,created_at").in("id",candidateIds):{data:[],error:null};
+    const identityById=new Map(((identityResult.data??[]) as ReportIdentity[]).map((row)=>[row.id,row]));
+    const candidates=dedupeCandidates(rawCandidates,identityById);
     const usefulExact=candidates.filter((row)=>row.evidence_product_id===productId&&(row.evidence_level==="exact_product"||row.evidence_level==="exact_variant")&&row.historical_match_score>=50);
     const ownExactReports=ownReports.filter((report)=>report.product_id===product.id&&report.garment_condition==="normal");
-    const usefulExactIds=new Set(usefulExact.map((row)=>row.fit_report_id));
-    for(const report of ownExactReports)usefulExactIds.add(report.id);
+    const usefulExactVariations=new Set(usefulExact.map((row)=>{
+      const identity=identityById.get(row.fit_report_id);
+      return variationEvidenceKey(row.user_id,row.evidence_product_id,identity?.objective_variant_key,row.fit_report_id);
+    }));
+    for(const report of ownExactReports)usefulExactVariations.add(variationEvidenceKey(report.user_id,report.product_id,report.objective_variant_key,report.id));
 
     const bestExact=[...usefulExact].sort((a,b)=>b.historical_match_score-a.historical_match_score||b.historical_coverage_percent-a.historical_coverage_percent)[0]??null;
     const ownExactMatches=ownExactReports.flatMap((report)=>{
@@ -106,7 +143,7 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
     return [productId,{
       category,
       profileReady:true,
-      matchingFitReports:usefulExactIds.size,
+      matchingFitReports:usefulExactVariations.size,
       strong,
       fitSnippet:recommendation?`FITuition: ${recommendation.sizeLabel} · ${recommendationConfidenceLabel(recommendation.confidence)}`:null,
       bestMatch,

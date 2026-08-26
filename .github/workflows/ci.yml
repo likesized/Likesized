@@ -17,12 +17,16 @@ jobs:
     steps:
       - name: Check out canonical source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - name: Use Node 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - name: Canonical integrity / drift guard
+        env:
+          CANONICAL_HEAD_REF: ${{ github.head_ref }}
         run: npm run canonical:check
       - name: Install exact dependencies
         run: npm ci

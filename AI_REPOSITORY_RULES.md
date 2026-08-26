@@ -61,6 +61,8 @@ A task is not complete until:
 
 Never mark planned, attempted, preview-only, failed, branch-only, unverified, or partially salvaged work COMPLETE.
 
+The current active branch recorded in `docs/AI_MASTER_LOG.md` must match the actual pull-request head branch. A PR with an out-of-date active-line record is canonical drift and must fail verification until reconciled.
+
 ## 7. Database source-of-truth rule — LOCKED
 
 - Ordered files in `supabase/migrations/` are the executable database history and replay source.
@@ -68,6 +70,7 @@ Never mark planned, attempted, preview-only, failed, branch-only, unverified, or
 - `supabase/schema.sql` is retired and must not exist as an alternate schema representation.
 - Applied migrations are immutable. Future database changes use new ordered migrations.
 - Dormant legacy columns/types/functions do not define current product semantics merely because their old names remain.
+- A PR that adds or changes an ordered migration must update `supabase/schema_contract.md` and `docs/AI_MASTER_LOG.md` in the same branch before it can pass the canonical gate.
 
 ## 8. Production deployment rule — LOCKED
 
@@ -76,6 +79,9 @@ Never mark planned, attempted, preview-only, failed, branch-only, unverified, or
 - Preview/build verification is not production authorization.
 - Never infer authorization from a prior deployment, prior conversation, or the fact that a PR is ready.
 - If production authorization for an old deployment cannot be proven from canonical records, record it as **authorization status unresolved** rather than inventing history.
+- When the owner explicitly says **deploy**, **push**, **submit**, **proceed**, **get it live**, or equivalent for the current frozen batch, that is production authorization for that batch. Do not ask for the same permission again after the exact candidate becomes verified.
+- Deployment authorization does **not** waive verification. Continue automatically through implementation and failing in-scope checks, fixing the underlying branch until the exact candidate has a successful full required CI run. Do not merge a failed, incomplete, stale, or superseded candidate merely because deployment was authorized.
+- The only exception is an explicit owner override made **after** the owner is told the exact failed or skipped verification gates and explicitly directs deployment anyway. A generic deployment instruction issued before a later failure is not such an override.
 
 ## 9. Mandatory machine safeguards — LOCKED
 
@@ -86,7 +92,10 @@ Canonical CI must run `npm run canonical:check` before typecheck/build/database 
 - hard-coded migration-count claims in canonical database docs;
 - a live `supabase/schema.sql` alternate schema;
 - forbidden temp/noop/version-suffixed source artifacts;
-- missing required current terminology in canonical docs.
+- missing required current terminology in canonical docs;
+- a pull request whose recorded active branch does not match the actual PR head;
+- an application/source PR that leaves the master untouched;
+- a migration PR that leaves the schema contract or master untouched.
 
 Do not weaken or remove these checks to make a branch pass. Fix the underlying drift.
 
@@ -101,7 +110,7 @@ For relevant changes, verify as applicable:
 - pgTAP/database behavior/privacy tests;
 - mobile + desktop owner verification where required.
 
-A green historical run on another branch is evidence worth preserving, not proof that a newly reconciled branch passes.
+The exact candidate proposed for merge must have a successful full required CI run after its final code/test/canonical-doc change. A green historical run on another branch or an earlier SHA is evidence worth preserving, not proof that the current candidate passes. A failed or incomplete run is not a deployable candidate unless the explicit post-failure owner override rule in Section 8 is satisfied.
 
 ## 11. Recovery freeze — LOCKED until cleared in master
 

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 const tagged=readFileSync(new URL("../app/outfits/[id]/TaggedItemsPanel.tsx",import.meta.url),"utf8");
 const gallery=readFileSync(new URL("../app/outfits/[id]/OutfitGallery.tsx",import.meta.url),"utf8");
+const detailStyles=readFileSync(new URL("../app/outfits/[id]/outfitDetail.module.css",import.meta.url),"utf8");
 const newPage=readFileSync(new URL("../app/outfits/new/page.tsx",import.meta.url),"utf8");
 const composer=readFileSync(new URL("../app/outfits/new/OutfitComposer.tsx",import.meta.url),"utf8");
 const consistencyMigration=readFileSync(new URL("../supabase/migrations/20260826190000_outfit_tag_consistency.sql",import.meta.url),"utf8");
@@ -16,10 +17,18 @@ test("tagged Outfit cards preload Relevant Fit Reports before a garment is opene
   assert.doesNotMatch(tagged,/if\(!selectedId\|\|!signedIn\|\|loadedFitMeta/);
 });
 
-test("normal desktop Outfit gallery has explicit Previous and Next photo controls",()=>{
+test("normal desktop Outfit gallery has explicit Previous and Next photo controls owned by the canonical stylesheet",()=>{
   assert.match(gallery,/aria-label="Previous Outfit photo"/);
   assert.match(gallery,/aria-label="Next Outfit photo"/);
   assert.match(gallery,/Previous and Next to change photos/);
+  assert.match(gallery,/styles\.galleryNav/);
+  assert.match(gallery,/styles\.galleryPrev/);
+  assert.match(gallery,/styles\.galleryNext/);
+  assert.doesNotMatch(gallery,/aria-label="Previous Outfit photo"[^>]*style=/);
+  assert.doesNotMatch(gallery,/aria-label="Next Outfit photo"[^>]*style=/);
+  assert.match(detailStyles,/\.galleryNav\{/);
+  assert.match(detailStyles,/\.galleryPrev\{left:10px\}/);
+  assert.match(detailStyles,/\.galleryNext\{right:10px\}/);
   assert.match(gallery,/event\.stopPropagation\(\);move\(-1\)/);
   assert.match(gallery,/event\.stopPropagation\(\);move\(1\)/);
 });

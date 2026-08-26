@@ -12,7 +12,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const LINK_PATTERN = /(https?:\/\/|www\.)/i;
 type SaveMode = "draft" | "publish" | "update";
 type ManifestTag = { closetItemId: string; x: number; y: number };
-type ManifestPhoto = { key: string; existingId?: string; isMain: boolean; tags: ManifestTag[] };
+type ManifestPhoto = { key: string; existingId?: string; isMain: boolean; caption: string; tags: ManifestTag[] };
 type ExistingPhoto = { id: string; bucket: "outfit-photos" | "outfit-draft-photos"; display_path: string; feed_path: string; sort_order: number; is_main: boolean };
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 export type OutfitSaveResult = { ok: boolean; postId?: string; status?: "draft" | "published"; photoIds?: Record<string, string>; error?: string };
@@ -35,6 +35,8 @@ function parseManifest(raw: string): ManifestPhoto[] {
     const key = typeof row.key === "string" ? row.key : "";
     const existingId = typeof row.existingId === "string" && UUID.test(row.existingId) ? row.existingId : undefined;
     const isMain = row.isMain === true;
+    const caption = typeof row.caption === "string" ? row.caption.trim() : "";
+    if (caption.length > 200) throw new Error("Photo captions can be up to 200 characters.");
     if (!/^[A-Za-z0-9_-]{1,64}$/.test(key) || keys.has(key)) throw new Error("Invalid photo list.");
     keys.add(key);
     if (existingId) {
@@ -55,7 +57,7 @@ function parseManifest(raw: string): ManifestPhoto[] {
       garments.add(closetItemId);
       tags.push({ closetItemId, x, y });
     }
-    rows.push({ key, existingId, isMain, tags });
+    rows.push({ key, existingId, isMain, caption, tags });
   }
   if (rows.length && rows.filter((row) => row.isMain).length !== 1) throw new Error("Choose one cover photo.");
   return rows;
@@ -196,6 +198,16 @@ async function syncOutfitPhotos(
   return photoIdByKey;
 }
 
+async function saveManifestCaptions(supabase: Supabase, postId: string, manifest: ManifestPhoto[], photoIdByKey: Map<string,string>) {
+  const results = await Promise.all(manifest.map((item) => {
+    const photoId = photoIdByKey.get(item.key) ?? item.existingId;
+    if (!photoId) return Promise.resolve({ error: { message: "Could not resolve an Outfit photo caption." } });
+    return supabase.from("outfit_photos").update({ caption: item.caption || null }).eq("id", photoId).eq("post_id", postId);
+  }));
+  const error = results.find((result) => result.error)?.error;
+  if (error) throw new Error(error.message || "Could not save the photo captions.");
+}
+
 async function saveOutfit(formData: FormData, mode: SaveMode): Promise<OutfitSaveResult> {
   let cleanup: { supabase: Supabase; postId: string } | null = null;
   try {
@@ -237,6 +249,7 @@ async function saveOutfit(formData: FormData, mode: SaveMode): Promise<OutfitSav
     let photoIdByKey = new Map<string,string>();
     if (shouldSyncPhotos) photoIdByKey = await syncOutfitPhotos(supabase,userId,postId,manifest,formData);
     else for (const item of manifest) if (item.existingId) photoIdByKey.set(item.key,item.existingId);
+    await saveManifestCaptions(supabase,postId,manifest,photoIdByKey);
 
     if (mode !== "draft") {
       if (mustPromoteDraftPhotos || photosDirty || !existingPost) {
@@ -257,6 +270,7 @@ async function saveOutfit(formData: FormData, mode: SaveMode): Promise<OutfitSav
     }
     return { ok: true, postId, status: mode === "draft" ? "draft" : "published", photoIds: Object.fromEntries(photoIdByKey) };
   } catch (error) {
+    console.error("[outfit-save] save failed",error);
     if (cleanup) await cleanupNewFailedPublish(cleanup.supabase, cleanup.postId);
     return { ok: false, error: error instanceof Error ? error.message : "That Outfit could not be saved." };
   }

@@ -95,6 +95,8 @@ Production Supabase includes, after the earlier Roadmap 12 migrations:
 PR #94 and PR #95 introduced no new production database migration. PR #96 introduced the Outfit tag-consistency migration above.
 
 ## Current primary line — ROADMAP 12 OWNER AUDIT REPAIR IN PROGRESS
+Active branch: **`agent/outfit-relevance-notify-closure`**
+
 The one active repair line is **PR #97 `Repair tagged Outfit FITuition flow`** on branch **`agent/outfit-relevance-notify-closure`**, based on current canonical `main` after PR #96. PR #97 is currently open/unverified; no competing repair branch is authorized.
 
 PR #96 remains the production baseline and its four repaired behaviors stay protected:

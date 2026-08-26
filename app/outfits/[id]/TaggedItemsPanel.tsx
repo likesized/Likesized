@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { reportProductItem } from "@/app/item/[slug]/actions";
 import { addToWishLocker, likeProduct, removeFromWishLocker, unlikeProduct } from "@/app/likelocker/actions";
 import { SwipeDismissImageLightbox } from "@/components/SwipeDismissImageLightbox";
@@ -19,22 +19,23 @@ type FitMeta={category:string;profileReady:boolean;matchingFitReports:number;obj
 export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedItem[];postId:string;signedIn:boolean}){
   const [selectedId,setSelectedId]=useState<string|null>(null);const [gateItem,setGateItem]=useState<TaggedItem|null>(null);const [imageOpen,setImageOpen]=useState(false);const [evidenceOpen,setEvidenceOpen]=useState(false);
   const [fitMeta,setFitMeta]=useState<Record<string,FitMeta>>({});const [fitLoading,setFitLoading]=useState<Record<string,boolean>>({});const [fitErrors,setFitErrors]=useState<Record<string,string>>({});const [fitRetry,setFitRetry]=useState<Record<string,number>>({});
+  const loadedFitMeta=useRef(new Set<string>());
   const [liked,setLiked]=useState<Record<string,boolean>>(()=>Object.fromEntries(items.map((item)=>[item.productId,item.liked])));const [wished,setWished]=useState<Record<string,boolean>>(()=>Object.fromEntries(items.map((item)=>[item.productId,item.wished])));const [likePending,setLikePending]=useState<Record<string,boolean>>({});const [wishPending,setWishPending]=useState<Record<string,boolean>>({});const [actionError,setActionError]=useState("");const [watching,setWatching]=useState<Record<string,boolean>>({});const [watchPending,setWatchPending]=useState<Record<string,boolean>>({});
   const selected=items.find((item)=>item.closetItemId===selectedId)??null;const returnTo=`/outfits/${postId}?tab=tagged`;
   const retryToken=selectedId?(fitRetry[selectedId]??0):0;
 
   useEffect(()=>{
-    if(!selectedId||!signedIn||fitMeta[selectedId])return;
+    if(!selectedId||!signedIn||loadedFitMeta.current.has(selectedId))return;
     const controller=new AbortController();
     setFitLoading((current)=>({...current,[selectedId]:true}));
     setFitErrors((current)=>{const next={...current};delete next[selectedId];return next;});
     void fetch(`/api/outfits/${postId}/tagged-fit?closet_item_id=${encodeURIComponent(selectedId)}`,{cache:"no-store",signal:controller.signal})
       .then(async(response)=>{if(!response.ok){const payload=await response.json().catch(()=>null) as {error?:string}|null;throw new Error(payload?.error||"FITuition evidence could not load.");}return response.json() as Promise<FitMeta>;})
-      .then((payload)=>setFitMeta((current)=>({...current,[selectedId]:payload})))
+      .then((payload)=>{loadedFitMeta.current.add(selectedId);setFitMeta((current)=>({...current,[selectedId]:payload}));})
       .catch((error:unknown)=>{if(controller.signal.aborted)return;setFitErrors((current)=>({...current,[selectedId]:error instanceof Error?error.message:"FITuition evidence could not load."}));})
       .finally(()=>{if(!controller.signal.aborted)setFitLoading((current)=>({...current,[selectedId]:false}));});
     return()=>controller.abort();
-  },[selectedId,signedIn,postId,retryToken,fitMeta]);
+  },[selectedId,signedIn,postId,retryToken]);
 
   useEffect(()=>{
     if(!selectedId||!signedIn)return;
@@ -49,7 +50,7 @@ export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedIt
   useEffect(()=>{function openFromPhoto(event:Event){const closetItemId=(event as CustomEvent<{closetItemId?:string}>).detail?.closetItemId;if(!closetItemId)return;const item=items.find((entry)=>entry.closetItemId===closetItemId);if(!item)return;if(signedIn){setEvidenceOpen(false);setSelectedId(item.closetItemId);}else setGateItem(item);}window.addEventListener("likesized:open-tagged-item",openFromPhoto);return()=>window.removeEventListener("likesized:open-tagged-item",openFromPhoto);},[items,signedIn]);
 
   function openItem(item:TaggedItem){if(!signedIn){setGateItem(item);return;}setEvidenceOpen(false);setActionError("");setSelectedId(item.closetItemId);}
-  function retryFit(item:TaggedItem){setFitMeta((current)=>{const next={...current};delete next[item.closetItemId];return next;});setFitRetry((current)=>({...current,[item.closetItemId]:(current[item.closetItemId]??0)+1}));}
+  function retryFit(item:TaggedItem){loadedFitMeta.current.delete(item.closetItemId);setFitMeta((current)=>{const next={...current};delete next[item.closetItemId];return next;});setFitRetry((current)=>({...current,[item.closetItemId]:(current[item.closetItemId]??0)+1}));}
   async function runLike(item:TaggedItem){if(likePending[item.productId])return;const next=!liked[item.productId];setActionError("");setLiked((current)=>({...current,[item.productId]:next}));setLikePending((current)=>({...current,[item.productId]:true}));const formData=new FormData();formData.set("product_id",item.productId);formData.set("return_to",returnTo);formData.set("stay_open","1");try{await(next?likeProduct:unlikeProduct)(formData);}catch{setLiked((current)=>({...current,[item.productId]:!next}));setActionError("LikeLocker could not update. Try again.");}finally{setLikePending((current)=>({...current,[item.productId]:false}));}}
   async function runWish(item:TaggedItem){if(wishPending[item.productId])return;const next=!wished[item.productId];setActionError("");setWished((current)=>({...current,[item.productId]:next}));setWishPending((current)=>({...current,[item.productId]:true}));const formData=new FormData();formData.set("product_id",item.productId);formData.set("return_to",returnTo);formData.set("stay_open","1");try{await(next?addToWishLocker:removeFromWishLocker)(formData);}catch{setWished((current)=>({...current,[item.productId]:!next}));setActionError("Wishlist could not update. Try again.");}finally{setWishPending((current)=>({...current,[item.productId]:false}));}}
   async function share(item:TaggedItem){const url=new URL(item.href,window.location.origin).toString();try{if(navigator.share)await navigator.share({title:item.label,url});else await navigator.clipboard.writeText(url);}catch{/* cancelled */}}

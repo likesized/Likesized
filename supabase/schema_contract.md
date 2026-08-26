@@ -14,11 +14,11 @@ This file owns current database behavior/privacy plus explicit implementation de
 # Production checkpoint — 2026-08-26
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-Current production application source is PR #93 squash merge **`2568e316fdfb772094cbb23b6e4c19b9a9e1e449`**. Exact tested PR #93 head **`8961cc52df35b6398d9d28befedabe36f4ba0468`** passed full LikeSized CI #971 (`32967512656`), and post-merge CI #972 (`32967732809`) also passed.
+Current production application source is PR #94 squash merge **`15b48373857cd090e418bff942123fe57f013984`**. PR #94 branch head **`e1931c2558622e97c842aaa5aa966b216e1349a5`** reached a READY Vercel preview; the GitHub Actions verification attempt for the repair line did not produce a completed full CI job before the owner explicitly authorized production deployment. This limitation remains recorded rather than retroactively describing an unrun gate as passed.
 
-PR #93 Vercel production deployment **`dpl_G3613fLU6EKvKG42Xg1tHGyU2wuo`** is READY for merge `2568e316fdfb772094cbb23b6e4c19b9a9e1e449` and is the current production application checkpoint.
+PR #94 Vercel production deployment **`dpl_BTxsXJxMW3NgPo5e6XBmcbJ14yz3`** is READY for merge `15b48373857cd090e418bff942123fe57f013984`, serves `likesized.com`, returned HTTP 200 on the public homepage and a published Outfit route, and had no error/fatal runtime log entries in the checked post-deploy window.
 
-PRs #88–#93 advanced application/database behavior beyond the stale PR #87 checkpoint previously recorded here. Applied migration history remains immutable; no current behavior should be described as branch-only merely because the canonical contract had not yet been reconciled.
+PRs #88–#94 advanced application/database behavior beyond the earlier PR #87 checkpoint. Applied migration history remains immutable; no current behavior should be described as branch-only merely because an older canonical contract had not yet been reconciled.
 
 The established Roadmap 12 foundation migrations remain immutable production history:
 - `20260824133400_add_outfit_comment_moderation_target.sql` → production `20260824164156 add_outfit_comment_moderation_target`;
@@ -51,7 +51,7 @@ Hosted verification across these production batches confirms, among other bounda
 - `public.get_public_outfit_tagged_items(uuid)` and `public.get_public_outfit_hotspots(uuid)` are security-definer minimum-field public projections available to `anon` and `authenticated` callers for published Outfit identification;
 - `public.get_outfit_comments_sorted_page(uuid,text,bigint,timestamptz,uuid,integer)` is the current sorted/paginated comment projection, with **Top** and **Newest** behavior described below.
 
-Draft PR #94 (`agent/outfit-audit-regression-repair`) currently introduces no new migration. Its tagged-FITuition work changes application query shape/loading behavior, not the persisted evidence model.
+PR #94 introduced no new migration. Its tagged-FITuition work changed application query shape/loading behavior, not the persisted evidence model. The current `agent/outfit-audit-continuation` line is also application-only unless an ordered migration is deliberately added later.
 
 # 1. Privacy / body-state foundations — LOCKED
 - `profiles` stores member identity; exact Fit Profile/body measurements are not stored there.
@@ -231,7 +231,7 @@ Twin designation is calculated from current Tops and Bottoms regional Match qual
 
 Follow alone does not enable person notifications. Person notifications and Product one-shot Match notifications remain separate from Following, Like and Wish state.
 
-# 13. LikeLocker / Wish Locker / Outfit foundations — ROADMAP 12 PRODUCTION THROUGH PR #93
+# 13. LikeLocker / Wish Locker / Outfit foundations — ROADMAP 12 PRODUCTION THROUGH PR #94
 Product likes, Outfit likes, comment likes and Wish Locker purchase intent are distinct states. Outfits reuse canonical Closet/Product/taxonomy foundations; no second garment or shopping system exists.
 
 Core Outfit schema:
@@ -309,10 +309,10 @@ Repeated reports from the same **person + Product + tracked fit variation** repr
 Before Product Detail consumes `exact_variant`, recommendation/evidence/Admin behavior must consume `GARMENT_VARIATION_DEFINITION_MAP`. Size and Color must never become exact-variation key fields. Body Match remains body similarity and must not be collapsed with Fit Result into a synthetic fit percentage.
 
 # 15. Current implementation debt / open verification
-- Production application is live through PR #93 merge **`2568e316fdfb772094cbb23b6e4c19b9a9e1e449`**; exact tested PR head **`8961cc52df35b6398d9d28befedabe36f4ba0468`** passed full CI #971 (`32967512656`) and post-merge CI #972 (`32967732809`) passed.
+- Production application is live through PR #94 merge **`15b48373857cd090e418bff942123fe57f013984`** and Vercel production **`dpl_BTxsXJxMW3NgPo5e6XBmcbJ14yz3`**. The owner explicitly authorized that deployment before a completed full GitHub CI run existed for the PR #94 head; do not rewrite that limitation as a passing CI gate.
 - `profile_locations` is production-applied at hosted migration **`20260825192738 private_profile_location_metadata`**; current application setup/settings require both City and State while the table retains pair-null compatibility for historical/compatibility rows.
 - Production also includes `20260826001512 username_change_cooldown`, `20260826001531 exact_variation_evidence_watches`, `20260826020651 atomic_outfit_cover_switch`, and `20260826020710 preserve_tracked_variation_recommendation_evidence`.
-- Draft PR #94 introduces no migration; verify its application-only query/loading/interaction changes through the full canonical gate before any authorized merge.
+- PR #94 and the current Outfit audit continuation add no database migration so far; the current repair scope should remain application-only unless a real persisted-contract change is required.
 - Owner live re-audit remains the Roadmap 12 gate; Roadmap 13 full Style Feed behavior must not be treated as unblocked until the owner finishes the New Outfit audit.
 - Roadmap 13A canonical Product-image scoring remains planned. No scoring schema is production truth until a later ordered migration is designed, verified and applied.
 - The legacy physical `closet_items.visibility` column remains intentionally in immutable replay history and locked to compatibility `shared`; broader Closet lifecycle/mutation rules remain future audit work.

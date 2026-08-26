@@ -65,7 +65,7 @@ PR #96 **Close current Outfit owner-audit failures** restored the verified produ
 - owner explicitly authorized the frozen batch for production with **“fix it all and deploy”** on 2026-08-26;
 - exact-head LikeSized CI **#994 / `33005686076`** completed successfully through canonical integrity, exact dependency install, typecheck, the full application safeguard suite, production build, complete fresh migration replay and canonical database behavior/privacy tests;
 - squash merge: **`87ffbdcb3ed9d1849d1dc1e28d58c9ec18586ea7`**;
-- resulting `main` push LikeSized CI **#995 / `33005905357`** also completed successfully through the same full verification chain;
+- resulting `main` push LikeSized CI **#995 / `33005905387`** also completed successfully through the same full verification chain;
 - local ordered migration **`20260826190000_outfit_tag_consistency.sql`** was applied to production as hosted **`20260826193527 outfit_tag_consistency`**;
 - Vercel production **`dpl_C6UoK4zTr8bQA13n6SYr3uymRQaP`** reached READY for exact merge `87ffbdcb3ed9d1849d1dc1e28d58c9ec18586ea7` with `likesized.com` assigned and no alias error;
 - live checks returned HTTP 200 for the homepage and published Outfit `/outfits/6bab9c98-b056-4836-a581-5653c46a85b3`; the Outfit response identified deployment `dpl_C6UoK4zTr8bQA13n6SYr3uymRQaP` and rendered the explicit Previous/Next gallery controls;

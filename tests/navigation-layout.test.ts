@@ -49,15 +49,15 @@ test("authenticated member navigation does not eagerly prefetch every expensive 
 test("shared member menu keeps close and compact layout safeguards", () => {
   assert.match(menu, /usePathname/);
   assert.match(menu, /pointerdown/);
-  assert.match(css, /\.memberNav \{[^}]*display:flex/);
-  assert.match(css, /\.menuPanel/);
-  assert.match(css, /\.sectionLabel/);
+  assert.match(css, /\.memberNav\{display:flex/);
+  assert.match(css, /\.menuPanel\{[^}]*max-height:calc\(100dvh - 86px - env\(safe-area-inset-bottom\)\)/);
+  assert.match(css, /\.sectionLabel\{/);
 });
 
 test("Fit Profile gives username rules up front and keeps the mobile update hero compact", () => {
   assert.match(fitProfileHeroCss, /3–32 characters\. Letters, numbers, and underscores only — no spaces\./);
   assert.match(fitProfilePage, /heroStyles\.revisitShell/);
-  assert.match(fitProfileHeroCss, /\.revisitShell \{[\s\S]*?min-height: 0;[\s\S]*?grid-template-rows: auto auto;[\s\S]*?align-content: start;/);
+  assert.match(fitProfileHeroCss, /\.revisitShell\{min-height:0;grid-template-rows:auto auto;align-content:start\}/);
 });
 
 test("initial Fit Profile collects required private city/state once and Settings owns later edits", () => {

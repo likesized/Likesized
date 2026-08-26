@@ -34,15 +34,15 @@ test("Outfit photos support optional 200-character captions without permanently 
   assert.match(gallery,/current\.caption&&showCaption/);
 });
 
-test("Wish Locker uses one deterministic bag-and-heart SVG and never renders a count",()=>{
+test("Wishlist uses one deterministic bag-and-heart SVG and never renders a count",()=>{
   assert.match(tagged,/UniversalActionButton action="wishLocker"/);
   assert.match(universalActions,/function WishLockerIcon/);
   assert.match(universalActions,/viewBox="0 0 24 24"/);
   assert.match(universalActions,/fill=\{active\?"currentColor":"none"\}/);
-  assert.match(universalActions,/wishLocker:\s*\{\s*label:\s*"Wish Locker"/);
-  assert.match(universalActions,/inactiveAria:\s*"Add to Wish Locker"/);
-  assert.match(universalActions,/activeAria:\s*"Remove from Wish Locker"/);
-  assert.match(universalActions,/const visibleCount = action === "wishLocker" \? undefined : count;/);
+  assert.match(universalActions,/wishLocker:\s*\{\s*label:\s*"Wishlist"/);
+  assert.match(universalActions,/inactiveAria:\s*"Add to Wishlist"/);
+  assert.match(universalActions,/activeAria:\s*"Remove from Wishlist"/);
+  assert.match(universalActions,/const visibleCount\s*=\s*action\s*===?\s*"wishLocker"\s*\?\s*undefined\s*:\s*count/);
   assert.doesNotMatch(universalActions,/🛍/);
   assert.doesNotMatch(tagged,/action="wishLocker"[^>]*count=/);
 });
@@ -57,9 +57,9 @@ test("creator quick view uses a clean hierarchy instead of table-grid chrome",()
   assert.doesNotMatch(creatorQuickViewCss,/\.stats>div\{[^}]*border/);
 });
 
-test("Tagged garment quick view has one clear garment-page destination",()=>{
+test("Tagged garment quick view has one clear detailed garment report destination",()=>{
   assert.doesNotMatch(tagged,/See fit evidence/);
-  assert.match(tagged,/>View Garment →<\/Link>/);
+  assert.match(tagged,/>View Detailed Garment Report →<\/Link>/);
   assert.equal((tagged.match(/href=\{selected\.href\}/g)??[]).length,1);
 });
 

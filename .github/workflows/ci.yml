@@ -17,97 +17,71 @@ jobs:
     steps:
       - name: Check out canonical source
         uses: actions/checkout@v4
-
       - name: Use Node 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - name: Canonical integrity / drift guard
         run: npm run canonical:check
-
       - name: Install exact dependencies
         run: npm ci
-
       - name: Typecheck
         run: npm run typecheck
-
       - name: Recommendation confidence calibration
         run: node --test tests/recommendation-confidence.test.ts
-
       - name: Fit Match audit UI semantics
         if: ${{ hashFiles('tests/fit-match-audit-ui.test.ts') != '' }}
         run: node --test tests/fit-match-audit-ui.test.ts
-
       - name: Outfit photo pipeline safeguards
         run: node --test tests/outfit-photo-pipeline.test.ts
-
       - name: New Outfit V1 safeguards
         run: node --test tests/new-outfit-v1.test.ts
-
       - name: Outfit polish batch safeguards
         run: node --test tests/outfit-polish-batch.test.ts
-
       - name: Outfit interaction and Fit Report photo safeguards
         run: node --test tests/outfit-interaction-photo-requirement.test.ts
-
       - name: Tagged-item quick-view safeguards
         run: node --test tests/outfit-tagged-quickview-regression.test.ts
-
       - name: Tracked Outfit variation evidence safeguards
         run: node --test tests/outfit-variation-evidence.test.ts
-
       - name: Outfit live-audit repair safeguards
         run: node --test tests/outfit-live-audit-repairs.test.ts
-
       - name: Comment sheet and global quick-view safeguards
         run: node --test tests/comments-global-quickview.test.ts
-
       - name: Public homepage content safeguards
         run: node --test tests/public-homepage-content.test.ts
-
       - name: Grouped navigation safeguards
         run: node --test tests/navigation-layout.test.ts
-
       - name: Settings profile consolidation safeguards
         run: node --test tests/settings-profile-consolidation.test.ts
-
+      - name: Canonical UI system safeguards
+        run: node --test tests/canonical-ui-system.test.ts
       - name: Explore, My Circle, and LikeLocker safeguards
         run: node --test tests/explore-circle-likelocker.test.ts
-
       - name: Controlled Fit Report and community catalog safeguards
         run: node --test tests/fit-report-taxonomy.test.ts
-
       - name: Tracked variation-definition safeguards
         run: node --test tests/variation-definition-map.test.ts
-
       - name: Fit Report UI regression safeguards
         run: node --test tests/fit-report-ui-regressions.test.ts
-
       - name: Sleepwear and purchase-context safeguards
         run: node --test tests/sleepwear-purchase-context.test.ts
-
       - name: Moderation and garment-confirmation safeguards
         run: node --test tests/moderation-foundation.test.ts
-
       - name: Build
         run: npm run build
-
       - name: Install pinned Supabase CLI
         uses: supabase/setup-cli@v2
         with:
           version: 2.84.2
           github-token: ${{ github.token }}
-
       - name: Initialize disposable local Supabase configuration
         run: |
           if [ ! -f supabase/config.toml ]; then
             supabase init
           fi
-
       - name: Replay all canonical migrations on a fresh local database
         run: supabase db start
-
       - name: Run canonical database behavior tests
         run: supabase test db --db-url postgresql://postgres:postgres@127.0.0.1:54322/postgres

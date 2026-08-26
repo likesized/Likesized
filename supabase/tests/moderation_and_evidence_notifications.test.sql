@@ -17,7 +17,7 @@ select ok(private.is_admin('fb100000-0000-4000-8000-000000000001'),'First accoun
 select ok(not private.is_admin('fb100000-0000-4000-8000-000000000002'),'Later accounts are not auto-promoted');
 
 -- Give watcher and reporting member enough identical Tops measurements for the one-shot
--- Product watch to qualify at the current 75%+ historical garment Match boundary.
+-- exact-variation watch to clear the current strong 85% Body Match threshold.
 set local role authenticated;
 set local request.jwt.claim.sub='fb100000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
@@ -36,8 +36,8 @@ values('fb120000-0000-4000-8000-000000000001','fb110000-0000-4000-8000-000000000
 set local role authenticated;
 set local request.jwt.claim.sub='fb100000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
-insert into public.product_evidence_notifications(user_id,product_id)
-values('fb100000-0000-4000-8000-000000000001','fb120000-0000-4000-8000-000000000001');
+insert into public.product_evidence_notifications(user_id,product_id,objective_variant_key,minimum_match_score)
+values('fb100000-0000-4000-8000-000000000001','fb120000-0000-4000-8000-000000000001','',85);
 reset role;
 
 set local role authenticated;
@@ -46,8 +46,8 @@ set local request.jwt.claim.role='authenticated';
 select is((select count(*) from public.product_evidence_notifications),0::bigint,'Another member cannot read evidence watches');
 insert into public.closet_items(id,user_id,product_id,size_label,visibility,wears_count)
 values('fb130000-0000-4000-8000-000000000001','fb100000-0000-4000-8000-000000000002','fb120000-0000-4000-8000-000000000001','M','shared',0);
-insert into public.fit_reports(id,user_id,closet_item_id,product_id,fit_profile_version_id,size_label,fit)
-select 'fb140000-0000-4000-8000-000000000001','fb100000-0000-4000-8000-000000000002','fb130000-0000-4000-8000-000000000001','fb120000-0000-4000-8000-000000000001',current_version_id,'M','just_right'
+insert into public.fit_reports(id,user_id,closet_item_id,product_id,fit_profile_version_id,size_label,fit,objective_variant_key)
+select 'fb140000-0000-4000-8000-000000000001','fb100000-0000-4000-8000-000000000002','fb130000-0000-4000-8000-000000000001','fb120000-0000-4000-8000-000000000001',current_version_id,'M','just_right',''
 from public.fit_profiles where user_id='fb100000-0000-4000-8000-000000000002';
 insert into public.outfit_posts(id,user_id,caption,photo_url)
 values('fb150000-0000-4000-8000-000000000001','fb100000-0000-4000-8000-000000000002','Reported outfit','fb100000-0000-4000-8000-000000000002/fb150000-0000-4000-8000-000000000001/display.webp');
@@ -56,7 +56,7 @@ reset role;
 set local role authenticated;
 set local request.jwt.claim.sub='fb100000-0000-4000-8000-000000000001';
 set local request.jwt.claim.role='authenticated';
-select ok((select last_notified_at is not null and active=false and matched_fit_report_id='fb140000-0000-4000-8000-000000000001'::uuid from public.product_evidence_notifications where product_id='fb120000-0000-4000-8000-000000000001'),'A future 75%+ matched Fit Report fires the one-shot Product notification and turns the watch off');
+select ok((select last_notified_at is not null and active=false and matched_fit_report_id='fb140000-0000-4000-8000-000000000001'::uuid from public.product_evidence_notifications where product_id='fb120000-0000-4000-8000-000000000001' and objective_variant_key=''),'A future 85%+ exact-variation Fit Report fires the one-shot personalized notification and turns the watch off');
 select ok(public.report_content('outfit_post','fb150000-0000-4000-8000-000000000001','spam_or_scam',null) is not null,'Member can report supported shared photo content');
 select is((select count(*) from public.content_reports where target_id='fb150000-0000-4000-8000-000000000001'),1::bigint,'Reporter can read the submitted report');
 reset role;

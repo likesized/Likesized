@@ -8,13 +8,15 @@ const actions=fs.readFileSync("app/settings/actions.ts","utf8");
 const css=fs.readFileSync("app/settings/settings.module.css","utf8");
 const location=fs.readFileSync("lib/profile-location.ts","utf8");
 
-test("Settings uses one consolidated profile editor",()=>{
+test("Settings uses one consolidated profile editor with independent username changes",()=>{
   assert.match(page,/ProfileSettingsForm/);
   assert.doesNotMatch(page,/ProfileIdentityForm|ProfileLocationForm|ProfilePhotoForm|UsernameSettingsForm/);
   assert.match(form,/Edit My Profile/);
   assert.match(form,/Edit Profile/);
   assert.match(form,/Save Changes/);
-  assert.match(form,/Username[\s\S]*Locked/);
+  assert.match(form,/Change username/);
+  assert.match(form,/can be changed once every 30 days/);
+  assert.doesNotMatch(form,/>Locked</);
 });
 
 test("City and state are required private profile fields",()=>{
@@ -25,14 +27,16 @@ test("City and state are required private profile fields",()=>{
   assert.match(location,/if \(!city \|\| !stateInput/);
 });
 
-test("Profile settings save through one canonical action",()=>{
+test("Profile fields save together while username keeps its canonical cooldown action",()=>{
   assert.match(actions,/saveUnifiedProfileSettings/);
-  assert.doesNotMatch(actions,/saveUsernameSettings|saveProfileLocationSettings|saveFitCommunitySettings|saveProfilePhoto|removeProfilePhoto/);
+  assert.match(actions,/saveUsernameSettings/);
+  assert.match(actions,/get_username_change_status/);
+  assert.doesNotMatch(actions,/saveProfileLocationSettings|saveFitCommunitySettings|saveProfilePhoto|removeProfilePhoto/);
 });
 
 test("Settings presentation stays restrained",()=>{
-  assert.match(css,/\.profileCard[\s\S]*border-radius: 16px/);
-  assert.match(css,/\.settingsHeader h1[\s\S]*font-size: clamp\(28px, 4vw, 38px\)/);
-  assert.doesNotMatch(css,/border-radius:\s*24px/);
-  assert.doesNotMatch(css,/padding:\s*30px/);
+  assert.match(css,/\.profileCard\{display:grid;padding:20px;border:1px solid var\(--line\);border-radius:var\(--radius-md\)/);
+  assert.match(css,/\.settingsHeader h1\{[^}]*font-size:clamp\(28px,4vw,36px\)/);
+  assert.doesNotMatch(css,/border-radius:24px/);
+  assert.doesNotMatch(css,/\.profileCard\{[^}]*padding:30px/);
 });

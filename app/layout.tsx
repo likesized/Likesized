@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { GlobalDialogImageViewer } from "@/components/GlobalDialogImageViewer";
 import { GlobalEntityQuickViewLayer } from "@/components/GlobalEntityQuickViewLayer";
 import { Header } from "@/components/Header";
 
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Header />
         {children}
         <GlobalEntityQuickViewLayer />
+        <GlobalDialogImageViewer />
       </body>
     </html>
   );

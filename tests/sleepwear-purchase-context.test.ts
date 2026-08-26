@@ -9,18 +9,7 @@ const actions = readFileSync("app/closet/actions.ts", "utf8");
 const styles = readFileSync("app/closet/add/fitReport.module.css", "utf8");
 const purchaseMigration = readFileSync("supabase/migrations/20260823130100_purchase_context_and_sleepwear_taxonomy.sql", "utf8");
 
-const expectedSleepwear = [
-  "pajama_pants",
-  "pajama_shorts",
-  "pajama_set",
-  "nightgown",
-  "robe",
-  "chemise",
-  "babydoll",
-  "teddy",
-  "corset_bustier",
-  "costume_lingerie",
-];
+const expectedSleepwear = ["pajama_pants","pajama_shorts","pajama_set","nightgown","robe","chemise","babydoll","teddy","corset_bustier","costume_lingerie"];
 
 test("Sleepwear & Lingerie is a first-class controlled intake category", () => {
   assert.ok(GARMENT_CATEGORIES.some((category) => category.value === "sleepwear_lingerie" && category.label === "Sleepwear & Lingerie"));
@@ -28,9 +17,7 @@ test("Sleepwear & Lingerie is a first-class controlled intake category", () => {
   assert.deepEqual(types.map((garment) => garment.key), expectedSleepwear);
   assert.ok(GARMENT_TYPES.some((garment) => garment.key === "sweatpants" && garment.category === "bottoms"));
   assert.ok(!GARMENT_TYPES.some((garment) => /sleep shirt/i.test(garment.label)));
-  for (const garment of types) {
-    assert.ok(garment.questions.length > 0 && garment.questions.length <= 4, `${garment.label} keeps the controlled four-question maximum`);
-  }
+  for (const garment of types) assert.ok(garment.questions.length > 0 && garment.questions.length <= 4, `${garment.label} keeps the controlled four-question maximum`);
   assert.match(catalog, /<option value="not_sure">Not sure<\/option>/);
 });
 
@@ -64,7 +51,7 @@ test("purchase controls and optional spacing remain constrained", () => {
   assert.match(catalog, /<option value="gift">Received as a Gift<\/option>/);
   assert.match(catalog, /PURCHASE_MONTHS/);
   assert.match(catalog, /PURCHASE_YEARS/);
-  assert.match(styles, /\.optionalDetailsBody :global\(\.privacyNote\) \{\s*margin-top: 0;/);
+  assert.match(styles, /\.optionalDetailsBody :global\(\.privacyNote\)\{margin-top:0\}/);
 });
 
 test("signed-in home is My Circle and public FAQ explains item-level evidence", () => {

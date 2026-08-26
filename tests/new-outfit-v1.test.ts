@@ -157,7 +157,7 @@ test("universal Outfit action row is LikeLocker, Share, Report and stays separat
 
 test("Tagged Items preview uses universal garment actions and full-size swipe-dismiss imagery",()=>{
  assert.match(tagged,/setSelectedId/);
- assert.match(tagged,/View Garment →/);
+ assert.match(tagged,/View Detailed Garment Report →/);
  assert.doesNotMatch(tagged,/See fit evidence/);
  assert.match(tagged,/action="likeLocker"/);
  assert.match(tagged,/action="wishLocker"/);

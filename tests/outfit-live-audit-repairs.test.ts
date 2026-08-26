@@ -114,7 +114,7 @@ test("opened gallery is one compact active image and photo hotspots open the one
  assert.match(gallery,/ArrowLeft/);
  assert.doesNotMatch(gallery,/galleryThumb|previewThumb/);
  assert.match(detailCss,/\.galleryMedia\{position:relative;display:inline-block/);
- assert.match(detailCss,/max-height:min\(66vh,580px\)/);
+ assert.match(detailCss,/max-height:min\(68dvh,620px\)/);
 });
 
 test("opened Outfit hierarchy is compact header, photo-attached actions, then three exclusive tabs",()=>{
@@ -130,7 +130,7 @@ test("opened Outfit hierarchy is compact header, photo-attached actions, then th
  assert.match(tabs,/Tagged Items/);
  assert.doesNotMatch(detail,/OUTFIT TITLE|OUTFIT TAGS|OUTFIT DESCRIPTION/);
  assert.doesNotMatch(detail,/engagementCounts/);
- assert.match(detailCss,/\.openOutfit\{width:min\(100%,680px\)/);
+ assert.match(detailCss,/\.openOutfit\{width:min\(100%,720px\)/);
  assert.match(detailCss,/\.outfitActionBar\{display:flex;align-items:center;justify-content:flex-end/);
 });
 
@@ -150,38 +150,40 @@ test("Outfit social controls stay with media, counts stay with actions, owners g
  assert.match(engagement,/sessionStorage\.setItem\(key,"1"\)/);
 });
 
-test("Matching Fit Reports means useful personalized exact-item evidence and includes the viewer through Closet history",()=>{
+test("Matching Fit Reports means high personalized exact-variation evidence while Closet history still informs FITuition",()=>{
  assert.match(tagged,/Matching Fit Reports:/);
- assert.match(tagged,/itemMeta\?\.category/);
+ assert.match(tagged,/meta\?\.category/);
  assert.match(tagged,/item\.imageUrl/);
- assert.doesNotMatch(tagged,/Just right|size worn|Fit Result/);
+ assert.doesNotMatch(tagged,/Just right|size worn|Sizes tried/);
  assert.doesNotMatch(taggedFit,/get_product_fit_summary/);
- assert.match(taggedFit,/usefulExact/);
- assert.match(taggedFit,/historical_match_score>=50/);
+ assert.match(taggedFit,/relevantExact/);
+ assert.match(taggedFit,/historical_match_score>=QUICK_VIEW_STRONG_MATCH_THRESHOLD/);
  assert.match(taggedFit,/get_fit_report_snapshot_matches/);
  assert.match(taggedFit,/ownHistory/);
  assert.match(taggedFit,/report\.product_id===product\.id/);
 });
 
-test("Tagged quick view uses useful fit context, compact actions, and a logged-out account gate",()=>{
+test("Tagged quick view uses high exact-variation evidence, compact actions, and a logged-out account gate",()=>{
  assert.match(tagged,/Body Match/);
- assert.match(tagged,/FITuition isn’t confident enough yet/);
- assert.match(tagged,/not enough strong evidence to recommend a size yet/);
- assert.match(tagged,/FITuition needs more evidence/);
- assert.match(tagged,/We don’t have enough relevant Fit Reports to recommend a size yet/);
+ assert.match(tagged,/I’m not confident enough to recommend a size yet/);
+ assert.match(tagged,/for this exact variation from people close to your measurements/);
+ assert.match(tagged,/I don’t have Fit Reports from people close enough to your measurements yet/);
+ assert.match(tagged,/Notify me when Fit Reports from people close to my measurements are posted/);
+ assert.match(tagged,/See Relevant Fit Reports →/);
+ assert.match(tagged,/View Detailed Garment Report →/);
  assert.match(tagged,/UniversalActionButton action="likeLocker"/);
  assert.match(tagged,/UniversalActionButton action="wishLocker"/);
  assert.match(tagged,/UniversalActionLink action="shop"/);
  assert.match(tagged,/UniversalActionButton action="share"/);
  assert.match(tagged,/UniversalActionSummary action="report"/);
- assert.match(universalActions,/wishLocker:\s*\{[^}]*label:\s*"Wish Locker"/);
+ assert.match(universalActions,/wishLocker:\s*\{[^}]*label:\s*"Wishlist"/);
  assert.match(tagged,/stay_open","1"/);
  assert.match(tagged,/Create account/);
- assert.match(tagged,/Sign in to see your fit matches/);
+ assert.match(tagged,/sign in to see Matching Fit Reports, Body Match, and FITuition/);
  assert.match(lockerActions,/stayOpen/);
  assert.match(lockerActions,/if \(stayOpen\) return/);
  assert.match(taggedFit,/recommendSize/);
- assert.match(taggedFit,/recommendation\.confidence>=45/);
+ assert.match(taggedFit,/recommendation&&recommendation\.confidence>=45&&relevantExact\.length>0/);
 });
 
 test("comments default to Top with Newest available and use local API mutations",()=>{
@@ -207,11 +209,11 @@ test("comments default to Top with Newest available and use local API mutations"
  assert.match(commentThreadCss,/\.composer textarea \{[\s\S]*font-size: 16px/);
 });
 
-test("compact controls stay compact without shrinking every page shell",()=>{
- assert.match(globals,/\.primaryButton, \.secondaryButton \{[^}]*padding:9px 14px/);
- assert.match(globals,/input, select, textarea \{[^}]*padding:10px 12px/);
- assert.match(globals,/\.section, \.pageShell \{ padding:80px 7vw/);
- assert.doesNotMatch(globals,/\.pageShell \{ padding:52px 7vw/);
+test("compact controls stay compact while app page spacing remains independently restrained",()=>{
+ assert.match(globals,/\.primaryButton,\.secondaryButton\{min-height:40px;padding:8px 14px/);
+ assert.match(globals,/input,select,textarea\{min-width:0;width:100%;min-height:var\(--control-height\);padding:9px 11px/);
+ assert.match(globals,/\.section\{padding:72px max\(20px,calc\(\(100vw - var\(--page-max\)\)\/2\)\)\}/);
+ assert.match(globals,/\.pageShell\{width:min\(var\(--page-max\),calc\(100% - 40px\)\);min-height:calc\(100vh - 64px\);margin:0 auto;padding:36px 0 64px\}/);
 });
 
 test("creator tools expose only incremental analytics and destructive confirmation",()=>{

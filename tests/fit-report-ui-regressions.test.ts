@@ -21,8 +21,8 @@ test("Item suggestions show cached results immediately while the brief network s
   assert.match(catalog, /itemSuggestionCache\.current\.set\(item\.id, item\)/);
   assert.match(catalog, /brief=1/);
   assert.match(catalog, /showItemSuggestions/);
-  assert.match(fitCss, /\.itemSuggestionDropdown\s*\{[\s\S]*?position: absolute;/);
-  assert.match(fitCss, /top: calc\(100% \+ 4px\);/);
+  assert.match(fitCss, /\.itemSuggestionDropdown\{[^}]*position:absolute/);
+  assert.match(fitCss, /top:calc\(100% \+ 4px\)/);
 });
 
 test("known-item Change controls invalidate matched identity instead of editing inside the old match", () => {
@@ -31,7 +31,7 @@ test("known-item Change controls invalidate matched identity instead of editing 
   assert.match(catalog, /function changeMatchedItem\(\) \{[\s\S]*?clearMatchedProductIdentity\(true\);[\s\S]*?itemNameInput\.current\?\.focus\(\)/);
   assert.match(catalog, /clearMatchedProductIdentity\(keepBrand: boolean\)[\s\S]*?setProduct\(null\);[\s\S]*?setItemName\(""\);[\s\S]*?setCategory\(""\);[\s\S]*?setType\(""\);[\s\S]*?setAnswers\(\{\}\);/);
   assert.doesNotMatch(catalog, />Change this<\/button>/);
-  assert.match(fitCss, /\.changeThis\s*\{[\s\S]*?white-space: nowrap;/);
+  assert.match(fitCss, /\.changeThis\{[^}]*white-space:nowrap/);
 });
 
 test("rejected barcode-resolved identity cannot silently reattach when Brand or Item no longer agrees", () => {
@@ -46,13 +46,13 @@ test("Category and garment type use one clearly shared Change control", () => {
   assert.match(catalog, /className=\{styles\.categoryTypeGroup\}/);
   assert.match(catalog, />Change category \/ type<\/button>/);
   assert.doesNotMatch(catalog, /<div className=\{styles\.editableField\}>\s*<label>Specific garment type/);
-  assert.match(fitCss, /\.categoryTypeGroup\s*\{[\s\S]*?position: relative;[\s\S]*?display: grid;/);
+  assert.match(fitCss, /\.categoryTypeGroup\{[^}]*position:relative;display:grid/);
 });
 
 test("desktop single-field controls are capped while grouped sections keep the wider form", () => {
-  assert.match(fitCss, /\.form > label,[\s\S]*?\.form > :global\(\.garmentSizeFields\),[\s\S]*?\.catalogDetails > label,[\s\S]*?\.categoryTypeGroup,[\s\S]*?\.compactTagEvidence\s*\{\s*width: min\(100%, 680px\);/);
-  assert.match(fitCss, /\.form\s*\{[\s\S]*?max-width: 920px;/);
-  assert.doesNotMatch(fitCss, /\.optionalDetails\s*\{[\s\S]*?max-width: 680px;/);
+  assert.match(fitCss, /\.form>label,\.form>:global\(\.garmentSizeFields\),\.catalogDetails>label,\.categoryTypeGroup,\.compactTagEvidence\{width:min\(100%,680px\)\}/);
+  assert.match(fitCss, /\.form\{[^}]*max-width:860px/);
+  assert.doesNotMatch(fitCss, /\.optionalDetails\{[^}]*max-width:680px/);
 });
 
 test("unmatched Fit Report details use one standard guidance message", () => {
@@ -66,22 +66,22 @@ test("manual item uncertainty is prominent and returns whenever no Product is ma
   assert.match(catalog, /\{!product \? <label className=\{styles\.uncertaintyCheck\}>/);
   assert.doesNotMatch(catalog, /I’m not completely sure this is the correct item\/style name/);
   assert.doesNotMatch(catalog, /Enter the specific item, style, or model shown on the garment/);
-  assert.match(fitCss, /\.uncertaintyCheck\s*\{[\s\S]*?padding: 12px 14px;[\s\S]*?border: 1px solid var\(--line\);/);
+  assert.match(fitCss, /\.uncertaintyCheck\{[^}]*padding:10px 12px;[^}]*border:1px solid var\(--line\)/);
 });
 
 test("Fit Report opens with approved barcode and tag-photo choices plus smaller manual fallback", () => {
   const startIndex = catalog.indexOf('if (step === "start")');
   const scanIndex = catalog.indexOf('if (step === "scan")');
   const start = catalog.slice(startIndex, scanIndex);
-
   assert.match(start, />Identify your item</);
   assert.match(start, /Scan the barcode or add a photo of the tag so we can verify the exact item\./);
   assert.match(start, />Scan barcode<\/button>/);
   assert.match(start, />Add tag photo<\/button>/);
   assert.match(start, /Tags missing\? Enter item manually →/);
   assert.match(start, /productLabelPhotoInput\.current\?\.click\(\)/);
-  assert.match(fitCss, /\.identificationActions\s*\{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
-  assert.match(fitCss, /\.manualFallback\s*\{[\s\S]*?background: transparent;[\s\S]*?font-size: 13px;/);
+  assert.match(fitCss, /\.identificationActions\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(fitCss, /\.manualFallback\{[^}]*background:transparent;[^}]*font-size:12px/);
+  assert.match(fitCss, /@media\(max-width:620px\)\{[\s\S]*?\.identificationActions\{grid-template-columns:1fr\}/);
 });
 
 test("Tag-photo start uses the one canonical label evidence input and carries it into details", () => {
@@ -90,7 +90,7 @@ test("Tag-photo start uses the one canonical label evidence input and carries it
   assert.match(catalog, /if \(step === "start" && nextName\) \{[\s\S]*?setIntakeSource\("tag_photo"\);[\s\S]*?setStep\("details"\);/);
   assert.match(catalog, /const showCompactTagUpload = intakeSource !== "tag_photo";/);
   assert.match(catalog, /\{showCompactTagUpload \? <div className=\{styles\.compactTagEvidence\}>/);
-  assert.match(fitCss, /\.compactTagEvidence\s*\{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto;[\s\S]*?padding: 10px 12px;/);
+  assert.match(fitCss, /\.compactTagEvidence\{[^}]*grid-template-columns:minmax\(0,1fr\) auto;[^}]*padding:10px 12px/);
   assert.doesNotMatch(catalog, /<div className=\{styles\.photoEvidenceCard\}>\s*<strong>Product Label \/ Tag Photo/);
 });
 
@@ -110,21 +110,21 @@ test("uncertain identity helper keeps the approved copy, aligns Retail Link opti
   assert.match(catalog, /<small role="status">Photo added: \{productPhotoName\}<\/small>/);
   assert.doesNotMatch(catalog, /Anything you already attached stays with this item/);
   assert.match(catalog, /productLabelPhotoName \? styles\.identityEvidenceActionsSingle : ""/);
-  assert.match(fitCss, /\.identityEvidenceActionsSingle\s*\{\s*grid-template-columns: 1fr;/);
+  assert.match(fitCss, /\.identityEvidenceActionsSingle\{grid-template-columns:1fr\}/);
 });
 
-test("uncertainty modal heading and spacing are locally constrained", () => {
-  assert.match(fitCss, /\.identityHelpCard\s*\{[\s\S]*?padding: 24px;/);
-  assert.match(fitCss, /\.identityHelpCard h2\s*\{[\s\S]*?font-size: 30px;[\s\S]*?line-height: 1\.08;/);
-  assert.match(fitCss, /\.identityHelpCard > p\s*\{[\s\S]*?margin: 0 0 16px;/);
-  assert.match(fitCss, /@media \(max-width: 640px\)[\s\S]*?\.identityHelpCard h2\s*\{[\s\S]*?font-size: 26px;/);
+test("uncertainty modal keeps a compact locally owned overlay/card", () => {
+  assert.match(fitCss, /\.successOverlay,\.reviewOverlay\{position:fixed;inset:0;z-index:180;display:grid;place-items:center/);
+  assert.match(fitCss, /\.identityHelpCard\{[^}]*width:min\(100%,560px\);[^}]*padding:18px/);
+  assert.match(fitCss, /\.identityHelpCard h2\{[^}]*font-size:22px;[^}]*line-height:1\.12/);
+  assert.match(fitCss, /\.identityHelpCard>p\{[^}]*margin:0 0 14px/);
+  assert.match(fitCss, /@media\(max-width:620px\)[\s\S]*?\.identityHelpCard h2\{font-size:20px\}/);
 });
 
 test("Product Photo stays in the primary Photos section after the Fit Photos", () => {
   const enrichmentStart = catalog.indexOf("export function CatalogCommunityEnrichment");
   const garmentStart = catalog.indexOf("export function CatalogGarmentFields");
   const enrichment = catalog.slice(enrichmentStart, garmentStart);
-
   assert.doesNotMatch(enrichment, /Product Photo/);
   assert.doesNotMatch(enrichment, /Product Label \/ Tag Photo/);
   assert.match(photoFields, /Product Photo \(not being worn\)/);
@@ -148,17 +148,17 @@ test("Fit Notes guidance is shown once above a clean textarea", () => {
 });
 
 test("confirmation grid keeps two evidence cells per row on normal mobile widths", () => {
-  assert.match(fitCss, /\.reviewRows\s*\{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
-  assert.match(fitCss, /@media \(max-width: 340px\)[\s\S]*?\.reviewRows\s*\{[\s\S]*?grid-template-columns: 1fr;/);
+  assert.match(fitCss, /\.reviewRows\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(fitCss, /@media\(max-width:340px\)\{[\s\S]*?\.reviewRows\{grid-template-columns:1fr\}/);
 });
 
-test("Fit Report spacing containers actually establish grid rhythm on desktop and mobile", () => {
-  assert.match(fitCss, /\.form\s*\{[\s\S]*?max-width: 920px;[\s\S]*?gap: 30px;/);
-  assert.match(fitCss, /\.catalogDetails\s*\{\s*display: grid;\s*gap: 30px;/);
-  assert.match(fitCss, /\.optionalDetailsBody\s*\{\s*display: grid;\s*gap: 30px;/);
-  assert.match(fitCss, /\.optionalDetailsBody :global\(\.fitDimensionFields\)\s*\{\s*display: grid;\s*gap: 22px;/);
-  assert.match(fitCss, /@media \(max-width: 640px\)[\s\S]*?\.catalogDetails\s*\{\s*gap: 34px;/);
-  assert.match(fitCss, /@media \(max-width: 640px\)[\s\S]*?\.optionalDetailsBody\s*\{[\s\S]*?gap: 30px;/);
+test("Fit Report spacing uses the compact canonical rhythm on desktop and mobile", () => {
+  assert.match(fitCss, /\.form\{[^}]*max-width:860px;[^}]*gap:20px/);
+  assert.match(fitCss, /\.catalogDetails\{display:grid;gap:20px\}/);
+  assert.match(fitCss, /\.optionalDetailsBody\{display:grid;gap:18px;padding:18px\}/);
+  assert.match(fitCss, /\.optionalDetailsBody :global\(\.fitDimensionFields\)\{display:grid;gap:16px;margin:0\}/);
+  assert.match(fitCss, /@media\(max-width:620px\)[\s\S]*?\.catalogDetails\{gap:18px\}/);
+  assert.match(fitCss, /@media\(max-width:620px\)[\s\S]*?\.optionalDetailsBody\{gap:16px;padding:16px\}/);
 });
 
 test("Profile Settings uses one local restrained spacing system instead of nested global section padding", () => {
@@ -166,9 +166,9 @@ test("Profile Settings uses one local restrained spacing system instead of neste
   assert.match(settings, /styles\.settingsPage/);
   assert.match(settings, /styles\.secondarySection/);
   assert.match(settings, /styles\.privacyStatement/);
-  assert.match(settingsCss, /\.settingsPage\s*\{[\s\S]*?padding: 38px clamp\(18px, 4vw, 44px\) 56px;/);
-  assert.match(settingsCss, /\.secondarySection\s*\{[\s\S]*?margin-top: 22px;[\s\S]*?padding: 20px 2px;/);
-  assert.match(settingsCss, /\.privacyStatement\s*\{\s*padding: 20px 2px 0;/);
+  assert.match(settingsCss, /\.settingsPage\{[^}]*padding:30px 0 56px\}/);
+  assert.match(settingsCss, /\.secondarySection\{[^}]*margin-top:22px;[^}]*padding:18px 2px/);
+  assert.match(settingsCss, /\.privacyStatement\{padding:18px 2px 0\}/);
 });
 
 test("Fit Community remains an editable field inside the consolidated profile editor", () => {

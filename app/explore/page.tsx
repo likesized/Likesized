@@ -8,6 +8,7 @@ import { ReportContentForm } from "@/components/ReportContentForm";
 import { EXPLORE_FIXTURE_OUTFITS, EXPLORE_FIXTURE_PEOPLE, EXPLORE_FIXTURE_PRODUCTS, allowExploreFixtures } from "@/lib/explore-fixtures";
 import { GARMENT_TYPE_BY_KEY, isAllowedGarmentAnswer } from "@/lib/garment-taxonomy";
 import { outfitFeedPhotoPath } from "@/lib/outfit-photo-paths";
+import { OUTFIT_OCCASION_LABELS } from "@/lib/outfit-taxonomy";
 import { currentProfilePhotoUrl } from "@/lib/profile-photo";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./explore.module.css";
@@ -25,6 +26,7 @@ type Person = { id:string; username:string; display_name:string|null; avatar_url
 function first(value:string|string[]|undefined){return Array.isArray(value)?value[0]:value;}
 function one<T>(value:unknown):T|null{return Array.isArray(value)?((value[0] as T|undefined)??null):((value as T|null)??null);}
 function clean(value:string|undefined){return (value??"").trim().replace(/%/g,"").replace(/\s+/g," ").slice(0,80);}
+function safeReturn(value:string|undefined){const cleaned=(value??"").trim().slice(0,500);return cleaned.startsWith("/")&&!cleaned.startsWith("//")?cleaned:"";}
 function label(value:string){return value.replaceAll("_"," ").replace(/\b\w/g,(letter)=>letter.toUpperCase());}
 function tier(score:number){if(score>=90)return "Exceptional fit evidence";if(score>=85)return "Strong fit evidence";if(score>=80)return "Good fit evidence";return "Useful fit evidence";}
 function trustRank(product:Product){if(product.catalog_review_needed)return 3;return product.catalog_status==="verified"?0:product.catalog_status==="corroborated"?1:2;}
@@ -45,6 +47,9 @@ export default async function ExplorePage({searchParams}:{searchParams:SearchPar
   const brandId=clean(first(params.brand));
   const itemName=clean(first(params.item));
   const color=clean(first(params.color));
+  const occasion=clean(first(params.occasion));
+  const styleTag=clean(first(params.style)).toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,30);
+  const returnTo=safeReturn(first(params.return_to));
   const resultLimit=Math.min(96,Math.max(24,Number(first(params.limit))||24));
   const fixtureMode=allowExploreFixtures(first(params.preview)==="fixtures");
   const selectedAttributes=Object.fromEntries(Object.entries(params).filter(([key,value])=>key.startsWith("attr_")&&typeof first(value)==="string").map(([key,value])=>[key.slice(5),clean(first(value))]).filter(([key,value])=>Boolean(value)&&isAllowedGarmentAnswer(garmentType,key,value))) as Record<string,string>;
@@ -114,12 +119,26 @@ export default async function ExplorePage({searchParams}:{searchParams:SearchPar
   const evidencePeople=new Map(((evidenceProfiles??[]) as Person[]).map((person)=>[person.id,person]));
   if(fixtureMode)for(const person of EXPLORE_FIXTURE_PEOPLE)evidencePeople.set(person.id,person);
 
+  let strictOutfitIds:string[]|null=null;
+  if(view==="outfits"&&occasion){
+    const {data,error}=await supabase.from("outfit_occasions").select("post_id").eq("occasion",occasion);
+    if(error)throw new Error("Could not apply the Outfit occasion filter.");
+    strictOutfitIds=intersect(strictOutfitIds,(data??[]).map((row)=>row.post_id));
+  }
+  if(view==="outfits"&&styleTag){
+    const {data,error}=await supabase.from("outfit_style_tags").select("post_id").eq("normalized_tag",styleTag);
+    if(error)throw new Error("Could not apply the Outfit style filter.");
+    strictOutfitIds=intersect(strictOutfitIds,(data??[]).map((row)=>row.post_id));
+  }
+
   let outfits:Outfit[]=[];
   if(view==="outfits"){
-    const result=await supabase.from("outfit_posts").select("id,user_id,caption,photo_url,created_at,profile:profiles(username,display_name,avatar_url)").order("created_at",{ascending:false}).limit(resultLimit);
+    let query=supabase.from("outfit_posts").select("id,user_id,caption,photo_url,created_at,profile:profiles(username,display_name,avatar_url)").order("created_at",{ascending:false}).limit(resultLimit);
+    if(strictOutfitIds)query=strictOutfitIds.length?query.in("id",strictOutfitIds):query.eq("id","00000000-0000-0000-0000-000000000000");
+    const result=await query;
     if(result.error)throw new Error("Could not load outfits.");
     outfits=(result.data??[]) as Outfit[];
-    if(fixtureMode)outfits=[...(EXPLORE_FIXTURE_OUTFITS as Outfit[]),...outfits].slice(0,resultLimit);
+    if(fixtureMode&&!occasion&&!styleTag)outfits=[...(EXPLORE_FIXTURE_OUTFITS as Outfit[]),...outfits].slice(0,resultLimit);
     if(scope==="matches")outfits=outfits.filter((post)=>post.fixture||(matchByUser.get(post.user_id)??0)>=75);
     outfits.sort((a,b)=>(matchByUser.get(b.user_id)??(b.fixture?90:0))-(matchByUser.get(a.user_id)??(a.fixture?90:0)));
   }
@@ -131,13 +150,16 @@ export default async function ExplorePage({searchParams}:{searchParams:SearchPar
   const outfitProfilePhotos=new Map<string,string>();
   for(const post of outfits){if(post.fixture)continue;const person=one<Profile>(post.profile);const avatar=currentProfilePhotoUrl(supabase,person?.avatar_url);if(avatar)outfitProfilePhotos.set(post.user_id,avatar);}
 
-  const filterQuery=new URLSearchParams({view,scope});if(category)filterQuery.set("category",category);if(garmentType)filterQuery.set("type",garmentType);if(brandId)filterQuery.set("brand",brandId);if(itemName)filterQuery.set("item",itemName);if(color)filterQuery.set("color",color);for(const [key,value] of Object.entries(selectedAttributes))filterQuery.set(`attr_${key}`,value);if(fixtureMode)filterQuery.set("preview","fixtures");if(resultLimit>24)filterQuery.set("limit",String(resultLimit));
+  const filterQuery=new URLSearchParams({view,scope});if(category)filterQuery.set("category",category);if(garmentType)filterQuery.set("type",garmentType);if(brandId)filterQuery.set("brand",brandId);if(itemName)filterQuery.set("item",itemName);if(color)filterQuery.set("color",color);if(occasion)filterQuery.set("occasion",occasion);if(styleTag)filterQuery.set("style",styleTag);if(returnTo)filterQuery.set("return_to",returnTo);for(const [key,value] of Object.entries(selectedAttributes))filterQuery.set(`attr_${key}`,value);if(fixtureMode)filterQuery.set("preview","fixtures");if(resultLimit>24)filterQuery.set("limit",String(resultLimit));
   const base=`/explore?${filterQuery.toString()}`;const nextLimit=Math.min(96,resultLimit+24);
-  const viewHref=(nextView:string)=>`/explore?view=${nextView}&scope=${scope}${fixtureMode?"&preview=fixtures":""}`;
-  const scopeHref=(nextScope:string)=>`/explore?view=${view}&scope=${nextScope}${fixtureMode?"&preview=fixtures":""}`;
+  const viewHref=(nextView:string)=>{const next=new URLSearchParams({view:nextView,scope});if(fixtureMode)next.set("preview","fixtures");if(returnTo)next.set("return_to",returnTo);return `/explore?${next.toString()}`;};
+  const scopeHref=(nextScope:string)=>{const next=new URLSearchParams(filterQuery);next.set("scope",nextScope);next.delete("limit");return `/explore?${next.toString()}`;};
+  const outfitFilterLabel=occasion?(OUTFIT_OCCASION_LABELS.get(occasion as never)??label(occasion)):styleTag?`#${styleTag}`:null;
+
   return <main className="pageShell">
     {fixtureMode?<div className={styles.previewBanner}><b>Owner-review test environment</b><span>Temporary Garments, Outfits, and Wearers are clearly labeled and are not stored in Supabase.</span></div>:null}
-    <div className="pageTitle"><span className="eyebrow">EXPLORE</span><h1>Discover clothes through real fit evidence.</h1><p>Start with garments and outfits backed by people whose fit data is most relevant to you. Switch to All whenever you want the wider catalog.</p></div>
+    {returnTo?<p><Link className="textLink" href={returnTo}>← Back to Outfit</Link></p>:null}
+    <div className="pageTitle"><span className="eyebrow">EXPLORE</span><h1>Discover clothes through real fit evidence.</h1><p>{outfitFilterLabel?`Showing Outfits tagged ${outfitFilterLabel}.`:"Start with garments and outfits backed by people whose fit data is most relevant to you. Switch to All whenever you want the wider catalog."}</p></div>
     <ExploreSearch fixtures={fixtureMode}/>
     <div className={styles.controls}><nav className="filterBar" aria-label="Explore content"><Link className={`filter${view==="garments"?" active":""}`} href={viewHref("garments")}>Garments</Link><Link className={`filter${view==="outfits"?" active":""}`} href={viewHref("outfits")}>Outfits</Link></nav><nav className="filterBar" aria-label="Explore scope"><Link className={`filter${scope==="matches"?" active":""}`} href={scopeHref("matches")}>My Fit Matches</Link><Link className={`filter${scope==="all"?" active":""}`} href={scopeHref("all")}>All</Link></nav></div>
     {view==="garments"?<ExploreFilters scope={scope} brands={brands} initial={{category,type:garmentType,brand:brandId,item:itemName,color,attributes:selectedAttributes}} fixtures={fixtureMode}/>:null}

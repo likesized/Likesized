@@ -172,10 +172,11 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
   const commentError = first(query.comment_error) === "1";
   const commentsOpen = first(query.comments) === "1";
   const creatorTwin=viewerId&&!owner&&following?fitTwinLabel(fitTwinDesignation({overall:overallMatch,tops:topsMatch,bottoms:bottomsMatch},threshold)):null;
+  const exploreReturn=encodeURIComponent(returnTo);
 
   const styleNotes=<div className={styles.styleNotes}>
     <h1>{outfit.headline||"Outfit"}</h1>
-    <div className={styles.pills}>{(occasionsResult.data??[]).map((row)=><span key={row.occasion}>{OUTFIT_OCCASION_LABELS.get(row.occasion)??row.occasion}</span>)}{(stylesResult.data??[]).map((row)=><span key={row.display_tag}>#{row.display_tag}</span>)}</div>
+    <div className={styles.pills}>{(occasionsResult.data??[]).map((row)=><Link prefetch={false} className="filter" key={row.occasion} href={`/explore?view=outfits&scope=all&occasion=${encodeURIComponent(row.occasion)}&return_to=${exploreReturn}`}>{OUTFIT_OCCASION_LABELS.get(row.occasion)??row.occasion}</Link>)}{(stylesResult.data??[]).map((row)=><Link prefetch={false} className="filter" key={row.display_tag} href={`/explore?view=outfits&scope=all&style=${encodeURIComponent(row.display_tag)}&return_to=${exploreReturn}`}>#{row.display_tag}</Link>)}</div>
     {outfit.story?<p className={styles.storyText}>{outfit.story}</p>:<p className="muted">No Style Notes added.</p>}
   </div>;
 

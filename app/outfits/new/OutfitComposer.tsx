@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { publishOutfit, saveOutfitDraft, savePublishedOutfit, type OutfitSaveResult } from "@/app/outfits/actions";
-import { saveOutfitPhotoCaptions } from "@/app/outfits/photo-caption-actions";
 import { OUTFIT_OCCASIONS } from "@/lib/outfit-taxonomy";
 import styles from "../outfits.module.css";
 import pickerStyles from "./outfitPicker.module.css";
@@ -282,7 +281,7 @@ export default function OutfitComposer({ closet, initial, styleSuggestions = [] 
     for (const id of selected) formData.append("closet_item_id", id);
     for (const occasion of occasions) formData.append("occasion", occasion);
     for (const tag of styleTags) formData.append("style_tag", tag);
-    formData.set("photo_manifest", JSON.stringify(photos.map((photo) => ({ key: photo.key, existingId: photo.existingId, isMain: photo.isMain, tags: photo.tags }))));
+    formData.set("photo_manifest", JSON.stringify(photos.map((photo) => ({ key: photo.key, existingId: photo.existingId, isMain: photo.isMain, caption: photo.caption, tags: photo.tags }))));
     for (const photo of photos) if (!photo.existingId && photo.displayBlob && photo.feedBlob) { formData.append(`photo_display__${photo.key}`, new File([photo.displayBlob], "display.webp", { type: "image/webp" })); formData.append(`photo_feed__${photo.key}`, new File([photo.feedBlob], "feed.webp", { type: "image/webp" })); }
     return formData;
   }
@@ -293,9 +292,6 @@ export default function OutfitComposer({ closet, initial, styleSuggestions = [] 
     const result: OutfitSaveResult = await action(buildFormData());
     if (!result.ok || !result.postId) { setSavingKind(null); setMessage(result.error ?? "That Outfit could not be saved."); return; }
     const photoIds = result.photoIds ?? {};
-    const captionInputs=photos.flatMap((photo)=>{const photoId=photoIds[photo.key]??photo.existingId;return photoId?[{photoId,caption:photo.caption}]:[];});
-    const captionResult=await saveOutfitPhotoCaptions(result.postId,captionInputs);
-    if(!captionResult.ok){setSavingKind(null);setMessage(captionResult.error??"That Outfit saved, but its photo captions could not be saved.");return;}
     setPostId(result.postId);
     setPhotos((current) => current.map((photo) => { const existingId = photoIds[photo.key] ?? photo.existingId; return existingId ? { ...photo, existingId, displayBlob: undefined, feedBlob: undefined } : photo; }));
     dirtyRef.current = false; photosDirtyRef.current=false; setDirty(false); setLeaveHref(null);

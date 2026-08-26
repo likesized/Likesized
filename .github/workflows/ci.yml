@@ -47,6 +47,8 @@ jobs:
         run: node --test tests/outfit-variation-evidence.test.ts
       - name: Outfit live-audit repair safeguards
         run: node --test tests/outfit-live-audit-repairs.test.ts
+      - name: Current Outfit owner-audit closure safeguards
+        run: node --test tests/outfit-owner-audit-contract.test.ts
       - name: Comment sheet and global quick-view safeguards
         run: node --test tests/comments-global-quickview.test.ts
       - name: Public homepage content safeguards

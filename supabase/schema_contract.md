@@ -11,14 +11,14 @@ Ordered SQL files in `supabase/migrations/` are the executable database history 
 
 This file owns current database behavior/privacy plus explicit implementation debt. Product meaning lives in `docs/V1_PRODUCT_SPEC.md`; roadmap/status/deployment history live in `docs/AI_MASTER_LOG.md`.
 
-# Production checkpoint — 2026-08-25
+# Production checkpoint — 2026-08-26
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-Current production application source is PR #87 squash merge **`96905b411dcef2b2a7b0cd55ef379986eff402db`**. Exact tested PR #87 head **`c0df62b3593c27dc61decdf5115e22d2c367bcd2`** passed full LikeSized CI #918 (`32882956817`): canonical integrity, exact dependency install, TypeScript, all focused application safeguards, production Next.js build, complete fresh replay of every canonical migration and the complete database behavior/privacy suite. Post-merge CI #919 (`32883274244`) also passed.
+Current production application source is PR #93 squash merge **`2568e316fdfb772094cbb23b6e4c19b9a9e1e449`**. Exact tested PR #93 head **`8961cc52df35b6398d9d28befedabe36f4ba0468`** passed full LikeSized CI #971 (`32967512656`), and post-merge CI #972 (`32967732809`) also passed.
 
-PR #87 Vercel production deployment **`dpl_FxhPv4KL3ecgQBghX2mwhsRoSHNL`** reached READY for merge `96905b411dcef2b2a7b0cd55ef379986eff402db`, serves `likesized.com`, returned HTTP 200, and the checked deployment-scoped runtime error/fatal window was clean. Public logged-out Outfit smoke verification also confirmed safe published hotspots remain visible without exposing personalized Body Match/FITuition data.
+PR #93 Vercel production deployment **`dpl_G3613fLU6EKvKG42Xg1tHGyU2wuo`** is READY for merge `2568e316fdfb772094cbb23b6e4c19b9a9e1e449` and is the current production application checkpoint.
 
-PR #86 and PR #87 introduced no database migration. Their application-level interaction changes therefore do not alter the production database contract below.
+PRs #88–#93 advanced application/database behavior beyond the stale PR #87 checkpoint previously recorded here. Applied migration history remains immutable; no current behavior should be described as branch-only merely because the canonical contract had not yet been reconciled.
 
 The established Roadmap 12 foundation migrations remain immutable production history:
 - `20260824133400_add_outfit_comment_moderation_target.sql` → production `20260824164156 add_outfit_comment_moderation_target`;
@@ -34,18 +34,24 @@ Later immutable Roadmap 12 production history includes:
 - `20260825000500_fix_live_comment_like_count_projection.sql` → production **`20260825000722 fix_live_comment_like_count_projection`**;
 - `20260825021000_outfit_comment_cursor_pagination.sql` → production **`20260825025014 outfit_comment_cursor_pagination`**;
 - `20260825122000_outfit_photo_captions.sql` → production **`20260825133233 outfit_photo_captions`**;
-- `20260825152000_outfit_public_hotspots_and_comment_sorting.sql` → production **`20260825155645 outfit_public_hotspots_and_comment_sorting`**.
+- `20260825152000_outfit_public_hotspots_and_comment_sorting.sql` → production **`20260825155645 outfit_public_hotspots_and_comment_sorting`**;
+- `20260825183000_private_profile_location_metadata.sql` → production **`20260825192738 private_profile_location_metadata`**;
+- production **`20260826001512 username_change_cooldown`**;
+- production **`20260826001531 exact_variation_evidence_watches`**;
+- `20260826003000_atomic_outfit_cover_switch.sql` → production **`20260826020651 atomic_outfit_cover_switch`**;
+- production **`20260826020710 preserve_tracked_variation_recommendation_evidence`**.
 
 Earlier catalog, Fit Report, identity, privacy and security migrations remain immutable applied history. Supabase-assigned production timestamps may differ from local canonical filenames; never rename applied local migration history to chase generated timestamps.
 
-Hosted smoke verification across these production batches confirmed, among other boundaries:
+Hosted verification across these production batches confirms, among other boundaries:
 - `profile-photos` is public storage for current public member identity while write ownership remains controlled;
+- `public.profile_locations` is production-applied private owner-scoped metadata, not branch-only;
 - `public.outfit_comment_likes` exists and its safe aggregate projection uses the declared `bigint` count;
 - `public.get_outfit_comments_page(uuid,timestamptz,uuid,integer)` exists as immutable prior cursor-pagination history;
 - `public.get_public_outfit_tagged_items(uuid)` and `public.get_public_outfit_hotspots(uuid)` are security-definer minimum-field public projections available to `anon` and `authenticated` callers for published Outfit identification;
 - `public.get_outfit_comments_sorted_page(uuid,text,bigint,timestamptz,uuid,integer)` is the current sorted/paginated comment projection, with **Top** and **Newest** behavior described below.
 
-The current active completion-repair line proposes ordered migration **`20260825183000_private_profile_location_metadata.sql`**. Until that exact branch is verified, authorized, merged and deployed, `profile_locations` is branch-only and must not be described as production-applied.
+Draft PR #94 (`agent/outfit-audit-regression-repair`) currently introduces no new migration. Its tagged-FITuition work changes application query shape/loading behavior, not the persisted evidence model.
 
 # 1. Privacy / body-state foundations — LOCKED
 - `profiles` stores member identity; exact Fit Profile/body measurements are not stored there.
@@ -66,15 +72,15 @@ A member profile photo, when uploaded, is public current identity rather than a 
 - A later profile-photo update therefore changes the identity photo shown on existing Outfit/comment surfaces without rewriting those historical content rows.
 - Raw body data remains private; making the profile photo public does not change Fit Profile privacy.
 
-## Private city/state profile metadata — OWNER LOCKED / ACTIVE MIGRATION
-`profile_locations` is the dedicated private owner-scoped location store introduced by proposed migration `20260825183000_private_profile_location_metadata.sql`.
+## Private city/state profile metadata — OWNER LOCKED / PRODUCTION
+`profile_locations` is the dedicated private owner-scoped location store introduced by applied migration `20260825183000_private_profile_location_metadata.sql` / hosted `20260825192738 private_profile_location_metadata`.
 
-- City and State are optional, but are stored as a pair: both populated or both blank.
+- The table allows a compatibility null-pair state but enforces that City and State are otherwise stored together; the **current application setup/settings flow requires both City and State**.
 - The table is keyed one-to-one by `user_id` and cascades with the owning profile.
 - RLS permits an authenticated member to read/insert/update only their own row.
 - `anon` receives no table access and ordinary authenticated members receive no cross-member read path.
 - City/state is not projected through public profile/Outfit/member identity helpers and is not a body measurement, Match input, Fit Twin input or Product identity field.
-- Initial Fit Profile setup may collect City + State once. Later edits belong to Profile Settings; My Measurements updates do not re-request location.
+- Initial Fit Profile setup requires City + State once. Later edits belong to Profile Settings; My Measurements updates do not re-request location.
 - The `(state_region, city)` normalized index exists to support future controlled server/admin aggregate analysis such as regional wishlist demand without making member-level location public.
 - Any future regional statistic must expose aggregate output only through a separately reviewed privacy-safe boundary; this table itself is not a public analytics API.
 
@@ -225,7 +231,7 @@ Twin designation is calculated from current Tops and Bottoms regional Match qual
 
 Follow alone does not enable person notifications. Person notifications and Product one-shot Match notifications remain separate from Following, Like and Wish state.
 
-# 13. LikeLocker / Wish Locker / Outfit foundations — ROADMAP 12 PRODUCTION THROUGH PR #87
+# 13. LikeLocker / Wish Locker / Outfit foundations — ROADMAP 12 PRODUCTION THROUGH PR #93
 Product likes, Outfit likes, comment likes and Wish Locker purchase intent are distinct states. Outfits reuse canonical Closet/Product/taxonomy foundations; no second garment or shopping system exists.
 
 Core Outfit schema:
@@ -276,7 +282,7 @@ Anonymous published Outfit access remains deliberately narrow:
 - `get_public_outfit_hotspots(uuid)` exposes only safe normalized published-photo hotspot coordinates tied to eligible tagged items;
 - raw/private body data, private Closet linkage, unresolved candidate/review state and authenticated member state do not leak merely because the Outfit URL is public.
 
-Public hotspot visibility is intentionally independent of authentication. Personalized tagged-item intelligence—Matching Fit Reports, Body Match, FITuition, private Closet evidence—remains application/auth/Fit-Profile gated.
+Public hotspot visibility is intentionally independent of authentication. Personalized tagged-item intelligence—Relevant Fit Reports, Body Match, FITuition, private Closet evidence—remains application/auth/Fit-Profile gated.
 
 Blocking suppresses signed-in social interaction between blocked members but does not make an otherwise public Outfit URL disappear from anonymous web access.
 
@@ -296,16 +302,17 @@ Recommendation evidence hierarchy remains:
 
 Help Me Size It is fallback sizing assistance and reuses the same canonical recommendation architecture. `Would Buy Again` does not affect size recommendation/confidence. Pending/unmapped candidate reports do not count as exact canonical Product evidence until mapped.
 
-The viewer's own eligible Fit Report/Closet history is valid recommendation evidence; it must not be discarded merely because the evidence belongs to the current viewer. Tagged-Outfit `Matching Fit Reports` is a personalized useful exact-item count, not `get_product_fit_summary.total_fit_count` or another raw Product total.
+The viewer's own eligible Fit Report/Closet history is valid recommendation evidence; it must not be discarded merely because the evidence belongs to the current viewer. Tagged-Outfit `Relevant Fit Reports` is a personalized useful exact-item/exact-tracked-variation count, not `get_product_fit_summary.total_fit_count` or another raw Product total.
 
 Repeated reports from the same **person + Product + tracked fit variation** represent one recommendation evidence unit. Distinct people remain independent; distinct tracked variations may remain distinct. Size and Color never create tracked variation identity.
 
 Before Product Detail consumes `exact_variant`, recommendation/evidence/Admin behavior must consume `GARMENT_VARIATION_DEFINITION_MAP`. Size and Color must never become exact-variation key fields. Body Match remains body similarity and must not be collapsed with Fit Result into a synthetic fit percentage.
 
 # 15. Current implementation debt / open verification
-- Production application is live through PR #87 merge **`96905b411dcef2b2a7b0cd55ef379986eff402db`**; exact tested PR head **`c0df62b3593c27dc61decdf5115e22d2c367bcd2`** passed full CI #918 (`32882956817`) and post-merge CI #919 (`32883274244`) passed.
-- Latest production Outfit migrations are `20260825122000_outfit_photo_captions.sql` → `20260825133233 outfit_photo_captions` and `20260825152000_outfit_public_hotspots_and_comment_sorting.sql` → `20260825155645 outfit_public_hotspots_and_comment_sorting`.
-- The active completion-repair branch proposes `20260825183000_private_profile_location_metadata.sql`; verify full replay/RLS behavior before any authorized merge. It is not production-applied yet.
+- Production application is live through PR #93 merge **`2568e316fdfb772094cbb23b6e4c19b9a9e1e449`**; exact tested PR head **`8961cc52df35b6398d9d28befedabe36f4ba0468`** passed full CI #971 (`32967512656`) and post-merge CI #972 (`32967732809`) passed.
+- `profile_locations` is production-applied at hosted migration **`20260825192738 private_profile_location_metadata`**; current application setup/settings require both City and State while the table retains pair-null compatibility for historical/compatibility rows.
+- Production also includes `20260826001512 username_change_cooldown`, `20260826001531 exact_variation_evidence_watches`, `20260826020651 atomic_outfit_cover_switch`, and `20260826020710 preserve_tracked_variation_recommendation_evidence`.
+- Draft PR #94 introduces no migration; verify its application-only query/loading/interaction changes through the full canonical gate before any authorized merge.
 - Owner live re-audit remains the Roadmap 12 gate; Roadmap 13 full Style Feed behavior must not be treated as unblocked until the owner finishes the New Outfit audit.
 - Roadmap 13A canonical Product-image scoring remains planned. No scoring schema is production truth until a later ordered migration is designed, verified and applied.
 - The legacy physical `closet_items.visibility` column remains intentionally in immutable replay history and locked to compatibility `shared`; broader Closet lifecycle/mutation rules remain future audit work.

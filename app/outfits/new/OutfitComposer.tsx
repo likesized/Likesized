@@ -224,7 +224,7 @@ export default function OutfitComposer({ closet, initial, styleSuggestions = [] 
 
   useEffect(() => {
     if (photos.length === 0) { setTagPhotoKey(null); setPreviewIndex(0); return; }
-    if (!tagPhotoKey || !photos.some((photo) => photo.key === tagPhotoKey)) setTagPhotoKey(photos[0].key);
+    if (!tagPhotoKey || !photos.some((photo) => photo.key === tagPhotoKey)) setTagPhotoKey((photos.find((photo) => photo.isMain) ?? photos[0]).key);
     if (previewIndex >= photos.length) setPreviewIndex(0);
   }, [photos, previewIndex, tagPhotoKey]);
 

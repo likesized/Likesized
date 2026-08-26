@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 const header = readFileSync(new URL("../components/Header.tsx", import.meta.url), "utf8");
 const menu = readFileSync(new URL("../components/MemberMenu.tsx", import.meta.url), "utf8");
 const css = readFileSync(new URL("../components/HeaderResponsive.module.css", import.meta.url), "utf8");
+const globals = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 const fitProfilePage = readFileSync(new URL("../app/onboarding/page.tsx", import.meta.url), "utf8");
 const fitProfileForm = readFileSync(new URL("../app/onboarding/FitProfileForm.tsx", import.meta.url), "utf8");
 const fitProfileActions = readFileSync(new URL("../app/onboarding/actions.ts", import.meta.url), "utf8");
@@ -40,10 +41,20 @@ test("single menu contains the owner-approved sections and links", () => {
   assert.doesNotMatch(menu, />Notifications/);
 });
 
-test("authenticated member navigation does not eagerly prefetch every expensive destination", () => {
+test("authenticated member navigation avoids eager route storms but warms the destination on intent", () => {
   const links = menu.match(/<Link[^>]+>/g) ?? [];
   assert.ok(links.length >= 10);
   for (const link of links) assert.match(link, /prefetch=\{false\}/);
+  assert.match(menu, /useRouter/);
+  assert.match(menu, /router\.prefetch\(href\)/);
+  assert.match(menu, /onPointerEnter=\{\(\) => warm\(/);
+  assert.match(menu, /onFocus=\{\(\) => warm\(/);
+  assert.match(menu, /onTouchStart=\{\(\) => warm\(/);
+});
+
+test("global route restoration is instant instead of animating from the previous scroll position", () => {
+  assert.match(globals, /html\{background:var\(--paper\)\}/);
+  assert.doesNotMatch(globals, /html\{[^}]*scroll-behavior:smooth/);
 });
 
 test("shared member menu keeps close and compact layout safeguards", () => {

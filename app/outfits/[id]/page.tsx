@@ -222,10 +222,8 @@ export default async function OutfitDetailPage({ params, searchParams }: { param
       <OutfitTabs initialTab={initialTab} commentCount={outfit.comment_count} styleNotes={styleNotes} comments={commentsPanel} taggedItems={<TaggedItemsPanel items={taggedItems} postId={id} signedIn={Boolean(viewerId)}/>}/>
 
       {owner?<section className={styles.ownerTools}>
-        <div><strong>{outfit.view_count}</strong><span>Views</span></div><div><strong>{outfit.follows_generated_count}</strong><span>Follows generated</span></div>
-        <Link prefetch={false} className={styles.compactSecondary} href={`/outfits/new?edit=${id}`}>Edit Outfit</Link>
-        <form action={toggleOutfitComments}><input type="hidden" name="post_id" value={id}/><input type="hidden" name="return_to" value={returnTo}/><input type="hidden" name="enabled" value={String(!outfit.comments_enabled)}/><button type="submit">{outfit.comments_enabled?"Turn comments off":"Turn comments on"}</button></form>
-        <ConfirmDeleteOutfit postId={id}/>
+        <div className={styles.ownerStats}><div><strong>{outfit.view_count}</strong><span>Views</span></div><div><strong>{outfit.follows_generated_count}</strong><span>Follows generated</span></div></div>
+        <div className={styles.ownerActions}><Link prefetch={false} className={styles.compactSecondary} href={`/outfits/new?edit=${id}`}>Edit Outfit</Link><ConfirmDeleteOutfit postId={id}/><form action={toggleOutfitComments}><input type="hidden" name="post_id" value={id}/><input type="hidden" name="return_to" value={returnTo}/><input type="hidden" name="enabled" value={String(!outfit.comments_enabled)}/><button type="submit">{outfit.comments_enabled?"Turn comments off":"Turn comments on"}</button></form></div>
       </section>:null}
     </article>
   </main>;

@@ -14,13 +14,15 @@ This file owns current database behavior/privacy plus explicit implementation de
 # Production checkpoint — 2026-08-26
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-Current production application source is PR #95 squash merge **`5c52fb29cb6bb54d21015e5c87b9f1e775f0bc81`**. PR #94 and PR #95 both reached production without a successful completed full exact-candidate CI chain; that limitation is part of the canonical record and must not be rewritten as though those gates passed.
+Current production application source is PR #96 squash merge **`87ffbdcb3ed9d1849d1dc1e28d58c9ec18586ea7`**. PR #94 and PR #95 both reached production without a successful completed full exact-candidate CI chain; those limitations remain canonical historical fact and must not be rewritten as though those gates passed.
 
 PR #94 branch head **`e1931c2558622e97c842aaa5aa966b216e1349a5`** was merged as **`15b48373857cd090e418bff942123fe57f013984`** after explicit owner deployment authorization. Vercel production **`dpl_BTxsXJxMW3NgPo5e6XBmcbJ14yz3`** reached READY and served `likesized.com`.
 
 PR #95 branch head **`34c436e0f6d5fb37c608b64e0d8b2fd0894779cf`** had failing PR CI run **#979 / `32994041367`**; its production merge **`5c52fb29cb6bb54d21015e5c87b9f1e775f0bc81`** also had failing `main` push CI run **#978 / `32993535307`**. Vercel production **`dpl_52b8K3YGnMbJGRfiEGApdqNJcYj6`** reached READY on `likesized.com`, and the checked immediate deployment window returned HTTP 200 with no error/fatal runtime entries. Those runtime checks do not substitute for the skipped build/migration replay/database gates.
 
-PRs #88–#95 advanced application/database behavior beyond the earlier PR #87 checkpoint. Applied migration history remains immutable; no current behavior should be described as branch-only merely because an older canonical contract had not yet been reconciled.
+PR #96 exact final branch head **`f4e8f4813841e1257382cedb87be8b88ba0ad4d2`** passed full exact-head CI **#994 / `33005686076`**, including canonical integrity, typecheck, the complete application safeguard suite, production build, full fresh migration replay and canonical database behavior/privacy tests. After explicit owner deployment authorization, it was squash-merged as **`87ffbdcb3ed9d1849d1dc1e28d58c9ec18586ea7`**. The resulting `main` push CI **#995 / `33005905387`** also completed successfully through the same full chain. Vercel production **`dpl_C6UoK4zTr8bQA13n6SYr3uymRQaP`** reached READY on `likesized.com`; live homepage and published Outfit checks returned HTTP 200 and the checked post-deploy runtime-error window contained no errors.
+
+PRs #88–#96 advanced application/database behavior beyond the earlier PR #87 checkpoint. Applied migration history remains immutable; no current behavior should be described as branch-only merely because an older canonical contract had not yet been reconciled.
 
 The established Roadmap 12 foundation migrations remain immutable production history:
 - `20260824133400_add_outfit_comment_moderation_target.sql` → production `20260824164156 add_outfit_comment_moderation_target`;
@@ -41,7 +43,8 @@ Later immutable Roadmap 12 production history includes:
 - production **`20260826001512 username_change_cooldown`**;
 - production **`20260826001531 exact_variation_evidence_watches`**;
 - `20260826003000_atomic_outfit_cover_switch.sql` → production **`20260826020651 atomic_outfit_cover_switch`**;
-- production **`20260826020710 preserve_tracked_variation_recommendation_evidence`**.
+- production **`20260826020710 preserve_tracked_variation_recommendation_evidence`**;
+- `20260826190000_outfit_tag_consistency.sql` → production **`20260826193527 outfit_tag_consistency`**.
 
 Earlier catalog, Fit Report, identity, privacy and security migrations remain immutable applied history. Supabase-assigned production timestamps may differ from local canonical filenames; never rename applied local migration history to chase generated timestamps.
 
@@ -53,19 +56,19 @@ Hosted verification across these production batches confirms, among other bounda
 - `public.get_public_outfit_tagged_items(uuid)` and `public.get_public_outfit_hotspots(uuid)` are security-definer minimum-field public projections available to `anon` and `authenticated` callers for published Outfit identification;
 - `public.get_outfit_comments_sorted_page(uuid,text,bigint,timestamptz,uuid,integer)` is the current sorted/paginated comment projection, with **Top** and **Newest** behavior described below.
 
-PR #94 and PR #95 introduced no production database migration. The current active PR #96 line is **`agent/outfit-audit-closure`** and adds ordered migration **`20260826190000_outfit_tag_consistency.sql`**. That migration is branch-only, has not been applied to production, and must not be described as live until exact-head full verification passes and an authorized production deployment applies it.
+PR #94 and PR #95 introduced no production database migration. PR #96 introduced ordered migration **`20260826190000_outfit_tag_consistency.sql`**, now applied to production as hosted **`20260826193527 outfit_tag_consistency`**.
 
-## PR #96 branch-only Outfit tag consistency contract — NOT PRODUCTION YET
-The current Outfit editor must treat `outfit_photo_tags` as subordinate to the Outfit's current selected/tagged garment set in `outfit_post_items`.
+## PR #96 Outfit tag consistency contract — PRODUCTION
+The current Outfit editor treats `outfit_photo_tags` as subordinate to the Outfit's current selected/tagged garment set in `outfit_post_items`.
 
-The branch migration `20260826190000_outfit_tag_consistency.sql` updates the canonical Outfit save path so that:
+Production migration `20260826190000_outfit_tag_consistency.sql` updates the canonical Outfit save path so that:
 - stale photo-hotspot rows whose `closet_item_id` is no longer present in the same Outfit's selected `outfit_post_items` are removed during the canonical save/synchronization operation;
 - current legitimate hotspot rows whose Closet item remains selected are preserved;
 - the creator is not forced to manually recover from historical stale state by receiving the internal **“Hotspot garment is not tagged in this Outfit”** consistency error;
 - the existing normalized hotspot requirement remains: a persisted hotspot may reference only a Closet item currently tagged on that Outfit;
 - this repair does not broaden public/private data access, expose private Closet linkage to anonymous users, create a second hotspot system or change Product/variation identity.
 
-This migration exists because production data investigation found real stale persisted hotspot relationships, not merely a client display problem. It must pass complete fresh migration replay and database behavior/privacy tests before production application.
+This migration exists because production data investigation found real stale persisted hotspot relationships, not merely a client display problem. It passed complete fresh migration replay and database behavior/privacy tests on the exact PR #96 candidate before production application, and the `main` push verification passed again afterward.
 
 # 1. Privacy / body-state foundations — LOCKED
 - `profiles` stores member identity; exact Fit Profile/body measurements are not stored there.
@@ -245,7 +248,7 @@ Twin designation is calculated from current Tops and Bottoms regional Match qual
 
 Follow alone does not enable person notifications. Person notifications and Product one-shot Match notifications remain separate from Following, Like and Wish state.
 
-# 13. LikeLocker / Wish Locker / Outfit foundations — ROADMAP 12 PRODUCTION THROUGH PR #95 + PR #96 BRANCH DELTA
+# 13. LikeLocker / Wish Locker / Outfit foundations — ROADMAP 12 PRODUCTION THROUGH PR #96
 Product likes, Outfit likes, comment likes and Wish Locker purchase intent are distinct states. Outfits reuse canonical Closet/Product/taxonomy foundations; no second garment or shopping system exists.
 
 Core Outfit schema:
@@ -263,7 +266,7 @@ Core Outfit schema:
 
 Drafts are owner-only and never enter Following activity or anonymous views. Publication requires valid Headline, 1–6 public photos with one Main, 1–6 tagged owned Closet garments and 1–2 Occasions.
 
-On the PR #96 branch, the canonical save/sync path heals stale `outfit_photo_tags` rows that no longer have a corresponding current `outfit_post_items` row before final consistency validation. This preserves the existing invariant rather than weakening it.
+The production canonical save/sync path heals stale `outfit_photo_tags` rows that no longer have a corresponding current `outfit_post_items` row before final consistency validation. This preserves the existing invariant rather than weakening it.
 
 ## Outfit comments and comment Likes
 `outfit_comment_likes(comment_id,user_id)` is member-private Like state for visible plain-text Outfit comments.
@@ -326,10 +329,10 @@ Repeated reports from the same **person + Product + tracked fit variation** repr
 Before Product Detail consumes `exact_variant`, recommendation/evidence/Admin behavior must consume `GARMENT_VARIATION_DEFINITION_MAP`. Size and Color must never become exact-variation key fields. Body Match remains body similarity and must not be collapsed with Fit Result into a synthetic fit percentage.
 
 # 15. Current implementation debt / open verification
-- Production application is live through PR #95 merge **`5c52fb29cb6bb54d21015e5c87b9f1e775f0bc81`** and Vercel production **`dpl_52b8K3YGnMbJGRfiEGApdqNJcYj6`**. PR #94 and PR #95 verification exceptions are explicitly recorded; neither should be retroactively described as full-CI green.
+- Production application is live through verified PR #96 merge **`87ffbdcb3ed9d1849d1dc1e28d58c9ec18586ea7`** and verified application deployment **`dpl_C6UoK4zTr8bQA13n6SYr3uymRQaP`**. PR #94 and PR #95 verification exceptions remain explicitly recorded and must not be retroactively described as full-CI green.
 - `profile_locations` is production-applied at hosted migration **`20260825192738 private_profile_location_metadata`**; current application setup/settings require both City and State while the table retains pair-null compatibility for historical/compatibility rows.
-- Production also includes `20260826001512 username_change_cooldown`, `20260826001531 exact_variation_evidence_watches`, `20260826020651 atomic_outfit_cover_switch`, and `20260826020710 preserve_tracked_variation_recommendation_evidence`.
-- PR #96 branch migration **`20260826190000_outfit_tag_consistency.sql`** is not production-applied. It must pass complete fresh replay and database behavior/privacy tests on the exact final candidate before any authorized production application.
+- Production also includes `20260826001512 username_change_cooldown`, `20260826001531 exact_variation_evidence_watches`, `20260826020651 atomic_outfit_cover_switch`, `20260826020710 preserve_tracked_variation_recommendation_evidence`, and **`20260826193527 outfit_tag_consistency`**.
+- The local canonical Outfit tag-consistency migration is **`20260826190000_outfit_tag_consistency.sql`**; Supabase assigned hosted version `20260826193527`. Do not rename the local immutable file to chase the hosted timestamp.
 - Owner live re-audit remains the Roadmap 12 gate; Roadmap 13 full Style Feed behavior must not be treated as unblocked until the owner finishes the New Outfit audit.
 - Roadmap 13A canonical Product-image scoring remains planned. No scoring schema is production truth until a later ordered migration is designed, verified and applied.
 - The legacy physical `closet_items.visibility` column remains intentionally in immutable replay history and locked to compatibility `shared`; broader Closet lifecycle/mutation rules remain future audit work.

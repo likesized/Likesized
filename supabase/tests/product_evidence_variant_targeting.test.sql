@@ -53,8 +53,8 @@ values
   ('e4000000-0000-4000-8000-000000000002'::uuid,'e2000000-0000-4000-8000-000000000001'::uuid,'M','Black','e3000000-0000-4000-8000-000000000001'::uuid,'unisex','black'),
   ('e4000000-0000-4000-8000-000000000003'::uuid,'e2000000-0000-4000-8000-000000000002'::uuid,'M','Blue','e3000000-0000-4000-8000-000000000001'::uuid,'unisex','blue');
 
--- One wearer intentionally has two legitimate observations. Both remain evidence; the
--- Exact Variant observation still ranks above the Exact Product observation.
+-- One wearer intentionally has two legitimate tracked fit variations. Both remain
+-- evidence even though Size/Color themselves never create tracked variations.
 set local role authenticated;
 set local request.jwt.claim.sub='e0000000-0000-4000-8000-000000000002';
 set local request.jwt.claim.role='authenticated';
@@ -62,10 +62,10 @@ insert into public.closet_items(id,user_id,product_id,variant_id,size_label,norm
 values
   ('e5000000-0000-4000-8000-000000000001'::uuid,'e0000000-0000-4000-8000-000000000002'::uuid,'e2000000-0000-4000-8000-000000000001'::uuid,'e4000000-0000-4000-8000-000000000001'::uuid,'M','e3000000-0000-4000-8000-000000000001'::uuid,'shared'),
   ('e5000000-0000-4000-8000-000000000002'::uuid,'e0000000-0000-4000-8000-000000000002'::uuid,'e2000000-0000-4000-8000-000000000001'::uuid,'e4000000-0000-4000-8000-000000000002'::uuid,'M','e3000000-0000-4000-8000-000000000001'::uuid,'shared');
-insert into public.fit_reports(id,user_id,closet_item_id,product_id,variant_id,size_label,normalized_size_id,fit,would_buy_again,created_at)
+insert into public.fit_reports(id,user_id,closet_item_id,product_id,variant_id,size_label,normalized_size_id,fit,would_buy_again,objective_variant_key,created_at)
 values
-  ('e6000000-0000-4000-8000-000000000001'::uuid,'e0000000-0000-4000-8000-000000000002'::uuid,'e5000000-0000-4000-8000-000000000001'::uuid,'e2000000-0000-4000-8000-000000000001'::uuid,'e4000000-0000-4000-8000-000000000001'::uuid,'M','e3000000-0000-4000-8000-000000000001'::uuid,'just_right',true,now()-interval '2 days'),
-  ('e6000000-0000-4000-8000-000000000002'::uuid,'e0000000-0000-4000-8000-000000000002'::uuid,'e5000000-0000-4000-8000-000000000002'::uuid,'e2000000-0000-4000-8000-000000000001'::uuid,'e4000000-0000-4000-8000-000000000002'::uuid,'M','e3000000-0000-4000-8000-000000000001'::uuid,'just_right',true,now()-interval '1 day');
+  ('e6000000-0000-4000-8000-000000000001'::uuid,'e0000000-0000-4000-8000-000000000002'::uuid,'e5000000-0000-4000-8000-000000000001'::uuid,'e2000000-0000-4000-8000-000000000001'::uuid,'e4000000-0000-4000-8000-000000000001'::uuid,'M','e3000000-0000-4000-8000-000000000001'::uuid,'just_right',true,'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',now()-interval '2 days'),
+  ('e6000000-0000-4000-8000-000000000002'::uuid,'e0000000-0000-4000-8000-000000000002'::uuid,'e5000000-0000-4000-8000-000000000002'::uuid,'e2000000-0000-4000-8000-000000000001'::uuid,'e4000000-0000-4000-8000-000000000002'::uuid,'M','e3000000-0000-4000-8000-000000000001'::uuid,'just_right',true,'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',now()-interval '1 day');
 reset role;
 
 set local role authenticated;
@@ -73,8 +73,8 @@ set local request.jwt.claim.sub='e0000000-0000-4000-8000-000000000003';
 set local request.jwt.claim.role='authenticated';
 insert into public.closet_items(id,user_id,product_id,variant_id,size_label,normalized_size_id,visibility)
 values('e5000000-0000-4000-8000-000000000003'::uuid,'e0000000-0000-4000-8000-000000000003'::uuid,'e2000000-0000-4000-8000-000000000001'::uuid,'e4000000-0000-4000-8000-000000000002'::uuid,'M','e3000000-0000-4000-8000-000000000001'::uuid,'shared');
-insert into public.fit_reports(id,user_id,closet_item_id,product_id,variant_id,size_label,normalized_size_id,fit,would_buy_again)
-values('e6000000-0000-4000-8000-000000000003'::uuid,'e0000000-0000-4000-8000-000000000003'::uuid,'e5000000-0000-4000-8000-000000000003'::uuid,'e2000000-0000-4000-8000-000000000001'::uuid,'e4000000-0000-4000-8000-000000000002'::uuid,'M','e3000000-0000-4000-8000-000000000001'::uuid,'just_right',true);
+insert into public.fit_reports(id,user_id,closet_item_id,product_id,variant_id,size_label,normalized_size_id,fit,would_buy_again,objective_variant_key)
+values('e6000000-0000-4000-8000-000000000003'::uuid,'e0000000-0000-4000-8000-000000000003'::uuid,'e5000000-0000-4000-8000-000000000003'::uuid,'e2000000-0000-4000-8000-000000000001'::uuid,'e4000000-0000-4000-8000-000000000002'::uuid,'M','e3000000-0000-4000-8000-000000000001'::uuid,'just_right',true,'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
 reset role;
 
 set local role authenticated;
@@ -82,8 +82,8 @@ set local request.jwt.claim.sub='e0000000-0000-4000-8000-000000000004';
 set local request.jwt.claim.role='authenticated';
 insert into public.closet_items(id,user_id,product_id,variant_id,size_label,normalized_size_id,visibility)
 values('e5000000-0000-4000-8000-000000000004'::uuid,'e0000000-0000-4000-8000-000000000004'::uuid,'e2000000-0000-4000-8000-000000000002'::uuid,'e4000000-0000-4000-8000-000000000003'::uuid,'M','e3000000-0000-4000-8000-000000000001'::uuid,'shared');
-insert into public.fit_reports(id,user_id,closet_item_id,product_id,variant_id,size_label,normalized_size_id,fit,would_buy_again)
-values('e6000000-0000-4000-8000-000000000004'::uuid,'e0000000-0000-4000-8000-000000000004'::uuid,'e5000000-0000-4000-8000-000000000004'::uuid,'e2000000-0000-4000-8000-000000000002'::uuid,'e4000000-0000-4000-8000-000000000003'::uuid,'M','e3000000-0000-4000-8000-000000000001'::uuid,'just_right',true);
+insert into public.fit_reports(id,user_id,closet_item_id,product_id,variant_id,size_label,normalized_size_id,fit,would_buy_again,objective_variant_key)
+values('e6000000-0000-4000-8000-000000000004'::uuid,'e0000000-0000-4000-8000-000000000004'::uuid,'e5000000-0000-4000-8000-000000000004'::uuid,'e2000000-0000-4000-8000-000000000002'::uuid,'e4000000-0000-4000-8000-000000000003'::uuid,'M','e3000000-0000-4000-8000-000000000001'::uuid,'just_right',true,'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc');
 reset role;
 
 set local role authenticated;
@@ -92,8 +92,8 @@ set local request.jwt.claim.role='authenticated';
 create temporary table variant_target_results on commit drop as
 select * from public.get_product_evidence_candidates('e2000000-0000-4000-8000-000000000001'::uuid,'e4000000-0000-4000-8000-000000000001'::uuid,50);
 
-select is((select count(*) from variant_target_results),4::bigint,'every distinct valid Fit Report situation is returned as evidence');
-select is((select count(*) from variant_target_results where user_id='e0000000-0000-4000-8000-000000000002'::uuid),2::bigint,'one wearer may contribute multiple legitimate distinct evidence rows');
+select is((select count(*) from variant_target_results),4::bigint,'every distinct valid tracked Fit Report situation is returned as evidence');
+select is((select count(*) from variant_target_results where user_id='e0000000-0000-4000-8000-000000000002'::uuid),2::bigint,'one wearer may contribute multiple legitimate tracked-variation evidence rows');
 select is((select evidence_variant_id from variant_target_results where fit_report_id='e6000000-0000-4000-8000-000000000001'::uuid),'e4000000-0000-4000-8000-000000000001'::uuid,'the matching observation retains its Exact Variant target');
 select is((select evidence_level::text from variant_target_results where fit_report_id='e6000000-0000-4000-8000-000000000001'::uuid),'exact_variant','matching target variant is labeled Exact Variant');
 select is((select evidence_rank from variant_target_results where fit_report_id='e6000000-0000-4000-8000-000000000001'::uuid),1,'Exact Variant receives evidence rank 1');
@@ -105,7 +105,7 @@ select is((select evidence_level::text from variant_target_results order by evid
 create temporary table foreign_variant_results on commit drop as
 select * from public.get_product_evidence_candidates('e2000000-0000-4000-8000-000000000001'::uuid,'e4000000-0000-4000-8000-000000000003'::uuid,50);
 select is((select count(*) from foreign_variant_results where evidence_level='exact_variant'::public.evidence_level),0::bigint,'foreign variant ID cannot receive Exact Variant rank for the target product');
-select ok((select count(*)=2 and bool_and(evidence_level='exact_product'::public.evidence_level) from foreign_variant_results where user_id='e0000000-0000-4000-8000-000000000002'::uuid),'foreign variant target safely falls both valid wearer observations back to Exact Product evidence');
+select ok((select count(*)=2 and bool_and(evidence_level='exact_product'::public.evidence_level) from foreign_variant_results where user_id='e0000000-0000-4000-8000-000000000002'::uuid),'foreign variant target safely falls both valid tracked observations back to Exact Product evidence');
 
 create temporary table product_target_results on commit drop as
 select * from public.get_product_evidence_candidates('e2000000-0000-4000-8000-000000000001'::uuid,null,50);

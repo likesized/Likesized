@@ -81,9 +81,9 @@ test("Outfit photos open a full-size viewer without stealing tag or Caption clic
   assert.match(gallery,/Previous photo/);
   assert.match(gallery,/Next photo/);
   assert.match(gallery,/onPointerMove=\{lightboxPointerMove\}/);
-  assert.match(gallery,/translateY\(\$\{lightboxDragY\}px\)/);
-  assert.match(gallery,/touchAction:"pan-x pinch-zoom"/);
-  assert.match(gallery,/dy>=70/);
+  assert.match(gallery,/translate\(\$\{lightboxDragX\}px, \$\{lightboxDragY\}px\)/);
+  assert.match(gallery,/Math\.abs\(dx\)>=38&&Math\.abs\(dx\)>Math\.abs\(rawDy\)/);
+  assert.match(gallery,/dy>=70&&dy>Math\.abs\(dx\)/);
   assert.match(gallery,/openTaggedItem\(tag\.closetItemId\)/);
   assert.match(gallery,/event\.stopPropagation\(\);setShowCaption/);
 });

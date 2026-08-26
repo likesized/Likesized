@@ -59,6 +59,14 @@ test("cover-tag reuse, draft responsiveness, and Preview Publish scroll are expl
  assert.match(composer,/Use Cover Photo Tags/);assert.match(composer,/photos_dirty/);assert.match(actions,/shouldSyncPhotos/);assert.match(composer,/await nextPaint\(\)/);assert.match(composer,/window\.scrollTo\(\{top:0,behavior:"auto"\}\)/);
 });
 
+test("photo upload feedback stays at the uploader and the cover is a single filled slot",()=>{
+ assert.match(composer,/mainPhoto\?<div className=\{styles\.uploadComplete\}/);assert.match(composer,/Cover photo uploaded successfully\./);assert.match(composer,/Photo uploaded successfully\./);assert.match(composer,/>Add more<\/button>/);assert.match(composer,/>Continue editing the Outfit<\/button>/);assert.match(composer,/additionalInputRef\.current\?\.click\(\)/);assert.match(composer,/postSectionRef\.current\?\.scrollIntoView/);assert.match(composer,/if \(!file\|\|mainPhoto\) return/);
+});
+
+test("published editor back navigation bypasses entity quick view but keeps the unsaved-work guard",()=>{
+ assert.match(newPage,/data-full-navigation="true"/);assert.match(newPage,/editing \? "← Back to Outfit" : "← Back to My Closet"/);assert.match(composer,/setLeaveHref\(`/);assert.match(composer,/>Leave Without Saving<\/button>/);assert.match(composer,/>Keep Editing<\/button>/);assert.match(composer,/isPublished \? "Save Changes" : "Save Draft"/);
+});
+
 test("Outfit photo captions keep optional copy and character count separated and save atomically",()=>{
  assert.match(composer,/className=\{styles\.photoCaptionField\}/);assert.match(outfitsCss,/\.photoCaptionField>span\{display:flex;align-items:baseline;gap:/);assert.match(outfitsCss,/\.photoCaptionField>span b\{margin-left:auto/);assert.match(composer,/caption: photo\.caption/);assert.match(actions,/saveManifestCaptions/);assert.doesNotMatch(composer,/saveOutfitPhotoCaptions/);
 });
@@ -89,6 +97,10 @@ test("Outfit social controls stay with media, counts stay with actions, owners g
 
 test("Relevant Fit Reports and Closet history both feed the one tagged FITuition engine",()=>{
  assert.match(tagged,/Relevant Fit Reports:/);assert.doesNotMatch(tagged,/Strong exact Fit Reports:|No Strong Fit Reports|strong exact-variation evidence arrives/);assert.match(tagged,/meta\?\.category/);assert.match(tagged,/item\.imageUrl/);assert.doesNotMatch(taggedFit,/get_product_fit_summary/);assert.match(taggedFit,/relevantExact/);assert.match(taggedFit,/historical_match_score>=STRONG_FIT_REPORT_MATCH_THRESHOLD/);assert.match(taggedFit,/get_fit_report_snapshot_matches/);assert.match(taggedFit,/closetEvidenceRelevance/);assert.match(taggedFit,/source:"community"/);assert.match(taggedFit,/source:"closet"/);assert.match(taggedFit,/recommendSize\(\[\.\.\.otherEvidence,\.\.\.ownHistory\]\)/);
+});
+
+test("own exact-item history remains Relevant when Body Match coverage is unavailable",()=>{
+ assert.match(taggedFit,/targetReport\.user_id===viewerId/);assert.match(taggedFit,/ownExactReports:RelevantReport\[\]/);assert.match(taggedFit,/bodyMatch=match&&match\.historical_match_score>0\?match\.historical_match_score:null/);assert.match(taggedFit,/matchingFitReports:relevantReports\.length/);assert.match(taggedFit,/strongFitReports:strongAggregate\(relevantExact/);assert.match(tagged,/bodyMatch:number\|null/);assert.match(tagged,/Your Fit Report/);assert.match(tagged,/Body Match unavailable/);
 });
 
 test("Tagged quick view resolves loading, persists notification state, and uses plain Relevant Fit Report copy",()=>{

@@ -72,6 +72,11 @@ test("tagged cards stay compact while clicked garments carry tracked-variation d
   assert.match(taggedPanel,/meta\?\.variationDetail\?<span className=\{quickStyles\.variationDetail\}>\{meta\.variationDetail\}<\/span>/);
 });
 
+test("first tagged-garment quick view always keeps direct full Garment Detail navigation",()=>{
+  assert.match(taggedPanel,/UniversalActionBar[\s\S]*View Garment Detail →/);
+  assert.match(taggedPanel,/href=\{selected\.href\} data-full-navigation="true">View Garment Detail →<\/Link>/);
+});
+
 test("FITuition details use one concise intermediate evidence layer before full garment navigation",()=>{
   assert.match(taggedPanel,/See FITuition Details →/);
   assert.match(taggedPanel,/FITuition DETAILS/);

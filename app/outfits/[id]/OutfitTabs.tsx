@@ -31,7 +31,7 @@ export default function OutfitTabs({initialTab="style",styleNotes,comments,tagge
     const span=target.closest("span[role='link']");
     if(!(span instanceof HTMLSpanElement)||!styleRef.current?.contains(span))return;
     const text=span.textContent?.trim()??"";
-    const params=new URLSearchParams({view:"outfits",scope:"all",return_to:`${window.location.pathname}${window.location.search}`});
+    const params=new URLSearchParams({view:"outfits",scope:"all"});
     if(text.startsWith("#")){const style=normalizedStyle(text);if(!style)return;params.set("style",style);}else{const occasion=OCCASION_BY_LABEL.get(text);if(!occasion)return;params.set("occasion",occasion);}
     window.location.assign(`/explore?${params.toString()}`);
   }

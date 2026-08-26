@@ -21,7 +21,6 @@ type SnapshotMatch={fit_report_id:string;historical_match_score:number;historica
 type TargetReport={id:string;product_id:string;objective_variant_key:string|null};
 type SizeRow={id:string;normalized_key:string;display_label:string;kind:string;sizing_system:string|null;alpha_size:string|null;numeric_size:number|null;shoe_size:number|null};
 type AttributeRow={product_id:string;attribute_key:string;option_key:string};
-
 type Adjacency={current:{sizeKey:string;sizeLabel:string};up:{sizeKey:string;sizeLabel:string}|null;down:{sizeKey:string;sizeLabel:string}|null};
 
 function sizeAdjacency(normalizedId:string|null,sizeLabel:string,byId:Map<string,SizeRow>,safe:Map<string,Adjacency>):Adjacency{
@@ -57,6 +56,7 @@ function strongAggregate(rows:Candidate[],sizeLabel:(row:Candidate)=>string){
     fitBreakdown:Object.entries(group.fits).filter(([,count])=>count>0).map(([fit,count])=>({fit,fitLabel:FIT_RESULT_LABELS[fit]??fit,count,percent:Math.round((count/group.count)*100)})),
   }));
 }
+function logEvidenceError(stage:string,error:unknown){if(error)console.error(`[tagged-fit] ${stage}`,error);}
 
 export async function GET(request:Request,{params}:{params:Promise<{id:string}>}){
   const {id:postId}=await params;
@@ -84,20 +84,23 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
   if(productError||!productData)return Response.json({error:"Could not load tagged garment."},{status:500});
   const product=productData as ProductRow;
   const category=product.garment_type_key?(GARMENT_TYPE_BY_KEY.get(product.garment_type_key)?.label??product.garment_type_key.replaceAll("_"," ")):"Garment";
-  if(!profileReady)return Response.json({category,profileReady:false,matchingFitReports:0,recommendation:null,relevantReports:[],strongFitReports:[],objectiveVariantKey:targetReport.objective_variant_key??""});
+  if(!profileReady)return Response.json({category,profileReady:false,matchingFitReports:0,recommendation:null,relevantReports:[],strongFitReports:[],objectiveVariantKey:targetReport.objective_variant_key??"",closetEvidenceCount:0});
 
-  const [{data:candidateData,error:candidateError},{data:ownReportData,error:ownReportError},{data:sizeData,error:sizeError}]=await Promise.all([
+  const [candidateResult,ownReportResult,sizeResult]=await Promise.all([
     supabase.rpc("get_product_evidence_candidates",{p_product_id:product.id,p_variant_id:null,p_result_limit:300}),
     supabase.from("fit_reports").select("id,user_id,product_id,normalized_size_id,size_label,fit,created_at,garment_condition,objective_variant_key").eq("user_id",viewerId).order("created_at",{ascending:false}).limit(200),
     supabase.from("normalized_sizes").select("id,normalized_key,display_label,kind,sizing_system,alpha_size,numeric_size,shoe_size"),
   ]);
-  if(candidateError||ownReportError||sizeError)return Response.json({error:"Could not load FITuition evidence."},{status:500});
+  logEvidenceError("community evidence",candidateResult.error);
+  logEvidenceError("Closet reports",ownReportResult.error);
+  logEvidenceError("normalized sizes",sizeResult.error);
 
-  const rawCandidates=(candidateData??[]) as Candidate[];
+  const rawCandidates=((candidateResult.error?[]:candidateResult.data)??[]) as Candidate[];
   const candidateIds=[...new Set(rawCandidates.map((row)=>row.fit_report_id))];
-  const identityResult=candidateIds.length?await supabase.from("fit_reports").select("id,user_id,product_id,objective_variant_key,created_at").in("id",candidateIds):{data:[],error:null};
-  if(identityResult.error)return Response.json({error:"Could not resolve Fit Report variation identity."},{status:500});
-  const identityById=new Map(((identityResult.data??[]) as ReportIdentity[]).map((row)=>[row.id,row]));
+  const identityResult=candidateIds.length?await supabase.from("fit_reports").select("id,user_id,product_id,objective_variant_key,created_at").in("id",candidateIds):{data:[] as ReportIdentity[],error:null};
+  logEvidenceError("variation identity",identityResult.error);
+  const identityRows=identityResult.error?[]:((identityResult.data??[]) as ReportIdentity[]);
+  const identityById=new Map(identityRows.map((row)=>[row.id,row]));
   const candidates=newestUniqueVariationEvidence(rawCandidates,(row)=>{const identity=identityById.get(row.fit_report_id);return{userId:row.user_id,productId:row.evidence_product_id,objectiveVariantKey:identity?.objective_variant_key,reportId:row.fit_report_id,createdAt:identity?.created_at??""};});
   const targetVariation=targetReport.objective_variant_key??"";
   const relevantExact=candidates.filter((row)=>{
@@ -105,18 +108,21 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
     return row.evidence_product_id===product.id&&(identity?.objective_variant_key??"")===targetVariation&&row.historical_match_score>=STRONG_FIT_REPORT_MATCH_THRESHOLD;
   }).sort((a,b)=>b.historical_match_score-a.historical_match_score||b.historical_coverage_percent-a.historical_coverage_percent);
 
-  const ownReports=newestUniqueVariationEvidence((ownReportData??[]) as OwnReport[],(report)=>({userId:report.user_id,productId:report.product_id,objectiveVariantKey:report.objective_variant_key,reportId:report.id,createdAt:report.created_at}));
+  const ownReports=newestUniqueVariationEvidence((((ownReportResult.error?[]:ownReportResult.data)??[]) as OwnReport[]),(report)=>({userId:report.user_id,productId:report.product_id,objectiveVariantKey:report.objective_variant_key,reportId:report.id,createdAt:report.created_at}));
   const ownProductIds=[...new Set(ownReports.map((row)=>row.product_id))];
   const [ownProductRows,snapshotResult,attributeResult]=await Promise.all([
-    ownProductIds.length?supabase.from("products").select("id,brand_id,product_family_id,garment_type_key,category").in("id",ownProductIds):Promise.resolve({data:[],error:null}),
-    ownReports.length?supabase.rpc("get_fit_report_snapshot_matches",{p_fit_report_ids:ownReports.map((row)=>row.id)}):Promise.resolve({data:[],error:null}),
+    ownProductIds.length?supabase.from("products").select("id,brand_id,product_family_id,garment_type_key,category").in("id",ownProductIds):Promise.resolve({data:[] as ProductRow[],error:null}),
+    ownReports.length?supabase.rpc("get_fit_report_snapshot_matches",{p_fit_report_ids:ownReports.map((row)=>row.id)}):Promise.resolve({data:[] as SnapshotMatch[],error:null}),
     supabase.from("product_attribute_values").select("product_id,attribute_key,option_key").in("product_id",[...new Set([product.id,...ownProductIds])]).neq("source_status","rejected").gte("confidence",0.75),
   ]);
-  if(ownProductRows.error||snapshotResult.error||attributeResult.error)return Response.json({error:"Could not load Closet history."},{status:500});
-  const ownProductById=new Map(((ownProductRows.data??[]) as ProductRow[]).map((row)=>[row.id,row]));
-  const snapshotByReport=new Map(((snapshotResult.data??[]) as SnapshotMatch[]).map((row)=>[row.fit_report_id,row]));
-  const attrs=attributeSets((attributeResult.data??[]) as AttributeRow[]);
-  const sizes=(sizeData??[]) as SizeRow[];
+  logEvidenceError("Closet products",ownProductRows.error);
+  logEvidenceError("Closet historical matches",snapshotResult.error);
+  logEvidenceError("structured garment attributes",attributeResult.error);
+
+  const ownProductById=new Map((((ownProductRows.error?[]:ownProductRows.data)??[]) as ProductRow[]).map((row)=>[row.id,row]));
+  const snapshotByReport=new Map((((snapshotResult.error?[]:snapshotResult.data)??[]) as SnapshotMatch[]).map((row)=>[row.fit_report_id,row]));
+  const attrs=attributeSets(((attributeResult.error?[]:attributeResult.data)??[]) as AttributeRow[]);
+  const sizes=((sizeResult.error?[]:sizeResult.data)??[]) as SizeRow[];
   const sizeById=new Map(sizes.map((row)=>[row.id,row]));
   const safeSizes=buildSafeSizeAdjacency(sizes.map((row):NormalizedSizeDescriptor=>({id:row.id,normalizedKey:row.normalized_key,displayLabel:row.display_label,kind:row.kind,sizingSystem:row.sizing_system,alphaSize:row.alpha_size,numericSize:row.numeric_size,shoeSize:row.shoe_size}))) as Map<string,Adjacency>;
   const sharedDirectional=new Map(candidates.filter((row)=>row.user_id===viewerId).map((row)=>[row.fit_report_id,row.directional_fit_support]));

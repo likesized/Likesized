@@ -98,7 +98,8 @@ test("profile photos are live identity instead of Outfit or comment snapshots",(
  assert.match(commentApi,/currentProfilePhotoUrl/);
  assert.match(commentApi,/get_outfit_comments_sorted_page/);
  assert.match(commentPageMigration,/p\.avatar_url/);
- assert.match(explorePage,/profile:profiles\(username,display_name,avatar_url\)/);
+ assert.match(explorePage,/from\("profiles"\)\.select\("id,username,display_name,avatar_url"\)\.in\("id",outfitUserIds\)/);
+ assert.doesNotMatch(explorePage,/profile:profiles\(username,display_name,avatar_url\)/);
  assert.match(explorePage,/outfitProfilePhotos/);
  assert.match(liveIdentityMigration,/set public = true/);
  assert.match(liveIdentityMigration,/p\.avatar_url/);

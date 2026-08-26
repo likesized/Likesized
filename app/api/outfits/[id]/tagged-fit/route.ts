@@ -15,14 +15,16 @@ import { createClient } from "@/lib/supabase/server";
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 type Candidate={fit_report_id:string;user_id:string;evidence_product_id:string;normalized_size_id:string|null;original_size_label:string;fit:RecommendationEvidence["fit"];historical_match_score:number;historical_coverage_percent:number;evidence_level:RecommendationEvidence["evidenceLevel"];attribute_overlap:number;directional_fit_support:number|null};
 type ProductRow={id:string;brand_id:string;product_family_id:string|null;garment_type_key:string|null;category:string};
-type OwnReport={id:string;user_id:string;product_id:string;normalized_size_id:string|null;size_label:string;fit:RecommendationEvidence["fit"];created_at:string;garment_condition:string;objective_variant_key:string|null};
+type ProductRelation=ProductRow|ProductRow[]|null;
+type OwnReport={id:string;user_id:string;product_id:string;normalized_size_id:string|null;size_label:string;fit:RecommendationEvidence["fit"];created_at:string;garment_condition:string;objective_variant_key:string|null;product:ProductRelation};
 type ReportIdentity={id:string;user_id:string;product_id:string;objective_variant_key:string|null;created_at:string};
 type SnapshotMatch={fit_report_id:string;historical_match_score:number;historical_coverage_percent:number};
-type TargetReport={id:string;product_id:string;objective_variant_key:string|null};
+type TargetReport={id:string;product_id:string;objective_variant_key:string|null;product:ProductRelation};
 type SizeRow={id:string;normalized_key:string;display_label:string;kind:string;sizing_system:string|null;alpha_size:string|null;numeric_size:number|null;shoe_size:number|null};
 type AttributeRow={product_id:string;attribute_key:string;option_key:string};
 type Adjacency={current:{sizeKey:string;sizeLabel:string};up:{sizeKey:string;sizeLabel:string}|null;down:{sizeKey:string;sizeLabel:string}|null};
 
+function firstProduct(value:ProductRelation){return Array.isArray(value)?(value[0]??null):value;}
 function sizeAdjacency(normalizedId:string|null,sizeLabel:string,byId:Map<string,SizeRow>,safe:Map<string,Adjacency>):Adjacency{
   if(normalizedId){
     const mapped=safe.get(normalizedId);if(mapped)return mapped;
@@ -69,31 +71,35 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
   const viewerId=claims?.claims?.sub??null;
   if(!viewerId)return Response.json({error:"Authentication required."},{status:401});
 
-  const [{data:tagLink,error:tagError},{data:fitProfile}]=await Promise.all([
+  const [tagResult,profileResult,targetResult,ownReportResult,sizeResult]=await Promise.all([
     supabase.from("outfit_post_items").select("closet_item_id").eq("post_id",postId).eq("closet_item_id",closetItemId).maybeSingle(),
     supabase.from("fit_profiles").select("completed_at").eq("user_id",viewerId).maybeSingle(),
+    supabase.from("fit_reports").select("id,product_id,objective_variant_key,product:products!fit_reports_product_id_fkey(id,brand_id,product_family_id,garment_type_key,category)").eq("closet_item_id",closetItemId).order("created_at",{ascending:false}).order("id",{ascending:false}).limit(1).maybeSingle(),
+    supabase.from("fit_reports").select("id,user_id,product_id,normalized_size_id,size_label,fit,created_at,garment_condition,objective_variant_key,product:products!fit_reports_product_id_fkey(id,brand_id,product_family_id,garment_type_key,category)").eq("user_id",viewerId).order("created_at",{ascending:false}).limit(200),
+    supabase.from("normalized_sizes").select("id,normalized_key,display_label,kind,sizing_system,alpha_size,numeric_size,shoe_size"),
   ]);
-  if(tagError||!tagLink)return Response.json({error:"Tagged garment not found."},{status:404});
-  const profileReady=Boolean(fitProfile?.completed_at);
+  if(tagResult.error||!tagResult.data)return Response.json({error:"Tagged garment not found."},{status:404});
+  if(targetResult.error||!targetResult.data)return Response.json({error:"Tagged garment has no Fit Report evidence."},{status:404});
+  logEvidenceError("Closet reports",ownReportResult.error);
+  logEvidenceError("normalized sizes",sizeResult.error);
 
-  const {data:targetData,error:targetError}=await supabase.from("fit_reports").select("id,product_id,objective_variant_key").eq("closet_item_id",closetItemId).order("created_at",{ascending:false}).order("id",{ascending:false}).limit(1).maybeSingle();
-  if(targetError||!targetData)return Response.json({error:"Tagged garment has no Fit Report evidence."},{status:404});
-  const targetReport=targetData as TargetReport;
-
-  const {data:productData,error:productError}=await supabase.from("products").select("id,brand_id,product_family_id,garment_type_key,category").eq("id",targetReport.product_id).maybeSingle();
-  if(productError||!productData)return Response.json({error:"Could not load tagged garment."},{status:500});
-  const product=productData as ProductRow;
+  const profileReady=Boolean(profileResult.data?.completed_at);
+  const targetReport=targetResult.data as unknown as TargetReport;
+  const product=firstProduct(targetReport.product);
+  if(!product)return Response.json({error:"Could not load tagged garment."},{status:500});
   const category=product.garment_type_key?(GARMENT_TYPE_BY_KEY.get(product.garment_type_key)?.label??product.garment_type_key.replaceAll("_"," ")):"Garment";
   if(!profileReady)return Response.json({category,profileReady:false,matchingFitReports:0,recommendation:null,relevantReports:[],strongFitReports:[],objectiveVariantKey:targetReport.objective_variant_key??"",closetEvidenceCount:0});
 
-  const [candidateResult,ownReportResult,sizeResult]=await Promise.all([
+  const ownReports=newestUniqueVariationEvidence((((ownReportResult.error?[]:ownReportResult.data)??[]) as unknown as OwnReport[]),(report)=>({userId:report.user_id,productId:report.product_id,objectiveVariantKey:report.objective_variant_key,reportId:report.id,createdAt:report.created_at}));
+  const ownProductIds=[...new Set(ownReports.map((row)=>row.product_id))];
+  const [candidateResult,snapshotResult,attributeResult]=await Promise.all([
     supabase.rpc("get_product_evidence_candidates",{p_product_id:product.id,p_variant_id:null,p_result_limit:300}),
-    supabase.from("fit_reports").select("id,user_id,product_id,normalized_size_id,size_label,fit,created_at,garment_condition,objective_variant_key").eq("user_id",viewerId).order("created_at",{ascending:false}).limit(200),
-    supabase.from("normalized_sizes").select("id,normalized_key,display_label,kind,sizing_system,alpha_size,numeric_size,shoe_size"),
+    ownReports.length?supabase.rpc("get_fit_report_snapshot_matches",{p_fit_report_ids:ownReports.map((row)=>row.id)}):Promise.resolve({data:[] as SnapshotMatch[],error:null}),
+    supabase.from("product_attribute_values").select("product_id,attribute_key,option_key").in("product_id",[...new Set([product.id,...ownProductIds])]).neq("source_status","rejected").gte("confidence",0.75),
   ]);
   logEvidenceError("community evidence",candidateResult.error);
-  logEvidenceError("Closet reports",ownReportResult.error);
-  logEvidenceError("normalized sizes",sizeResult.error);
+  logEvidenceError("Closet historical matches",snapshotResult.error);
+  logEvidenceError("structured garment attributes",attributeResult.error);
 
   const rawCandidates=((candidateResult.error?[]:candidateResult.data)??[]) as Candidate[];
   const candidateIds=[...new Set(rawCandidates.map((row)=>row.fit_report_id))];
@@ -108,18 +114,8 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
     return row.evidence_product_id===product.id&&(identity?.objective_variant_key??"")===targetVariation&&row.historical_match_score>=STRONG_FIT_REPORT_MATCH_THRESHOLD;
   }).sort((a,b)=>b.historical_match_score-a.historical_match_score||b.historical_coverage_percent-a.historical_coverage_percent);
 
-  const ownReports=newestUniqueVariationEvidence((((ownReportResult.error?[]:ownReportResult.data)??[]) as OwnReport[]),(report)=>({userId:report.user_id,productId:report.product_id,objectiveVariantKey:report.objective_variant_key,reportId:report.id,createdAt:report.created_at}));
-  const ownProductIds=[...new Set(ownReports.map((row)=>row.product_id))];
-  const [ownProductRows,snapshotResult,attributeResult]=await Promise.all([
-    ownProductIds.length?supabase.from("products").select("id,brand_id,product_family_id,garment_type_key,category").in("id",ownProductIds):Promise.resolve({data:[] as ProductRow[],error:null}),
-    ownReports.length?supabase.rpc("get_fit_report_snapshot_matches",{p_fit_report_ids:ownReports.map((row)=>row.id)}):Promise.resolve({data:[] as SnapshotMatch[],error:null}),
-    supabase.from("product_attribute_values").select("product_id,attribute_key,option_key").in("product_id",[...new Set([product.id,...ownProductIds])]).neq("source_status","rejected").gte("confidence",0.75),
-  ]);
-  logEvidenceError("Closet products",ownProductRows.error);
-  logEvidenceError("Closet historical matches",snapshotResult.error);
-  logEvidenceError("structured garment attributes",attributeResult.error);
-
-  const ownProductById=new Map((((ownProductRows.error?[]:ownProductRows.data)??[]) as ProductRow[]).map((row)=>[row.id,row]));
+  const ownProductById=new Map<string,ProductRow>();
+  for(const report of ownReports){const source=firstProduct(report.product);if(source)ownProductById.set(source.id,source);}
   const snapshotByReport=new Map((((snapshotResult.error?[]:snapshotResult.data)??[]) as SnapshotMatch[]).map((row)=>[row.fit_report_id,row]));
   const attrs=attributeSets(((attributeResult.error?[]:attributeResult.data)??[]) as AttributeRow[]);
   const sizes=((sizeResult.error?[]:sizeResult.data)??[]) as SizeRow[];

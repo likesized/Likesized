@@ -23,13 +23,16 @@ test("photo hotspots can open the canonical tagged quick view from any detail ta
   assert.match(css,/\.taggedTabDormant \.taggedGrid\{display:none\}/);
 });
 
-test("Relevant Fit Report evidence and recommendation evidence collapse repeat reports by tracked variation",()=>{
+test("visible Relevant Fit Reports exclude the viewer while own Closet history remains recommendation evidence",()=>{
   assert.match(taggedFit,/newestUniqueVariationEvidence/);
   assert.match(taggedFit,/objective_variant_key/);
   assert.match(taggedFit,/const relevantExact=candidates\.filter/);
   assert.match(taggedFit,/row\.historical_match_score>=STRONG_FIT_REPORT_MATCH_THRESHOLD/);
+  assert.match(taggedFit,/const otherRelevantExact=relevantExact\.filter\(\(row\)=>row\.user_id!==viewerId\)/);
+  assert.match(taggedFit,/const relevantReports=strongOtherReports/);
   assert.match(taggedFit,/matchingFitReports:relevantReports\.length/);
-  assert.match(taggedFit,/strongFitReports:strongAggregate\(relevantExact/);
+  assert.match(taggedFit,/strongFitReports:strongAggregate\(otherRelevantExact/);
+  assert.doesNotMatch(taggedFit,/const relevantReports=\[\.\.\.ownExactReports/);
   assert.match(taggedFit,/source:"community"/);
   assert.match(taggedFit,/source:"closet"/);
   assert.match(taggedFit,/recommendSize\(\[\.\.\.otherEvidence,\.\.\.ownHistory\]\)/);
@@ -52,7 +55,7 @@ test("tagged FITuition preloads every card and resolves failures instead of hang
   assert.doesNotMatch(taggedPanel,/if\(!selectedId\|\|!signedIn\|\|loadedFitMeta/);
 });
 
-test("zero Relevant Fit Reports never surfaces a tagged-item size recommendation",()=>{
+test("zero other-wearer Relevant Fit Reports never surfaces a tagged-item size recommendation",()=>{
   assert.match(taggedPanel,/const showRecommendation=Boolean\(meta\?\.recommendation&&meta\.matchingFitReports>0\)/);
   assert.match(taggedPanel,/showRecommendation&&meta\.recommendation/);
   assert.match(taggedPanel,/I don’t have enough useful evidence to recommend a size yet\./);

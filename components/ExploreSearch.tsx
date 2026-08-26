@@ -9,13 +9,14 @@ type SearchGroup = { total: number; items: SearchItem[] };
 type SearchResponse = { garments: SearchGroup; outfits: SearchGroup; people: SearchGroup };
 const EMPTY: SearchResponse = { garments: { total: 0, items: [] }, outfits: { total: 0, items: [] }, people: { total: 0, items: [] } };
 
-export function ExploreSearch({ fixtures = false }: { fixtures?: boolean }) {
-  const [query, setQuery] = useState("");
+export function ExploreSearch({ fixtures = false, initialQuery = "" }: { fixtures?: boolean; initialQuery?: string }) {
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResponse>(EMPTY);
   const [open, setOpen] = useState(false);
   const [full, setFull] = useState(false);
   const [loading, setLoading] = useState(false);
   const requestNumber = useRef(0);
+  const skipInitialSearch = useRef(Boolean(initialQuery.trim()));
 
   async function runSearch(value: string, limit: number, showFull: boolean) {
     const cleaned = value.trim();
@@ -35,6 +36,7 @@ export function ExploreSearch({ fixtures = false }: { fixtures?: boolean }) {
   }
 
   useEffect(() => {
+    if (skipInitialSearch.current) { skipInitialSearch.current = false; return; }
     const cleaned = query.trim();
     if (!cleaned) { setResults(EMPTY); setOpen(false); return; }
     const timer = window.setTimeout(() => { void runSearch(cleaned, 5, false); }, 220);
@@ -45,7 +47,7 @@ export function ExploreSearch({ fixtures = false }: { fixtures?: boolean }) {
   const total = results.garments.total + results.outfits.total + results.people.total;
   return <div className={styles.searchWrap}>
     <form className={styles.search} onSubmit={(event) => { event.preventDefault(); void runSearch(query, 24, true); }} role="search">
-      <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} onFocus={() => { if (query.trim()) setOpen(true); }} placeholder="Search garments, outfits, or people" maxLength={80} autoComplete="off" aria-expanded={open} aria-controls="explore-search-results" />
+      <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} onFocus={() => { if (query.trim() && results !== EMPTY) setOpen(true); }} placeholder="Search garments, outfits, or people" maxLength={80} autoComplete="off" aria-expanded={open} aria-controls="explore-search-results" />
       <button className="primaryButton" type="submit">Search</button>
     </form>
     {open ? <section id="explore-search-results" className={`${styles.searchResults} ${full ? styles.fullSearchResults : ""}`} aria-live="polite">

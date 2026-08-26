@@ -11,6 +11,7 @@ const pickerCss=readFileSync(new URL("../app/outfits/new/outfitPicker.module.css
 const cardStart=taggedPanel.indexOf("<div className={styles.taggedGrid}");
 const quickViewStart=taggedPanel.indexOf("{selected?<div className={styles.itemPreviewOverlay}");
 const cardMarkup=taggedPanel.slice(cardStart,quickViewStart);
+const unsavedDialogCss=pickerCss.match(/:global\(\[role="dialog"\]\[aria-label="Unsaved Outfit"\]\)\{([^}]*)\}/)?.[1]??"";
 
 test("photo hotspots can open the canonical tagged quick view from any detail tab",()=>{
   assert.match(tabs,/tab==="style"\?<div ref=\{styleRef\}/);
@@ -81,11 +82,11 @@ test("FITuition details use one concise intermediate evidence layer before full 
 });
 
 test("unsaved Outfit navigation confirmation is fixed in the current viewport",()=>{
-  assert.match(pickerCss,/\[role="dialog"\]\[aria-label="Unsaved Outfit"\]/);
-  assert.match(pickerCss,/position:fixed!important/);
-  assert.match(pickerCss,/inset:0!important/);
-  assert.match(pickerCss,/place-items:center!important/);
-  assert.match(pickerCss,/z-index:240!important/);
+  assert.ok(unsavedDialogCss,"Unsaved Outfit dialog rule must exist");
+  assert.match(unsavedDialogCss,/position:fixed!important/);
+  assert.match(unsavedDialogCss,/inset:0!important/);
+  assert.match(unsavedDialogCss,/place-items:center!important/);
+  assert.match(unsavedDialogCss,/z-index:240!important/);
 });
 
 test("mobile tagged quick view stays readable inside the safe-area modal",()=>{

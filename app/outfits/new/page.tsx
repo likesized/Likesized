@@ -11,12 +11,11 @@ type ProductRecord = { id:string;name: string; image_url:string|null;garment_typ
 type SubmissionRecord={product_photo_storage_path:string|null};
 type ProductPhotoEvidence={product_id:string;public_url:string;source_status:string;created_at:string};
 type BrandRecord = { name: string };
-type FitReport = { closet_item_id: string; fit: string; created_at: string };
+type FitReport = { closet_item_id: string; fit: string; created_at: string; garment_answers:Record<string,string>|null };
 type StyleSuggestionRow = { display_tag: string | null };
 type OutfitRow = { id: string; status: "draft" | "published"; headline: string | null; story: string | null; comments_enabled: boolean };
 type OutfitPhotoRow = { id: string; bucket: "outfit-photos" | "outfit-draft-photos"; display_path: string; sort_order: number; is_main: boolean; caption:string|null };
 type OutfitPhotoTag = { photo_id: string; closet_item_id: string; x: number; y: number };
-type AttributeRow={product_id:string;attribute_key:string;option_key:string};
 type VariantRow={id:string;color_label:string|null};
 type FitPhotoRow={closet_item_id:string;storage_path:string;photo_role:string};
 const FIT_LABELS: Record<string, string> = { too_small: "Too small", snug: "Snug", just_right: "Just right", relaxed: "Relaxed", too_big: "Too big" };
@@ -61,8 +60,7 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
   const requestedPreselectedClosetItemId = first(params.closet_item_id) ?? "";
   const preselectedClosetItemId = UUID.test(requestedPreselectedClosetItemId) && closetIds.includes(requestedPreselectedClosetItemId) ? requestedPreselectedClosetItemId : "";
 
-  const reportsRequest = closetIds.length ? supabase.from("fit_reports").select("closet_item_id,fit,created_at").in("closet_item_id", closetIds).order("created_at", { ascending: false }) : Promise.resolve({ data: [], error: null });
-  const attributesRequest=productIds.length?supabase.from("product_attribute_values").select("product_id,attribute_key,option_key").in("product_id",productIds):Promise.resolve({data:[],error:null});
+  const reportsRequest = closetIds.length ? supabase.from("fit_reports").select("closet_item_id,fit,created_at,garment_answers").in("closet_item_id", closetIds).order("created_at", { ascending: false }) : Promise.resolve({ data: [], error: null });
   const variantsRequest=variantIds.length?supabase.from("product_variants").select("id,color_label").in("id",variantIds):Promise.resolve({data:[],error:null});
   const fitPhotosRequest=closetIds.length?supabase.from("fit_reference_photos").select("closet_item_id,storage_path,photo_role").in("closet_item_id",closetIds):Promise.resolve({data:[],error:null});
   const productPhotosRequest=productIds.length?supabase.from("product_photo_evidence").select("product_id,public_url,source_status,created_at").in("product_id",productIds).neq("source_status","rejected").order("created_at",{ascending:false}):Promise.resolve({data:[],error:null});
@@ -75,15 +73,13 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
     ])
     : Promise.resolve(null);
 
-  const [reportsResult,attributesResult,variantsResult,fitPhotosResult,productPhotosResult,outfitParts] = await Promise.all([reportsRequest,attributesRequest,variantsRequest,fitPhotosRequest,productPhotosRequest,outfitPartsRequest]);
+  const [reportsResult,variantsResult,fitPhotosResult,productPhotosResult,outfitParts] = await Promise.all([reportsRequest,variantsRequest,fitPhotosRequest,productPhotosRequest,outfitPartsRequest]);
   if (reportsResult.error) throw new Error(`Could not load Closet fit evidence: ${reportsResult.error.message}`);
-  if(attributesResult.error||variantsResult.error||fitPhotosResult.error||productPhotosResult.error)throw new Error("Could not load Closet garment details.");
+  if(variantsResult.error||fitPhotosResult.error||productPhotosResult.error)throw new Error("Could not load Closet garment details.");
   const reports = (reportsResult.data ?? []) as FitReport[];
   const reportByItem = new Map<string, FitReport>();
   for (const report of reports) if (!reportByItem.has(report.closet_item_id)) reportByItem.set(report.closet_item_id, report);
   const variantById=new Map(((variantsResult.data??[]) as VariantRow[]).map((row)=>[row.id,row]));
-  const attributesByProduct=new Map<string,AttributeRow[]>();
-  for(const row of (attributesResult.data??[]) as AttributeRow[])attributesByProduct.set(row.product_id,[...(attributesByProduct.get(row.product_id)??[]),row]);
   const fitPhotosByItem=new Map<string,FitPhotoRow[]>();
   for(const row of (fitPhotosResult.data??[]) as FitPhotoRow[])fitPhotosByItem.set(row.closet_item_id,[...(fitPhotosByItem.get(row.closet_item_id)??[]),row]);
   const productPhotoByProduct=new Map<string,string>();
@@ -100,11 +96,14 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
     const garmentType = product?.garment_type_key ?? "unknown";
     const category = product?.category ?? "unknown";
     const typeDefinition=TYPE_BY_KEY.get(garmentType);
-    const answers=(product?attributesByProduct.get(product.id)??[]:[]).flatMap((attribute)=>{
-      const question=typeDefinition?.questions.find((candidate)=>candidate.key===attribute.attribute_key);
-      const option=question?.options.find((candidate)=>candidate.value===attribute.option_key);
-      return question&&option?[{label:question.label,value:option.label}]:[];
+    const recordedAnswers=report?.garment_answers??{};
+    const answers=(typeDefinition?.questions??[]).flatMap((question)=>{
+      const answer=recordedAnswers[question.key];
+      if(typeof answer!=="string"||!answer)return [];
+      const option=question.options.find((candidate)=>candidate.value===answer);
+      return option?[{label:question.label,value:option.label}]:[];
     }).slice(0,4);
+    const variationDetail=answers.map((answer)=>`${answer.label}: ${answer.value}`).join(" · ");
     const fitRows=fitPhotosByItem.get(item.id)??[];
     const frontRow=fitRows.find((row)=>row.photo_role==="front");
     const backRow=fitRows.find((row)=>row.photo_role==="back");
@@ -117,7 +116,7 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
     return {
       id: item.id,
       label: `${brand?.name || "Brand"} · ${product?.name || "Garment"}`,
-      detail: [garmentTypeLabel,`Size ${item.size_label}`,color].filter(Boolean).join(" · "),
+      detail: [garmentTypeLabel,`Size ${item.size_label}`,color,variationDetail].filter(Boolean).join(" · "),
       brand: brand?.name || "Brand",
       itemName: product?.name || "Garment",
       garmentType,

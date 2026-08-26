@@ -13,16 +13,18 @@ Canonical ownership:
 GitHub `likesized/Likesized` is the source of truth. `main` is the single production line. Current files describe current truth; Git history preserves superseded attempts. Never create patch/fixed/v2/temp/backup implementations, parallel product systems or a second master plan.
 
 ## Deployment-batch discipline — OWNER LOCKED
-Once the owner says **push**, **deploy**, **submit**, **proceed**, or otherwise authorizes a specific accumulated change list for production, that deployment batch is frozen. Later requests start the next batch and require separate authorization.
+Once the owner says **push**, **deploy**, **submit**, **proceed**, **get it live**, or otherwise authorizes a specific accumulated change list for production, that deployment batch is frozen. Later requests start the next batch and require separate authorization.
 
 The working batch loop is:
 
-**implement the complete approved batch → targeted relevant checks → full CI at the deliberate stopping point → merge the exact tested candidate → deploy the exact merge → verify live production → reconcile canonical docs**.
+**implement the complete approved batch → reconcile branch product/status/schema truth in the canonical docs → run targeted relevant checks → run full CI on the exact final candidate → merge the exact tested candidate → deploy the exact merge → verify live production → append immutable merge/deployment facts to the canonical record**.
 
-Do not call a batch done merely because source was edited or a preview built. The owner verifies fixes on `likesized.com`.
+Do not call a batch done merely because source was edited or a preview built. Do not wait until after merge to record owner-approved product meaning that already exists on the active branch. The owner verifies fixes on `likesized.com`.
+
+An explicit owner deployment command is production authorization for the current frozen batch; do not ask for the same permission again. That authorization does **not** waive verification. If a later required gate fails, repair the underlying branch and continue automatically until the exact candidate passes. A failed/incomplete candidate may be deployed only if the owner is told the exact failed/skipped gates and then explicitly overrides them after that disclosure.
 
 ## Live repair fast path — OWNER DIRECTED
-During an owner live audit, concrete owner-reported breakage plus a direction to fix it authorizes implementation on the one active repair branch. Do not stop for repeated approval questions, repeated status-only handoffs or parallel repair branches. Production/main still requires explicit authorization unless the owner has already granted deployment for the current frozen batch.
+During an owner live audit, concrete owner-reported breakage plus a direction to fix it authorizes implementation on the one active repair branch. Do not stop for repeated approval questions, repeated status-only handoffs or parallel repair branches. “Fast path” means remove unnecessary conversational/process pauses—not remove canonical safeguards, exact-head CI, build, migration replay or database/privacy verification.
 
 ## Future app transition — OWNER LOCKED 2026-08-24
 LikeSized remains web-first while V1 is completed and owner-audited, with intended app transition after the web product is mature enough.
@@ -38,18 +40,27 @@ Going forward:
 
 # CURRENT STATUS — 2026-08-26
 
-## Canonical production line — LIVE THROUGH PR #94
-Production application source of truth is PR #94 squash merge **`15b48373857cd090e418bff942123fe57f013984`** on `main`.
+## Canonical production line — LIVE THROUGH PR #95
+Production application source of truth is PR #95 squash merge **`5c52fb29cb6bb54d21015e5c87b9f1e775f0bc81`** on `main`.
 
-PR #94 **Repair remaining Outfit audit regressions**:
+PR #94 **Repair remaining Outfit audit regressions** remains an important verification exception in the lineage:
 - exact repair-branch head before squash merge: **`e1931c2558622e97c842aaa5aa966b216e1349a5`**;
-- the earlier GitHub Actions attempt for the PR #94 repair line ended in startup failure before any job was created, and no later completed full CI run existed for that exact head before production;
+- the GitHub Actions attempt for the PR #94 repair line did not produce a completed full CI job before production;
 - the owner explicitly authorized deployment with **“get this deployed”** on 2026-08-26;
 - squash merge: **`15b48373857cd090e418bff942123fe57f013984`**;
-- Vercel production: **`dpl_BTxsXJxMW3NgPo5e6XBmcbJ14yz3`** READY, target production, serving `likesized.com` from the merge above;
+- Vercel production: **`dpl_BTxsXJxMW3NgPo5e6XBmcbJ14yz3`** reached READY and served `likesized.com`;
 - post-deploy checks returned HTTP 200 for the homepage and a published Outfit route, and the checked deployment-scoped runtime window contained no error/fatal entries.
 
-Do not rewrite the missing completed PR #94 full-CI gate as though it passed. The owner-authorized production deployment is real; the verification limitation is also real.
+PR #95 **Complete current Outfit owner-audit repairs** is the current production application line:
+- exact repair-branch head before squash merge: **`34c436e0f6d5fb37c608b64e0d8b2fd0894779cf`**;
+- PR exact-head CI run **#979 / `32994041367` failed** before completing the full verification chain;
+- owner then explicitly authorized deployment;
+- squash merge: **`5c52fb29cb6bb54d21015e5c87b9f1e775f0bc81`**;
+- the resulting `main` push CI run **#978 / `32993535307` also failed**;
+- therefore PR #95 did **not** have a successful exact-candidate full CI run covering every later application test, production build, fresh migration replay and database behavior/privacy test before or after merge;
+- Vercel production **`dpl_52b8K3YGnMbJGRfiEGApdqNJcYj6`** reached READY on `likesized.com`; the live site returned HTTP 200 and the checked immediate deployment runtime window contained no error/fatal entries.
+
+Do not rewrite either PR #94 or PR #95 as fully CI-verified. Both production deployments are real; the verification gaps are also real. The recovery rule from this point forward is that a deployment instruction authorizes the batch but does not silently override later failing gates.
 
 Production lineage after PR #87 is complete and immutable:
 - PR #88 **Finish Roadmap 12 visual and profile completion repairs** → merge **`2d4bb3a193cc61d409f2c2221af17ffe5f4baa0c`**. This carried the deterministic Wishlist SVG, creator quick-view cleanup, private City/State foundation, and Roadmap 13A canonical-image planning into production.
@@ -58,31 +69,44 @@ Production lineage after PR #87 is complete and immutable:
 - PR #91 **Repair live Outfit flows and evolve FITuition** → merge **`7b86358353327d345c2a3e70f92eeea7abc80b2d`**.
 - PR #92 **Repair remaining Outfit Explore and FITuition production failures** → merge **`bd3e35bd30ae285e847089e4e355e3fd8f90997d`**.
 - PR #93 **Fix Outfit tag navigation and FITuition notification state** → merge **`2568e316fdfb772094cbb23b6e4c19b9a9e1e449`**.
-- PR #94 is the current production application head above.
+- PR #94 **Repair remaining Outfit audit regressions** → merge **`15b48373857cd090e418bff942123fe57f013984`**.
+- PR #95 **Complete current Outfit owner-audit repairs** → merge **`5c52fb29cb6bb54d21015e5c87b9f1e775f0bc81`**, current production application head.
 
-Production Supabase now includes, after the earlier Roadmap 12 migrations:
+Production Supabase includes, after the earlier Roadmap 12 migrations:
 - `20260825183000_private_profile_location_metadata.sql` → hosted **`20260825192738 private_profile_location_metadata`**;
 - hosted **`20260826001512 username_change_cooldown`**;
 - hosted **`20260826001531 exact_variation_evidence_watches`**;
 - `20260826003000_atomic_outfit_cover_switch.sql` → hosted **`20260826020651 atomic_outfit_cover_switch`**;
 - hosted **`20260826020710 preserve_tracked_variation_recommendation_evidence`**.
 
-PR #94 introduced no database migration.
+PR #94 and PR #95 introduced no new production database migration.
 
-## Current primary active line — ROADMAP 12 OWNER-AUDIT CONTINUATION
-Active branch: **`agent/outfit-audit-continuation`**.
-Base: exact current production merge **`15b48373857cd090e418bff942123fe57f013984`**.
+## Current primary active line — ROADMAP 12 OWNER-AUDIT CLOSURE
+Active branch: **`agent/outfit-audit-closure`**.
+PR: **#96 `Close current Outfit owner-audit failures`**.
+Base: exact current production merge **`5c52fb29cb6bb54d21015e5c87b9f1e775f0bc81`**.
 
-The prior `agent/outfit-audit-regression-repair` line was fully represented by merged PR #94 and is no longer the active implementation future. New owner-audit repairs belong on this one continuation branch unless the owner explicitly changes that direction.
+The prior `agent/outfit-audit-continuation` line was fully represented by merged PR #95 and is no longer the active implementation future. All current owner-approved Outfit repair meaning belongs on `agent/outfit-audit-closure`; do not start a second product branch from `main` while PR #96 is unresolved.
 
-Current state before new implementation begins:
-- production is live through PR #94;
-- Roadmap 12/New Outfit remains under owner audit;
-- the owner has authorized a new accumulated repair batch for implementation, but production/main authorization has **not** been granted for that new batch;
-- the newly reported repair behavior must be recorded in the canonical product spec/master before the corresponding implementation is treated as complete.
+The current PR #96 owner repair scope is exactly four failures:
+1. **Relevant Fit Reports must preload on every signed-in Tagged Items card.** Opening a garment must not be required to make its count appear.
+2. **The normal desktop Outfit gallery must provide obvious, reliable Previous/Next navigation when more than one photo exists.** Pointer/trackpad drag and keyboard arrows remain supplemental rather than the only discoverable desktop path.
+3. **Existing Outfit edit/save must heal stale hotspot-to-selected-garment relationships instead of surfacing the internal `Hotspot garment is not tagged in this Outfit` consistency error.** Legitimate current hotspots remain intact; only relationships no longer represented by the Outfit's current selected-garment set are removed.
+4. **Tracked variation identity must be visible anywhere a person must distinguish legitimate same-Product entries.** The Outfit picker and tagged/clicked quick-view path show the actual answered variation-defining structured attributes rather than making distinct Fit Report variations look like duplicates. Legitimate repeated same-Product entries are not deduped merely because the base Product is the same.
+
+The separately reported Explore/Search behavior remains deferred to the later Search audit. Do not fold Search into PR #96.
+
+PR #96 also contains ordered migration **`20260826190000_outfit_tag_consistency.sql`**, branch-only and **not applied to production**. It exists because the stale hotspot relationship is persisted data/state, not merely presentation.
+
+PR #96 checkpoint before this anti-drift reconciliation:
+- implementation head **`70c2599447793e67f311c9bceae81410d907fdcc`**;
+- CI run **#987 / `33001621632`** successfully passed canonical integrity, dependency install, typecheck, recommendation confidence, Fit Match UI, Outfit photo pipeline, New Outfit V1, Outfit polish, Outfit interaction/photo, tagged-item quick-view and tracked Outfit variation evidence;
+- that run then failed in `tests/outfit-live-audit-repairs.test.ts` on a stale source-shape assertion expecting literal `>Notify me</button>` even though current UI still contains the owner-approved **Notify me** action conditionally alongside Saving state;
+- because the workflow is fail-fast, later owner-closure safeguards, remaining application suites, production build, fresh Supabase replay and pgTAP/database behavior/privacy tests were skipped;
+- this stale safeguard is being corrected without weakening the underlying notification behavior contract.
 
 ## Roadmap 12 — New Outfit — CURRENT OWNER AUDIT GATE
-Roadmap 12 is production-live through PR #94 and remains under owner audit on the continuation line above.
+Roadmap 12 is production-live through PR #95 and remains under owner audit on PR #96.
 
 **Roadmap 13 remains blocked until the owner explicitly finishes the New Outfit/Roadmap 12 audit and accepts the production stopping point.**
 
@@ -187,12 +211,16 @@ Raw/private body data, private Closet linkage, unresolved candidate/review state
 ## Outfit interaction — CURRENT ROADMAP 12 DIRECTION
 - One published Outfit uses one shareable `/outfits/[id]` route.
 - Gallery is one active photo at a time; secondary photos remain behind it rather than a thumbnail strip.
+- When more than one photo exists, the normal desktop gallery exposes visible **Previous / Next** navigation; pointer/trackpad drag and keyboard arrows remain supplemental.
 - Clicking/tapping the photo background opens full-size; tags/caption overlays retain independent behavior.
 - Full-size imagery uses the shared viewer with intentional close/Escape, **left/right swipe between Outfit photos**, plus drag/swipe-down dismissal; the image follows the drag and a short drag returns instead of dismissing.
 - Optional Outfit photo captions are maximum 200 characters and hidden by default behind Caption control.
 - Safe public hotspots remain visible logged out.
 - Tagged Items and on-photo hotspots open the same canonical tagged-item quick view.
+- Signed-in Tagged Items cards preload personalized Relevant Fit Report metadata for every visible tagged garment; opening the card is not a prerequisite for its count to appear.
 - Tagged quick view is personalized only when the viewer is signed in and eligible for personalized evidence.
+- Where multiple legitimate entries share one base Product but differ by tracked fit variation, the Outfit picker and clicked/tagged quick-view path expose the answered variation-defining structured attributes needed to distinguish them. Same Product does not imply duplicate entry.
+- Existing Outfit save keeps photo-hotspot relationships subordinate to the current Outfit selected-garment set; stale orphan relationships are healed rather than exposed as an internal consistency error.
 - Tagged garment actions are **LikeLocker · Wishlist · Shop · Share · Report** with no garment-action counts.
 - LikeLocker/Wishlist update locally/in place and independently.
 - Tagged quick view has one full-Product navigation action: **View Garment →**. Do not restore competing **See fit evidence** / **Full details** links.
@@ -421,7 +449,7 @@ An admin-locked image always wins. A newly uploaded photo may score 100 and stil
 10. Style Feed relationship semantics — direction locked above; full feed behavior remains Roadmap 13.
 11. New Fit Report — evidence-first flow live; visible photo validation is live.
 11A. **Garment-question variation classification — COMPLETE / DEPLOYED.**
-12. **New Outfit — CURRENT OWNER AUDIT GATE; production through PR #94 with active continuation branch `agent/outfit-audit-continuation`.**
+12. **New Outfit — CURRENT OWNER AUDIT GATE; production through PR #95 with active closure PR #96 on `agent/outfit-audit-closure`.**
 13. **Style Feed full behavior/ranking — BLOCKED until the owner closes Roadmap 12.**
 13A. **Automatic Canonical Product Image Scoring — OWNER LOCKED / PLANNED; implement before Garment/Product detail, Explore, Search and Wish Locker audit so those surfaces consume one canonical image-selection system.**
 14. Garment/Product detail — Exact Variation consumes the canonical 11A map and Roadmap 13A canonical-image hierarchy when reached.
@@ -431,7 +459,7 @@ An admin-locked image always wins. A newly uploaded photo may score 100 and stil
 18. Full Admin Catalog + Moderation — include Roadmap 13A Product-image set/lock/unlock controls and eligibility/moderation visibility.
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
 
-# ROADMAP 12 DATABASE FOUNDATION — PRODUCTION
+# ROADMAP 12 DATABASE FOUNDATION — PRODUCTION + CURRENT BRANCH DELTA
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
 Original Roadmap 12 foundation mappings remain immutable:
@@ -442,7 +470,7 @@ Original Roadmap 12 foundation mappings remain immutable:
 - `20260824133800_canonical_public_closet_and_outfit_public_identity.sql` → hosted `20260824164452 canonical_public_closet_and_outfit_public_identity`.
 - `20260824133900_fix_outfit_compatibility_photo_registration.sql` → hosted `20260824164507 fix_outfit_compatibility_photo_registration`.
 
-Later Roadmap 12 mappings:
+Later Roadmap 12 production mappings:
 - `20260824231500_outfit_comment_likes.sql` → hosted **`20260825000654 outfit_comment_likes`**.
 - `20260824234500_live_profile_identity.sql` → hosted **`20260825000708 live_profile_identity`**.
 - `20260825000500_fix_live_comment_like_count_projection.sql` → hosted **`20260825000722 fix_live_comment_like_count_projection`**.
@@ -455,12 +483,13 @@ Later Roadmap 12 mappings:
 - `20260826003000_atomic_outfit_cover_switch.sql` → hosted **`20260826020651 atomic_outfit_cover_switch`**.
 - hosted **`20260826020710 preserve_tracked_variation_recommendation_evidence`**.
 
-Applied migrations are immutable. PR #94 introduced no new migration. The current owner-audit continuation has no migration at this checkpoint.
+Applied migrations are immutable. PR #94 and PR #95 added no migration. PR #96 adds **`20260826190000_outfit_tag_consistency.sql`** on the active branch; it has **not** been applied to production and cannot be described as production state until the exact branch passes full verification and a later authorized deployment applies it.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Continue the owner New Outfit/Roadmap 12 re-audit from production PR #94. **Roadmap 13 remains blocked until the owner says Roadmap 12/New Outfit is complete.**
-- Record the owner-approved current Outfit repair behavior in the canonical product spec/master before implementation is treated as complete; then implement it only on `agent/outfit-audit-continuation`.
-- Run the relevant focused safeguards and a deliberate full canonical CI gate for the exact continuation candidate before presenting it as ready. The missing completed PR #94 full-CI gate must not become precedent for silently skipping verification.
+- Close the exact four PR #96 owner-reported Outfit failures without expanding the repair into Search or Roadmap 13.
+- Reconcile canonical product/master/schema truth on `agent/outfit-audit-closure` before the final exact-head CI so another stale active-branch/deployment record cannot silently ride into production.
+- Keep all canonical integrity, TypeScript, focused application, build, fresh migration replay and pgTAP/database behavior/privacy gates active. Do not treat PR #94/#95 verification exceptions as precedent.
+- Source-format regression tests that assert incidental JSX spelling/placement should be corrected to preserve the real behavior contract rather than forcing application code backward to satisfy stale regex. This is not permission to weaken behavioral checks.
 - Roadmap 13A Automatic Canonical Product Image Scoring is owner-locked and planned; do not implement it opportunistically before its roadmap turn unless the owner explicitly changes the order.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
@@ -468,7 +497,7 @@ Applied migrations are immutable. PR #94 introduced no new migration. The curren
 - Purchase-context aggregate/admin reporting UI remains open.
 - Broader Closet mutation/lifecycle semantics and exact post-submit Fit Report mutation model remain open.
 - Product merge/split, richer alias management, spam handling, broader Product-photo moderation, field lock/reopen, external barcode-provider evaluation, SerpAPI admin UX and starter-catalog enrichment remain open where previously scoped.
-- `main` is currently not branch-protected; required PR + CI protection remains a separate owner decision and must not be changed silently.
+- GitHub currently returns **no repository rulesets** for this repository. Branch-protection details are not readable through the connected integration, and the fact that failed PR #95 entered `main` proves there was no effective required-green-CI barrier for that merge. Machine-level protection should be added later only through an explicitly reviewed repository-governance change; meanwhile the repository rule and exact-head verification discipline are mandatory.
 
 # CANONICAL RECOVERY — COMPLETE
 The 2026-08-21 canonical recovery is complete. No recovery freeze is active. Historical repair branches and superseded files have no current authority; Git history preserves them for provenance while current canonical files and `main` define present truth. Do not resurrect an old branch/file as a competing source merely because it still exists in Git history.
@@ -476,7 +505,7 @@ The 2026-08-21 canonical recovery is complete. No recovery freeze is active. His
 # RECENT CANONICAL LINEAGE
 Recent production lineage:
 - PR #80 — stopping-point Roadmap 12 repair — DEPLOYED.
-- PR #81 — tagged-item live regression repair — DEPLOYED, merge `1743b0638ac80a5465dba8bb52cab831f6f35148`.
+- PR #81 — tagged-item live regression repair — DEPLOYED, merge `1743b0638ac80a5465dba8fb52cab831f6f35148`.
 - PR #82 — visible Style Feed rename/copy slice — DEPLOYED; full Roadmap 13 behavior was intentionally not implemented.
 - PR #83 — Roadmap 12 follow-up — DEPLOYED, merge `ccbe87d8391e56d106c58353eaceae1be6aaaa4f`.
 - PR #84 — Outfit polish/captions — DEPLOYED, merge `332ff38cf214c09125cb8e02b39246a6b0e3e8d9`.
@@ -489,14 +518,16 @@ Recent production lineage:
 - PR #91 — Outfit flow/FITuition repair — DEPLOYED, merge `7b86358353327d345c2a3e70f92eeea7abc80b2d`.
 - PR #92 — Outfit Explore/FITuition production repair — DEPLOYED, merge `bd3e35bd30ae285e847089e4e355e3fd8f90997d`.
 - PR #93 — Outfit tag navigation/FITuition notification state — DEPLOYED, merge `2568e316fdfb772094cbb23b6e4c19b9a9e1e449`.
-- PR #94 — Outfit live-audit regression repair — DEPLOYED, merge **`15b48373857cd090e418bff942123fe57f013984`**, production **`dpl_BTxsXJxMW3NgPo5e6XBmcbJ14yz3`**.
-- `agent/outfit-audit-continuation` — **CURRENT ACTIVE OWNER-AUDIT LINE**, based on PR #94 production.
+- PR #94 — Outfit live-audit regression repair — DEPLOYED, merge **`15b48373857cd090e418bff942123fe57f013984`**, production **`dpl_BTxsXJxMW3NgPo5e6XBmcbJ14yz3`**, full-CI limitation recorded above.
+- PR #95 — Outfit owner-audit continuation — DEPLOYED, merge **`5c52fb29cb6bb54d21015e5c87b9f1e775f0bc81`**, production **`dpl_52b8K3YGnMbJGRfiEGApdqNJcYj6`**, failed exact-head/main CI limitation recorded above.
+- `agent/outfit-audit-closure` / PR #96 — **CURRENT ACTIVE OWNER-AUDIT LINE**, based on PR #95 production; not merged/deployed.
 
 # EXACT NEXT ACTION — CURRENT
-1. Record the newly owner-approved Outfit repair batch in `docs/V1_PRODUCT_SPEC.md` and this master on the active continuation line without changing unrelated product meaning.
-2. Implement that exact accumulated batch on `agent/outfit-audit-continuation`; do not fold the separately deferred Search audit into this repair.
-3. Add focused regression safeguards for the repaired paths, then run canonical integrity, TypeScript, relevant focused tests, production build, and the full canonical CI/database replay gate as applicable.
-4. Do not update `main` or deploy the continuation candidate without a separate explicit owner production authorization for that exact tested candidate.
-5. After any later authorized production deployment, verify `likesized.com`, runtime health and the exact repaired Outfit flows, then reconcile merge/deployment facts here.
-6. Keep Roadmap 13 blocked until the owner explicitly closes Roadmap 12/New Outfit.
-7. Preserve Roadmap 13A as the shared future canonical Product-image system; do not create competing Explore/Search/Wish Locker image selection before its roadmap turn.
+1. Keep PR #96 as the sole active implementation line and preserve the exact four-item scope above; Search remains deferred.
+2. Re-arm the canonical anti-drift gate so PR branch identity, master synchronization and migration/schema-contract synchronization fail machine verification when they diverge.
+3. Correct stale implementation-shape test assertions without weakening their actual behavior contract.
+4. Run the exact final PR #96 head through canonical integrity, TypeScript, every focused application safeguard, production build, complete fresh migration replay and pgTAP/database behavior/privacy tests. A prior/partial green run is not sufficient.
+5. Do not update `main`, apply the branch-only migration to production or deploy PR #96 until the owner explicitly authorizes deployment. Once the owner says deploy for this frozen batch, do not ask again; finish any remaining verification failures automatically, then merge/deploy the exact green candidate.
+6. After authorized deployment, verify `likesized.com`, runtime health and the exact four repaired Outfit flows, then append immutable merge/deployment/migration facts here without rewriting failed historical CI as green.
+7. Keep Roadmap 13 blocked until the owner explicitly closes Roadmap 12/New Outfit.
+8. Preserve Roadmap 13A as the shared future canonical Product-image system; do not create competing Explore/Search/Wish Locker image selection before its roadmap turn.

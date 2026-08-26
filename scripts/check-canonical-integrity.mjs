@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const root = process.cwd();
 const errors = [];
@@ -37,6 +38,20 @@ function walk(dir, out = []) {
   return out;
 }
 
+function pullRequestChangedFiles() {
+  const activeBranch = process.env.CANONICAL_HEAD_REF?.trim();
+  if (!activeBranch) return [];
+  try {
+    return execFileSync('git', ['diff', '--name-only', 'HEAD^1', 'HEAD'], { cwd: root, encoding: 'utf8' })
+      .split(/\r?\n/)
+      .map((value) => value.trim())
+      .filter(Boolean);
+  } catch (error) {
+    fail(`Could not determine pull-request changed files for canonical synchronization: ${error instanceof Error ? error.message : String(error)}`);
+    return [];
+  }
+}
+
 const canonicalDocs = [
   'AI_REPOSITORY_RULES.md',
   'docs/AI_MASTER_LOG.md',
@@ -58,6 +73,27 @@ mustContain('docs/AI_MASTER_LOG.md', 'CANONICAL RECOVERY');
 mustContain('docs/V1_PRODUCT_SPEC.md', 'Help Me Size It is fallback');
 mustContain('supabase/schema_contract.md', '`follows` is the one canonical **Following** relationship');
 mustContain('AI_REPOSITORY_RULES.md', 'Canonical CI must run `npm run canonical:check`');
+
+const activeBranch = process.env.CANONICAL_HEAD_REF?.trim();
+if (activeBranch) {
+  mustContain('docs/AI_MASTER_LOG.md', `Active branch: **\`${activeBranch}\`**`);
+
+  const changed = pullRequestChangedFiles();
+  const changedSet = new Set(changed);
+  const productSourceChanged = changed.some((rel) => /^(?:app|components|lib)\//.test(rel));
+  const productSpecChanged = changedSet.has('docs/V1_PRODUCT_SPEC.md');
+  const migrationChanged = changed.some((rel) => /^supabase\/migrations\/.*\.sql$/.test(rel));
+
+  if ((productSourceChanged || productSpecChanged) && !changedSet.has('docs/AI_MASTER_LOG.md')) {
+    fail('Product/source changes must update docs/AI_MASTER_LOG.md on the same active branch.');
+  }
+  if (migrationChanged && !changedSet.has('supabase/schema_contract.md')) {
+    fail('Migration changes must update supabase/schema_contract.md in the same pull request.');
+  }
+  if (migrationChanged && !changedSet.has('docs/AI_MASTER_LOG.md')) {
+    fail('Migration changes must update docs/AI_MASTER_LOG.md in the same pull request.');
+  }
+}
 
 const forbiddenDocPhrases = [
   'A Fit Twin is a Fit Match the user deliberately saves/follows',

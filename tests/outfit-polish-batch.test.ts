@@ -15,7 +15,8 @@ const migration=readFileSync(new URL("../supabase/migrations/20260825122000_outf
 const closet=readFileSync(new URL("../app/closet/page.tsx",import.meta.url),"utf8");
 
 test("New Outfit uses the same garment identity metadata before selection and during photo tagging",()=>{
-  assert.match(newPage,/detail: \[garmentTypeLabel,`Size \$\{item\.size_label\}`,color\]\.filter\(Boolean\)\.join\(" · "\)/);
+  assert.match(newPage,/const variationDetail=answers\.map/);
+  assert.match(newPage,/detail: \[garmentTypeLabel,`Size \$\{item\.size_label\}`,color,variationDetail\]\.filter\(Boolean\)\.join\(" · "\)/);
   assert.match(composer,/className=\{pickerStyles\.choiceMain\}[\s\S]*<small>\{item\.detail\}<\/small>/);
   assert.match(composer,/className=\{styles\.selectedClosetItems\}[\s\S]*<small>\{item\.detail\}<\/small>/);
   assert.match(composer,/className=\{styles\.hotspotChoices\}[\s\S]*<small>\{item\.detail\}<\/small>/);

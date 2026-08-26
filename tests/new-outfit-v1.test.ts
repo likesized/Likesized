@@ -52,12 +52,14 @@ test("Closet picker is progressive and selection is explicit",()=>{
 });
 
 test("garment quick view uses real Closet detail evidence",()=>{
- assert.match(newPage,/product_attribute_values/);
+ assert.match(newPage,/garment_answers/);
+ assert.doesNotMatch(newPage,/product_attribute_values/);
  assert.match(newPage,/fit_reference_photos/);
  assert.match(newPage,/variant_id/);
  assert.match(newPage,/const color=item\.variant_id\?variantById\.get\(item\.variant_id\)\?\.color_label\?\?null:null/);
  assert.match(newPage,/photoUrls/);
  assert.match(newPage,/answers/);
+ assert.match(newPage,/variationDetail/);
  assert.match(composer,/BRAND/);
  assert.match(composer,/ITEM \/ MODEL/);
  assert.match(composer,/GARMENT TYPE/);

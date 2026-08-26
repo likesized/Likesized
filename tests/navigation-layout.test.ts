@@ -29,13 +29,19 @@ test("desktop and mobile share one bell and one member menu", () => {
 
 test("single menu contains the owner-approved sections and links", () => {
   assert.match(menu, />Discover<\/div>/);
-  assert.match(menu, /href="\/explore"[^>]*>Explore/);
-  assert.match(menu, /href="\/people"[^>]*>People My Size/);
-  assert.match(menu, /href="\/circle"[^>]*>Style Feed/);
-  assert.match(menu, /href="\/likelocker"[^>]*>LikeLocker/);
+  assert.match(menu, /href="\/explore"/);
+  assert.match(menu, />Explore<\/Link>/);
+  assert.match(menu, /href="\/people"/);
+  assert.match(menu, />People My Size<\/Link>/);
+  assert.match(menu, /href="\/circle"/);
+  assert.match(menu, />Style Feed<\/Link>/);
+  assert.match(menu, /href="\/likelocker"/);
+  assert.match(menu, />LikeLocker<\/Link>/);
   assert.match(menu, />My Closet<\/div>/);
-  assert.match(menu, /href="\/closet\/add"[^>]*>Add a Garment/);
-  assert.match(menu, /href="\/outfits\/new"[^>]*>Style an Outfit/);
+  assert.match(menu, /href="\/closet\/add"/);
+  assert.match(menu, />Add a Garment<\/Link>/);
+  assert.match(menu, /href="\/outfits\/new"/);
+  assert.match(menu, />Style an Outfit<\/Link>/);
   assert.match(menu, />Account<\/div>/);
   assert.doesNotMatch(menu, /outfits\?feed=twins/);
   assert.doesNotMatch(menu, />Notifications/);

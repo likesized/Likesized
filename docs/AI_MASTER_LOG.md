@@ -95,7 +95,7 @@ Production Supabase includes, after the earlier Roadmap 12 migrations:
 PR #94 and PR #95 introduced no new production database migration. PR #96 introduced the Outfit tag-consistency migration above.
 
 ## Current primary line — ROADMAP 12 OWNER AUDIT REPAIR IN PROGRESS
-The one active repair line is **PR #97 `Repair tagged Outfit FITuition flow`** on branch **`agent/outfit-relevance-notify-closure`**, based on current canonical `main` after PR #96. PR #97 is currently draft/unverified; no competing repair branch is authorized.
+The one active repair line is **PR #97 `Repair tagged Outfit FITuition flow`** on branch **`agent/outfit-relevance-notify-closure`**, based on current canonical `main` after PR #96. PR #97 is currently open/unverified; no competing repair branch is authorized.
 
 PR #96 remains the production baseline and its four repaired behaviors stay protected:
 1. **Relevant Fit Reports preload on every signed-in Tagged Items card.** Opening a garment is not required to make its count appear.
@@ -465,7 +465,7 @@ An admin-locked image always wins. A newly uploaded photo may score 100 and stil
 10. Style Feed relationship semantics — direction locked above; full feed behavior remains Roadmap 13.
 11. New Fit Report — evidence-first flow live; visible photo validation is live.
 11A. **Garment-question variation classification — COMPLETE / DEPLOYED.**
-12. **New Outfit — CURRENT OWNER AUDIT GATE; production through verified PR #96; active repair PR #97 is draft/unverified.**
+12. **New Outfit — CURRENT OWNER AUDIT GATE; production through verified PR #96; active repair PR #97 is open/unverified.**
 13. **Style Feed full behavior/ranking — BLOCKED until the owner closes Roadmap 12.**
 13A. **Automatic Canonical Product Image Scoring — OWNER LOCKED / PLANNED; implement before Garment/Product detail, Explore, Search and Wish Locker audit so those surfaces consume one canonical image-selection system.**
 14. Garment/Product detail — Exact Variation consumes the canonical 11A map and Roadmap 13A canonical-image hierarchy when reached.

@@ -46,6 +46,29 @@ export type NormalizedSizeDescriptor = {
   shoeSize?: number | null;
 };
 
+export type ClosetRelevanceInput = {
+  sameProduct: boolean;
+  sameVariation: boolean;
+  sameBrand: boolean;
+  sameGarmentType: boolean;
+  sameCategory: boolean;
+  attributeOverlap: number;
+};
+
+export const CLOSET_STRONG_ATTRIBUTE_OVERLAP = 2;
+
+export function closetEvidenceRelevance(input: ClosetRelevanceInput) {
+  if (input.sameProduct && input.sameVariation) return 1;
+  if (input.sameProduct) return 0.95;
+  const strongTraits = input.attributeOverlap >= CLOSET_STRONG_ATTRIBUTE_OVERLAP;
+  if (input.sameBrand && input.sameGarmentType && strongTraits) return 0.85;
+  if (input.sameGarmentType && strongTraits) return 0.75;
+  if (input.sameBrand && input.sameGarmentType) return 0.65;
+  if (input.sameGarmentType) return 0.50;
+  if (input.sameCategory) return 0.25;
+  return 0;
+}
+
 const EVIDENCE_WEIGHT: Record<EvidenceLevel, number> = {
   exact_variant: 1,
   exact_product: 0.94,

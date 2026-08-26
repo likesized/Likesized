@@ -97,9 +97,10 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
 
   const rawCandidates=((candidateResult.error?[]:candidateResult.data)??[]) as Candidate[];
   const candidateIds=[...new Set(rawCandidates.map((row)=>row.fit_report_id))];
-  const identityResult=candidateIds.length?await supabase.from("fit_reports").select("id,user_id,product_id,objective_variant_key,created_at").in("id",candidateIds):{data:[],error:null};
+  const identityResult=candidateIds.length?await supabase.from("fit_reports").select("id,user_id,product_id,objective_variant_key,created_at").in("id",candidateIds):{data:[] as ReportIdentity[],error:null};
   logEvidenceError("variation identity",identityResult.error);
-  const identityById=new Map((((identityResult as {data:unknown[]|null;error:unknown}).error?[]:(identityResult as {data:unknown[]|null}).data)??[]) as ReportIdentity[]).map((row)=>[row.id,row]));
+  const identityRows=identityResult.error?[]:((identityResult.data??[]) as ReportIdentity[]);
+  const identityById=new Map(identityRows.map((row)=>[row.id,row]));
   const candidates=newestUniqueVariationEvidence(rawCandidates,(row)=>{const identity=identityById.get(row.fit_report_id);return{userId:row.user_id,productId:row.evidence_product_id,objectiveVariantKey:identity?.objective_variant_key,reportId:row.fit_report_id,createdAt:identity?.created_at??""};});
   const targetVariation=targetReport.objective_variant_key??"";
   const relevantExact=candidates.filter((row)=>{
@@ -110,8 +111,8 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
   const ownReports=newestUniqueVariationEvidence((((ownReportResult.error?[]:ownReportResult.data)??[]) as OwnReport[]),(report)=>({userId:report.user_id,productId:report.product_id,objectiveVariantKey:report.objective_variant_key,reportId:report.id,createdAt:report.created_at}));
   const ownProductIds=[...new Set(ownReports.map((row)=>row.product_id))];
   const [ownProductRows,snapshotResult,attributeResult]=await Promise.all([
-    ownProductIds.length?supabase.from("products").select("id,brand_id,product_family_id,garment_type_key,category").in("id",ownProductIds):Promise.resolve({data:[],error:null}),
-    ownReports.length?supabase.rpc("get_fit_report_snapshot_matches",{p_fit_report_ids:ownReports.map((row)=>row.id)}):Promise.resolve({data:[],error:null}),
+    ownProductIds.length?supabase.from("products").select("id,brand_id,product_family_id,garment_type_key,category").in("id",ownProductIds):Promise.resolve({data:[] as ProductRow[],error:null}),
+    ownReports.length?supabase.rpc("get_fit_report_snapshot_matches",{p_fit_report_ids:ownReports.map((row)=>row.id)}):Promise.resolve({data:[] as SnapshotMatch[],error:null}),
     supabase.from("product_attribute_values").select("product_id,attribute_key,option_key").in("product_id",[...new Set([product.id,...ownProductIds])]).neq("source_status","rejected").gte("confidence",0.75),
   ]);
   logEvidenceError("Closet products",ownProductRows.error);

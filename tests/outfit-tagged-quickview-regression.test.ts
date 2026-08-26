@@ -6,6 +6,12 @@ const tabs=readFileSync(new URL("../app/outfits/[id]/OutfitTabs.tsx",import.meta
 const taggedFit=readFileSync(new URL("../app/api/outfits/[id]/tagged-fit/route.ts",import.meta.url),"utf8");
 const taggedPanel=readFileSync(new URL("../app/outfits/[id]/TaggedItemsPanel.tsx",import.meta.url),"utf8");
 const css=readFileSync(new URL("../app/outfits/[id]/outfitDetail.module.css",import.meta.url),"utf8");
+const pickerCss=readFileSync(new URL("../app/outfits/new/outfitPicker.module.css",import.meta.url),"utf8");
+
+const cardStart=taggedPanel.indexOf("<div className={styles.taggedGrid}");
+const quickViewStart=taggedPanel.indexOf("{selected?<div className={styles.itemPreviewOverlay}");
+const cardMarkup=taggedPanel.slice(cardStart,quickViewStart);
+const unsavedDialogCss=pickerCss.match(/:global\(\[role="dialog"\]\[aria-label="Unsaved Outfit"\]\)\{([^}]*)\}/)?.[1]??"";
 
 test("photo hotspots can open the canonical tagged quick view from any detail tab",()=>{
   assert.match(tabs,/tab==="style"\?<div ref=\{styleRef\}/);
@@ -17,22 +23,25 @@ test("photo hotspots can open the canonical tagged quick view from any detail ta
   assert.match(css,/\.taggedTabDormant \.taggedGrid\{display:none\}/);
 });
 
-test("Relevant Fit Report evidence and recommendation evidence collapse repeat reports by tracked variation",()=>{
+test("visible Relevant Fit Reports exclude the viewer while own Closet history remains recommendation evidence",()=>{
   assert.match(taggedFit,/newestUniqueVariationEvidence/);
   assert.match(taggedFit,/objective_variant_key/);
   assert.match(taggedFit,/const relevantExact=candidates\.filter/);
   assert.match(taggedFit,/row\.historical_match_score>=STRONG_FIT_REPORT_MATCH_THRESHOLD/);
+  assert.match(taggedFit,/const otherRelevantExact=relevantExact\.filter\(\(row\)=>row\.user_id!==viewerId\)/);
+  assert.match(taggedFit,/const relevantReports=strongOtherReports/);
   assert.match(taggedFit,/matchingFitReports:relevantReports\.length/);
-  assert.match(taggedFit,/strongFitReports:strongAggregate\(relevantExact/);
+  assert.match(taggedFit,/strongFitReports:strongAggregate\(otherRelevantExact/);
+  assert.doesNotMatch(taggedFit,/const relevantReports=\[\.\.\.ownExactReports/);
   assert.match(taggedFit,/source:"community"/);
   assert.match(taggedFit,/source:"closet"/);
   assert.match(taggedFit,/recommendSize\(\[\.\.\.otherEvidence,\.\.\.ownHistory\]\)/);
 });
 
-test("insufficient FITuition copy agrees with a positive Relevant Fit Report count",()=>{
+test("insufficient FITuition copy agrees with a positive exact-variation report count",()=>{
   assert.match(taggedPanel,/I’m not confident enough to recommend a size yet\./);
-  assert.match(taggedPanel,/I found \{meta\.matchingFitReports\} relevant Fit Report/);
-  assert.match(taggedPanel,/combined Size Match and Closet evidence does not point clearly to one size/);
+  assert.match(taggedPanel,/Relevant Fit Reports: \{meta\.matchingFitReports\}/);
+  assert.match(taggedPanel,/current exact-variation evidence does not point clearly enough to one size/);
   assert.doesNotMatch(taggedPanel,/No useful exact-item Fit Reports match your Fit Profile yet/);
 });
 
@@ -46,13 +55,41 @@ test("tagged FITuition preloads every card and resolves failures instead of hang
   assert.doesNotMatch(taggedPanel,/if\(!selectedId\|\|!signedIn\|\|loadedFitMeta/);
 });
 
-test("hybrid FITuition can recommend from useful Closet evidence while Relevant Fit Reports are still growing",()=>{
-  assert.match(taggedFit,/const canRecommend=Boolean\(recommendation&&recommendation\.confidence>=45\)/);
-  assert.doesNotMatch(taggedFit,/recommendation\.confidence>=45&&relevantExact\.length>0/);
-  assert.match(taggedPanel,/Your relevant Closet History provides the strongest current signal/);
+test("zero other-wearer Relevant Fit Reports never surfaces a tagged-item size recommendation",()=>{
+  assert.match(taggedPanel,/const showRecommendation=Boolean\(meta\?\.recommendation&&meta\.matchingFitReports>0\)/);
+  assert.match(taggedPanel,/showRecommendation&&meta\.recommendation/);
+  assert.match(taggedPanel,/I don’t have enough useful evidence to recommend a size yet\./);
   assert.match(taggedPanel,/"Notify me"/);
+  assert.match(taggedPanel,/🔔/);
   assert.match(taggedPanel,/FITuition will notify you when people close to your size post a Fit Report for this item\./);
   assert.match(taggedPanel,/Notifications on/);
+  assert.doesNotMatch(taggedPanel,/Your relevant Closet History provides the strongest current signal/);
+});
+
+test("tagged cards stay compact while clicked garments carry tracked-variation detail",()=>{
+  assert.ok(cardStart>=0&&quickViewStart>cardStart);
+  assert.doesNotMatch(cardMarkup,/variationDetail/);
+  assert.match(taggedPanel,/meta\?\.variationDetail\?<span className=\{quickStyles\.variationDetail\}>\{meta\.variationDetail\}<\/span>/);
+});
+
+test("FITuition details use one concise intermediate evidence layer before full garment navigation",()=>{
+  assert.match(taggedPanel,/See FITuition Details →/);
+  assert.match(taggedPanel,/FITuition DETAILS/);
+  assert.match(taggedPanel,/Strong Fit Report summary/);
+  assert.match(taggedPanel,/Best current match/);
+  assert.match(taggedPanel,/View all \$\{meta\.relevantReports\.length\} Relevant Fit Reports →/);
+  assert.match(taggedPanel,/View Garment Details →/);
+  assert.doesNotMatch(taggedPanel,/Closest exact reports/);
+  assert.doesNotMatch(taggedPanel,/Exact-item history · Body Match unavailable/);
+  assert.doesNotMatch(taggedPanel,/View Detailed Garment Report/);
+});
+
+test("unsaved Outfit navigation confirmation is fixed in the current viewport",()=>{
+  assert.ok(unsavedDialogCss,"Unsaved Outfit dialog rule must exist");
+  assert.match(unsavedDialogCss,/position:fixed!important/);
+  assert.match(unsavedDialogCss,/inset:0!important/);
+  assert.match(unsavedDialogCss,/place-items:center!important/);
+  assert.match(unsavedDialogCss,/z-index:240!important/);
 });
 
 test("mobile tagged quick view stays readable inside the safe-area modal",()=>{

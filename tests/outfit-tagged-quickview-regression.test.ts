@@ -12,11 +12,12 @@ test("photo hotspots can open the canonical tagged quick view from any detail ta
   assert.match(tabs,/tab==="comments"\?comments:null/);
   assert.match(tabs,/taggedTabDormant/);
   assert.match(tabs,/\{taggedItems\}/);
-  assert.match(tabs,/return_to:`\$\{window\.location\.pathname\}\$\{window\.location\.search\}`/);
+  assert.doesNotMatch(tabs,/return_to/);
+  assert.match(tabs,/window\.location\.assign\(`\/explore\?\$\{params\.toString\(\)\}`\)/);
   assert.match(css,/\.taggedTabDormant \.taggedGrid\{display:none\}/);
 });
 
-test("Strong Fit Reports and recommendation evidence collapse repeat reports by tracked variation",()=>{
+test("Relevant Fit Report evidence and recommendation evidence collapse repeat reports by tracked variation",()=>{
   assert.match(taggedFit,/newestUniqueVariationEvidence/);
   assert.match(taggedFit,/objective_variant_key/);
   assert.match(taggedFit,/const relevantExact=candidates\.filter/);
@@ -28,9 +29,9 @@ test("Strong Fit Reports and recommendation evidence collapse repeat reports by 
   assert.match(taggedFit,/recommendSize\(\[\.\.\.otherEvidence,\.\.\.ownHistory\]\)/);
 });
 
-test("insufficient FITuition copy agrees with a positive Strong exact-evidence count",()=>{
+test("insufficient FITuition copy agrees with a positive Relevant Fit Report count",()=>{
   assert.match(taggedPanel,/I’m not confident enough to recommend a size yet\./);
-  assert.match(taggedPanel,/I found \{meta\.matchingFitReports\} strong exact-variation Fit Report/);
+  assert.match(taggedPanel,/I found \{meta\.matchingFitReports\} relevant Fit Report/);
   assert.match(taggedPanel,/combined Size Match and Closet evidence does not point clearly to one size/);
   assert.doesNotMatch(taggedPanel,/No useful exact-item Fit Reports match your Fit Profile yet/);
 });
@@ -44,11 +45,12 @@ test("tagged FITuition resolves failed requests instead of hanging forever",()=>
   assert.doesNotMatch(taggedPanel,/\[selectedId,signedIn,postId,fitMeta,fitLoading\]/);
 });
 
-test("hybrid FITuition can recommend from useful Closet evidence while Strong exact evidence is still growing",()=>{
+test("hybrid FITuition can recommend from useful Closet evidence while Relevant Fit Reports are still growing",()=>{
   assert.match(taggedFit,/const canRecommend=Boolean\(recommendation&&recommendation\.confidence>=45\)/);
   assert.doesNotMatch(taggedFit,/recommendation\.confidence>=45&&relevantExact\.length>0/);
   assert.match(taggedPanel,/Your relevant Closet History provides the strongest current signal/);
-  assert.match(taggedPanel,/Notify me when strong exact-variation Fit Reports arrive/);
+  assert.match(taggedPanel,/Notify me when Fit Reports from people close to my measurements are posted/);
+  assert.match(taggedPanel,/OK\. We’ll notify you when Fit Reports from people close to your measurements are posted\./);
 });
 
 test("mobile tagged quick view stays readable inside the safe-area modal",()=>{

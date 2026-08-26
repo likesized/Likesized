@@ -41,7 +41,7 @@ test("My Closet owns member Garments, Outfits, and FITuition",()=>{
 });
 
 test("current profile identity resolves live across owned, discovered, opened, and paginated comments",()=>{
- assert.match(profilePhoto,/current profiles\.avatar_url at render time/);assert.match(closetPage,/currentProfilePhotoUrl/);assert.match(explore,/profile:profiles\(username,display_name,avatar_url\)/);assert.match(explore,/currentProfilePhotoUrl/);assert.match(detail,/get_public_outfit_creator/);assert.match(commentApi,/currentProfilePhotoUrl/);assert.match(commentPageMigration,/p\.avatar_url/);assert.match(liveIdentityMigration,/set public = true/);assert.match(liveIdentityMigration,/never snapshotted onto the comment/);
+ assert.match(profilePhoto,/current profiles\.avatar_url at render time/);assert.match(closetPage,/currentProfilePhotoUrl/);assert.match(explore,/from\("profiles"\)\.select\("id,username,display_name,avatar_url"\)/);assert.match(explore,/currentProfilePhotoUrl/);assert.match(detail,/get_public_outfit_creator/);assert.match(commentApi,/currentProfilePhotoUrl/);assert.match(commentPageMigration,/p\.avatar_url/);assert.match(liveIdentityMigration,/set public = true/);assert.match(liveIdentityMigration,/never snapshotted onto the comment/);
 });
 
 test("New Outfit picker uses progressive filters and explicit Add",()=>{
@@ -56,8 +56,8 @@ test("cover-tag reuse, draft responsiveness, and Preview Publish scroll are expl
  assert.match(composer,/Use Cover Photo Tags/);assert.match(composer,/photos_dirty/);assert.match(actions,/shouldSyncPhotos/);assert.match(composer,/await nextPaint\(\)/);assert.match(composer,/window\.scrollTo\(\{top:0,behavior:"auto"\}\)/);
 });
 
-test("Outfit photo captions keep optional copy and character count separated",()=>{
- assert.match(composer,/className=\{styles\.photoCaptionField\}/);assert.match(outfitsCss,/\.photoCaptionField>span\{display:flex;align-items:baseline;gap:/);assert.match(outfitsCss,/\.photoCaptionField>span b\{margin-left:auto/);
+test("Outfit photo captions keep optional copy and character count separated and save atomically",()=>{
+ assert.match(composer,/className=\{styles\.photoCaptionField\}/);assert.match(outfitsCss,/\.photoCaptionField>span\{display:flex;align-items:baseline;gap:/);assert.match(outfitsCss,/\.photoCaptionField>span b\{margin-left:auto/);assert.match(composer,/caption: photo\.caption/);assert.match(actions,/saveManifestCaptions/);assert.doesNotMatch(composer,/saveOutfitPhotoCaptions/);
 });
 
 test("changing an existing Outfit cover clears the old main before promoting the new one",()=>{

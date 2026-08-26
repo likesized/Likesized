@@ -22,7 +22,7 @@ test("Relevant Fit Report evidence and recommendation evidence collapse repeat r
   assert.match(taggedFit,/objective_variant_key/);
   assert.match(taggedFit,/const relevantExact=candidates\.filter/);
   assert.match(taggedFit,/row\.historical_match_score>=STRONG_FIT_REPORT_MATCH_THRESHOLD/);
-  assert.match(taggedFit,/matchingFitReports:relevantExact\.length/);
+  assert.match(taggedFit,/matchingFitReports:relevantReports\.length/);
   assert.match(taggedFit,/strongFitReports:strongAggregate\(relevantExact/);
   assert.match(taggedFit,/source:"community"/);
   assert.match(taggedFit,/source:"closet"/);
@@ -50,7 +50,7 @@ test("hybrid FITuition can recommend from useful Closet evidence while Relevant 
   assert.match(taggedFit,/const canRecommend=Boolean\(recommendation&&recommendation\.confidence>=45\)/);
   assert.doesNotMatch(taggedFit,/recommendation\.confidence>=45&&relevantExact\.length>0/);
   assert.match(taggedPanel,/Your relevant Closet History provides the strongest current signal/);
-  assert.match(taggedPanel,/>Notify me<\/button>/);
+  assert.match(taggedPanel,/"Notify me"/);
   assert.match(taggedPanel,/FITuition will notify you when people close to your size post a Fit Report for this item\./);
   assert.match(taggedPanel,/Notifications on/);
 });

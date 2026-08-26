@@ -1,26 +1,61 @@
 import { GARMENT_TYPE_BY_KEY } from "@/lib/garment-taxonomy";
-import { FIT_RESULT_LABELS, QUICK_VIEW_STRONG_MATCH_THRESHOLD } from "@/lib/quick-fit-evidence";
+import { FIT_RESULT_LABELS, STRONG_FIT_REPORT_MATCH_THRESHOLD } from "@/lib/quick-fit-evidence";
 import { newestUniqueVariationEvidence } from "@/lib/outfit-variation-evidence";
-import { recommendSize, recommendationConfidenceLabel, type RecommendationEvidence } from "@/lib/recommendation";
+import {
+  buildSafeSizeAdjacency,
+  closetEvidenceRelevance,
+  recommendSize,
+  recommendationConfidenceLabel,
+  simpleAlphaAdjacency,
+  type NormalizedSizeDescriptor,
+  type RecommendationEvidence,
+} from "@/lib/recommendation";
 import { createClient } from "@/lib/supabase/server";
 
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-type Candidate={fit_report_id:string;user_id:string;evidence_product_id:string;original_size_label:string;fit:RecommendationEvidence["fit"];historical_match_score:number;historical_coverage_percent:number;evidence_level:RecommendationEvidence["evidenceLevel"];attribute_overlap:number;directional_fit_support:number|null};
+type Candidate={fit_report_id:string;user_id:string;evidence_product_id:string;normalized_size_id:string|null;original_size_label:string;fit:RecommendationEvidence["fit"];historical_match_score:number;historical_coverage_percent:number;evidence_level:RecommendationEvidence["evidenceLevel"];attribute_overlap:number;directional_fit_support:number|null};
 type ProductRow={id:string;brand_id:string;product_family_id:string|null;garment_type_key:string|null;category:string};
-type OwnReport={id:string;user_id:string;product_id:string;size_label:string;fit:RecommendationEvidence["fit"];created_at:string;garment_condition:string;objective_variant_key:string|null};
+type OwnReport={id:string;user_id:string;product_id:string;normalized_size_id:string|null;size_label:string;fit:RecommendationEvidence["fit"];created_at:string;garment_condition:string;objective_variant_key:string|null};
 type ReportIdentity={id:string;user_id:string;product_id:string;objective_variant_key:string|null;created_at:string};
 type SnapshotMatch={fit_report_id:string;historical_match_score:number;historical_coverage_percent:number};
 type TargetReport={id:string;product_id:string;objective_variant_key:string|null};
+type SizeRow={id:string;normalized_key:string;display_label:string;kind:string;sizing_system:string|null;alpha_size:string|null;numeric_size:number|null;shoe_size:number|null};
+type AttributeRow={product_id:string;attribute_key:string;option_key:string};
 
-function evidenceForOwnReport(report:OwnReport,target:ProductRow,source:ProductRow,match:SnapshotMatch):RecommendationEvidence{
-  const level:RecommendationEvidence["evidenceLevel"]=report.product_id===target.id
-    ?"exact_product"
-    :target.product_family_id&&source.product_family_id===target.product_family_id
-      ?"product_family"
-      :source.brand_id===target.brand_id&&source.garment_type_key===target.garment_type_key
-        ?"brand_garment_type"
-        :"category_fit";
-  return{sizeKey:`raw:${report.size_label.trim().toUpperCase()}`,sizeLabel:report.size_label,fit:report.fit,matchScore:match.historical_match_score,coveragePercent:match.historical_coverage_percent,evidenceLevel:level,attributeOverlap:0,directionalFitSupport:null};
+type Adjacency={current:{sizeKey:string;sizeLabel:string};up:{sizeKey:string;sizeLabel:string}|null;down:{sizeKey:string;sizeLabel:string}|null};
+
+function sizeAdjacency(normalizedId:string|null,sizeLabel:string,byId:Map<string,SizeRow>,safe:Map<string,Adjacency>):Adjacency{
+  if(normalizedId){
+    const mapped=safe.get(normalizedId);if(mapped)return mapped;
+    const normalized=byId.get(normalizedId);if(normalized)return{current:{sizeKey:normalized.normalized_key,sizeLabel:normalized.display_label},up:null,down:null};
+  }
+  const alpha=simpleAlphaAdjacency(sizeLabel);
+  if(alpha.current)return{current:alpha.current,up:alpha.up,down:alpha.down};
+  return{current:{sizeKey:`raw:${sizeLabel.trim().toUpperCase()}`,sizeLabel},up:null,down:null};
+}
+
+function attributeSets(rows:AttributeRow[]){
+  const result=new Map<string,Set<string>>();
+  for(const row of rows){const set=result.get(row.product_id)??new Set<string>();set.add(`${row.attribute_key}:${row.option_key}`);result.set(row.product_id,set);}
+  return result;
+}
+function overlap(a:Set<string>|undefined,b:Set<string>|undefined){if(!a||!b)return 0;let count=0;for(const value of a)if(b.has(value))count+=1;return count;}
+function evidenceLevelForOwn(report:OwnReport,target:ProductRow,source:ProductRow,targetVariation:string,attributeOverlap:number):RecommendationEvidence["evidenceLevel"]{
+  if(report.product_id===target.id&&(report.objective_variant_key??"")===targetVariation)return"exact_variant";
+  if(report.product_id===target.id)return"exact_product";
+  if(target.product_family_id&&source.product_family_id===target.product_family_id)return"product_family";
+  if(source.garment_type_key===target.garment_type_key&&attributeOverlap>0)return"similar_garments";
+  if(source.brand_id===target.brand_id&&source.garment_type_key===target.garment_type_key)return"brand_garment_type";
+  return"category_fit";
+}
+function strongAggregate(rows:Candidate[],sizeLabel:(row:Candidate)=>string){
+  const groups=new Map<string,{sizeLabel:string;count:number;fits:Record<RecommendationEvidence["fit"],number>}>();
+  for(const row of rows){const label=sizeLabel(row);const group=groups.get(label)??{sizeLabel:label,count:0,fits:{too_small:0,snug:0,just_right:0,relaxed:0,too_big:0}};group.count+=1;group.fits[row.fit]+=1;groups.set(label,group);}
+  return [...groups.values()].sort((a,b)=>b.count-a.count||a.sizeLabel.localeCompare(b.sizeLabel)).map((group)=>({
+    sizeLabel:group.sizeLabel,
+    count:group.count,
+    fitBreakdown:Object.entries(group.fits).filter(([,count])=>count>0).map(([fit,count])=>({fit,fitLabel:FIT_RESULT_LABELS[fit]??fit,count,percent:Math.round((count/group.count)*100)})),
+  }));
 }
 
 export async function GET(request:Request,{params}:{params:Promise<{id:string}>}){
@@ -49,13 +84,14 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
   if(productError||!productData)return Response.json({error:"Could not load tagged garment."},{status:500});
   const product=productData as ProductRow;
   const category=product.garment_type_key?(GARMENT_TYPE_BY_KEY.get(product.garment_type_key)?.label??product.garment_type_key.replaceAll("_"," ")):"Garment";
-  if(!profileReady)return Response.json({category,profileReady:false,matchingFitReports:0,recommendation:null,relevantReports:[],objectiveVariantKey:targetReport.objective_variant_key??""});
+  if(!profileReady)return Response.json({category,profileReady:false,matchingFitReports:0,recommendation:null,relevantReports:[],strongFitReports:[],objectiveVariantKey:targetReport.objective_variant_key??""});
 
-  const [{data:candidateData,error:candidateError},{data:ownReportData,error:ownReportError}]=await Promise.all([
-    supabase.rpc("get_product_evidence_candidates",{p_product_id:product.id,p_variant_id:null,p_result_limit:200}),
-    supabase.from("fit_reports").select("id,user_id,product_id,size_label,fit,created_at,garment_condition,objective_variant_key").eq("user_id",viewerId).order("created_at",{ascending:false}).limit(160),
+  const [{data:candidateData,error:candidateError},{data:ownReportData,error:ownReportError},{data:sizeData,error:sizeError}]=await Promise.all([
+    supabase.rpc("get_product_evidence_candidates",{p_product_id:product.id,p_variant_id:null,p_result_limit:300}),
+    supabase.from("fit_reports").select("id,user_id,product_id,normalized_size_id,size_label,fit,created_at,garment_condition,objective_variant_key").eq("user_id",viewerId).order("created_at",{ascending:false}).limit(200),
+    supabase.from("normalized_sizes").select("id,normalized_key,display_label,kind,sizing_system,alpha_size,numeric_size,shoe_size"),
   ]);
-  if(candidateError||ownReportError)return Response.json({error:"Could not load FITuition evidence."},{status:500});
+  if(candidateError||ownReportError||sizeError)return Response.json({error:"Could not load FITuition evidence."},{status:500});
 
   const rawCandidates=(candidateData??[]) as Candidate[];
   const candidateIds=[...new Set(rawCandidates.map((row)=>row.fit_report_id))];
@@ -66,35 +102,59 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
   const targetVariation=targetReport.objective_variant_key??"";
   const relevantExact=candidates.filter((row)=>{
     const identity=identityById.get(row.fit_report_id);
-    return row.evidence_product_id===product.id&&(identity?.objective_variant_key??"")===targetVariation&&row.historical_match_score>=QUICK_VIEW_STRONG_MATCH_THRESHOLD;
+    return row.evidence_product_id===product.id&&(identity?.objective_variant_key??"")===targetVariation&&row.historical_match_score>=STRONG_FIT_REPORT_MATCH_THRESHOLD;
   }).sort((a,b)=>b.historical_match_score-a.historical_match_score||b.historical_coverage_percent-a.historical_coverage_percent);
 
   const ownReports=newestUniqueVariationEvidence((ownReportData??[]) as OwnReport[],(report)=>({userId:report.user_id,productId:report.product_id,objectiveVariantKey:report.objective_variant_key,reportId:report.id,createdAt:report.created_at}));
   const ownProductIds=[...new Set(ownReports.map((row)=>row.product_id))];
-  const ownProductRows=ownProductIds.length?await supabase.from("products").select("id,brand_id,product_family_id,garment_type_key,category").in("id",ownProductIds):{data:[],error:null};
-  if(ownProductRows.error)return Response.json({error:"Could not load Closet history."},{status:500});
+  const [ownProductRows,snapshotResult,attributeResult]=await Promise.all([
+    ownProductIds.length?supabase.from("products").select("id,brand_id,product_family_id,garment_type_key,category").in("id",ownProductIds):Promise.resolve({data:[],error:null}),
+    ownReports.length?supabase.rpc("get_fit_report_snapshot_matches",{p_fit_report_ids:ownReports.map((row)=>row.id)}):Promise.resolve({data:[],error:null}),
+    supabase.from("product_attribute_values").select("product_id,attribute_key,option_key").in("product_id",[...new Set([product.id,...ownProductIds])]).neq("source_status","rejected").gte("confidence",0.75),
+  ]);
+  if(ownProductRows.error||snapshotResult.error||attributeResult.error)return Response.json({error:"Could not load Closet history."},{status:500});
   const ownProductById=new Map(((ownProductRows.data??[]) as ProductRow[]).map((row)=>[row.id,row]));
-  const snapshotResult=ownReports.length?await supabase.rpc("get_fit_report_snapshot_matches",{p_fit_report_ids:ownReports.map((row)=>row.id)}):{data:[],error:null};
-  if(snapshotResult.error)return Response.json({error:"Could not compare Closet history."},{status:500});
   const snapshotByReport=new Map(((snapshotResult.data??[]) as SnapshotMatch[]).map((row)=>[row.fit_report_id,row]));
+  const attrs=attributeSets((attributeResult.data??[]) as AttributeRow[]);
+  const sizes=(sizeData??[]) as SizeRow[];
+  const sizeById=new Map(sizes.map((row)=>[row.id,row]));
+  const safeSizes=buildSafeSizeAdjacency(sizes.map((row):NormalizedSizeDescriptor=>({id:row.id,normalizedKey:row.normalized_key,displayLabel:row.display_label,kind:row.kind,sizingSystem:row.sizing_system,alphaSize:row.alpha_size,numericSize:row.numeric_size,shoeSize:row.shoe_size}))) as Map<string,Adjacency>;
+  const sharedDirectional=new Map(candidates.filter((row)=>row.user_id===viewerId).map((row)=>[row.fit_report_id,row.directional_fit_support]));
 
-  const otherEvidence:RecommendationEvidence[]=candidates.filter((row)=>row.user_id!==viewerId).map((row)=>({sizeKey:`raw:${row.original_size_label.trim().toUpperCase()}`,sizeLabel:row.original_size_label,fit:row.fit,matchScore:row.historical_match_score,coveragePercent:row.historical_coverage_percent,evidenceLevel:row.evidence_level,attributeOverlap:row.attribute_overlap,directionalFitSupport:row.directional_fit_support}));
+  const otherEvidence:RecommendationEvidence[]=candidates.filter((row)=>row.user_id!==viewerId).map((row)=>{
+    const identity=identityById.get(row.fit_report_id);const size=sizeAdjacency(row.normalized_size_id,row.original_size_label,sizeById,safeSizes);
+    const exactVariation=row.evidence_product_id===product.id&&(identity?.objective_variant_key??"")===targetVariation;
+    return{sizeKey:size.current.sizeKey,sizeLabel:size.current.sizeLabel,fit:row.fit,matchScore:row.historical_match_score,coveragePercent:row.historical_coverage_percent,evidenceLevel:exactVariation?"exact_variant":row.evidence_level,attributeOverlap:row.attribute_overlap,directionalFitSupport:row.directional_fit_support,source:"community",sourceRelevance:1,adjacentSizeUp:size.up,adjacentSizeDown:size.down};
+  });
   const ownHistory:RecommendationEvidence[]=ownReports.flatMap((report)=>{
     if(report.garment_condition!=="normal")return[];
     const source=ownProductById.get(report.product_id);const match=snapshotByReport.get(report.id);
     if(!source||!match)return[];
-    const related=report.product_id===product.id||Boolean(product.product_family_id&&source.product_family_id===product.product_family_id)||Boolean(product.garment_type_key&&source.garment_type_key===product.garment_type_key)||source.category===product.category;
-    return related?[evidenceForOwnReport(report,product,source,match)]:[];
+    const attributeOverlap=overlap(attrs.get(product.id),attrs.get(source.id));
+    const sourceRelevance=closetEvidenceRelevance({sameProduct:report.product_id===product.id,sameVariation:report.product_id===product.id&&(report.objective_variant_key??"")===targetVariation,sameBrand:source.brand_id===product.brand_id,sameGarmentType:Boolean(source.garment_type_key&&source.garment_type_key===product.garment_type_key),sameCategory:source.category===product.category,attributeOverlap});
+    if(sourceRelevance<=0)return[];
+    const size=sizeAdjacency(report.normalized_size_id,report.size_label,sizeById,safeSizes);
+    return[{sizeKey:size.current.sizeKey,sizeLabel:size.current.sizeLabel,fit:report.fit,matchScore:match.historical_match_score,coveragePercent:match.historical_coverage_percent,evidenceLevel:evidenceLevelForOwn(report,product,source,targetVariation,attributeOverlap),attributeOverlap,directionalFitSupport:sharedDirectional.get(report.id)??null,source:"closet" as const,sourceRelevance,adjacentSizeUp:size.up,adjacentSizeDown:size.down}];
   });
-  const recommendation=recommendSize([...otherEvidence,...ownHistory],"standard");
-  const canRecommend=Boolean(recommendation&&recommendation.confidence>=45&&relevantExact.length>0);
+  const recommendation=recommendSize([...otherEvidence,...ownHistory]);
+  const canRecommend=Boolean(recommendation&&recommendation.confidence>=45);
+  const sizeLabelForCandidate=(row:Candidate)=>sizeAdjacency(row.normalized_size_id,row.original_size_label,sizeById,safeSizes).current.sizeLabel;
 
   return Response.json({
     category,
     profileReady:true,
     matchingFitReports:relevantExact.length,
     objectiveVariantKey:targetVariation,
-    recommendation:canRecommend&&recommendation?{sizeLabel:recommendation.sizeLabel,confidence:recommendation.confidence,confidenceLabel:recommendationConfidenceLabel(recommendation.confidence),similarWearerCount:recommendation.similarWearerCount,sizeEvidenceCount:recommendation.sizeEvidenceCount}:null,
-    relevantReports:relevantExact.map((row)=>({fitReportId:row.fit_report_id,bodyMatch:row.historical_match_score,sizeLabel:row.original_size_label,fitLabel:FIT_RESULT_LABELS[row.fit]??row.fit,isOwn:row.user_id===viewerId})),
+    recommendation:canRecommend&&recommendation?{
+      sizeLabel:recommendation.sizeLabel,
+      confidence:recommendation.confidence,
+      confidenceLabel:recommendationConfidenceLabel(recommendation.confidence),
+      similarWearerCount:recommendation.similarWearerCount,
+      sizeEvidenceCount:recommendation.sizeEvidenceCount,
+      sourceBreakdown:recommendation.sourceBreakdown,
+    }:null,
+    relevantReports:relevantExact.map((row)=>({fitReportId:row.fit_report_id,bodyMatch:row.historical_match_score,sizeLabel:sizeLabelForCandidate(row),fitLabel:FIT_RESULT_LABELS[row.fit]??row.fit,isOwn:row.user_id===viewerId})),
+    strongFitReports:strongAggregate(relevantExact,sizeLabelForCandidate),
+    closetEvidenceCount:ownHistory.length,
   });
 }

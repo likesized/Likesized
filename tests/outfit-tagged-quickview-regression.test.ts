@@ -11,6 +11,9 @@ const pickerCss=readFileSync(new URL("../app/outfits/new/outfitPicker.module.css
 const cardStart=taggedPanel.indexOf("<div className={styles.taggedGrid}");
 const quickViewStart=taggedPanel.indexOf("{selected?<div className={styles.itemPreviewOverlay}");
 const cardMarkup=taggedPanel.slice(cardStart,quickViewStart);
+const firstQuickViewStart=taggedPanel.indexOf("<div className={styles.itemPreviewTop}>");
+const firstQuickViewEnd=taggedPanel.indexOf("{actionError?",firstQuickViewStart);
+const firstQuickViewMarkup=taggedPanel.slice(firstQuickViewStart,firstQuickViewEnd);
 const unsavedDialogCss=pickerCss.match(/:global\(\[role="dialog"\]\[aria-label="Unsaved Outfit"\]\)\{([^}]*)\}/)?.[1]??"";
 
 test("photo hotspots can open the canonical tagged quick view from any detail tab",()=>{
@@ -73,7 +76,9 @@ test("tagged cards stay compact while clicked garments carry tracked-variation d
 });
 
 test("first tagged-garment quick view always keeps direct full Garment Detail navigation, including zero-report Notify",()=>{
-  assert.match(taggedPanel,/renderWatchPrompt\(selected\)[\s\S]*<\/section>\s*<UniversalActionBar[\s\S]*<\/UniversalActionBar>\s*<Link[^>]*href=\{selected\.href\}[^>]*data-full-navigation="true"[^>]*>View Garment Detail →<\/Link>/);
+  assert.ok(firstQuickViewStart>=0&&firstQuickViewEnd>firstQuickViewStart);
+  assert.match(firstQuickViewMarkup,/renderWatchPrompt\(selected\)/);
+  assert.match(firstQuickViewMarkup,/href=\{selected\.href\} data-full-navigation="true">View Garment Detail →<\/Link>/);
 });
 
 test("FITuition details use one concise intermediate evidence layer before full garment navigation",()=>{

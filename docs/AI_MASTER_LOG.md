@@ -36,7 +36,7 @@ Going forward:
 - never create separate web-vs-app product truth;
 - do not prematurely choose a native framework or rewrite working V1 solely for hypothetical portability.
 
-# CURRENT STATUS — 2026-08-25
+# CURRENT STATUS — 2026-08-26
 
 ## Canonical production line — LIVE THROUGH PR #87
 Production application source of truth is PR #87 squash merge **`96905b411dcef2b2a7b0cd55ef379986eff402db`** on `main`.
@@ -73,17 +73,25 @@ Latest production database mappings relevant to Roadmap 12:
 - `20260825122000_outfit_photo_captions.sql` → **`20260825133233 outfit_photo_captions`**;
 - `20260825152000_outfit_public_hotspots_and_comment_sorting.sql` → **`20260825155645 outfit_public_hotspots_and_comment_sorting`**.
 
-## Current primary active line — COMPLETION REPAIR + ROADMAP RECORDING
-Active branch: **`agent/canonical-product-image-roadmap`**.
+## Current primary active line — ROADMAP 12 LIVE-AUDIT REPAIR
+Active branch: **`agent/outfit-audit-regression-repair`**.
 
-This line contains the owner-locked Roadmap 13A canonical Product-image-scoring plan plus the current owner-directed completion repairs. It is **not production-live** and has no production authorization merely because implementation is present.
+This is the one current owner-directed live-repair line. It is **not production-live**, has **not passed the full verification gate yet**, and has no production authorization merely because branch-only implementation exists.
 
-Current completion-repair scope:
-1. replace the invalid composed Wishlist emoji/glyph with one deterministic shopping-bag + heart SVG whose active state fills the heart;
-2. simplify Outfit creator quick view to **Overall Match** alone, then **Tops Match | Bottoms Match**, then **Total Garments | Total Outfits**, with no boxed table/grid chrome;
-3. make Total Garments count distinct garment/Fit Report associations rather than relabeling raw Fit Report count;
-4. collect optional **City + State** only during initial Fit Profile setup, keep it private, make it editable later in Settings, and do not re-show it on My Measurements updates;
-5. add owner-private database storage for city/state so future anonymous regional aggregates such as wishlist demand can be built without exposing location on public/member profile surfaces.
+The previously recorded primary line **`agent/canonical-product-image-roadmap`** is now **DEFERRED / SALVAGE-PROTECTED** at commit **`372e43befbf5ef729f1bfbfdf53752c66fde42b4`**. It contains owner-approved Roadmap 13A recording plus completion-repair work. Before any current repair candidate can be proposed for production, every meaningful unique change from that parked line must be classified **RECOVERED / SUPERSEDED / DUPLICATE / DEFERRED** and reconciled so no owner-approved work is silently lost.
+
+Current branch-only Roadmap 12 repair scope includes:
+1. full-size Outfit imagery supports **left/right swipe between photos** while preserving intentional close/Escape and swipe-down dismissal;
+2. zero-evidence tagged FITuition uses a compact **Notify me** text action with the explanation **“FITuition will notify you when people close to your size post a Fit Report for this item.”**;
+3. tagged-item surfaces expose the current **Relevant Fit Reports** count rather than hiding the evidence count while loading/after load;
+4. owner Outfit analytics and management controls are separated into compact stats and controls instead of one visually tangled row;
+5. Outfit photo tagging starts on the **Cover/Main photo** rather than unexpectedly starting on another image;
+6. app navigation no longer inherits global smooth scrolling that makes route changes visibly crawl from the old scroll position;
+7. member navigation may warm likely destinations without restoring the earlier eager-prefetch storm;
+8. tagged FITuition evidence retrieval has been consolidated to remove avoidable sequential data round-trips while preserving the canonical evidence model;
+9. tagged FITuition loading/cache state now uses a stable loaded-item ref so a successful response cannot abort its own completion effect and leave **Checking…** stuck indefinitely.
+
+These items remain branch-only until the exact candidate passes focused safeguards, canonical integrity, TypeScript, production build, fresh migration replay and database behavior/privacy verification.
 
 ## Roadmap 12 — New Outfit — CURRENT OWNER AUDIT GATE
 Roadmap 12 is production-live through PR #87 and is still under owner audit.
@@ -167,6 +175,8 @@ FITuition combines Size Match evidence with the viewer's relevant Closet History
 
 When evidence exists but confidence is insufficient, current quick-view direction is **“FITuition isn’t confident enough yet.”** with a relevant-match explanation. With no relevant evidence: **“FITuition needs more evidence.”**
 
+On tagged Outfit quick view, when no Relevant Fit Reports are currently available, the member may opt into a compact **Notify me** action. Its explanatory copy is **“FITuition will notify you when people close to your size post a Fit Report for this item.”** The notification control must not masquerade as a large primary CTA.
+
 ## Shopping / lockers
 LikeLocker, Wish Locker and Shop are independent.
 - LikeLocker = product affinity/save state.
@@ -190,7 +200,7 @@ Raw/private body data, private Closet linkage, unresolved candidate/review state
 - One published Outfit uses one shareable `/outfits/[id]` route.
 - Gallery is one active photo at a time; secondary photos remain behind it rather than a thumbnail strip.
 - Clicking/tapping the photo background opens full-size; tags/caption overlays retain independent behavior.
-- Full-size imagery uses the shared viewer with intentional close/Escape plus drag/swipe-down dismissal; the image follows the drag and a short drag returns instead of dismissing.
+- Full-size imagery uses the shared viewer with intentional close/Escape, **left/right swipe between Outfit photos**, plus drag/swipe-down dismissal; the image follows the drag and a short drag returns instead of dismissing.
 - Optional Outfit photo captions are maximum 200 characters and hidden by default behind Caption control.
 - Safe public hotspots remain visible logged out.
 - Tagged Items and on-photo hotspots open the same canonical tagged-item quick view.
@@ -206,6 +216,7 @@ Raw/private body data, private Closet linkage, unresolved candidate/review state
 - Comments default to **Top** and may switch to **Newest**. Top = Like count descending, newest tie-break. Newest = newest first.
 - Comment submit, Like/unlike and sort switching use the API/local interaction path rather than whole-Outfit navigation for every action.
 - Owner management controls—Edit, comments on/off, delete, Views, Follows generated—remain separate from viewer content actions.
+- New Outfit photo tagging opens on the current **Cover/Main photo**.
 - New Outfit back navigation returns to **My Closet → Outfits**.
 
 # OWNER-LOCKED STYLE FEED DIRECTION — ROADMAP 13, FULL BEHAVIOR NOT YET IMPLEMENTED
@@ -413,8 +424,8 @@ An admin-locked image always wins. A newly uploaded photo may score 100 and stil
 1. Homepage + FAQ — current public copy live; exact sex/body-specific measurement FAQ wording remains pending owner approval.
 2. Global header / member menu / admin entry — current Roadmap 12 interaction repairs are live; broader audit may continue afterward.
 3. Auth — owner-confirmed baseline.
-4. **Fit Profile / My Measurements — OWNER-COMPLETE.** The current active completion repair adds private City/State only to first-time setup and Settings; it does not reopen the My Measurements surface.
-5. Profile Settings — Fit Community editor live; private City/State editor is included in the current active completion repair.
+4. **Fit Profile / My Measurements — OWNER-COMPLETE.** Private City/State first-setup/Settings completion work remains owner-approved and must survive active-line reconciliation before production.
+5. Profile Settings — Fit Community editor live; private City/State editor remains part of the owner-approved completion work that must be reconciled before production.
 6. Notifications — audit remains.
 7. Unified Closet/member profile Closet — canonical visibility meaning reconciled; broader lifecycle/mutation audit remains.
 8. Post-submit Fit Report mutation/lifecycle model — remains.
@@ -451,10 +462,11 @@ Later Roadmap 12 mappings:
 - `20260825122000_outfit_photo_captions.sql` → hosted **`20260825133233 outfit_photo_captions`**.
 - `20260825152000_outfit_public_hotspots_and_comment_sorting.sql` → hosted **`20260825155645 outfit_public_hotspots_and_comment_sorting`**.
 
-Applied migrations are immutable. PR #86 and PR #87 added no migration. The current active completion repair proposes new ordered migration `20260825183000_private_profile_location_metadata.sql`; it is not production-applied until the owner authorizes and the exact tested batch is merged/deployed.
+Applied migrations are immutable. PR #86 and PR #87 added no migration. Branch-only ordered migrations on active/deferred completion work are not production-applied until the owner authorizes an exact reconciled and tested batch.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Verify the current completion-repair branch as one exact candidate, including TypeScript, focused safeguards, production build, complete fresh migration replay and database behavior/privacy tests before any merge.
+- **Before any PR/merge to `main`, reconcile the parked `agent/canonical-product-image-roadmap` head `372e43befbf5ef729f1bfbfdf53752c66fde42b4` against the current repair line and classify every unique owner-approved change as RECOVERED / SUPERSEDED / DUPLICATE / DEFERRED.**
+- Verify the exact current repair candidate, including canonical integrity, TypeScript, focused safeguards, production build, complete fresh migration replay and database behavior/privacy tests before any merge.
 - Continue the owner New Outfit/Roadmap 12 re-audit on production. **Roadmap 13 remains blocked until the owner says Roadmap 12/New Outfit is complete.**
 - Roadmap 13A Automatic Canonical Product Image Scoring is owner-locked and planned; do not implement it opportunistically before its roadmap turn unless the owner explicitly changes the order.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification.
@@ -478,12 +490,14 @@ Recent production lineage:
 - PR #85 — Outfit interaction/Fit Report photo batch — DEPLOYED, merge `95cd89724ab01d85ab2ea3732af4c4f552d700b8`.
 - PR #86 — Roadmap 12 interaction consistency — DEPLOYED, merge `6dccf40032d12fd68c5fc5ee85ad4a4e75a8db19`.
 - PR #87 — Fit Report/Outfit live interaction regression repair — DEPLOYED, merge `96905b411dcef2b2a7b0cd55ef379986eff402db`.
-- `agent/canonical-product-image-roadmap` — **CURRENT PRIMARY ACTIVE LINE** containing Roadmap 13A owner-locked planning plus the current owner-directed Wishlist/creator-quick-view/private-location completion repairs. Not production-live.
+- `agent/canonical-product-image-roadmap` @ `372e43befbf5ef729f1bfbfdf53752c66fde42b4` — **DEFERRED / SALVAGE-PROTECTED** owner-approved Roadmap 13A + completion work pending reconciliation.
+- `agent/outfit-audit-regression-repair` — **CURRENT PRIMARY ACTIVE LINE**, branch-only Roadmap 12 live-audit repairs; not production-live and not yet fully verified.
 
 # EXACT NEXT ACTION — CURRENT
-1. Verify the exact current active-line candidate across canonical integrity, TypeScript, focused application safeguards, production build, fresh migration replay and database behavior/privacy tests.
-2. Review the complete diff against `main` for only the owner-directed completion repair plus Roadmap 13A canonical recording; no opportunistic scope drift.
-3. Do not merge/deploy this new batch without explicit production authorization for this batch.
-4. After any authorized production deployment, verify `likesized.com` and reconcile the exact merge/deployment/migration facts here.
-5. Keep Roadmap 13 blocked until the owner explicitly closes Roadmap 12/New Outfit.
-6. Preserve Roadmap 13A as the shared future canonical Product-image system; do not create competing Explore/Search/Wish Locker image selection before its roadmap turn.
+1. Finish focused source/test consistency for the current repair batch and verify the tagged FITuition loading-state repair no longer self-aborts after a successful response.
+2. Reconcile the parked `agent/canonical-product-image-roadmap` commit `372e43befbf5ef729f1bfbfdf53752c66fde42b4` into the one active-line truth, classifying every unique change before any PR to `main`.
+3. Run the exact reconciled candidate through canonical integrity, TypeScript, all relevant focused safeguards, production build, fresh migration replay and database behavior/privacy tests.
+4. Review the final diff against `main` for only owner-approved live repairs + preserved owner-approved completion/roadmap state; no opportunistic scope drift.
+5. Do not merge/deploy without explicit production authorization for the exact tested batch.
+6. After any authorized production deployment, verify `likesized.com` and reconcile the exact merge/deployment/migration facts here.
+7. Keep Roadmap 13 blocked until the owner explicitly closes Roadmap 12/New Outfit; preserve Roadmap 13A as the future shared canonical Product-image system.

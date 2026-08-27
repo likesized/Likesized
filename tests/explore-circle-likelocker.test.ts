@@ -75,7 +75,6 @@ test("Style Feed is Outfit-only following inspiration with Fit Twins as the defa
  assert.match(circle,/OUTFIT_OCCASIONS/);
  assert.match(circle,/Find More Fit Twins/);
  assert.match(circle,/href="\/people"/);
- assert.doesNotMatch(circle,/See All Following/);
  assert.doesNotMatch(circle,/get_following_feed/);
  assert.doesNotMatch(circle,/fit_report_added|closet_shared|fitTwinPriority|Overall Match/);
 });

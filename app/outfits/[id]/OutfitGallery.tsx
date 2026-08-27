@@ -44,7 +44,7 @@ export default function OutfitGallery({photos,garments}:{photos:GalleryPhoto[];g
   function clearLightboxTimer(){if(lightboxTimer.current){clearTimeout(lightboxTimer.current);lightboxTimer.current=null;}}
   function openTaggedItem(closetItemId:string){window.dispatchEvent(new CustomEvent("likesized:open-tagged-item",{detail:{closetItemId}}));}
 
-  function stagePointerDown(event:React.PointerEvent<HTMLDivElement>){
+  function pointerDown(event:React.PointerEvent<HTMLDivElement>){
     if(!event.isPrimary||stageAnimating)return;
     clearStageTimer();
     stageStart.current={x:event.clientX,y:event.clientY};
@@ -64,7 +64,7 @@ export default function OutfitGallery({photos,garments}:{photos:GalleryPhoto[];g
       setStageDragX(dx);
     }
   }
-  function finishStagePointer(event:React.PointerEvent<HTMLDivElement>,cancelled=false){
+  function pointerUp(event:React.PointerEvent<HTMLDivElement>){
     const start=stageStart.current;
     if(!start||!event.isPrimary||stagePointerId.current!==event.pointerId)return;
     const dx=event.clientX-start.x;
@@ -74,7 +74,7 @@ export default function OutfitGallery({photos,garments}:{photos:GalleryPhoto[];g
     setStageDragging(false);
     event.currentTarget.releasePointerCapture?.(event.pointerId);
     const width=Math.max(stageWidth.current,240);
-    const commit=!cancelled&&photos.length>1&&Math.abs(dx)>=Math.min(90,width*.18)&&Math.abs(dx)>Math.abs(dy);
+    const commit=photos.length>1&&Math.abs(dx)>=Math.min(90,width*.18)&&Math.abs(dx)>Math.abs(dy);
     if(!commit){setStageAnimating(true);setStageDragX(0);stageTimer.current=setTimeout(()=>setStageAnimating(false),180);return;}
     const delta=dx<0?1:-1;
     const exitX=dx<0?-width:width;
@@ -85,6 +85,15 @@ export default function OutfitGallery({photos,garments}:{photos:GalleryPhoto[];g
       setStageAnimating(false);
       setStageDragX(0);
     },160);
+  }
+  function cancelStagePointer(event:React.PointerEvent<HTMLDivElement>){
+    if(stagePointerId.current!==event.pointerId)return;
+    stageStart.current=null;
+    stagePointerId.current=null;
+    setStageDragging(false);
+    setStageAnimating(true);
+    setStageDragX(0);
+    stageTimer.current=setTimeout(()=>setStageAnimating(false),180);
   }
 
   function lightboxPointerDown(event:React.PointerEvent<HTMLDivElement>){
@@ -153,7 +162,7 @@ export default function OutfitGallery({photos,garments}:{photos:GalleryPhoto[];g
   const dismissProgress=Math.min(1,lightboxDragY/240);
 
   return <section className={styles.gallery} aria-label="Outfit photo gallery">
-    <div className={styles.galleryStage} role="button" tabIndex={0} aria-label={photos.length>1?`Outfit photo ${index+1} of ${photos.length}. Open full-size photo or use Previous and Next to change photos.`:"Open full-size Outfit photo"} onPointerDown={stagePointerDown} onPointerMove={stagePointerMove} onPointerUp={(event)=>finishStagePointer(event)} onPointerCancel={(event)=>finishStagePointer(event,true)} onClick={()=>{if(suppressClick.current){suppressClick.current=false;return;}setLightboxOpen(true);}} onKeyDown={(event)=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();setLightboxOpen(true);}else if(event.key==="ArrowRight"){event.preventDefault();move(1);}else if(event.key==="ArrowLeft"){event.preventDefault();move(-1);}}}>
+    <div className={styles.galleryStage} role="button" tabIndex={0} aria-label={photos.length>1?`Outfit photo ${index+1} of ${photos.length}. Open full-size photo or use Previous and Next to change photos.`:"Open full-size Outfit photo"} onPointerDown={pointerDown} onPointerMove={stagePointerMove} onPointerUp={pointerUp} onPointerCancel={cancelStagePointer} onClick={()=>{if(suppressClick.current){suppressClick.current=false;return;}setLightboxOpen(true);}} onKeyDown={(event)=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();setLightboxOpen(true);}else if(event.key==="ArrowRight"){event.preventDefault();move(1);}else if(event.key==="ArrowLeft"){event.preventDefault();move(-1);}}}>
       <div className={styles.galleryMedia} style={{transform:`translate3d(${stageDragX}px,0,0)`,transition:stageTransition,opacity:Math.max(.72,1-Math.abs(stageDragX)/Math.max(stageWidth.current||600,600)*.28),willChange:stageDragging||stageAnimating?"transform, opacity":undefined}}><img className={styles.galleryMain} src={current.previewUrl??current.url} alt={`Outfit photo ${index+1}`} draggable={false}/>{showTags?current.tags.map((tag,tagIndex)=>{const garment=garmentById.get(tag.closetItemId);if(!garment)return null;return <button key={`${tag.closetItemId}-${tagIndex}`} className={styles.hotspot} style={{left:`${tag.x*100}%`,top:`${tag.y*100}%`}} type="button" aria-label={`Open ${garment.label}`} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();openTaggedItem(tag.closetItemId);}}>+</button>;}):null}{current.caption&&showCaption?<div className={styles.galleryCaptionPanel} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>event.stopPropagation()}>{current.caption}</div>:null}</div>
       {photos.length>1?<><button className={`${styles.galleryNav} ${styles.galleryPrev}`} type="button" aria-label="Previous Outfit photo" onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();move(-1);}}>‹</button><button className={`${styles.galleryNav} ${styles.galleryNext}`} type="button" aria-label="Next Outfit photo" onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();move(1);}}>›</button><span className={styles.galleryCounter}>{index+1} / {photos.length}</span></>:null}{current.tags.length?<button className={styles.galleryTagToggle} type="button" onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();setShowTags((value)=>!value);}}>{showTags?"Hide tags":"Show tags"}</button>:null}{current.caption?<button className={styles.galleryCaptionToggle} type="button" aria-expanded={showCaption} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();setShowCaption((value)=>!value);}}>Caption</button>:null}
     </div>

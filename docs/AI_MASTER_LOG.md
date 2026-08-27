@@ -10,7 +10,7 @@ Canonical ownership:
 - `supabase/schema_contract.md` — current database behavior/privacy plus explicit implementation debt.
 - `supabase/migrations/` — immutable ordered executable database history.
 
-GitHub `likesized/Likesized` is the source of truth for application source and recorded product decisions. `main` is the single production source line. Current files describe current product truth; Git history preserves superseded attempts. Never create patch/fixed/v2/temp/backup implementations, parallel product systems or a second master plan.
+GitHub `likesized/Likesized` is the source of truth for application source and recorded product decisions. `main` is the single production source line. Current files describe current truth only.
 
 **Vercel owns live deployment operational truth.** This master records immutable release facts after they are verified, but whether a deployment is currently READY, rolled back, reassigned or unhealthy must be read from Vercel when that current operational state matters.
 
@@ -107,7 +107,7 @@ PR #108 **Finish canonical person quick-view consolidation** release facts:
 - Vercel production deployment **`dpl_CPRipAfxBQd3pemDDG2UCCH31ZK7`** was verified READY for exact merge `2d30ed30861ed7e0cd6d199123f37109262fe33e`, targeted production, assigned `likesized.com` and reported no alias error at verification time;
 - PR #108 routes Outfit creator, inline/comment and global person-preview entry points through one actual `CanonicalPersonQuickViewCard`, eliminating the active duplicate person-preview implementation problem while preserving route-specific triggers and actions.
 
-PR #107 **Collapse person previews to one canonical card** is **SUPERSEDED / CLOSED WITHOUT MERGE**. Its exact head **`36a370a0efc9fa249163671717dee75d53fc79b7`** contains no unique current Product behavior that is not represented by released PR #108. It is non-authoritative history and must not be treated as an alternate current implementation.
+PR #107 **Collapse person previews to one canonical card** is **SUPERSEDED / CLOSED WITHOUT MERGE**. Its exact head **`36a370a0efc9fa249163671717dee75d53fc79b7`** contains no unique Product behavior that is not represented by released PR #108. It is non-authoritative history and must not be treated as an alternate current implementation.
 
 PR #109 **Record verified PR108 release state** was the docs-only post-release reconciliation after PR #108:
 - exact head **`f1dafdef65058135da18550b665e7fbfe2b0ebba`**;

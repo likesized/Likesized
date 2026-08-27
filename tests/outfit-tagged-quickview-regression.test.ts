@@ -28,21 +28,36 @@ test("photo hotspots can open the canonical tagged quick view from any detail ta
   assert.match(css,/\.taggedTabDormant \.taggedGrid\{display:none\}/);
 });
 
-test("visible Relevant Fit Reports include the viewer's eligible exact Product and tracked variation report",()=>{
+test("visible Relevant Fit Reports and strong aggregate use the same eligible exact evidence units",()=>{
   assert.match(taggedFit,/newestUniqueVariationEvidence/);
   assert.match(taggedFit,/objective_variant_key/);
   assert.match(taggedFit,/const relevantExact=candidates\.filter/);
   assert.match(taggedFit,/row\.historical_match_score>=STRONG_FIT_REPORT_MATCH_THRESHOLD/);
   assert.match(taggedFit,/const otherRelevantExact=relevantExact\.filter\(\(row\)=>row\.user_id!==viewerId\)/);
-  assert.match(taggedFit,/const ownExactReports:RelevantReport\[\]=ownReports\.filter/);
+  assert.match(taggedFit,/const ownRelevantExact=ownReports\.filter/);
   assert.match(taggedFit,/report\.garment_condition==="normal"&&report\.product_id===product\.id&&\(report\.objective_variant_key\?\?""\)===targetVariation/);
+  assert.match(taggedFit,/const ownExactReports:RelevantReport\[\]=ownRelevantExact\.map/);
   assert.match(taggedFit,/bodyMatch:null/);
   assert.match(taggedFit,/isOwn:true/);
   assert.match(taggedFit,/const relevantReports=\[\.\.\.ownExactReports,\.\.\.strongOtherReports\]/);
   assert.match(taggedFit,/matchingFitReports:relevantReports\.length/);
+  assert.match(taggedFit,/const strongExactEvidence:StrongAggregateEvidence\[\]=\[/);
+  assert.match(taggedFit,/\.\.\.ownRelevantExact\.map/);
+  assert.match(taggedFit,/\.\.\.otherRelevantExact\.map/);
+  assert.match(taggedFit,/strongFitReports:strongAggregate\(strongExactEvidence\)/);
+  assert.doesNotMatch(taggedFit,/strongFitReports:strongAggregate\(otherRelevantExact/);
   assert.match(taggedFit,/source:"community"/);
   assert.match(taggedFit,/source:"closet"/);
   assert.match(taggedFit,/recommendSize\(\[\.\.\.otherEvidence,\.\.\.ownHistory\]\)/);
+});
+
+test("FITuition detail labels distinguish the best other-person report from the viewer's own report",()=>{
+  assert.match(taggedPanel,/Best Available Matching Fit Report/);
+  assert.match(taggedPanel,/\{report\.bodyMatch\}% Body Match/);
+  assert.match(taggedPanel,/Your Fit Report/);
+  assert.doesNotMatch(taggedPanel,/Your own exact report/);
+  assert.match(taggedPanel,/renderRelevantReport\(bestRelevantReport,true\)/);
+  assert.match(taggedPanel,/additionalRelevantReports\.map\(\(report\)=>renderRelevantReport\(report\)\)/);
 });
 
 test("approved tagged FITuition wording is locked for insufficient and recommended states",()=>{

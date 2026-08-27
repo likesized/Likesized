@@ -57,6 +57,15 @@ When an owner-locked decision changes product meaning, update the master and eve
 - Regression tests are verification consumers, not an independent product-decision ledger. If the owner explicitly changes a locked decision, every overlapping older test assertion must be reconciled in the same change so the suite cannot protect two contradictory answers. A historical test filename or prior green run does not make retired wording/behavior canonical.
 - Before merge, every changed file must map directly to at least one owner-approved item in the frozen batch. Any unrelated change must be removed before the candidate is considered complete.
 
+### Runtime/safeguard separation gate — LOCKED
+- **Implementation must change to satisfy canon; canon and safeguards must never move merely to satisfy implementation.** A runtime Product PR is not allowed to rewrite the rules that judge that same runtime change.
+- Stable owner-locked feature behavior contracts live only inside the marked **CANONICAL FEATURE CONTRACTS** section of `docs/AI_MASTER_LOG.md`. A runtime Product PR may update active status/release bookkeeping elsewhere in the master, but it may not change that stable contract section.
+- A runtime Product PR may never modify `AI_REPOSITORY_RULES.md`, `scripts/check-canonical-integrity.mjs`, or `.github/workflows/`. Governance changes are a separate non-runtime batch.
+- A runtime Product PR may not modify pre-existing `tests/*.test.ts` safeguards or `docs/V1_PRODUCT_SPEC.md` unless canonical `main` **before that implementation PR began** already contains a **Pending owner-approved safeguard change** block for the exact implementation branch and explicitly names every protected file allowed to change. Adding that authorization inside the same runtime PR is invalid; the machine gate reads the PR base, not the proposed branch text.
+- A legitimate Product behavior change therefore starts with a separately owner-authorized, non-runtime pending-decision record on canonical `main`. That record states the exact new behavior/copy, implementation branch, and exact safeguard/spec files that may need reconciliation. Only then may the runtime implementation PR change those named safeguards while satisfying the already-recorded owner decision.
+- After the runtime change is verified and merged, reconcile the pending decision into the stable feature contract and remove/close the pending authorization in a non-runtime canonical reconciliation. Do not leave a permanent blanket authorization behind.
+- The first owner-authorized repair that installs this separation gate may necessarily contain the current runtime regression repair plus the safeguards it is correcting. Machine enforcement activates when this exact gate is already present on canonical `main`; after that bootstrap merge, same-PR self-authorization is rejected automatically.
+
 ## 5. Branch discipline / salvage protection — LOCKED
 
 1. Only one primary active implementation/recovery line should exist at a time unless the owner explicitly authorizes parallel work.
@@ -126,6 +135,7 @@ Canonical CI must run `npm run canonical:check` before typecheck/build/database 
 - an application/source/safeguard PR that leaves the master untouched;
 - a migration PR that leaves the schema contract or master untouched;
 - owner-locked source/copy regressions that are explicitly protected by the canonical integrity check;
+- a runtime Product PR that attempts to change governance, stable feature contracts, tests, or Product Spec without the required pre-existing canonical authorization;
 - removal or weakening of the fail-open Vercel non-runtime release boundary.
 
 Pull-request synchronization and drift checks must inspect the **entire PR diff against canonical `main`**, not only the final commit. A multi-commit PR may not hide earlier application/test/doc changes from the canonical gate.

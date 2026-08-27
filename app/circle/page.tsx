@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { likeOutfit, unlikeOutfit } from "@/app/outfits/actions";
 import { fitTwinDesignation, fitTwinLabel } from "@/lib/fit-twin";
 import { outfitFeedPhotoPath } from "@/lib/outfit-photo-paths";
-import { OUTFIT_OCCASION_LABELS, OUTFIT_OCCASIONS } from "@/lib/outfit-taxonomy";
+import { OUTFIT_OCCASIONS } from "@/lib/outfit-taxonomy";
 import { currentProfilePhotoUrl } from "@/lib/profile-photo";
 import { createClient } from "@/lib/supabase/server";
 import { StyleFeedShareButton } from "./StyleFeedShareButton";
@@ -61,6 +61,9 @@ function shortNote(value: string | null) {
   const text = value?.trim();
   if (!text) return null;
   return text.length > 260 ? `${text.slice(0, 257).trimEnd()}…` : text;
+}
+function occasionLabel(value: string) {
+  return OUTFIT_OCCASIONS.find((item) => item.value === value)?.label ?? value;
 }
 
 export default async function StyleFeedPage({ searchParams }: { searchParams: SearchParams }) {
@@ -248,7 +251,7 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
                   {note ? <p className={styles.note}>{note}</p> : null}
                   {(postOccasions.length || postStyleTags.length) ? (
                     <div className={styles.tags}>
-                      {postOccasions.map((row) => <Link key={`${post.id}-occasion-${row.occasion}`} href={feedHref(scope, row.occasion, styleTag)}>{OUTFIT_OCCASION_LABELS.get(row.occasion) ?? row.occasion}</Link>)}
+                      {postOccasions.map((row) => <Link key={`${post.id}-occasion-${row.occasion}`} href={feedHref(scope, row.occasion, styleTag)}>{occasionLabel(row.occasion)}</Link>)}
                       {postStyleTags.map((row) => <Link key={`${post.id}-style-${row.normalized_tag}`} href={feedHref(scope, occasion, row.normalized_tag)}>#{row.display_tag}</Link>)}
                     </div>
                   ) : null}

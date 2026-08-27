@@ -43,7 +43,7 @@ jobs:
               supabase/*|app/api/*|*/actions.ts|proxy.ts|package.json|package-lock.json)
                 database=true
                 ;;
-              *.ts|*.tsx|*.js|*.jsx)
+              app/*|components/*|lib/*)
                 if [ -f "$file" ] && grep -Eq 'createClient|supabase|\.from\(|\.rpc\(|auth\.' "$file"; then
                   database=true
                 fi

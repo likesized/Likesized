@@ -77,16 +77,46 @@ mustContain('supabase/schema_contract.md', '`follows` is the one canonical **Fol
 mustContain('AI_REPOSITORY_RULES.md', 'Canonical CI must run `npm run canonical:check`');
 mustContain('AI_REPOSITORY_RULES.md', 'Owner scope lock — LOCKED');
 mustContain('AI_REPOSITORY_RULES.md', 'Every committed `tests/*.test.ts` safeguard must run automatically in CI by discovery.');
+mustContain('AI_REPOSITORY_RULES.md', '`vercel.json` + `scripts/vercel-ignore-build.mjs` own the canonical non-runtime release boundary.');
 mustContain('.github/workflows/ci.yml', 'for test_file in tests/*.test.ts; do');
 mustContain('supabase/storage.sql', 'Support/reference mirror only. This file is not a second canonical current-state schema.');
 mustNotContain('supabase/storage.sql', 'Canonical current-state storage model.');
 mustNotContain('docs/AI_MASTER_LOG.md', '## Live repair fast path');
 
-// Dynamic application/deployment status belongs only to the master. The schema contract may
+// Dynamic application/release status belongs only to the master. The schema contract may
 // record database behavior and immutable migration facts, but it must not become a stale
-// second ledger for the currently deployed application line or Vercel deployment status.
+// second ledger for the currently released application line or Vercel operational state.
 mustNotContain('supabase/schema_contract.md', 'Current production application source is PR #');
 mustNotContain('supabase/schema_contract.md', 'Vercel production');
+
+// Vercel's release boundary prevents a non-runtime canonical reconciliation from spawning
+// another production application build merely to record the prior release. It is fail-open:
+// unknown or runtime-affecting changes must build, never silently skip.
+mustContain('vercel.json', '"ignoreCommand": "node scripts/vercel-ignore-build.mjs"');
+const releaseBoundary = read('scripts/vercel-ignore-build.mjs');
+for (const required of [
+  'if (diff.status !== 0)',
+  'process.exit(1)',
+  'changedFiles.every(isNonRuntimeOnly)',
+  'Runtime-affecting or unclassified files changed; production build required.',
+]) {
+  if (!releaseBoundary.includes(required)) fail(`scripts/vercel-ignore-build.mjs must preserve fail-open release-boundary logic: ${JSON.stringify(required)}`);
+}
+for (const forbiddenRuntimeClassification of [
+  'file.startsWith("app/")',
+  'file.startsWith("components/")',
+  'file.startsWith("lib/")',
+  'file.startsWith("public/")',
+  'file.startsWith("supabase/migrations/")',
+  'file === "package.json"',
+  'file === "package-lock.json"',
+  'file === "vercel.json"',
+  'file === "scripts/vercel-ignore-build.mjs"',
+]) {
+  if (releaseBoundary.includes(forbiddenRuntimeClassification)) {
+    fail(`scripts/vercel-ignore-build.mjs must not classify runtime/release-boundary source as skippable: ${JSON.stringify(forbiddenRuntimeClassification)}`);
+  }
+}
 
 const activeBranch = process.env.CANONICAL_HEAD_REF?.trim();
 if (activeBranch) {
@@ -96,7 +126,8 @@ if (activeBranch) {
   const changedSet = new Set(changed);
   const productOrSafeguardChanged = changed.some((rel) => /^(?:app|components|lib|tests|scripts|\.github\/workflows)\//.test(rel))
     || changedSet.has('package.json')
-    || changedSet.has('package-lock.json');
+    || changedSet.has('package-lock.json')
+    || changedSet.has('vercel.json');
   const productSpecChanged = changedSet.has('docs/V1_PRODUCT_SPEC.md');
   const migrationChanged = changed.some((rel) => /^supabase\/migrations\/.*\.sql$/.test(rel));
 

@@ -12,6 +12,8 @@ function safeReturnPath(value: FormDataEntryValue | null) {
     path.startsWith("/people/") ||
     path === "/following" ||
     path.startsWith("/following?") ||
+    path === "/circle" ||
+    path.startsWith("/circle?") ||
     path.startsWith("/outfits/") ||
     path === "/notifications"
   ) {
@@ -50,6 +52,7 @@ export async function followPerson(formData: FormData) {
   }
 
   revalidatePath("/following");
+  revalidatePath("/circle");
   revalidatePath("/outfits");
   revalidatePath("/notifications");
   redirect(returnTo);
@@ -71,6 +74,7 @@ export async function unfollowPerson(formData: FormData) {
   }
 
   revalidatePath("/following");
+  revalidatePath("/circle");
   revalidatePath("/outfits");
   revalidatePath("/notifications");
   redirect(returnTo);
@@ -94,6 +98,7 @@ export async function setFollowingNotificationSubscription(formData: FormData) {
   revalidatePath("/people");
   revalidatePath(returnTo);
   revalidatePath("/following");
+  revalidatePath("/circle");
   revalidatePath("/outfits");
   revalidatePath("/notifications");
   redirect(returnTo);

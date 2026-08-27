@@ -51,8 +51,8 @@ test("New Outfit picker uses progressive filters and explicit Add",()=>{
  assert.match(composer,/>All Garments</);assert.match(composer,/>Recently Added</);assert.match(composer,/>A–Z</);assert.match(composer,/closetCategory\?<select aria-label="Filter by garment type"/);assert.match(composer,/closetCategory&&closetType\?<select aria-label="Filter by brand"/);assert.match(composer,/setClosetPreviewId\(item\.id\)/);assert.match(composer,/\{added\?"✓ Added":"Add"\}/);assert.doesNotMatch(composer,/Garment Type<\/option>/);assert.match(pickerCss,/Search your Closet/);assert.match(pickerCss,/width:min\(280px,100%\)/);assert.match(pickerCss,/min-height:32px/);
 });
 
-test("picker quick view identifies similar garment variations before selection",()=>{
- for(const text of ["BRAND","ITEM / MODEL","GARMENT TYPE","SIZE","COLOR","FIT RESULT"])assert.match(composer,new RegExp(text.replace("/","\\/")));assert.match(composer,/closetPreview\.photoUrls/);assert.match(composer,/closetPreview\.answers/);assert.match(newPage,/garment_answers/);assert.match(newPage,/variationDetail/);assert.doesNotMatch(newPage,/product_attribute_values/);assert.match(newPage,/fit_reference_photos/);assert.match(newPage,/const color=item\.variant_id\?variantById\.get\(item\.variant_id\)\?\.color_label\?\?null:null/);
+test("picker quick view identifies similar garment variations before selection without dumping them on the list",()=>{
+ for(const text of ["BRAND","ITEM / MODEL","GARMENT TYPE","SIZE","COLOR","FIT RESULT"])assert.match(composer,new RegExp(text.replace("/","\\/")));assert.match(composer,/closetPreview\.photoUrls/);assert.match(composer,/closetPreview\.answers/);assert.match(composer,/closetPreview\.answers\.map/);assert.match(newPage,/garment_answers/);assert.doesNotMatch(newPage,/const variationDetail=answers\.map/);assert.doesNotMatch(newPage,/product_attribute_values/);assert.match(newPage,/fit_reference_photos/);assert.match(newPage,/const color=item\.variant_id\?variantById\.get\(item\.variant_id\)\?\.color_label\?\?null:null/);
 });
 
 test("cover-tag reuse, draft responsiveness, and Preview Publish scroll are explicit",()=>{

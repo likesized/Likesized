@@ -103,7 +103,6 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
       const option=question.options.find((candidate)=>candidate.value===answer);
       return option?[{label:question.label,value:option.label}]:[];
     }).slice(0,4);
-    const variationDetail=answers.map((answer)=>`${answer.label}: ${answer.value}`).join(" · ");
     const fitRows=fitPhotosByItem.get(item.id)??[];
     const frontRow=fitRows.find((row)=>row.photo_role==="front");
     const backRow=fitRows.find((row)=>row.photo_role==="back");
@@ -116,7 +115,7 @@ export default async function NewOutfitPage({ searchParams }: { searchParams: Se
     return {
       id: item.id,
       label: `${brand?.name || "Brand"} · ${product?.name || "Garment"}`,
-      detail: [garmentTypeLabel,`Size ${item.size_label}`,color,variationDetail].filter(Boolean).join(" · "),
+      detail: [garmentTypeLabel,`Size ${item.size_label}`,color].filter(Boolean).join(" · "),
       brand: brand?.name || "Brand",
       itemName: product?.name || "Garment",
       garmentType,

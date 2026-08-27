@@ -107,9 +107,13 @@ Production Supabase includes, after the earlier Roadmap 12 migrations:
 PR #94, PR #95 and PR #97 introduced no new production database migration. PR #96 introduced the Outfit tag-consistency migration above.
 
 ## Current primary line — ROADMAP 12 OWNER LIVE AUDIT
-Active branch: **`main`**
+Active branch: **`agent/outfit-detail-dialog-closure`**
 
-There is **no open repair PR** after PR #97. Production is current through PR #97 and the owner live audit continues from that deployed baseline. A later owner-reported batch must use one new canonical repair line rather than resurrecting the closed PR #97 branch as a competing source.
+The current owner-reported repair batch is frozen to exactly two UI issues on this single branch:
+1. restore the direct **View Garment Detail →** link at the bottom of the first clicked tagged-garment quick view in every FITuition state, including the zero-report Notify state;
+2. keep the Outfit garment-picker list/card compact by removing the tracked-variation answer dump from that list while preserving those answers in the clicked picker quick view.
+
+Do not reopen FITuition logic, Search/Explore, gallery, hotspot, preload or other completed/deferred work in this batch unless the owner reports a new defect there.
 
 PR #96's four repaired behaviors remain protected:
 1. **Relevant Fit Reports preload on every signed-in Tagged Items card.** Opening a garment is not required to make its count appear.
@@ -128,9 +132,9 @@ PR #97 deployed the current owner-locked Outfit repair semantics:
 The separately reported Explore/Search behavior remains deferred to the later Search audit. Do not fold Search into Roadmap 12 Outfit work unless the owner explicitly changes scope.
 
 ## Roadmap 12 — New Outfit — CURRENT OWNER AUDIT GATE
-Roadmap 12 is production-live through verified PR #97 and remains under owner live audit until the owner explicitly accepts the Roadmap 12/New Outfit stopping point.
+Roadmap 12 is production-live through verified PR #97 and remains under owner live audit. The two-item repair branch **`agent/outfit-detail-dialog-closure`** is not production until it completes the mandatory verification/deployment chain.
 
-**Roadmap 13 remains blocked until the owner explicitly finishes the New Outfit/Roadmap 12 audit and accepts the production stopping point.**
+**Roadmap 13 remains blocked until the owner explicitly accepts the Roadmap 12/New Outfit stopping point.**
 
 # OWNER-LOCKED CURRENT PRODUCT DECISIONS
 
@@ -246,8 +250,8 @@ Raw/private body data, private Closet linkage, unresolved candidate/review state
 - Signed-in Tagged Items cards preload personalized Relevant Fit Report metadata for every visible tagged garment; opening the card is not a prerequisite for its count to appear.
 - Tagged Items compact cards remain compact Product identification; tracked-variation answers are exposed only after the user opens the tagged garment.
 - Tagged quick view is personalized only when the viewer is signed in and eligible for personalized evidence.
-- Where multiple legitimate entries share one base Product but differ by tracked fit variation, the Outfit picker and clicked/tagged quick-view path expose the answered variation-defining structured attributes needed to distinguish them. Same Product does not imply duplicate entry.
-- The clicked tagged-garment quick view opens one in-Outfit FITuition detail layer for deeper exact-variation evidence. That intermediate layer—not the first click—contains the explicit navigation to the full Garment Detail page, which is where broader/related evidence lives.
+- Where multiple legitimate entries share one base Product but differ by tracked fit variation, the Outfit garment-picker **list stays compact and does not display the tracked-variation answer dump**. Clicking a picker entry opens the garment quick view, and that clicked quick view exposes the answered variation-defining structured attributes needed to distinguish the legitimate entries. Same Product does not imply duplicate entry.
+- The first clicked tagged-garment quick view keeps direct **View Garment Detail →** navigation at its bottom in every FITuition state. FITuition Details still opens the in-Outfit intermediate evidence layer before any optional full-page navigation from that evidence path.
 - Existing Outfit save keeps photo-hotspot relationships subordinate to the current Outfit selected-garment set; stale orphan relationships are healed rather than exposed as an internal consistency error.
 - Edit/New Outfit unsaved internal navigation uses the existing Save Changes/Save Draft · Leave Without Saving · Keep Editing confirmation in a fixed/current-viewport dialog; it must never render as an unnoticed block at the bottom of the composer.
 - Tagged garment actions are **LikeLocker · Wishlist · Shop · Share · Report** with no garment-action counts.
@@ -477,7 +481,7 @@ An admin-locked image always wins. A newly uploaded photo may score 100 and stil
 10. Style Feed relationship semantics — direction locked above; full feed behavior remains Roadmap 13.
 11. New Fit Report — evidence-first flow live; visible photo validation is live.
 11A. **Garment-question variation classification — COMPLETE / DEPLOYED.**
-12. **New Outfit — CURRENT OWNER AUDIT GATE; production through verified PR #97; no active repair PR.**
+12. **New Outfit — CURRENT OWNER AUDIT GATE; production through verified PR #97; active repair line `agent/outfit-detail-dialog-closure` is limited to the two owner-reported UI regressions above.**
 13. **Style Feed full behavior/ranking — BLOCKED until the owner closes Roadmap 12.**
 13A. **Automatic Canonical Product Image Scoring — OWNER LOCKED / PLANNED; implement before Garment/Product detail, Explore, Search and Wish Locker audit so those surfaces consume one canonical image-selection system.**
 14. Garment/Product detail — Exact Variation consumes the canonical 11A map and Roadmap 13A canonical-image hierarchy when reached.
@@ -515,7 +519,7 @@ Later Roadmap 12 production mappings:
 Applied migrations are immutable. PR #94, PR #95 and PR #97 added no migration. PR #96 added the Outfit tag-consistency migration and it is production-applied at the hosted timestamp above.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Continue the owner live Roadmap 12/New Outfit audit from verified production PR #97. Do not expand the closed PR #97 batch into Search or Roadmap 13 after the fact.
+- Complete only the two-item owner repair batch on `agent/outfit-detail-dialog-closure`: first-view direct Garment Detail navigation and compact Outfit garment-picker list with variation answers available only after click.
 - Keep all canonical integrity, TypeScript, focused application, build, fresh migration replay and pgTAP/database behavior/privacy gates active. Do not treat PR #94/#95 verification exceptions as precedent; PR #96 restored the full exact-head/main verification chain and PR #97 preserved it.
 - Source-format regression tests that assert incidental JSX spelling/placement should be corrected to preserve the real behavior contract rather than forcing application code backward to satisfy stale regex. This is not permission to weaken behavioral checks.
 - Roadmap 13A Automatic Canonical Product Image Scoring is owner-locked and planned; do not implement it opportunistically before its roadmap turn unless the owner explicitly changes the order.
@@ -552,10 +556,10 @@ Recent production lineage:
 - PR #97 — tagged Outfit FITuition flow — DEPLOYED, exact branch **`9cc02f75b2afd6e46c821505775b7e521f16eb61`**, merge **`6cb6902a3bc297cd36f45fc77de1af115058d996`**, exact-head CI **#1005** green, main CI **#1007** green, production **`dpl_21H4Srw7S5dUmrHx3yxNFkoG21RX`**, no database migration.
 
 # EXACT NEXT ACTION — CURRENT
-1. Continue the owner live Roadmap 12/New Outfit audit on production through verified PR #97; record new owner-reported issues before opening the next single repair batch.
-2. Preserve the PR #97 semantics: visible Outfit Relevant Fit Reports are other-wearer exact Product + exact tracked-variation evidence; own eligible reports remain internal supporting Closet/FITuition evidence without incrementing that visible count or suppressing Notify.
-3. Keep the separately reported Explore/Search behavior deferred to the later Search audit unless the owner explicitly changes the order.
-4. Keep canonical integrity, TypeScript, complete application safeguards, production build, full fresh migration replay and pgTAP/database behavior/privacy verification mandatory for every relevant future final candidate.
-5. Keep Roadmap 13 blocked until the owner explicitly closes Roadmap 12/New Outfit.
-6. Preserve Roadmap 13A as the shared future canonical Product-image system; do not create competing Explore/Search/Wish Locker image selection before its roadmap turn.
-7. Current production application behavior is PR #97; no active repair PR exists.
+1. Finish the two-item repair on **`agent/outfit-detail-dialog-closure`** and do not add old/completed/deferred issues to this batch.
+2. Verify the first clicked tagged-garment quick view always renders direct **View Garment Detail →** navigation at the bottom, including the zero-report Notify state, while FITuition Details still keeps its intermediate in-Outfit behavior.
+3. Verify the Outfit garment-picker list/card renders only compact garment/report context and no tracked-variation answer dump; clicking the garment must still expose the stored structured answers in the quick view, with legitimate repeated same-Product entries preserved.
+4. Run targeted regression checks, then the complete exact-head CI chain: canonical integrity, TypeScript, full application safeguards, production build, complete fresh migration replay and pgTAP/database behavior/privacy verification.
+5. Do not modify FITuition recommendation/count logic or Search/Explore in this batch unless the owner reports a new defect there.
+6. Keep Roadmap 13 blocked until the owner explicitly closes Roadmap 12/New Outfit.
+7. Current production remains PR #97 until a separately authorized deployment of this repair batch completes.

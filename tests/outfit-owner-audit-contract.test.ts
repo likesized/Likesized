@@ -39,11 +39,12 @@ test("Outfit edit save heals stale hotspot-to-item relationships instead of thro
   assert.doesNotMatch(consistencyMigration,/Hotspot garment is not tagged in this Outfit/);
 });
 
-test("Outfit picker identifies repeated Product entries with the exact Fit Report variation answers",()=>{
+test("Outfit picker stays compact while clicked quick view retains exact Fit Report variation answers",()=>{
   assert.match(newPage,/select\("closet_item_id,fit,created_at,garment_answers"\)/);
   assert.match(newPage,/const recordedAnswers=report\?\.garment_answers\?\?\{\}/);
-  assert.match(newPage,/const variationDetail=answers\.map/);
-  assert.match(newPage,/detail: \[garmentTypeLabel,`Size \$\{item\.size_label\}`,color,variationDetail\]/);
+  assert.match(newPage,/detail: \[garmentTypeLabel,`Size \$\{item\.size_label\}`,color\]/);
+  assert.doesNotMatch(newPage,/detail: \[[^\]]*variationDetail/);
+  assert.doesNotMatch(newPage,/const variationDetail=answers\.map/);
   assert.doesNotMatch(newPage,/product_attribute_values/);
   assert.match(composer,/closetPreview\.answers\.map/);
   assert.match(composer,/\{item\.detail\}<\/small>/);

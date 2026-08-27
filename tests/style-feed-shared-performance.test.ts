@@ -30,10 +30,12 @@ test("stay-open Follow persistence preserves the void action contract and bypass
   assert.doesNotMatch(peopleActions,/return \{ ok: true \}/);
 });
 
-test("shared gallery keeps one stable viewport across mixed-aspect swipes",()=>{
-  assert.match(gallery,/const stableStageHeight="clamp\(260px,62dvh,620px\)"/);
+test("shared gallery keeps one stable viewport across mixed-aspect swipes and mobile browser chrome changes",()=>{
+  assert.match(gallery,/const stableStageHeight="clamp\(260px,62svh,620px\)"/);
   assert.match(gallery,/style=\{\{height:stableStageHeight,[\s\S]*overflow:"hidden"\}\}/);
   assert.match(gallery,/className=\{styles\.galleryMedia\} style=\{\{position:"relative",width:"100%",height:"100%"\}\}/);
+  assert.match(gallery,/src=\{current\.url\}[\s\S]*style=\{\{maxHeight:"100%"\}\}/);
+  assert.doesNotMatch(gallery,/const stableStageHeight=.*dvh/);
   assert.doesNotMatch(gallery,/stageHeights=useRef/);
   assert.doesNotMatch(gallery,/syncStageHeight/);
   assert.doesNotMatch(gallery,/transition:"min-height/);

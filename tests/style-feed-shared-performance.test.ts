@@ -18,15 +18,16 @@ test("universal person quick view toggles Follow in place without a navigation f
   assert.doesNotMatch(personCard,/<form action=\{followPerson\}>/);
 });
 
-test("stay-open Follow persistence bypasses revalidation and redirect",()=>{
+test("stay-open Follow persistence preserves the void action contract and bypasses revalidation",()=>{
   assert.match(peopleActions,/const stayOpen = String\(formData\.get\("stay_open"\)/);
-  const followStay=peopleActions.indexOf("if (stayOpen) return { ok: true };");
+  const followStay=peopleActions.indexOf("if (stayOpen) return;");
   const firstFollowRevalidate=peopleActions.indexOf('revalidatePath("/following")');
   assert.ok(followStay>=0&&firstFollowRevalidate>followStay);
   const unfollowStart=peopleActions.indexOf("export async function unfollowPerson");
-  const unfollowStay=peopleActions.indexOf("if (stayOpen) return { ok: true };",unfollowStart);
+  const unfollowStay=peopleActions.indexOf("if (stayOpen) return;",unfollowStart);
   const unfollowRevalidate=peopleActions.indexOf('revalidatePath("/following")',unfollowStart);
   assert.ok(unfollowStay>unfollowStart&&unfollowRevalidate>unfollowStay);
+  assert.doesNotMatch(peopleActions,/return \{ ok: true \}/);
 });
 
 test("shared gallery sizes from active and neighboring slides instead of active-only resizing",()=>{

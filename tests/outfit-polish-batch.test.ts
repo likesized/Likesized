@@ -14,10 +14,19 @@ const captionAction=readFileSync(new URL("../app/outfits/photo-caption-actions.t
 const migration=readFileSync(new URL("../supabase/migrations/20260825122000_outfit_photo_captions.sql",import.meta.url),"utf8");
 const closet=readFileSync(new URL("../app/closet/page.tsx",import.meta.url),"utf8");
 
-test("New Outfit uses the same garment identity metadata before selection and during photo tagging",()=>{
-  assert.match(newPage,/const variationDetail=answers\.map/);
-  assert.match(newPage,/detail: \[garmentTypeLabel,`Size \$\{item\.size_label\}`,color,variationDetail\]\.filter\(Boolean\)\.join\(" · "\)/);
+const firstQuickViewStart=tagged.indexOf("<div className={styles.itemPreviewTop}>");
+const firstQuickViewEnd=tagged.indexOf("{actionError?",firstQuickViewStart);
+const firstQuickView=tagged.slice(firstQuickViewStart,firstQuickViewEnd);
+const evidenceViewStart=tagged.indexOf("{evidenceOpen&&meta?<>");
+const evidenceViewEnd=tagged.indexOf("</>:<>",evidenceViewStart);
+const evidenceView=tagged.slice(evidenceViewStart,evidenceViewEnd);
+
+test("New Outfit keeps picker rows compact while clicked quick view retains garment variation evidence",()=>{
+  assert.match(newPage,/garment_answers/);
+  assert.match(newPage,/detail: \[garmentTypeLabel,`Size \$\{item\.size_label\}`,color\]\.filter\(Boolean\)\.join\(" · "\)/);
+  assert.doesNotMatch(newPage,/const variationDetail=answers\.map/);
   assert.match(composer,/className=\{pickerStyles\.choiceMain\}[\s\S]*<small>\{item\.detail\}<\/small>/);
+  assert.match(composer,/closetPreview\.answers\.map/);
   assert.match(composer,/className=\{styles\.selectedClosetItems\}[\s\S]*<small>\{item\.detail\}<\/small>/);
   assert.match(composer,/className=\{styles\.hotspotChoices\}[\s\S]*<small>\{item\.detail\}<\/small>/);
   assert.doesNotMatch(newPage,/detail: `Size \$\{item\.size_label\}\$\{report/);
@@ -58,12 +67,14 @@ test("creator quick view uses a clean hierarchy instead of table-grid chrome",()
   assert.doesNotMatch(creatorQuickViewCss,/\.stats>div\{[^}]*border/);
 });
 
-test("Tagged garment quick view has one clear full Garment Detail destination",()=>{
+test("Tagged garment quick view and FITuition evidence layer each keep their intended Garment Detail destination",()=>{
   assert.doesNotMatch(tagged,/See fit evidence/);
-  assert.match(tagged,/View Garment Details →/);
+  assert.match(firstQuickView,/View Garment Detail →/);
+  assert.match(firstQuickView,/href=\{selected\.href\}/);
+  assert.match(evidenceView,/View Garment Details →/);
+  assert.match(evidenceView,/href=\{selected\.href\}/);
   assert.match(tagged,/See FITuition Details →/);
   assert.doesNotMatch(tagged,/View Detailed Garment Report/);
-  assert.equal((tagged.match(/href=\{selected\.href\}/g)??[]).length,1);
 });
 
 test("Closet Outfit cards use matched vector icon boxes for likes and comments",()=>{

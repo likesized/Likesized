@@ -41,8 +41,8 @@ Going forward:
 
 # CURRENT STATUS — 2026-08-27
 
-## Canonical source line — MAIN THROUGH PR #108
-Current `main` source is PR #108 squash merge **`2d30ed30861ed7e0cd6d199123f37109262fe33e`**. Roadmap 12 remains complete/deployed. PR #106 repaired the owner-reported Style Feed regressions, restored the approved footer and top relationship controls, made Like/comments/gallery interactions local/smooth, and installed the runtime/safeguard separation gate. PR #108 then completed the structural requirement that Outfit creator, inline/comment and global person previews all render one actual canonical shared person quick-view implementation. The owner authorized production for the exact verified PR #108 candidate by saying **“ok proceed”** on 2026-08-27. The resulting production deployment is verified READY on `likesized.com`; owner live interaction QA is the next step.
+## Canonical application/runtime source — MAIN THROUGH PR #110
+Current application/runtime source on `main` is PR #110 squash merge **`a4db9989fec96ad15b8f895f0ddf851bdd5aaf95`**. Roadmap 12 remains complete/deployed. PR #106 repaired the earlier owner-reported Style Feed regressions and installed the runtime/safeguard separation gate; PR #108 consolidated person previews onto one canonical shared implementation; PR #110 then completed the owner-authorized Style Feed polish/performance batch. PR #110 exact-head CI and resulting `main` CI both passed, and production deployment **`dpl_NaisTCYEBDgYJX3n4kHaYCLjAFY8`** was verified READY for exact merge `a4db9989fec96ad15b8f895f0ddf851bdd5aaf95`, targeted production, assigned `likesized.com` and reported no alias error at reconciliation time. Owner live QA after that release identified a smaller follow-up repair list recorded below. Those follow-up observations are **recorded only and are not implementation authorization**.
 
 PR #101 **Close Roadmap 12 Outfit evidence and canonical governance** release facts:
 - exact final branch head before squash merge: **`9d37c2e99ed40d0588e516ff40aae08c8233c45d`**;
@@ -109,6 +109,27 @@ PR #108 **Finish canonical person quick-view consolidation** release facts:
 
 PR #107 **Collapse person previews to one canonical card** is **SUPERSEDED / CLOSED WITHOUT MERGE**. Its exact head **`36a370a0efc9fa249163671717dee75d53fc79b7`** contains no unique Product behavior that is not represented by released PR #108. It is non-authoritative history and must not be treated as an alternate current implementation.
 
+PR #109 **Record verified PR108 release state** was the docs-only post-release reconciliation after PR #108:
+- exact head **`f1dafdef65058135da18550b665e7fbfe2b0ebba`**;
+- exact-head LikeSized CI **#1070 / `33073182977`** succeeded;
+- merge **`0954d9e25f7264c2865953084359909cba0edba4`**;
+- resulting `main` LikeSized CI **#1071 / `33073414907`** succeeded;
+- it changed only the canonical master release bookkeeping and introduced no runtime Product behavior or database migration.
+
+PR #111 and PR #112 were the required docs-only safeguard preauthorizations for the already owner-authorized PR #110 runtime branch:
+- PR #111 exact head **`919b488e2e16a5b3a222ff498c0fe4b17e99ab2c`**, exact-head LikeSized CI **#1081 / `33084058737`** succeeded, merge **`68d95da58213223ffd4ce0e9fac78610ce1affb0`**;
+- PR #112 exact head **`fccaaacd9e7838fb663c0f666b3cad4fcb12fe61`**, exact-head LikeSized CI **#1085 / `33088117718`** succeeded, merge **`114de2850209a9907f5374ed55ca26296a080bb8`**;
+- together they authorized only the named existing Style Feed safeguards required by the runtime/safeguard separation gate; neither changed runtime Product behavior or added a database migration.
+
+PR #110 **Finish Style Feed polish and interaction performance** release facts:
+- exact final branch head before squash merge: **`85399208796b368b044359873a416c4e334a8a51`**;
+- exact-head LikeSized CI **#1087 / `33089052645`** completed successfully;
+- squash merge: **`a4db9989fec96ad15b8f895f0ddf851bdd5aaf95`**;
+- resulting `main` push LikeSized CI **#1088 / `33089339088`** completed successfully;
+- PR #110 introduced **no database migration**;
+- Vercel production deployment **`dpl_NaisTCYEBDgYJX3n4kHaYCLjAFY8`** was verified READY for exact merge `a4db9989fec96ad15b8f895f0ddf851bdd5aaf95`, targeted production, assigned `likesized.com` and reported no alias error at verification time;
+- PR #110 delivered the owner-authorized Style Feed polish/performance batch, including the mobile relationship control, distinct caught-up states, in-feed garment access, shared gallery interaction/performance work, person/comments warming, shared Report spacing, More/Show less, server-render performance work and isolated QA mode. Later owner live QA identified the follow-up defects recorded under **Current Style Feed owner-QA follow-up** below; those later observations do not rewrite PR #110's immutable release facts.
+
 Those Vercel details are immutable release-verification facts, not a substitute for querying Vercel for present-day operational state later.
 
 PR #94 and PR #95 remain immutable verification exceptions: neither had a successful completed full exact-candidate verification chain before production. Do not rewrite either as fully CI-verified. PR #96 restored the full exact-head/main verification discipline; PR #97 onward preserve it.
@@ -121,12 +142,12 @@ Production Supabase includes, after the earlier Roadmap 12 migrations:
 - hosted **`20260826020710 preserve_tracked_variation_recommendation_evidence`**;
 - `20260826190000_outfit_tag_consistency.sql` → hosted **`20260826193527 outfit_tag_consistency`**.
 
-PR #94, PR #95, PR #97, PR #98, PR #99, PR #100, PR #101, PR #102, PR #103, PR #104, PR #105, PR #106 and PR #108 introduced no new production database migration. PR #96 introduced the Outfit tag-consistency migration above.
+PR #94, PR #95, PR #97, PR #98, PR #99, PR #100, PR #101, PR #102, PR #103, PR #104, PR #105, PR #106, PR #108 and PR #110 introduced no new production database migration. PR #96 introduced the Outfit tag-consistency migration above.
 
 ## Current primary line — SETTLED ON CANONICAL MAIN
 Active branch: **NONE — canonical main**
 
-The owner-authorized Style Feed regression + safeguard-separation incident is implemented, verified and released through PR #106 and PR #108. No Product/runtime implementation branch is currently authoritative. The exact live interaction must now be owner-tested on `likesized.com`; any newly observed defect starts a new owner-scoped repair item and does not reopen unrelated roadmap work automatically.
+The owner-authorized Style Feed polish/performance batch is implemented, verified and released through PR #110. No Product/runtime implementation branch is currently authoritative. Owner live QA has since identified the smaller follow-up defect list recorded below. That list is planning/current QA state only; no follow-up runtime repair is authorized until the owner explicitly starts that identified batch.
 
 ## Roadmap 12 — New Outfit / Style an Outfit — COMPLETE / DEPLOYED
 The three final source defects were implemented in released PR #101 and regression-protected:
@@ -215,7 +236,7 @@ The viewer's own eligible exact Product evidence is useful both in the visible e
 
 Recommendation evidence dedupes **same person + same Product + same tracked fit variation** to one recommendation evidence unit. Distinct people remain independent; distinct tracked variations may remain distinct. Size and Color do not create tracked variations.
 
-FITuition combines Size Match evidence with the viewer's relevant Closet History. Exact Product/variation evidence is strongest; related variation is reduced fallback/support. Confidence is separate from recommendation score. `Would Buy Again` does not affect recommendation.
+FITuition combines Size Match evidence with the viewer's relevant Closet History. Exact Product/variation evidence is strongest; related variation is reduced fallback/support. Confidence is separate from recommendation score. **Would Buy Again is not a Fit Report question and is not FITuition evidence.**
 
 For the **clicked Outfit tagged-garment quick view**, zero Relevant Fit Reports hard-gates the presentation: no size recommendation is shown, even if broader Closet History could otherwise produce a numerical winner. Instead the member receives the compact notification state. When one or more Relevant Fit Reports exist but confidence is insufficient, the quick view uses the locked wording **“Not enough fit data to confidently recommend a size.”**, shows the exact count and offers the in-Outfit FITuition details layer. When confidence is sufficient, it uses **“Our FITuition suggests: [SIZE]”** with **“Confidence: [label]”** and that same FITuition details layer.
 
@@ -274,7 +295,7 @@ Raw/private body data, private Closet linkage, unresolved candidate/review state
 - New Outfit back navigation returns to **My Closet → Outfits**.
 
 # OWNER-LOCKED STYLE FEED — ROADMAP 13 REGRESSION REPAIR
-PR #106 plus PR #108 are the current production Style Feed repair line. The PR #105 bottom-switch regression and the duplicate person-preview implementation problem are corrected in canonical `main`; owner live interaction QA on `likesized.com` is the remaining verification step before moving on.
+PR #110 is the current production Style Feed application line, built on the earlier PR #106 regression repair and PR #108 person-preview consolidation. Owner live QA after PR #110 identified the smaller follow-up repair list recorded later in this master; that list is not yet an implementation batch.
 
 Locked behavior:
 1. Style Feed is a passive social Outfit inspiration feed, not a mixed activity log.
@@ -291,7 +312,7 @@ Locked behavior:
 12. Each feed Outfit reuses the canonical Outfit gallery behavior: all photos are swipeable in-card; tapping the photo opens the full-screen gallery; full-screen supports the same multi-photo navigation/dismissal. Photo taps do **not** open an Outfit metadata quick view and do **not** navigate to full details.
 13. **Comments** opens the canonical comments sheet over the feed, allowing read/add/reply-style comment interaction without requiring full-Outfit navigation.
 14. Creator avatar, Display Name and `@username` use the **one universal Person quick-view behavior** already shared by LikeSized. Do not create Style Feed-specific profile cards or separate page-by-page profile/garment preview systems.
-15. Full Outfit navigation is explicit and separate through **View Full Outfit →**. It bypasses quick-view interception and navigates to `/outfits/[id]`; photo and creator identity are not substitutes for this control.
+15. Style Feed cards do **not** carry a redundant **View Full Outfit →** CTA. Garment exploration stays in the Style Feed context through **View Garments**; the full Outfit route remains a separate destination when reached intentionally elsewhere.
 16. **People My Size is a separate page from Explore and defaults to Twin-level matches only.** It offers All Matches as the alternate view.
 17. Explore/Search remain separate intentional discovery surfaces and are not part of this Style Feed flow.
 18. Public identity is compact **Display Name + `@username` on one line**; display-name-only presentation is not accepted because the username is the unique identity cue.
@@ -499,22 +520,94 @@ An admin-locked image always wins. A newly uploaded photo may score 100 and stil
 3. Auth — owner-confirmed baseline.
 4. **Fit Profile / My Measurements — OWNER-COMPLETE.** Required private City/State is collected only on first-time setup and edited in Settings; it does not reopen My Measurements.
 5. Profile Settings — Fit Community and required private City/State editors are production-live.
+5A. **Member / Public Profile page — PLANNED AUDIT.** Audit the full member-facing profile reached from Outfit/person identity, including the member viewing their own profile. Settle one canonical boundary between the member-facing profile and Profile Settings so LikeSized does not maintain two competing profile “homes” or duplicate editors. No move or redesign is authorized yet; details are recorded below.
 6. Notifications — audit remains.
-7. Unified Closet/member profile Closet — canonical visibility meaning reconciled; broader lifecycle/mutation audit remains later.
-8. Post-submit Fit Report mutation/lifecycle model — remains.
+7. **Unified My Closet / member-profile Closet — lifecycle work deferred to this audit.** Canonical visibility meaning is reconciled; the broader garment/report lifecycle controls approved below belong here when My Closet is audited rather than in the current Style Feed repair or Garment Detail work.
+8. **Post-submit Fit Report / Closet garment lifecycle — OWNER-APPROVED PLAN / NOT IMPLEMENTED.** Use the three non-destructive member choices **Edit your report →**, **Log how it fits now →**, and **Update garment quality →**, with **Delete This Garment** as the separate destructive action. Detailed behavior is recorded below and is deferred until the My Closet audit.
 9. **People My Size — Twin-level default is DEPLOYED; broader page audit remains later.**
-10. **Style Feed relationship semantics — PR #106 repair is DEPLOYED; PR #108 canonical person-preview consolidation is DEPLOYED; owner live interaction QA is next.**
+10. **Style Feed relationship semantics — deployed through PR #110; current owner-QA follow-up defects are recorded but not authorized for implementation.**
 11. New Fit Report — evidence-first flow live; visible photo validation is live.
 11A. **Garment-question variation classification — COMPLETE / DEPLOYED.**
 12. **New Outfit / Style an Outfit — COMPLETE / DEPLOYED.** Future multi-user live-data QA is deferred until enough evidence exists and does not block completion.
-13. **Style Feed full behavior — DEPLOYED through PR #106 + PR #108; current step is owner testing on `likesized.com`, not another implementation batch.**
+13. **Style Feed full behavior — DEPLOYED through PR #110; finish the recorded owner-QA follow-up only when the owner explicitly authorizes that repair batch.**
 13A. **Automatic Canonical Product Image Scoring — OWNER LOCKED / PLANNED; implement before Garment/Product detail, Explore, Search and Wish Locker audit so those surfaces consume one canonical image-selection system.**
-14. Garment/Product detail — Exact Variation consumes the canonical 11A map and Roadmap 13A canonical-image hierarchy when reached.
+14. Garment/Product detail — Exact Variation consumes the canonical 11A map and Roadmap 13A canonical-image hierarchy when reached. The full Garment Detail page is intentionally not being overhauled during the current Style Feed QA follow-up.
 15. Explore — consume Roadmap 13A canonical imagery rather than inventing its own image selection.
 16. Search + `/browse` compatibility — consume Roadmap 13A canonical imagery.
 17. LikeLocker / Wish Locker — consume canonical Product imagery where the surface represents the Product generally; preserve report-specific imagery where the surface represents a member's actual Fit Report/worn item.
 18. Full Admin Catalog + Moderation — include Roadmap 13A Product-image set/lock/unlock controls and eligibility/moderation visibility.
 19. Final mobile/desktop/nav/privacy/copy/security/performance/spam/canonical-drift regression.
+
+# PLANNED MEMBER / PUBLIC PROFILE AUDIT — OWNER-REQUESTED / NOT IMPLEMENTED
+The current product exposes both Profile Settings/editing and a full member-facing profile reached from Outfit/person identity. The owner wants this audited intentionally rather than accepting two apparent profile homes by accident.
+
+When this roadmap item is reached:
+- audit what another member sees on the full profile and what the owner/member sees when viewing their own profile;
+- audit every current profile field/stat/content section and its public/private boundary; private Fit Profile measurements and private City/State remain private;
+- decide the canonical division between **Profile Settings** and the member-facing profile instead of maintaining duplicate profile editors or competing “home” pages;
+- decide whether the member's own full profile should expose the primary **Edit Profile** entry and where that entry routes;
+- keep account/privacy/preferences/settings concerns intentionally separated from public/member-facing identity and content;
+- audit self-view versus other-member view, navigation into the profile from Outfit/person surfaces, and the profile's Garments/Outfits/Closet presentation;
+- do not move existing settings or invent a second editor before this audit is explicitly authorized.
+
+# PLANNED MY CLOSET GARMENT / FIT REPORT LIFECYCLE — OWNER-APPROVED / NOT IMPLEMENTED
+This work belongs with the future **My Closet** audit. It is not part of the current Style Feed repair and should not be opportunistically implemented while Garment Detail or another surface is nearby.
+
+The member-facing garment management choices are:
+
+1. **Made an error?**  
+   **Edit your report →**  
+   Fix something you entered incorrectly. Your original body snapshot stays unchanged.
+
+2. **Measurements changed?**  
+   **Log how it fits now →**  
+   Add a new fit update using your current measurements while keeping your previous report in your history.
+
+3. **How has it held up?**  
+   **Update garment quality →**  
+   Tell us about shrinking, stretching, fading, wear, durability, and how the garment has changed over time.
+
+A visually separate **Delete This Garment** action follows those three choices.
+
+## Edit your report — correction, not time travel
+- This is the one correction entry point. Do not add a separate competing “wrong garment type” button on the Closet card.
+- Open the report the member originally filled out, but keep Product-identity fields such as Brand, Item Name and Garment Type locked by default.
+- Normal correction fields may include the member-entered size, the structured garment questions for that Garment Type, Fit Result, notes and Fit Photos.
+- The historical body snapshot and original report/observation timestamp remain locked and must never be rewritten to current measurements.
+- If the member believes a locked Product-identity field is wrong, an identity-error control inside Edit Report may let them enter the proposed correct identity/type and submit it for admin investigation. The current Product identity does **not** change until admin review approves/reconciles it.
+- Keep a correction timestamp and auditable old-value → new-value history. A materially late correction must flag admin for review rather than silently rewriting old evidence; the owner's example was a correction roughly six months later. The exact flag threshold remains an implementation-time calibration decision unless the owner locks a precise threshold later.
+- Extensive or suspicious corrections may also flag admin; a flag is review, not an automatic rejection of a legitimate correction.
+
+## Log how it fits now — new body-state observation
+- This is for the same physical garment when the member's measurements/body have changed; it must not look like editing the old historical observation.
+- Use the member's **current** Fit Profile snapshot for the new observation and keep the prior report/history intact.
+- Prefill stable garment/report information so the member does not have to re-enter the garment from the beginning.
+- Do not interrogate the member about why measurements changed. Accept the update, then compare current versus prior measurements on the backend.
+- Backend logic decides whether the measurement change is meaningful enough to become another weighted evidence unit. No change or an immaterial change must not manufacture duplicate FITuition/community evidence merely because the member clicked the update action.
+- Exact persistence/weight treatment for an immaterial update is to be finalized during implementation without changing the member-facing distinction above.
+
+## Update garment quality — garment aging/condition history
+This is separate from the Fit Report/body-fit observation. It may collect garment-aging information such as:
+- did it shrink;
+- did it stretch out;
+- approximately how many times has it been worn;
+- did it fade;
+- durability/quality changes or other wear notes;
+- **Would you buy it again?**
+
+**Would Buy Again belongs only in this garment-quality context if used. It is not a Fit Report question and must not feed FITuition.** Any legacy current Fit Report/UI use of `would_buy_again` is non-canonical lifecycle debt to remove/re-scope when this My Closet work is implemented; do not resurrect it as a normal Fit Report field.
+
+Garment-quality state must stay distinguishable from normal new-garment fit evidence. A garment known to have shrunk, stretched or otherwise materially changed must not silently teach FITuition that a brand-new copy normally fits that altered way.
+
+## Delete This Garment — destructive action
+- **Delete This Garment** is the destructive action itself; it does not need the three helper-text treatment used by the non-destructive choices.
+- Clicking it opens a warning that clearly explains the permanent effects before deletion.
+- The warning should tell the member that if the problem is an error, they may not need to delete the garment and can use **Edit Report** instead.
+- **Edit Report** inside the delete warning is an actual clickable button/action that exits the destructive path and opens the report editor.
+- The warning also reminds the member that Fit Photos can be changed or removed without deleting the entire garment.
+- Require the member to type **DELETE** exactly before the destructive delete action becomes available.
+- Deleting the garment removes that Closet item, its Fit Reports and Fit Photos from active member/community evidence and removes that garment's Outfit garment links/photo hotspots. The Outfit post itself remains. Canonical Product/catalog records remain.
+- Do not use Delete as the normal correction mechanism.
 
 # ROADMAP 12 DATABASE FOUNDATION — PRODUCTION
 Production Supabase project: `rlksidwniuoxoacumyaf`.
@@ -541,11 +634,14 @@ Later Roadmap 12 production mappings:
 - hosted **`20260826020710 preserve_tracked_variation_recommendation_evidence`**.
 - `20260826190000_outfit_tag_consistency.sql` → hosted **`20260826193527 outfit_tag_consistency`**.
 
-Applied migrations are immutable. PR #94, PR #95, PR #97, PR #98, PR #99, PR #100, PR #101, PR #102, PR #103, PR #104, PR #105, PR #106 and PR #108 added no migration. PR #96 added the Outfit tag-consistency migration and it is production-applied at the hosted timestamp above.
+Applied migrations are immutable. PR #94, PR #95, PR #97, PR #98, PR #99, PR #100, PR #101, PR #102, PR #103, PR #104, PR #105, PR #106, PR #108 and PR #110 added no migration. PR #96 added the Outfit tag-consistency migration and it is production-applied at the hosted timestamp above.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- There is **no active Product/runtime implementation branch**. Canonical Product truth is `main` through PR #108. Do not open a new implementation batch until the owner explicitly authorizes it.
-- Owner live QA is still required for the just-released Style Feed interaction set on `likesized.com`: visible Fit Twins/All Following control, bottom See All Following + Find More Fit Twins actions, local Like/comments behavior, shared smooth gallery/swipe-down behavior, and the one universal person quick-view implementation.
+- There is **no active Product/runtime implementation branch**. Canonical application/runtime Product truth is `main` through PR #110. Do not open a new implementation batch until the owner explicitly authorizes it.
+- **Current Style Feed owner-QA follow-up is recorded but not authorized for implementation:** (1) **View Garments** must open the same one canonical tagged-garment/FITuition quick-view flow used by Outfit, with **View Garment Detail →** available from that flow instead of Style Feed rows bypassing it through direct Garment Detail navigation; (2) the universal person quick-view **Notify** action must toggle and persist locally without redirecting/closing the mini-profile; (3) the shared Outfit/Style Feed gallery must not present a cropped feed derivative as if it were the full in-card display photo; (4) the shared **Caption** control/panel must remain attached to and usable on the visible image rather than falling to the stage/bottom edge. These are shared canonical-system repairs, not Style Feed-specific duplicate implementations.
+- The full Garment/Product Detail overhaul remains Roadmap 14 after Roadmap 13A; do not fold unrelated Garment Detail cleanup into the Style Feed follow-up.
+- The approved My Closet garment/Fit Report lifecycle is recorded above and deferred until the My Closet audit. Do not implement it opportunistically in Style Feed or Garment Detail.
+- The Member/Public Profile page now has an explicit planned audit. Until that audit is authorized, do not create another profile editor or move current Settings fields merely because the two surfaces feel redundant.
 - PR #107 is **SUPERSEDED / CLOSED WITHOUT MERGE** by PR #108 and has no unique current Product authority. Its remote branch is historical cleanup debt only; do not use it as a source line.
 - After the runtime/safeguard bootstrap reached canonical `main`, runtime Product PRs may not modify governance or the stable feature-contract section, and test/Product-Spec changes require a pre-existing **Pending owner-approved safeguard change** block on canonical `main` naming the exact implementation branch and protected files.
 - **Explore is separate and is not part of the Style Feed → Find More Fit Twins flow.** Find More Fit Twins routes to People My Size.
@@ -557,7 +653,6 @@ Applied migrations are immutable. PR #94, PR #95, PR #97, PR #98, PR #99, PR #10
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
 - Full Admin all-Products priority/filter/merge/split presentation remains.
 - Purchase-context aggregate/admin reporting UI remains open.
-- Broader Closet mutation/lifecycle semantics and exact post-submit Fit Report mutation model remain open.
 - Product merge/split, richer alias management, spam handling, broader Product-photo moderation, field lock/reopen, external barcode-provider evaluation, SerpAPI admin UX and starter-catalog enrichment remain open where previously scoped.
 - **Repository-governance external setting remains unresolved:** GitHub currently has no repository ruleset and `main` is not protected by required status checks. Written rules require server-side protection: require pull requests and `LikeSized CI / verify`, block force pushes/deletion, and enable merged-head cleanup where supported. The available connector can read but not configure that setting.
 - Historical remote repair branches remain non-authoritative. After salvage verification, merged/stale heads should be deleted rather than left as competing active-looking work lines.
@@ -596,25 +691,27 @@ Recent released application/source lineage:
 - PR #106 — Style Feed regression + safeguard-separation repair — exact branch **`359723367b16df3f695e756096c9c6686094d8f7`**, merge **`c4a13af3b0753928c445c78f024be8f8b1934b8e`**, exact-head CI **#1063 / `33070271611`** green, main push CI **#1064 / `33070494560`** green, no migration; Vercel release **`dpl_6xcNWncP2StzjFpEdbjdxdE73nCG`** was verified READY on `likesized.com`.
 - PR #107 — person-preview consolidation attempt — **SUPERSEDED / CLOSED WITHOUT MERGE**, exact head **`36a370a0efc9fa249163671717dee75d53fc79b7`**; no unique current Product authority remains outside released PR #108.
 - PR #108 — canonical person quick-view consolidation — exact branch **`9fb72dba543a75c63ada1369ce69492736371904`**, merge **`2d30ed30861ed7e0cd6d199123f37109262fe33e`**, exact-head CI **#1068 / `33072141110`** green, main push CI **#1069 / `33072475137`** green, no migration; owner authorized production by saying **“ok proceed”**; Vercel release **`dpl_CPRipAfxBQd3pemDDG2UCCH31ZK7`** was verified READY on `likesized.com` with no alias error.
+- PR #109 — PR #108 release reconciliation — exact branch **`f1dafdef65058135da18550b665e7fbfe2b0ebba`**, merge **`0954d9e25f7264c2865953084359909cba0edba4`**, exact-head CI **#1070 / `33073182977`** green and main CI **#1071 / `33073414907`** green; docs-only, no Product behavior and no migration.
+- PR #111 — Style Feed safeguard preauthorization — exact branch **`919b488e2e16a5b3a222ff498c0fe4b17e99ab2c`**, merge **`68d95da58213223ffd4ce0e9fac78610ce1affb0`**, exact-head CI **#1081 / `33084058737`** green; docs-only authorization for the named safeguard files, no Product behavior and no migration.
+- PR #112 — remaining Style Feed safeguard preauthorization — exact branch **`fccaaacd9e7838fb663c0f666b3cad4fcb12fe61`**, merge **`114de2850209a9907f5374ed55ca26296a080bb8`**, exact-head CI **#1085 / `33088117718`** green; docs-only authorization for the additional named safeguard files, no Product behavior and no migration.
+- PR #110 — Style Feed polish/performance repair — exact branch **`85399208796b368b044359873a416c4e334a8a51`**, merge **`a4db9989fec96ad15b8f895f0ddf851bdd5aaf95`**, exact-head CI **#1087 / `33089052645`** green, main push CI **#1088 / `33089339088`** green, no migration; Vercel release **`dpl_NaisTCYEBDgYJX3n4kHaYCLjAFY8`** was verified READY on `likesized.com` with no alias error.
 
 # EXACT NEXT ACTION — CURRENT
-1. Owner tests the released Style Feed and Outfit interaction surfaces on **`likesized.com`** from canonical `main` PR #108.
-2. Specifically verify: visible top **Fit Twins | All Following** control; exhausted Fit Twins shows **See All Following →** and **Find More Fit Twins →** separately; unapproved **Want more inspiration?** copy is absent; Like and Comments feel local/in-place; the shared Outfit gallery follows horizontal drag smoothly and full-screen swipe-down dismisses; Outfit, Style Feed and comment/global profile clicks show the same canonical person quick-view implementation.
-3. If owner testing exposes a defect, record only that defect as the next repair scope. Do not make adjacent changes or rewrite safeguards/canon to match an unintended implementation.
-4. Do **not** begin Roadmap 13A or any other repository implementation merely because it is next on the roadmap. Return to list/discussion mode after owner QA until the owner explicitly authorizes the next implementation batch.
-5. Repository governance remains separately incomplete at the GitHub settings layer: `main` protection/ruleset and stale merged/retry branch cleanup still require supported server-side actions before they can be called complete.
+1. No Product/runtime implementation branch is active. The owner is reviewing the current Style Feed owner-QA follow-up list recorded below.
+2. Do **not** implement that follow-up merely because it is documented. When the owner explicitly authorizes the identified repair batch, repair only the recorded Style Feed/shared-system defects unless the owner adds more scope.
+3. Do **not** begin Roadmap 13A, Garment Detail, the My Closet lifecycle plan or the Member/Public Profile audit merely because they are now documented. Each remains a future owner-authorized batch.
+4. Repository governance remains separately incomplete at the GitHub settings layer: `main` protection/ruleset and stale merged/retry branch cleanup still require supported server-side actions before they can be called complete.
 
-## Style Feed incident closure — 2026-08-27
-- PR #106 corrected the owner-reported Style Feed regressions and installed the safeguard-separation gate.
-- PR #108 completed the remaining structural universal-person-preview consolidation.
-- Canonical runtime is now `main` through **`2d30ed30861ed7e0cd6d199123f37109262fe33e`**; production deployment **`dpl_CPRipAfxBQd3pemDDG2UCCH31ZK7`** is verified READY on `likesized.com`.
-- No Product/runtime branch remains authoritative. Owner live QA is the next step.
+## Style Feed polish release closure — PR #110 / 2026-08-27
+- PR #110 completed the owner-authorized Style Feed polish/performance batch on exact branch head **`85399208796b368b044359873a416c4e334a8a51`**.
+- Exact-head CI **#1087 / `33089052645`** and resulting main CI **#1088 / `33089339088`** passed.
+- Canonical application/runtime is `main` through **`a4db9989fec96ad15b8f895f0ddf851bdd5aaf95`**; production deployment **`dpl_NaisTCYEBDgYJX3n4kHaYCLjAFY8`** was verified READY on `likesized.com` with no alias error at verification time.
+- No Product/runtime branch remains authoritative after that release.
 
-## Active Style Feed polish repair — 2026-08-27
-Active branch: **`agent/style-feed-polish-repair`**
+## Current Style Feed owner-QA follow-up — RECORDED / NOT AUTHORIZED FOR IMPLEMENTATION
+1. **View Garments → canonical garment quick view.** Style Feed **View Garments** must not bypass the shared FITuition flow by sending a selected garment row straight to Garment Detail. It should invoke the same one canonical tagged-garment/FITuition quick-view implementation/data flow used by Outfit, including Relevant Fit Reports/FITuition states and the **View Garment Detail →** link inside that flow. Do not copy the Outfit implementation into a Style Feed-specific second system.
+2. **Universal person quick-view Notify stays open.** The shared person mini-profile **Notify** action currently navigates/revalidates in a way that closes the quick view. The canonical shared person quick view should update the notification state locally/in place and persist it without full-page navigation; toggling off should behave the same way. Repair the shared implementation, not a Style Feed-only copy.
+3. **Shared gallery photo framing.** Style Feed currently supplies a cropped feed derivative as `previewUrl` while the shared Outfit gallery uses that preview for the in-card active image, which can make the display photo appear zoomed/cropped even though the gallery image itself uses contain-style sizing. The shared media contract should show the appropriate uncropped display representation in-card rather than treating the crop derivative as the full display photo.
+4. **Caption control stays with the visible photo.** The shared gallery Caption control/panel is positioned against the gallery stage rather than the visible image box, which can place Caption at/below the image edge and make it difficult to see/use. Repair the shared Outfit gallery so Caption remains visibly attached to the active image across Outfit and Style Feed contexts.
 
-This active branch supersedes the settled-status wording above only for the duration of the current owner-authorized repair batch. The owner explicitly authorized the accumulated Style Feed repair list and directed that repairs be implemented one at a time internally, then verified as one completed production batch rather than requiring owner QA between each item.
-
-Current authorized repair scope is limited to the Style Feed/shared interaction defects found during live owner QA: restore the mobile-visible Fit Twins / All Following relationship control; correct Fit Twins and All Following caught-up states; replace redundant full-Outfit navigation with in-feed tagged-garment access and direct Garment Detail navigation; fix shared Outfit/Style Feed image loading and swipe behavior; warm the one canonical person quick view and canonical comments sheet before tap; enlarge/space the shared comment Report action; preserve local optimistic Likes/comments; support in-feed More / Show less for long Outfit descriptions; remove identified Style Feed server-render bottlenecks; and provide an explicit isolated production QA mode without inserting fake member records into ordinary discovery or metrics.
-
-No database migration is part of this repair. The stable `CANONICAL FEATURE CONTRACTS` section is unchanged on this runtime branch. A dedicated regression safeguard will be added after the runtime candidate merges, as a separate non-runtime safeguard/reconciliation change, so the runtime implementation does not author its own judging rule.
+These four items are the current Style Feed repair list. The temporary fake-data work used for testing is not an open Style Feed runtime repair. Full Garment Detail cleanup, My Closet lifecycle work and Member/Public Profile audit are separate future roadmap work.

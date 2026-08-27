@@ -11,18 +11,10 @@ Ordered SQL files in `supabase/migrations/` are the executable database history 
 
 This file owns current database behavior/privacy plus explicit implementation debt. Product meaning lives in `docs/V1_PRODUCT_SPEC.md`; roadmap/status/deployment history live in `docs/AI_MASTER_LOG.md`.
 
-# Production checkpoint — 2026-08-26
+# Production database checkpoint — 2026-08-26
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
-Current production application source is PR #96 squash merge **`87ffbdcb3ed9d1849d1dc1e28d58c9ec18586ea7`**. PR #94 and PR #95 both reached production without a successful completed full exact-candidate CI chain; those limitations remain canonical historical fact and must not be rewritten as though those gates passed.
-
-PR #94 branch head **`e1931c2558622e97c842aaa5aa966b216e1349a5`** was merged as **`15b48373857cd090e418bff942123fe57f013984`** after explicit owner deployment authorization. Vercel production **`dpl_BTxsXJxMW3NgPo5e6XBmcbJ14yz3`** reached READY and served `likesized.com`.
-
-PR #95 branch head **`34c436e0f6d5fb37c608b64e0d8b2fd0894779cf`** had failing PR CI run **#979 / `32994041367`**; its production merge **`5c52fb29cb6bb54d21015e5c87b9f1e775f0bc81`** also had failing `main` push CI run **#978 / `32993535307`**. Vercel production **`dpl_52b8K3YGnMbJGRfiEGApdqNJcYj6`** reached READY on `likesized.com`, and the checked immediate deployment window returned HTTP 200 with no error/fatal runtime entries. Those runtime checks do not substitute for the skipped build/migration replay/database gates.
-
-PR #96 exact final branch head **`f4e8f4813841e1257382cedb87be8b88ba0ad4d2`** passed full exact-head CI **#994 / `33005686076`**, including canonical integrity, typecheck, the complete application safeguard suite, production build, full fresh migration replay and canonical database behavior/privacy tests. After explicit owner deployment authorization, it was squash-merged as **`87ffbdcb3ed9d1849d1dc1e28d58c9ec18586ea7`**. The resulting `main` push CI **#995 / `33005905387`** also completed successfully through the same full chain. Vercel production **`dpl_C6UoK4zTr8bQA13n6SYr3uymRQaP`** reached READY on `likesized.com`; live homepage and published Outfit checks returned HTTP 200 and the checked post-deploy runtime-error window contained no errors.
-
-PRs #88–#96 advanced application/database behavior beyond the earlier PR #87 checkpoint. Applied migration history remains immutable; no current behavior should be described as branch-only merely because an older canonical contract had not yet been reconciled.
+Application merge/deployment status is intentionally not duplicated here. `docs/AI_MASTER_LOG.md` is the sole owner of the current application line, CI/deployment status and production deployment history.
 
 The established Roadmap 12 foundation migrations remain immutable production history:
 - `20260824133400_add_outfit_comment_moderation_target.sql` → production `20260824164156 add_outfit_comment_moderation_target`;
@@ -329,7 +321,7 @@ Repeated reports from the same **person + Product + tracked fit variation** repr
 Before Product Detail consumes `exact_variant`, recommendation/evidence/Admin behavior must consume `GARMENT_VARIATION_DEFINITION_MAP`. Size and Color must never become exact-variation key fields. Body Match remains body similarity and must not be collapsed with Fit Result into a synthetic fit percentage.
 
 # 15. Current implementation debt / open verification
-- Production application is live through verified PR #96 merge **`87ffbdcb3ed9d1849d1dc1e28d58c9ec18586ea7`** and verified application deployment **`dpl_C6UoK4zTr8bQA13n6SYr3uymRQaP`**. PR #94 and PR #95 verification exceptions remain explicitly recorded and must not be retroactively described as full-CI green.
+- Application deployment/current-line facts and historical CI exceptions live only in `docs/AI_MASTER_LOG.md`; this database contract intentionally does not duplicate them.
 - `profile_locations` is production-applied at hosted migration **`20260825192738 private_profile_location_metadata`**; current application setup/settings require both City and State while the table retains pair-null compatibility for historical/compatibility rows.
 - Production also includes `20260826001512 username_change_cooldown`, `20260826001531 exact_variation_evidence_watches`, `20260826020651 atomic_outfit_cover_switch`, `20260826020710 preserve_tracked_variation_recommendation_evidence`, and **`20260826193527 outfit_tag_consistency`**.
 - The local canonical Outfit tag-consistency migration is **`20260826190000_outfit_tag_consistency.sql`**; Supabase assigned hosted version `20260826193527`. Do not rename the local immutable file to chase the hosted timestamp.

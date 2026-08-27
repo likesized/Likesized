@@ -21,7 +21,7 @@ The working batch loop is:
 
 **implement the complete approved batch → reconcile branch product/status/schema truth in the canonical docs → run targeted relevant checks → run full CI on the exact final candidate → merge the exact tested candidate → verify the resulting production application deployment and post-merge CI → record immutable release facts without creating another runtime build merely for bookkeeping**.
 
-Do not call a batch done merely because source was edited or a preview built. Owner-approved product meaning must be recorded on the active branch before merge. The owner verifies owner-reported personalized UI fixes on `likesized.com`.
+Do not call a batch done merely because source was edited or a preview built. Owner-approved product meaning must be recorded on the active implementation branch before merge. The owner verifies owner-reported personalized UI fixes on `likesized.com`.
 
 A deployment authorization does **not** waive verification. If a later required gate fails, repair the underlying branch and continue automatically until the exact candidate passes. A failed/incomplete candidate may be deployed only if the owner is told the exact failed/skipped gates and then explicitly overrides them after that disclosure.
 
@@ -39,8 +39,8 @@ Going forward:
 
 # CURRENT STATUS — 2026-08-27
 
-## Canonical production source line — RELEASED THROUGH PR #101
-Current application source on `main` is PR #101 squash merge **`3e2a49eab0a6d60386aa9d66cab46e04c7aa1648`**.
+## Canonical source line — MAIN THROUGH PR #102
+Current `main` source is PR #102 squash merge **`41323f047cb63efc0768f6a95d9aefd74d16d8ba`**. PR #102 changed release-governance configuration only; the current Product behavior remains the PR #101 Roadmap 12 closeout behavior described below.
 
 PR #101 **Close Roadmap 12 Outfit evidence and canonical governance** release facts:
 - exact final branch head before squash merge: **`9d37c2e99ed40d0588e516ff40aae08c8233c45d`**;
@@ -53,9 +53,18 @@ PR #101 **Close Roadmap 12 Outfit evidence and canonical governance** release fa
 - live production fetch of `/outfits/6bab9c98-b056-4836-a581-5653c46a85b3` returned HTTP 200 and identified deployment `dpl_DCSC1RY3uGpj8RHgUg3SeBHBqQHm`;
 - the checked deployment-scoped production error/fatal window contained no matching runtime logs.
 
+PR #102 **Establish canonical Vercel release boundary** governance facts:
+- exact final branch head before squash merge: **`45310f1de87fa50e3b38bfb878ca2f91ea551c3f`**;
+- exact-head LikeSized CI **#1039 / `33033816436`** completed successfully through canonical integrity, exact dependency install, typecheck, every committed application safeguard including the new release-boundary test, production build, complete fresh migration replay and canonical database behavior/privacy tests;
+- squash merge: **`41323f047cb63efc0768f6a95d9aefd74d16d8ba`**;
+- resulting `main` push LikeSized CI **#1040 / `33033937464`** completed successfully through the same full verification chain;
+- PR #102 introduced **no Product behavior change and no database migration**;
+- Vercel deployment **`dpl_6RJgXWTQLbzErVVKLxdtLPcPpDbg`** was verified READY for exact merge `41323f047cb63efc0768f6a95d9aefd74d16d8ba`, targeted production, assigned `likesized.com` and reported no alias error at verification time;
+- the boundary installation correctly received a normal application build because `vercel.json` and the classifier itself are intentionally not skippable.
+
 Those Vercel details are immutable release-verification facts, not a substitute for querying Vercel for present-day operational state later.
 
-PR #94 and PR #95 remain immutable verification exceptions: neither had a successful completed full exact-candidate verification chain before production. Do not rewrite either as fully CI-verified. PR #96 restored the full exact-head/main verification discipline; PR #97, PR #98, PR #99, PR #100 and PR #101 preserved it.
+PR #94 and PR #95 remain immutable verification exceptions: neither had a successful completed full exact-candidate verification chain before production. Do not rewrite either as fully CI-verified. PR #96 restored the full exact-head/main verification discipline; PR #97 through PR #102 preserved it.
 
 Production Supabase includes, after the earlier Roadmap 12 migrations:
 - `20260825183000_private_profile_location_metadata.sql` → hosted **`20260825192738 private_profile_location_metadata`**;
@@ -65,21 +74,22 @@ Production Supabase includes, after the earlier Roadmap 12 migrations:
 - hosted **`20260826020710 preserve_tracked_variation_recommendation_evidence`**;
 - `20260826190000_outfit_tag_consistency.sql` → hosted **`20260826193527 outfit_tag_consistency`**.
 
-PR #94, PR #95, PR #97, PR #98, PR #99, PR #100 and PR #101 introduced no new production database migration. PR #96 introduced the Outfit tag-consistency migration above.
+PR #94, PR #95, PR #97, PR #98, PR #99, PR #100, PR #101 and PR #102 introduced no new production database migration. PR #96 introduced the Outfit tag-consistency migration above.
 
-## Current primary line — CANONICAL RELEASE-BOUNDARY CLOSEOUT
-Active branch: **`agent/canonical-release-boundary`**
+## Current primary line — SETTLED
+Active branch: **NONE — canonical main**
 
-This governance-only branch starts from exact released `main` **`3e2a49eab0a6d60386aa9d66cab46e04c7aa1648`**. It makes no Product behavior change.
+No Product/runtime implementation branch is currently authoritative. PR #101's Product changes and PR #102's canonical release-boundary safeguards are merged into the single `main` line.
 
-Purpose:
-1. configure `vercel.json` to use the one canonical fail-open non-runtime classifier at `scripts/vercel-ignore-build.mjs`;
-2. allow a commit that changes only explicitly enumerated non-runtime canonical docs/CI metadata/regression safeguards to skip a Vercel application build;
-3. require every runtime-affecting or unclassified change—and any change to the release-boundary config/classifier itself—to continue to a normal Vercel build;
-4. make canonical CI protect the boundary from later weakening;
-5. stop the recursive pattern where recording one deployment on `main` creates another deployment that then needs another status-recording commit.
+The release boundary is now canonical:
+1. `vercel.json` delegates ignored-build classification to `scripts/vercel-ignore-build.mjs`;
+2. the classifier fails open to a real build whenever it cannot safely classify a commit;
+3. only commits whose changed files are all explicitly enumerated non-runtime canonical docs/CI metadata/regression safeguards may skip a Vercel application build;
+4. runtime source, migrations, dependencies, `vercel.json`, and the classifier itself are not skippable;
+5. canonical CI and regression coverage fail if the boundary is weakened;
+6. a pure post-release non-runtime reconciliation may settle the master at **NONE — canonical main** instead of preserving a merged branch name as false current authority.
 
-The first installation of this boundary is itself deployment-affecting configuration and therefore must **not** be skipped. Only after the boundary is verified may a purely non-runtime reconciliation be allowed to skip a Vercel application build.
+This removes two recurring drift loops found in the audit: deployment bookkeeping no longer needs to trigger another application deployment, and merged branch names no longer remain recorded as if they were still active.
 
 ## Roadmap 12 — New Outfit / Style an Outfit — OWNER LIVE ACCEPTANCE GATE
 The three final owner-reported source defects are implemented in released PR #101 and regression-protected:
@@ -472,13 +482,14 @@ Later Roadmap 12 production mappings:
 - hosted **`20260826020710 preserve_tracked_variation_recommendation_evidence`**.
 - `20260826190000_outfit_tag_consistency.sql` → hosted **`20260826193527 outfit_tag_consistency`**.
 
-Applied migrations are immutable. PR #94, PR #95, PR #97, PR #98, PR #99, PR #100 and PR #101 added no migration. PR #96 added the Outfit tag-consistency migration and it is production-applied at the hosted timestamp above.
+Applied migrations are immutable. PR #94, PR #95, PR #97, PR #98, PR #99, PR #100, PR #101 and PR #102 added no migration. PR #96 added the Outfit tag-consistency migration and it is production-applied at the hosted timestamp above.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- Finish and verify only the governance-only release-boundary line `agent/canonical-release-boundary`; it must not change Product behavior.
+- No Product/runtime implementation branch is currently active. Do not start Roadmap 13 until the owner closes the Roadmap 12 signed-in live acceptance gate.
 - Keep PR #101's three Outfit closeout behaviors regression-protected; tests are verification consumers, not an independent product-decision ledger.
 - Owner signed-in live acceptance of those three personalized Outfit FITuition behaviors remains the only Product gate before Roadmap 12 can be marked COMPLETE.
 - Keep all canonical integrity, TypeScript, application safeguard, build, fresh migration replay and pgTAP/database behavior/privacy gates active. Do not treat PR #94/#95 verification exceptions as precedent.
+- The canonical Vercel non-runtime release boundary is installed and machine-protected. Operational skip/build behavior is checked against Vercel when needed rather than stale-cached as a permanent repository status.
 - Roadmap 13A Automatic Canonical Product Image Scoring is owner-locked and planned; do not implement it opportunistically before its roadmap turn unless the owner explicitly changes the order.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
@@ -493,7 +504,7 @@ Applied migrations are immutable. PR #94, PR #95, PR #97, PR #98, PR #99, PR #10
 The 2026-08-21 canonical recovery is complete. No recovery freeze is active. Historical repair branches and superseded files have no current authority; Git history preserves them for provenance while current canonical files and `main` define present product truth. Do not resurrect an old branch/file as a competing source merely because it still exists in Git history.
 
 # RECENT CANONICAL LINEAGE
-Recent released application lineage:
+Recent released application/source lineage:
 - PR #80 — stopping-point Roadmap 12 repair — DEPLOYED.
 - PR #81 — tagged-item live regression repair — merge `1743b0638ac80a5465dba8fb52cab831f6f35148`.
 - PR #82 — visible Style Feed rename/copy slice — full Roadmap 13 behavior intentionally not implemented.
@@ -516,12 +527,10 @@ Recent released application lineage:
 - PR #99 — own Relevant Fit Report + embedded Add a Garment viewport repair — merge **`54f77889c56bea6b2e76aa4e0200add757e6a606`**; exact-head CI #1020 and main CI #1021 green; no migration.
 - PR #100 — approved Outfit FITuition UI + scope safeguards — merge **`29d1167628d4ee634729b5efee4b9e2725b8b261`**; exact-head CI #1034 / `33030833182` and main push CI `33030989868` green; no migration.
 - PR #101 — Roadmap 12 Outfit evidence + canonical governance — exact branch **`9d37c2e99ed40d0588e516ff40aae08c8233c45d`**, merge **`3e2a49eab0a6d60386aa9d66cab46e04c7aa1648`**, exact-head CI **#1037 / `33033095382`** green, main push CI **#1038 / `33033315038`** green, no migration; Vercel release `dpl_DCSC1RY3uGpj8RHgUg3SeBHBqQHm` was verified READY and the checked live Outfit route returned HTTP 200 from that deployment.
+- PR #102 — canonical Vercel release boundary — exact branch **`45310f1de87fa50e3b38bfb878ca2f91ea551c3f`**, merge **`41323f047cb63efc0768f6a95d9aefd74d16d8ba`**, exact-head CI **#1039 / `33033816436`** green, main push CI **#1040 / `33033937464`** green, no Product change and no migration; Vercel release `dpl_6RJgXWTQLbzErVVKLxdtLPcPpDbg` was verified READY for the boundary installation.
 
 # EXACT NEXT ACTION — CURRENT
-1. Complete only the canonical release-boundary governance line on **`agent/canonical-release-boundary`**: no Product behavior changes.
-2. Verify `vercel.json` delegates ignored-build classification to `scripts/vercel-ignore-build.mjs` and that the classifier fails open to a build for unknown/runtime changes.
-3. Verify canonical CI fails if that boundary is weakened and automatically runs the new regression safeguard.
-4. Run the complete exact-head CI chain on the final boundary candidate. Because `vercel.json`/the classifier are themselves release-affecting configuration, the boundary-installation merge must receive and verify a normal Vercel application deployment; it must not be skipped.
-5. After the boundary is installed and verified, use a purely non-runtime canonical reconciliation to record its final merge/release facts and verify that Vercel skips that bookkeeping build. Do not add a noop/runtime change to force deployment.
-6. The owner should verify the three PR #101 signed-in personalized Outfit FITuition behaviors on `likesized.com`. Only after that confirmation mark Roadmap 12 / Style an Outfit **COMPLETE / DEPLOYED** and unblock Roadmap 13.
-7. Independently, GitHub `main` branch protection/ruleset and stale-branch cleanup remain repository-governance tasks; do not call those complete until the server-side settings/cleanup are actually done.
+1. **Owner live acceptance:** while signed in on `likesized.com`, verify the three PR #101 personalized FITuition behaviors: Best Available Matching Fit Report labeling, clean Your Fit Report presentation, and aggregate evidence accounting for the same eligible exact units as Relevant Fit Reports.
+2. If those three behaviors are correct, record Roadmap 12 / Style an Outfit **COMPLETE / DEPLOYED** and unblock Roadmap 13 without reopening completed Outfit work.
+3. **Repository governance remains separate:** GitHub `main` protection/ruleset is still required and stale merged/retry branches still require salvage-safe cleanup. Do not call those audit items complete until the server-side protection and branch cleanup are actually done.
+4. Until the owner closes item 1, do not begin Roadmap 13 Product implementation.

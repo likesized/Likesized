@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 type MatchCategory = "overall" | "tops" | "bottoms";
 type FitCommunity = "men" | "women" | "both";
+type PeopleScope = "twins" | "all";
 
 type FitMatch = {
   user_id: string;
@@ -31,17 +32,20 @@ const COMMUNITY_LABELS: Record<FitCommunity, string> = {
 function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
-
 function matchCategory(value: string | undefined): MatchCategory {
   return value === "tops" || value === "bottoms" ? value : "overall";
+}
+function peopleScope(value: string | undefined): PeopleScope {
+  return value === "all" ? "all" : "twins";
 }
 function fitCommunity(value: string | undefined, fallback: FitCommunity): FitCommunity {
   return value === "men" || value === "women" || value === "both" ? value : fallback;
 }
-function peopleHref(category:MatchCategory,community:FitCommunity){
-  const params=new URLSearchParams();
-  if(category!=="overall")params.set("category",category);
-  params.set("community",community);
+function peopleHref(category: MatchCategory, community: FitCommunity, scope: PeopleScope) {
+  const params = new URLSearchParams();
+  if (scope === "all") params.set("scope", "all");
+  if (category !== "overall") params.set("category", category);
+  params.set("community", community);
   return `/people?${params.toString()}`;
 }
 function matchMap(data: unknown) {
@@ -51,7 +55,8 @@ function matchMap(data: unknown) {
 export default async function PeoplePage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   const category = matchCategory(first(params.category));
-  const requestedCommunity=first(params.community);
+  const scope = peopleScope(first(params.scope));
+  const requestedCommunity = first(params.community);
   const profileSaved = first(params.profile) === "saved";
   const followError = first(params.follow) === "error";
   const supabase = await createClient();
@@ -67,23 +72,30 @@ export default async function PeoplePage({ searchParams }: { searchParams: Searc
   if (profileError || fitProfileError) throw new Error("Could not load your Fit Profile status.");
   if (!profile?.username || !fitProfile) redirect("/onboarding");
 
-  const savedCommunity=fitProfile.fit_community==="men"||fitProfile.fit_community==="women"?fitProfile.fit_community:"both";
-  const community=fitCommunity(requestedCommunity,savedCommunity);
-  const [overallResult,topsResult,bottomsResult,{ data: followData, error: followLoadError },{data:twinSettings,error:twinSettingsError}] = await Promise.all([
-    supabase.rpc("get_fit_matches", { p_match_category: "overall", p_result_limit: 100, p_fit_community:community }),
-    supabase.rpc("get_fit_matches", { p_match_category: "tops", p_result_limit: 100, p_fit_community:community }),
-    supabase.rpc("get_fit_matches", { p_match_category: "bottoms", p_result_limit: 100, p_fit_community:community }),
+  const savedCommunity = fitProfile.fit_community === "men" || fitProfile.fit_community === "women" ? fitProfile.fit_community : "both";
+  const community = fitCommunity(requestedCommunity, savedCommunity);
+  const [overallResult, topsResult, bottomsResult, { data: followData, error: followLoadError }, { data: twinSettings, error: twinSettingsError }] = await Promise.all([
+    supabase.rpc("get_fit_matches", { p_match_category: "overall", p_result_limit: 100, p_fit_community: community }),
+    supabase.rpc("get_fit_matches", { p_match_category: "tops", p_result_limit: 100, p_fit_community: community }),
+    supabase.rpc("get_fit_matches", { p_match_category: "bottoms", p_result_limit: 100, p_fit_community: community }),
     supabase.from("follows").select("followed_id").eq("follower_id", userId),
-    supabase.from("fit_twin_settings").select("threshold_percent").eq("singleton",true).maybeSingle(),
+    supabase.from("fit_twin_settings").select("threshold_percent").eq("singleton", true).maybeSingle(),
   ]);
   if (overallResult.error || topsResult.error || bottomsResult.error || followLoadError || twinSettingsError) throw new Error("Could not load Fit Matches.");
 
-  const matchData = category === "tops" ? topsResult.data : category === "bottoms" ? bottomsResult.data : overallResult.data;
-  const matches = ((matchData ?? []) as FitMatch[]).slice(0,30);
   const overall = matchMap(overallResult.data);
   const tops = matchMap(topsResult.data);
   const bottoms = matchMap(bottomsResult.data);
-  const threshold=twinSettings?.threshold_percent??85;
+  const threshold = twinSettings?.threshold_percent ?? 85;
+  const designationFor = (targetUserId: string) => fitTwinDesignation({
+    overall: overall.get(targetUserId),
+    tops: tops.get(targetUserId),
+    bottoms: bottoms.get(targetUserId),
+  }, threshold);
+  const matchData = category === "tops" ? topsResult.data : category === "bottoms" ? bottomsResult.data : overallResult.data;
+  const availableMatches = (matchData ?? []) as FitMatch[];
+  const matches = (scope === "twins" ? availableMatches.filter((person) => Boolean(designationFor(person.user_id))) : availableMatches).slice(0, 30);
+
   const avatarUrlByUser = new Map<string, string>();
   await Promise.all(matches.map(async (person) => {
     if (!person.avatar_url) return;
@@ -93,28 +105,34 @@ export default async function PeoplePage({ searchParams }: { searchParams: Searc
 
   const followedIds = new Set((followData ?? []).map((row: { followed_id: string }) => row.followed_id));
   const categoryLabel = CATEGORY_LABELS[category];
-  const returnTo = peopleHref(category,community);
+  const returnTo = peopleHref(category, community, scope);
 
   return (
     <main className="pageShell">
       <div className="pageTitle">
         <span className="eyebrow">PEOPLE MY SIZE</span>
         <h1>Your closest Fit Matches</h1>
-        <p>Match % shows how closely this person’s garment-relevant body measurements match yours. It is not a probability that a garment will fit.</p>
+        <p>{scope === "twins" ? "People whose current Tops or Bottoms Match qualifies for a Twin-level match." : "Match % shows how closely this person’s garment-relevant body measurements match yours. It is not a probability that a garment will fit."}</p>
         <Link className="textLink" href="/twins">My Fit Twins →</Link>
       </div>
 
       {profileSaved ? <div className="authMessage">Fit Profile saved. Your match scores are current.</div> : null}
       {followError ? <div className="authMessage error">That follow change could not be saved.</div> : null}
 
+      <span className="muted">People view</span>
+      <div className="filterBar">
+        <Link className={`filter${scope === "twins" ? " active" : ""}`} href={peopleHref(category, community, "twins")}>Fit Twins</Link>
+        <Link className={`filter${scope === "all" ? " active" : ""}`} href={peopleHref(category, community, "all")}>All Matches</Link>
+      </div>
+
       <span className="muted">Fit Community · defaults to your Fit Profile. Switching this view does not change your saved preference.</span>
       <div className="filterBar">
-        {(Object.keys(COMMUNITY_LABELS) as FitCommunity[]).map((key)=><Link key={key} className={`filter${community===key?" active":""}`} href={peopleHref(category,key)}>{COMMUNITY_LABELS[key]}</Link>)}
+        {(Object.keys(COMMUNITY_LABELS) as FitCommunity[]).map((key) => <Link key={key} className={`filter${community === key ? " active" : ""}`} href={peopleHref(category, key, scope)}>{COMMUNITY_LABELS[key]}</Link>)}
       </div>
       <span className="muted">Match view</span>
       <div className="filterBar">
         {(Object.keys(CATEGORY_LABELS) as MatchCategory[]).map((key) => (
-          <Link key={key} className={`filter${category === key ? " active" : ""}`} href={peopleHref(key,community)}>
+          <Link key={key} className={`filter${category === key ? " active" : ""}`} href={peopleHref(key, community, scope)}>
             {CATEGORY_LABELS[key]}
           </Link>
         ))}
@@ -124,17 +142,14 @@ export default async function PeoplePage({ searchParams }: { searchParams: Searc
         <div className="cardGrid">
           {matches.map((person) => {
             const followed = followedIds.has(person.user_id);
-            const twinLabel = followed ? fitTwinLabel(fitTwinDesignation({
-              overall:overall.get(person.user_id),
-              tops:tops.get(person.user_id),
-              bottoms:bottoms.get(person.user_id),
-            },threshold)) : null;
+            const designation = designationFor(person.user_id);
+            const twinLabel = fitTwinLabel(designation);
             return (
               <MatchCard
                 key={person.user_id}
                 name={person.display_name?.trim() || person.username}
                 handle={`@${person.username}`}
-                style={followed ? twinLabel ? `Following · ${twinLabel}` : "Following" : `${categoryLabel} Fit Match`}
+                style={followed ? twinLabel ? `Following · ${twinLabel}` : "Following" : twinLabel ? `${twinLabel} Match` : `${categoryLabel} Fit Match`}
                 avatarUrl={avatarUrlByUser.get(person.user_id) ?? null}
                 match={person.match_score}
                 secondary={`${categoryLabel} measurements · exact measurements stay private`}
@@ -155,8 +170,9 @@ export default async function PeoplePage({ searchParams }: { searchParams: Searc
       ) : (
         <div className="tableLike">
           <div className="matchCardBody">
-            <strong>No Fit Matches yet.</strong>
-            <p className="muted">Your Fit Profile is ready. Matches will appear here as other members complete compatible Fit Profiles in this Fit Community.</p>
+            <strong>{scope === "twins" ? "No Twin-level Fit Matches yet." : "No Fit Matches yet."}</strong>
+            <p className="muted">{scope === "twins" ? "As more people complete compatible Fit Profiles, Twin-level matches will appear here." : "Your Fit Profile is ready. Matches will appear here as other members complete compatible Fit Profiles in this Fit Community."}</p>
+            {scope === "twins" ? <Link className="textLink" href={peopleHref(category, community, "all")}>See all Fit Matches →</Link> : null}
           </div>
         </div>
       )}

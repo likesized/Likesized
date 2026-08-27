@@ -62,7 +62,7 @@ Match % means **garment-relevant body similarity**, not probability a garment wi
 - Style Feed Comments opens the canonical comments sheet over the feed instead of forcing navigation to full Outfit details.
 - Creator avatar / Display Name / `@username` uses the one universal Person quick-view behavior. Do not create separate Style Feed-specific member/profile preview systems.
 - Full Outfit navigation is a separate explicit **View Full Outfit →** control. Photo and creator identity are not full-detail navigation.
-- The default Fit Twins view never silently broadens to All Following. The bottom prompt offers **Find More Fit Twins**, routing to **People My Size**; it does not duplicate the All Following switch already available at the top.
+- The default Fit Twins view never silently broadens to All Following. When the Fit Twins feed is exhausted, the bottom prompt keeps two separate actions: **See All Following →** switches the feed to All Following, and **Find More Fit Twins →** routes to **People My Size**. Find More Fit Twins never replaces the All Following switch.
 - `/following` is compatibility-only and resolves to `/circle`.
 - Signed-in `/` currently resolves to `/circle`; logged-out `/` is the public homepage.
 - Follow alone does not enable person notifications.
@@ -564,7 +564,7 @@ Outfits are member-created mini editorial posts built from owned Closet garments
 - The Style Feed **Comments** action opens the canonical comments sheet over the feed so the viewer can read/add comments without navigating away from their feed position.
 - Creator avatar / Display Name / `@username` uses the same universal Person quick view used elsewhere. LikeSized does not maintain separate per-page Person or garment preview implementations.
 - Full Outfit details are reached through a dedicated explicit **View Full Outfit →** navigation control; photo and creator identity are not full-detail navigation targets.
-- The default Fit Twins view never silently falls back to All Following. If there are no Twin Outfit posts for the active filters, the page says so. The bottom prompt offers **Find More Fit Twins** and routes to **People My Size**; it does not repeat All Following because that relationship control is already at the top.
+- The default Fit Twins view never silently falls back to All Following. If there are no Twin Outfit posts for the active filters, the page says so. When the Fit Twins feed is exhausted, the bottom prompt shows both **See All Following →** to switch the feed to All Following and **Find More Fit Twins →** to route to **People My Size**. Find More Fit Twins never replaces the All Following switch.
 - People My Size defaults to Twin-level qualifying results and exposes **All Matches** as the alternate broader discovery view.
 - Drafts never create feed activity.
 - Explore/Search remain separate intentional Product/garment/Outfit discovery surfaces; Style Feed does not replace them.

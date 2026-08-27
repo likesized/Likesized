@@ -12,9 +12,10 @@ const personQuickView=fs.readFileSync("components/PersonQuickView.tsx","utf8");
 const productMini=fs.readFileSync("components/ProductMiniBrowser.tsx","utf8");
 
 test("full comments sheet is the single active comments surface while open",()=>{
-  assert.match(thread,/!open\?<div className=\{styles\.preview\}/);
+  assert.match(thread,/!open&&!triggerOnly\?<div className=\{styles\.preview\}/);
+  assert.match(thread,/!open&&triggerOnly\?<button/);
   assert.match(thread,/if\(open\)setFull\(apply\);\s*else setPreview\(apply\)/);
-  assert.match(thread,/function closeComments\(\)[\s\S]*setOpen\(false\)[\s\S]*loadPreview\(sort\)/);
+  assert.match(thread,/function closeComments\(\)[\s\S]*setOpen\(false\)[\s\S]*if\(!triggerOnly\)[\s\S]*loadPreview\(sort\)/);
   assert.doesNotMatch(thread,/setPreview\(apply\);\s*setFull\(apply\)/);
 });
 

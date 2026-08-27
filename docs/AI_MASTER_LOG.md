@@ -130,8 +130,8 @@ The owner-authorized Style Feed regression + safeguard-separation incident is im
 
 ## Pending owner-approved safeguard change — 2026-08-27 Style Feed polish repair
 - Implementation branch: `agent/style-feed-polish-repair`
-- Authorized safeguard files: `tests/explore-circle-likelocker.test.ts`
-- Owner-approved behavior change: the Style Feed no longer uses `View Full Outfit →`; it uses `View Garments →` in-place, while long Outfit text expands through `More` / `Show less`. This preauthorization permits the stale Style Feed safeguard to be updated to judge the approved behavior instead of forcing the retired link back into runtime source.
+- Authorized safeguard files: `tests/explore-circle-likelocker.test.ts`, `tests/new-outfit-v1.test.ts`, `tests/outfit-interaction-photo-requirement.test.ts`, `tests/outfit-owner-audit-contract.test.ts`, `tests/outfit-photo-pipeline.test.ts`
+- Owner-approved behavior change: this repair keeps `View Garments →` in-place and long Outfit text behind `More` / `Show less`; it also uses the shared animated Outfit gallery path for arrow/keyboard/swipe movement, the adjacent-slide full-size transform for smooth drag, and public Outfit-photo URLs in Style Feed instead of per-photo signed-URL generation because published Outfit photos are public. These exact safeguards may be reconciled to judge that approved behavior instead of forcing the retired direct `move()` path, retired single-image transform, or server signing work back into runtime source.
 
 ## Roadmap 12 — New Outfit / Style an Outfit — COMPLETE / DEPLOYED
 The three final source defects were implemented in released PR #101 and regression-protected:

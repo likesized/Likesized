@@ -39,6 +39,15 @@ When an owner-locked decision changes product meaning, update the master and eve
 - Before a different feature/decision branch begins, the prior active line must be reconciled into the single recovery/canonical line or explicitly parked in the master with exact source branch + commit SHA and a salvage status.
 - Never start a second divergent product future while meaningful owner-approved work remains unclassified on another branch.
 
+### Owner scope lock — LOCKED
+- The exact defects, behaviors, and copy the owner explicitly authorizes for a repair batch are the complete writable scope for that batch.
+- A direction to **fix** a named defect authorizes implementation of that defect only. It does not authorize adjacent cleanup, redesign, copy changes, refactors, test rewrites, documentation rewrites, or reopening completed/deferred work unless those changes are strictly necessary to implement or verify the named defect.
+- Existing owner-approved wording is immutable unless the owner explicitly authorizes a wording change. Do not paraphrase, improve, modernize, shorten, or otherwise rewrite approved copy while repairing nearby behavior.
+- Newly discovered defects outside the active scope are notes only. Do not implement them until the owner explicitly adds them to scope.
+- Completed or deferred issues never re-enter active scope merely because their code is nearby or a prior test mentions them.
+- Tests and canonical documents protect the owner-approved behavior. They must never be rewritten to bless an unapproved implementation or to redefine the owner's requirement after the fact.
+- Before merge, every changed file must map directly to at least one owner-approved item in the frozen batch. Any unrelated change must be removed before the candidate is considered complete.
+
 ## 5. Branch discipline / salvage protection — LOCKED
 
 1. Only one primary active implementation/recovery line should exist at a time unless the owner explicitly authorizes parallel work.
@@ -95,9 +104,12 @@ Canonical CI must run `npm run canonical:check` before typecheck/build/database 
 - missing required current terminology in canonical docs;
 - a pull request whose recorded active branch does not match the actual PR head;
 - an application/source PR that leaves the master untouched;
-- a migration PR that leaves the schema contract or master untouched.
+- a migration PR that leaves the schema contract or master untouched;
+- owner-locked source/copy regressions that are explicitly protected by the canonical integrity check.
 
-Do not weaken or remove these checks to make a branch pass. Fix the underlying drift.
+Pull-request synchronization and drift checks must inspect the **entire PR diff against canonical `main`**, not only the final commit. A multi-commit PR may not hide earlier application/test/doc changes from the canonical gate.
+
+Do not weaken or remove these checks to make a branch pass. Do not rewrite a failing regression test to accept an unapproved behavior. Fix the underlying drift.
 
 ## 10. Verification gates — LOCKED
 
@@ -111,6 +123,8 @@ For relevant changes, verify as applicable:
 - mobile + desktop owner verification where required.
 
 The exact candidate proposed for merge must have a successful full required CI run after its final code/test/canonical-doc change. A green historical run on another branch or an earlier SHA is evidence worth preserving, not proof that the current candidate passes. A failed or incomplete run is not a deployable candidate unless the explicit post-failure owner override rule in Section 8 is satisfied.
+
+For owner-reported UI regressions, green source/CI checks are not a substitute for the owner being able to verify the exact interaction on the production site after deployment.
 
 ## 11. Recovery freeze — LOCKED until cleared in master
 

@@ -21,14 +21,16 @@ This file is the canonical repository/source-of-truth policy for every AI agent 
 ## 3. Canonical document ownership — LOCKED
 
 - `AI_REPOSITORY_RULES.md` — repository/source-of-truth policy.
-- `docs/AI_MASTER_LOG.md` — sole roadmap, status record, owner-decision ledger, recovery/salvage ledger, completed-work ledger, deployment ledger, and AI handoff.
+- `docs/AI_MASTER_LOG.md` — sole roadmap, product/status record, owner-decision ledger, recovery/salvage ledger, completed-work ledger, release authorization/verification ledger, and AI handoff.
 - `docs/V1_PRODUCT_SPEC.md` — current product/fit architecture only.
 - `supabase/schema_contract.md` — current database behavior/privacy contract plus explicit implementation debt.
 - `README.md` — summary only. It never overrides the files above.
 
 If these documents disagree, STOP feature work and reconcile them before implementation continues.
 
-A canonical document must not duplicate fast-changing status that belongs to another canonical owner. In particular, deployment/production PR status and the current active application line belong only in `docs/AI_MASTER_LOG.md`; other canonical documents must cross-reference the master instead of copying a PR number or deployment checkpoint that can go stale.
+A canonical document must not duplicate fast-changing status that belongs to another canonical owner. Product/release status and the current active application line belong only in `docs/AI_MASTER_LOG.md`; other canonical documents must cross-reference the master instead of copying a PR number or application checkpoint that can go stale.
+
+**Current runtime deployment state is operational truth owned by Vercel.** The master records owner authorization, release PR/merge lineage and verified release facts, but it must not pretend a repository file can be the live source for whether a Vercel deployment is currently READY, failed, rolled back or reassigned. When exact current deployment state or deployment ID matters, read it from Vercel. Do not duplicate that fast-changing operational state into `supabase/schema_contract.md`, `docs/V1_PRODUCT_SPEC.md`, README or another canonical source.
 
 A supporting/reference artifact must never label itself a second canonical current-state source when authority is assigned above. `supabase/storage.sql` is a support/reference mirror only; it does not override ordered migrations or `supabase/schema_contract.md`.
 
@@ -73,11 +75,13 @@ A task is not complete until:
 - obsolete alternatives are removed;
 - relevant verification passes;
 - canonical docs agree;
-- `docs/AI_MASTER_LOG.md` records the verified final state, deployment state, unresolved work, and exact next action.
+- `docs/AI_MASTER_LOG.md` records the verified product/release state, unresolved work, and exact next action.
 
 Never mark planned, attempted, preview-only, failed, branch-only, unverified, or partially salvaged work COMPLETE.
 
 The current active branch recorded in `docs/AI_MASTER_LOG.md` must match the actual pull-request head branch. A PR with an out-of-date active-line record is canonical drift and must fail verification until reconciled.
+
+Some immutable release facts—such as the final squash SHA, post-merge `main` CI result, and Vercel deployment result—do not exist until after merge. Record owner authorization and all pre-merge product truth on the release branch first. After deployment verification, any follow-up reconciliation that changes **only** non-runtime canonical documentation/CI metadata/regression safeguards must use the canonical Vercel release boundary so it does not create another production application build merely to record the prior release. Never modify runtime source, add a noop, or trigger a second deployment just to close bookkeeping.
 
 ## 7. Database source-of-truth rule — LOCKED
 
@@ -92,13 +96,16 @@ The current active branch recorded in `docs/AI_MASTER_LOG.md` must match the act
 ## 8. Production deployment rule — LOCKED
 
 - Do not deploy production without explicit owner authorization.
-- Until Git/Vercel production coupling is deliberately changed and verified, treat any update to `main` that can trigger Vercel production as a production deployment action requiring explicit owner authorization.
+- Runtime-affecting updates to `main` that can create a Vercel production application build require explicit owner authorization.
+- `vercel.json` + `scripts/vercel-ignore-build.mjs` own the canonical non-runtime release boundary. A commit may skip a Vercel production build only when **every** changed file is explicitly classified non-runtime by that fail-open classifier. Any unclassified file, classifier failure, runtime source, migration, dependency/config change or classifier/config change itself must continue to a normal production build.
+- A non-runtime reconciliation that Vercel correctly skips is not a new production application deployment and must never be padded with a runtime/noop change just to force one.
 - Preview/build verification is not production authorization.
 - Never infer authorization from a prior deployment, prior conversation, or the fact that a PR is ready.
 - If production authorization for an old deployment cannot be proven from canonical records, record it as **authorization status unresolved** rather than inventing history.
-- When the owner explicitly says **deploy**, **push**, **submit**, **proceed**, **get it live**, or equivalent for the current frozen batch, that is production authorization for that batch. Do not ask for the same permission again after the exact candidate becomes verified.
+- When the owner explicitly says **deploy**, **push**, **submit**, **proceed**, **get it live**, **continue** in the context of an explicitly identified verified release candidate, or equivalent for the current frozen batch, that is production authorization for that batch. Do not ask for the same permission again after the exact candidate becomes verified.
 - Deployment authorization does **not** waive verification. Continue automatically through implementation and failing in-scope checks, fixing the underlying branch until the exact candidate has a successful full required CI run. Do not merge a failed, incomplete, stale, or superseded candidate merely because deployment was authorized.
 - The only exception is an explicit owner override made **after** the owner is told the exact failed or skipped verification gates and explicitly directs deployment anyway. A generic deployment instruction issued before a later failure is not such an override.
+- Exact current deployment readiness, rollback state, alias assignment and deployment ID are read from Vercel when needed; the repository must not invent or stale-cache operational truth that Vercel owns.
 
 ## 9. Mandatory machine safeguards — LOCKED
 
@@ -111,11 +118,12 @@ Canonical CI must run `npm run canonical:check` before typecheck/build/database 
 - a support/reference schema file falsely claiming independent canonical current-state authority;
 - forbidden temp/noop/version-suffixed source artifacts;
 - missing required current terminology in canonical docs;
-- duplicated deployment/current-application status outside the master;
+- duplicated current-application/release status outside the master;
 - a pull request whose recorded active branch does not match the actual PR head;
 - an application/source/safeguard PR that leaves the master untouched;
 - a migration PR that leaves the schema contract or master untouched;
-- owner-locked source/copy regressions that are explicitly protected by the canonical integrity check.
+- owner-locked source/copy regressions that are explicitly protected by the canonical integrity check;
+- removal or weakening of the fail-open Vercel non-runtime release boundary.
 
 Pull-request synchronization and drift checks must inspect the **entire PR diff against canonical `main`**, not only the final commit. A multi-commit PR may not hide earlier application/test/doc changes from the canonical gate.
 
@@ -131,7 +139,7 @@ For relevant changes, verify as applicable:
 - canonical integrity check;
 - TypeScript/typecheck;
 - focused unit/application tests;
-- production build;
+- production build when the release boundary classifies runtime impact;
 - complete fresh migration replay;
 - pgTAP/database behavior/privacy tests;
 - mobile + desktop owner verification where required.

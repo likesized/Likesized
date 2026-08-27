@@ -59,7 +59,7 @@ export async function followPerson(formData: FormData) {
     redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}follow=error`);
   }
 
-  if (stayOpen) return { ok: true };
+  if (stayOpen) return;
   revalidatePath("/following");
   revalidatePath("/circle");
   revalidatePath("/outfits");
@@ -87,7 +87,7 @@ export async function unfollowPerson(formData: FormData) {
     redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}follow=error`);
   }
 
-  if (stayOpen) return { ok: true };
+  if (stayOpen) return;
   revalidatePath("/following");
   revalidatePath("/circle");
   revalidatePath("/outfits");

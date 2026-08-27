@@ -22,6 +22,8 @@ test("CI keeps fast draft iteration and full exact-candidate verification separa
   const full=read(".github/workflows/ci.yml");
   assert.match(fast,/Classify changed paths/);
   assert.match(fast,/database=false/);
+  assert.match(fast,/app\/\*\|components\/\*\|lib\/\*/);
+  assert.doesNotMatch(fast,/\*\.ts\|\*\.tsx\|\*\.js\|\*\.jsx/);
   assert.match(fast,/for test_file in tests\/\*\.test\.ts; do/);
   assert.match(fast,/steps\.changes\.outputs\.database == 'true'/);
   assert.match(full,/github\.event\.pull_request\.draft == false/);

@@ -161,6 +161,16 @@ The exact candidate proposed for merge must have a successful full required CI r
 
 For owner-reported UI regressions, green source/CI checks are not a substitute for the owner being able to verify the exact interaction on the production site after deployment.
 
+### Universal performance / scale baseline — OWNER LOCKED 2026-08-27
+Performance and scalability are default engineering requirements across the entire LikeSized website, not a later page-specific cleanup phase.
+
+- Every new or materially changed path must be designed to remain responsive under multi-user load. Avoid N+1 data access, unbounded/full-table reads, duplicate identical requests, eager loading of hidden/offscreen heavy UI, unnecessary full-page navigation/revalidation for local interactions, and avoidable client/server work on every render or click.
+- Prefer bounded pagination/cursors/limits, set-based or batched queries, indexed lookup paths, deliberate caching, request deduplication, lazy/deferred loading for nonessential or offscreen work, and media sized for the rendered context. Full originals are reserved for interactions that need them; lightweight display media should be used when it preserves the approved presentation.
+- Shared/canonical components and services own performance behavior when the same interaction appears in multiple surfaces. Never create a page-specific fast fork beside a slower canonical implementation; repair the owning shared path instead.
+- Data, query and index design must be evaluated for expected scale when a feature is introduced or materially changed rather than waiting for traffic to expose avoidable load. A feature is not considered well-designed merely because it works against a tiny development dataset.
+- Performance work must preserve correctness, privacy, security and owner-approved semantics. Do not hide stale or incorrect data, weaken authorization, or silently change Product behavior to make a benchmark faster.
+- Avoidable heavy load, redundant work, interaction blocking or scaling regressions are defects in the owning path and should be repaired canonically. When a changed feature adds meaningful load, verification should include the relevant query/request/media/render path rather than treating visual correctness as the only acceptance criterion.
+
 ## 11. Recovery freeze — LOCKED until cleared in master
 
 While `docs/AI_MASTER_LOG.md` says canonical recovery is active:

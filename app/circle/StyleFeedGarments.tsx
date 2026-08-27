@@ -44,6 +44,6 @@ export default function StyleFeedGarments({postId}:{postId:string}){
 
   function warm(){if(items===null)void loadItems(postId).then(setItems);}
   return <div ref={hostRef} onPointerEnter={warm} onPointerDown={warm} onFocusCapture={warm} style={{minHeight:items===null||items.length?34:0}}>
-    {items?.length?<StyleFeedGarmentsButton items={items}/>:null}
+    {items?.length?<StyleFeedGarmentsButton items={items} postId={postId}/>:null}
   </div>;
 }

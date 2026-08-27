@@ -59,6 +59,21 @@ function changedEntries() {
   }
 }
 
+function isGovernanceFile(rel) {
+  return rel === 'AI_REPOSITORY_RULES.md'
+    || rel === 'AGENTS.md'
+    || rel === 'CLAUDE.md'
+    || rel === '.github/copilot-instructions.md'
+    || rel === '.github/CODEOWNERS'
+    || rel.startsWith('.github/workflows/')
+    || rel === '.github/pull_request_template.md'
+    || rel.startsWith('.github/PULL_REQUEST_TEMPLATE/')
+    || rel === 'scripts/check-canonical-integrity.mjs'
+    || rel === 'scripts/check-pr-governance.mjs'
+    || rel === 'vercel.json'
+    || rel === 'scripts/vercel-ignore-build.mjs';
+}
+
 const entries = changedEntries();
 const changed = entries.map((entry) => entry.rel);
 const changedSet = new Set(changed);
@@ -72,18 +87,8 @@ if (!['Repair', 'Product Change'].includes(lane)) {
   fail('PR body must declare exactly `Change lane: Repair` or `Change lane: Product Change`.');
 }
 
-const governanceProtected = changed.filter((rel) =>
-  rel === 'AI_REPOSITORY_RULES.md'
-  || rel === '.github/CODEOWNERS'
-  || rel.startsWith('.github/workflows/')
-  || rel === '.github/pull_request_template.md'
-  || rel.startsWith('.github/PULL_REQUEST_TEMPLATE/')
-  || rel === 'scripts/check-canonical-integrity.mjs'
-  || rel === 'scripts/check-pr-governance.mjs'
-  || rel === 'vercel.json'
-  || rel === 'scripts/vercel-ignore-build.mjs'
-);
-
+const governanceProtected = changed.filter(isGovernanceFile);
+const governanceOnly = changed.length > 0 && changed.every((rel) => isGovernanceFile(rel) || /^tests\/governance-.*\.test\.ts$/.test(rel));
 const architectureFiles = changed.filter((rel) =>
   rel === 'package.json'
   || rel === 'package-lock.json'
@@ -103,6 +108,9 @@ const candidateMaster = read(candidateRoot, 'docs/AI_MASTER_LOG.md');
 const baseContracts = extractFeatureContracts(baseMaster);
 const candidateContracts = extractFeatureContracts(candidateMaster);
 const stableContractsChanged = baseContracts !== candidateContracts;
+
+if (!baseContracts) fail('Trusted base is missing the marked CANONICAL FEATURE CONTRACTS section.');
+if (!candidateContracts) fail('Candidate removed or broke the marked CANONICAL FEATURE CONTRACTS section.');
 
 if (lane === 'Repair') {
   if (!/^no$/i.test(productTruth)) fail('Repair PRs must declare `Product truth changed: No`.');
@@ -131,17 +139,14 @@ if (lane === 'Product Change') {
     fail('`Governance change: Yes` was declared but no protected governance file changed.');
   }
 
-  const durableProductTruthChanged = stableContractsChanged || productSpecChanged || migrations.length > 0;
-  if (durableProductTruthChanged && !masterChanged) {
-    fail('Product Change altered durable Product/architecture truth but did not reconcile docs/AI_MASTER_LOG.md.');
+  // Governance policy has its own canonical owner. Product/runtime decisions still belong in the Master.
+  if (!governanceOnly && !masterChanged) {
+    fail('Product Change affecting Product/runtime truth must reconcile docs/AI_MASTER_LOG.md in the same PR.');
   }
   if (migrations.length && !schemaContractChanged) {
     fail('Migration Product Change must reconcile supabase/schema_contract.md in the same PR.');
   }
 }
-
-if (stableContractsChanged && !baseContracts) fail('Trusted base is missing the marked CANONICAL FEATURE CONTRACTS section.');
-if (stableContractsChanged && !candidateContracts) fail('Candidate removed or broke the marked CANONICAL FEATURE CONTRACTS section.');
 
 if (errors.length) {
   console.error('\nTrusted PR governance FAILED:\n');

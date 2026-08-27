@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 const tabs=readFileSync(new URL("../app/outfits/[id]/OutfitTabs.tsx",import.meta.url),"utf8");
 const taggedFit=readFileSync(new URL("../app/api/outfits/[id]/tagged-fit/route.ts",import.meta.url),"utf8");
 const taggedPanel=readFileSync(new URL("../app/outfits/[id]/TaggedItemsPanel.tsx",import.meta.url),"utf8");
+const itemPage=readFileSync(new URL("../app/item/[slug]/page.tsx",import.meta.url),"utf8");
 const css=readFileSync(new URL("../app/outfits/[id]/outfitDetail.module.css",import.meta.url),"utf8");
 const pickerCss=readFileSync(new URL("../app/outfits/new/outfitPicker.module.css",import.meta.url),"utf8");
 
@@ -44,11 +45,13 @@ test("visible Relevant Fit Reports include the viewer's eligible exact Product a
   assert.match(taggedFit,/recommendSize\(\[\.\.\.otherEvidence,\.\.\.ownHistory\]\)/);
 });
 
-test("insufficient FITuition copy agrees with a positive exact-variation report count",()=>{
-  assert.match(taggedPanel,/I’m not confident enough to recommend a size yet\./);
+test("approved tagged FITuition wording is locked for insufficient and recommended states",()=>{
+  assert.match(taggedPanel,/Not enough fit data to confidently recommend a size\./);
+  assert.match(taggedPanel,/Our FITuition suggests: \{meta\.recommendation\.sizeLabel\}/);
+  assert.match(taggedPanel,/Confidence: \{meta\.recommendation\.confidenceLabel\}/);
   assert.match(taggedPanel,/Relevant Fit Reports: \{meta\.matchingFitReports\}/);
-  assert.match(taggedPanel,/current exact-variation evidence does not point clearly enough to one size/);
-  assert.doesNotMatch(taggedPanel,/No useful exact-item Fit Reports match your Fit Profile yet/);
+  assert.doesNotMatch(taggedPanel,/I’m not confident enough to recommend a size yet\./);
+  assert.doesNotMatch(taggedPanel,/current exact-variation evidence does not point clearly enough to one size/);
 });
 
 test("tagged FITuition preloads every card and resolves failures instead of hanging forever",()=>{
@@ -84,16 +87,27 @@ test("first tagged-garment quick view always keeps direct full Garment Detail na
   assert.match(firstQuickViewMarkup,/href=\{selected\.href\} data-full-navigation="true">View Garment Detail →<\/Link>/);
 });
 
-test("FITuition details use one concise intermediate evidence layer before full garment navigation",()=>{
-  assert.match(taggedPanel,/See FITuition Details →/);
-  assert.match(taggedPanel,/FITuition DETAILS/);
-  assert.match(taggedPanel,/Strong Fit Report summary/);
-  assert.match(taggedPanel,/Best current match/);
-  assert.match(taggedPanel,/View all \$\{meta\.relevantReports\.length\} Relevant Fit Reports →/);
-  assert.match(taggedPanel,/View Garment Details →/);
-  assert.doesNotMatch(taggedPanel,/Closest exact reports/);
-  assert.doesNotMatch(taggedPanel,/Exact-item history · Body Match unavailable/);
-  assert.doesNotMatch(taggedPanel,/View Detailed Garment Report/);
+test("FITuition details show only the requested evidence instead of repeating the quick-view summary",()=>{
+  assert.match(taggedPanel,/additionalRelevantReports/);
+  assert.match(taggedPanel,/View more Relevant Fit Reports →/);
+  assert.match(taggedPanel,/meta\.strongFitReports\.flatMap/);
+  assert.match(taggedPanel,/fit\.count/);
+  assert.match(taggedPanel,/group\.sizeLabel/);
+  assert.match(taggedPanel,/fit\.fitLabel/);
+  assert.match(taggedPanel,/View Garment Detail →/);
+  assert.doesNotMatch(taggedPanel,/FITuition DETAILS/);
+  assert.doesNotMatch(taggedPanel,/Strong Fit Report summary/);
+  assert.doesNotMatch(taggedPanel,/Best current match/);
+  assert.doesNotMatch(taggedPanel,/FITuition still can’t recommend a size yet/);
+  assert.doesNotMatch(taggedPanel,/Recommended size/);
+});
+
+test("full Garment Detail does not crash when supplemental FITuition enrichment is unavailable",()=>{
+  assert.doesNotMatch(itemPage,/throw new Error\("Could not assemble FITuition evidence\."\)/);
+  assert.match(itemPage,/profilesResult\.error\?\[\]:\(profilesResult\.data\?\?\[\]\)/);
+  assert.match(itemPage,/productsResult\.error\?\[\]:\(productsResult\.data\?\?\[\]\)/);
+  assert.match(itemPage,/snapshotResult\.error\?\[\]:snapshotResult\.data/);
+  assert.match(itemPage,/attributeResult\.error\?\[\]:attributeResult\.data/);
 });
 
 test("unsaved Outfit navigation confirmation is fixed in the current viewport",()=>{

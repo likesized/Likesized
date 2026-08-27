@@ -67,7 +67,8 @@ test("tagged FITuition preloads every card and resolves failures instead of hang
 test("zero exact Relevant Fit Reports never surfaces a tagged-item size recommendation",()=>{
   assert.match(taggedPanel,/const showRecommendation=Boolean\(meta\?\.recommendation&&meta\.matchingFitReports>0\)/);
   assert.match(taggedPanel,/showRecommendation&&meta\.recommendation/);
-  assert.match(taggedPanel,/I don’t have enough useful evidence to recommend a size yet\./);
+  assert.match(taggedPanel,/Not enough fit data to confidently recommend a size\./);
+  assert.doesNotMatch(taggedPanel,/I don’t have enough useful evidence to recommend a size yet\./);
   assert.match(taggedPanel,/"Notify me"/);
   assert.match(taggedPanel,/🔔/);
   assert.match(taggedPanel,/FITuition will notify you when people close to your size post a Fit Report for this item\./);

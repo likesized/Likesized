@@ -12,7 +12,8 @@ permissions:
   contents: read
 
 jobs:
-  verify:
+  release_verify:
+    name: Release Verification
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 25

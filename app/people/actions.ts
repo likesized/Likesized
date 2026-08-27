@@ -33,24 +33,33 @@ async function authenticatedUserId() {
 export async function followPerson(formData: FormData) {
   const targetUserId = String(formData.get("target_user_id") ?? "");
   const returnTo = safeReturnPath(formData.get("return_to"));
+  const stayOpen = String(formData.get("stay_open") ?? "") === "1";
   const { supabase, userId } = await authenticatedUserId();
-  if (!targetUserId || targetUserId === userId) redirect(returnTo);
+  if (!targetUserId || targetUserId === userId) {
+    if (stayOpen) throw new Error("Could not follow this person.");
+    redirect(returnTo);
+  }
 
   const { data: target, error: targetError } = await supabase
     .from("profiles")
     .select("id, username")
     .eq("id", targetUserId)
     .maybeSingle();
-  if (targetError || !target?.username) redirect(returnTo);
+  if (targetError || !target?.username) {
+    if (stayOpen) throw new Error("Could not follow this person.");
+    redirect(returnTo);
+  }
 
   const { error } = await supabase.from("follows").insert({
     follower_id: userId,
     followed_id: targetUserId,
   });
   if (error && error.code !== "23505") {
+    if (stayOpen) throw new Error("Could not follow this person.");
     redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}follow=error`);
   }
 
+  if (stayOpen) return { ok: true };
   revalidatePath("/following");
   revalidatePath("/circle");
   revalidatePath("/outfits");
@@ -61,8 +70,12 @@ export async function followPerson(formData: FormData) {
 export async function unfollowPerson(formData: FormData) {
   const targetUserId = String(formData.get("target_user_id") ?? "");
   const returnTo = safeReturnPath(formData.get("return_to"));
+  const stayOpen = String(formData.get("stay_open") ?? "") === "1";
   const { supabase, userId } = await authenticatedUserId();
-  if (!targetUserId || targetUserId === userId) redirect(returnTo);
+  if (!targetUserId || targetUserId === userId) {
+    if (stayOpen) throw new Error("Could not unfollow this person.");
+    redirect(returnTo);
+  }
 
   const { error } = await supabase
     .from("follows")
@@ -70,9 +83,11 @@ export async function unfollowPerson(formData: FormData) {
     .eq("follower_id", userId)
     .eq("followed_id", targetUserId);
   if (error) {
+    if (stayOpen) throw new Error("Could not unfollow this person.");
     redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}follow=error`);
   }
 
+  if (stayOpen) return { ok: true };
   revalidatePath("/following");
   revalidatePath("/circle");
   revalidatePath("/outfits");

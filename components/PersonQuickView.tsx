@@ -1,21 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { CanonicalPersonQuickViewCard } from "@/components/CanonicalPersonQuickViewCard";
+import { loadPersonQuickView, readPersonQuickView, warmPersonQuickView, type PersonQuickViewSummary } from "@/lib/person-quick-view-client";
 import styles from "@/app/outfits/[id]/CreatorQuickView.module.css";
 
-type Summary={userId:string|null;username:string;displayName:string|null;avatarUrl:string|null;signedIn:boolean;owner:boolean;following:boolean;notificationsOn:boolean;overallMatch:number|null;topsMatch:number|null;bottomsMatch:number|null;totalGarments:number|null;totalOutfits:number|null};
 type Props={username:string;displayName?:string|null;avatarUrl?:string|null;children:ReactNode;inline?:boolean};
 
 export function PersonQuickView({username,displayName,avatarUrl,children,inline=false}:Props){
+  const triggerRef=useRef<HTMLButtonElement>(null);
   const [open,setOpen]=useState(false);
-  const [summary,setSummary]=useState<Summary|null>(null);
+  const [summary,setSummary]=useState<PersonQuickViewSummary|null>(()=>readPersonQuickView(username));
   const [loading,setLoading]=useState(false);
   const [returnTo,setReturnTo]=useState("/people");
   const name=summary?.displayName?.trim()||displayName?.trim()||username;
   const photo=summary?.avatarUrl??avatarUrl??null;
   const resolvedUsername=summary?.username??username;
+
+  useEffect(()=>{
+    setSummary(readPersonQuickView(username));
+    const node=triggerRef.current;
+    if(!node)return;
+    const observer=new IntersectionObserver((entries)=>{
+      if(entries.some((entry)=>entry.isIntersecting)){warmPersonQuickView(username);observer.disconnect();}
+    },{rootMargin:"350px 0px"});
+    observer.observe(node);
+    return()=>observer.disconnect();
+  },[username]);
 
   useEffect(()=>{
     if(!open)return;
@@ -28,15 +40,17 @@ export function PersonQuickView({username,displayName,avatarUrl,children,inline=
 
   async function openQuickView(){
     setReturnTo(`${window.location.pathname}${window.location.search}${window.location.hash}`);
+    const cached=readPersonQuickView(username);
+    if(cached)setSummary(cached);
     setOpen(true);
-    if(summary||loading)return;
+    if(cached||summary||loading)return;
     setLoading(true);
-    try{const response=await fetch(`/api/people/${encodeURIComponent(username)}/quick-view`,{cache:"no-store"});if(response.ok)setSummary(await response.json() as Summary);}finally{setLoading(false);}
+    try{const payload=await loadPersonQuickView(username);if(payload)setSummary(payload);}finally{setLoading(false);}
   }
 
   const triggerStyle={display:inline?"inline":"inline-block",margin:0,padding:0,border:0,background:"transparent",color:"inherit",font:"inherit",textAlign:"left" as const,cursor:"pointer"};
   return <>
-    <button type="button" style={triggerStyle} aria-label={`Quick view ${name}`} onClick={()=>void openQuickView()}>{children}</button>
+    <button ref={triggerRef} type="button" style={triggerStyle} aria-label={`Quick view ${name}`} onPointerEnter={()=>warmPersonQuickView(username)} onPointerDown={()=>warmPersonQuickView(username)} onFocus={()=>warmPersonQuickView(username)} onClick={()=>void openQuickView()}>{children}</button>
     {open?<CanonicalPersonQuickViewCard
       displayName={name}
       username={resolvedUsername}

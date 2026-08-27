@@ -50,8 +50,9 @@ test("discovered Outfits and Style Feed keep feed derivatives while full-size ga
   assert.match(explore, /outfitFeedPhotoPath\(post\.photo_url\)/);
   assert.match(explore, /storage\.from\("outfit-photos"\)\.createSignedUrl\(feedPath/);
   assert.match(circle, /row\.feed_path\|\|outfitFeedPhotoPath\(row\.display_path\)/);
-  assert.match(circle, /createSignedUrl\(row\.display_path,1800\)/);
-  assert.match(circle, /createSignedUrl\(previewPath,1800\)/);
+  assert.match(circle, /storage\.from\("outfit-photos"\)\.getPublicUrl\(row\.display_path\)/);
+  assert.match(circle, /storage\.from\("outfit-photos"\)\.getPublicUrl\(previewPath\)/);
+  assert.doesNotMatch(circle, /createSignedUrl/);
   assert.match(gallery, /src=\{current\.previewUrl\?\?current\.url\}/);
   assert.match(gallery, /src=\{current\.url\}/);
   assert.match(outfitsIndex, /\/closet\?tab=outfits/);

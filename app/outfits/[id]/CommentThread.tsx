@@ -17,6 +17,7 @@ function formatDate(value:string){return new Intl.DateTimeFormat("en-US",{month:
 function sortComments(items:CommentItem[],sort:SortMode){return [...items].sort((a,b)=>sort==="top"?b.likeCount-a.likeCount||Date.parse(b.createdAt)-Date.parse(a.createdAt)||b.id.localeCompare(a.id):Date.parse(b.createdAt)-Date.parse(a.createdAt)||b.id.localeCompare(a.id));}
 
 export default function CommentThread({postId,commentCount,signedIn,signIn,initialOpen=false,error,triggerOnly=false,triggerClassName,triggerLabel}:{postId:string;commentCount:number;signedIn:boolean;signIn:ReactNode;initialOpen?:boolean;error?:ReactNode;triggerOnly?:boolean;triggerClassName?:string;triggerLabel?:ReactNode}){
+  const triggerRef=useRef<HTMLButtonElement>(null);
   const [open,setOpen]=useState(initialOpen);
   const [sort,setSort]=useState<SortMode>("top");
   const [count,setCount]=useState(commentCount);
@@ -24,7 +25,7 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
   const [full,setFull]=useState<CommentItem[]>([]);
   const [cursor,setCursor]=useState<Cursor|null>(null);
   const [previewLoaded,setPreviewLoaded]=useState(false);
-  const [fullLoaded,setFullLoaded]=useState(false);
+  const [fullLoaded,setFullLoaded]=useState(commentCount===0);
   const [loadingEarlier,setLoadingEarlier]=useState(false);
   const [interactionError,setInteractionError]=useState("");
   const prefetching=useRef(false);
@@ -47,6 +48,7 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
   }
 
   async function loadFull(sortMode:SortMode){
+    if(count===0){setFull([]);setCursor(null);setFullLoaded(true);return;}
     const payload=await requestPage(PAGE_SIZE,sortMode);
     setFull(payload?.comments??[]);
     setCursor(payload?.nextCursor??null);
@@ -55,6 +57,7 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
 
   function primeFull(){
     if(fullLoaded||prefetching.current)return;
+    if(count===0){setFull([]);setCursor(null);setFullLoaded(true);return;}
     prefetching.current=true;
     void loadFull(sort).finally(()=>{prefetching.current=false;});
   }
@@ -70,6 +73,7 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
   function openComments(){
     setInteractionError("");
     setOpen(true);
+    if(count===0){setFull([]);setCursor(null);setFullLoaded(true);return;}
     if(!fullLoaded&&!prefetching.current)primeFull();
   }
 
@@ -87,8 +91,9 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
     setSort(next);
     setCursor(null);
     setInteractionError("");
-    setFullLoaded(false);
+    setFullLoaded(count===0);
     prefetching.current=false;
+    if(count===0)return;
     if(open){void loadFull(next);}
     else if(!triggerOnly){setPreviewLoaded(false);void loadPreview(next);}
   }
@@ -153,11 +158,23 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
     setCount(commentCount);
     setSort("top");
     prefetching.current=false;
-    if(initialOpen){setOpen(true);setFullLoaded(false);void loadFull("top");}
-    else if(triggerOnly){setOpen(false);setFull([]);setFullLoaded(false);setPreview([]);setPreviewLoaded(true);}
+    if(initialOpen){setOpen(true);setFullLoaded(commentCount===0);if(commentCount>0)void loadFull("top");}
+    else if(triggerOnly){setOpen(false);setFull([]);setFullLoaded(commentCount===0);setPreview([]);setPreviewLoaded(true);}
     else{setOpen(false);setPreviewLoaded(false);void loadPreview("top");}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[postId,triggerOnly]);
+
+  useEffect(()=>{
+    if(!triggerOnly||fullLoaded||count===0)return;
+    const node=triggerRef.current;
+    if(!node)return;
+    const observer=new IntersectionObserver((entries)=>{
+      if(entries.some((entry)=>entry.isIntersecting)){primeFull();observer.disconnect();}
+    },{rootMargin:"350px 0px"});
+    observer.observe(node);
+    return()=>observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[postId,triggerOnly,fullLoaded,count,sort]);
 
   function SortButtons(){return <div className={styles.sortRow} aria-label="Sort comments">
     <button className={styles.sortButton} type="button" aria-pressed={sort==="top"} onClick={()=>changeSort("top")}>Top</button>
@@ -177,7 +194,7 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
         </div>
         <div className={styles.textRow}><p>{comment.body}</p><div className={styles.actions}>
           {signedIn?<button type="button" aria-label={comment.likedByViewer?"Unlike comment":"Like comment"} onClick={()=>void toggleLike(comment)}>{comment.likedByViewer?"♥":"♡"}{comment.likeCount?` ${comment.likeCount}`:""}</button>:<span>♡{comment.likeCount?` ${comment.likeCount}`:""}</span>}
-          {signedIn?<details className="reportFlagControl"><summary title="Report comment" aria-label="Report comment">⚑</summary><form action={reportContent}><input type="hidden" name="target_type" value="outfit_comment"/><input type="hidden" name="target_id" value={comment.id}/><input type="hidden" name="return_to" value={returnTo}/><label>Reason<select name="reason" defaultValue="" required><option value="" disabled>Select a reason</option><option value="spam">Spam</option><option value="harassment">Harassment</option><option value="inappropriate_content">Inappropriate content</option><option value="scam_misleading">Scam / misleading</option><option value="other">Other</option></select></label><label>Details (optional)<textarea name="details" maxLength={500}/></label><button type="submit">Send report</button></form></details>:null}
+          {signedIn?<details className="reportFlagControl"><summary aria-label="Report comment">Report</summary><form action={reportContent}><input type="hidden" name="target_type" value="outfit_comment"/><input type="hidden" name="target_id" value={comment.id}/><input type="hidden" name="return_to" value={returnTo}/><label>Reason<select name="reason" defaultValue="" required><option value="" disabled>Select a reason</option><option value="spam">Spam</option><option value="harassment">Harassment</option><option value="inappropriate_content">Inappropriate content</option><option value="scam_misleading">Scam / misleading</option><option value="other">Other</option></select></label><label>Details (optional)<textarea name="details" maxLength={500}/></label><button type="submit">Send report</button></form></details>:null}
           {comment.canDelete?<button type="button" onClick={()=>void deleteComment(comment)}>Delete</button>:null}
         </div></div>
       </div>
@@ -185,7 +202,7 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
   }
 
   return <div className={styles.host}>
-    {!open&&triggerOnly?<button className={triggerClassName??styles.openButton} type="button" onPointerEnter={primeFull} onPointerDown={primeFull} onFocus={primeFull} onClick={openComments}>{triggerLabel??(count?`Comments ${count}`:"Comments")}</button>:null}
+    {!open&&triggerOnly?<button ref={triggerRef} className={triggerClassName??styles.openButton} type="button" onPointerEnter={primeFull} onPointerDown={primeFull} onFocus={primeFull} onClick={openComments}>{triggerLabel??(count?`Comments ${count}`:"Comments")}</button>:null}
     {!open&&!triggerOnly?<div className={styles.preview}>
       <SortButtons/>
       {!previewLoaded?<p className="muted">Loading comments…</p>:preview.length?<div className={styles.commentList}>{preview.map(renderComment)}</div>:<p className="muted">No comments yet.</p>}

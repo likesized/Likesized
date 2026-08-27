@@ -12,7 +12,7 @@ function normalizeStyle(value:string){
   return value.trim().replace(/^#+/,"").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,30);
 }
 
-export function StyleFeedFilters({scope,occasion,styleDisplay,styleOptions}:{scope:FeedScope;occasion:string;styleDisplay:string;styleOptions:StyleOption[]}){
+export function StyleFeedFilters({scope,occasion,styleDisplay,styleOptions,qa=false}:{scope:FeedScope;occasion:string;styleDisplay:string;styleOptions:StyleOption[];qa?:boolean}){
   const router=useRouter();
   const [styleValue,setStyleValue]=useState(styleDisplay);
 
@@ -22,6 +22,7 @@ export function StyleFeedFilters({scope,occasion,styleDisplay,styleOptions}:{sco
     if(nextOccasion)params.set("occasion",nextOccasion);
     const normalized=normalizeStyle(nextStyle);
     if(normalized)params.set("style",normalized);
+    if(qa)params.set("qa","1");
     const query=params.toString();
     return query?`/circle?${query}`:"/circle";
   }

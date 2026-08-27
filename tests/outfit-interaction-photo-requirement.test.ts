@@ -82,7 +82,7 @@ test("Outfit photos use the one smooth full-size viewer without stealing tag or 
   assert.match(gallery,/Next photo/);
   assert.match(gallery,/onPointerMove=\{lightboxPointerMove\}/);
   assert.match(gallery,/setStageDragX\(dx\)/);
-  assert.match(gallery,/translate3d\(\$\{lightboxDragX\}px,\$\{lightboxDragY\}px,0\)/);
+  assert.match(gallery,/translate3d\(calc\(\$\{position\*100\}vw \+ \$\{lightboxDragX\}px\),\$\{lightboxDragY\}px,0\)/);
   assert.match(gallery,/setLightboxDragY\(Math\.max\(0,dy\)\)/);
   assert.match(gallery,/setLightboxAnimating\(true\)/);
   assert.match(gallery,/touchAction:"none"/);

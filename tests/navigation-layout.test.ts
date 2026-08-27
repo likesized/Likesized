@@ -108,7 +108,7 @@ test("initial Fit Profile collects required private city/state once and Settings
   assert.doesNotMatch(locationMigration, /grant select[^;]*to anon/);
 });
 
-test("Fit Community is a saved default with reversible social-view filters", () => {
+test("Fit Community is a saved default with reversible People My Size filters", () => {
   assert.match(fitProfileForm, />Fit Community<select/);
   assert.match(fitProfileForm, /value="men">Men<\/option>/);
   assert.match(fitProfileForm, /value="women">Women<\/option>/);
@@ -117,10 +117,9 @@ test("Fit Community is a saved default with reversible social-view filters", () 
   assert.match(fitProfileActions, /p_fit_community:community/);
   assert.match(settingsForm, /name="fit_community"/);
   assert.match(settingsActions, /fit_community:community/);
-  assert.match(peoplePage, /p_fit_community:community/);
+  assert.match(peoplePage, /p_fit_community:\s*community/);
   assert.match(peoplePage, /Switching this view does not change your saved preference/);
-  assert.match(circlePage, /p_fit_community:override/);
-  assert.match(circlePage, /not by the garment’s Men’s or Women’s Department/);
+  assert.doesNotMatch(circlePage, /p_fit_community|Fit Community/);
 });
 
 test("direct Product search is global and does not require a Men or Women filter switch", () => {

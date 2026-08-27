@@ -128,6 +128,11 @@ Active branch: **NONE — canonical main**
 
 The owner-authorized Style Feed regression + safeguard-separation incident is implemented, verified and released through PR #106 and PR #108. No Product/runtime implementation branch is currently authoritative. The exact live interaction must now be owner-tested on `likesized.com`; any newly observed defect starts a new owner-scoped repair item and does not reopen unrelated roadmap work automatically.
 
+## Pending owner-approved safeguard change — 2026-08-27 Style Feed polish repair
+- Implementation branch: `agent/style-feed-polish-repair`
+- Authorized safeguard files: `tests/explore-circle-likelocker.test.ts`
+- Owner-approved behavior change: the Style Feed no longer uses `View Full Outfit →`; it uses `View Garments →` in-place, while long Outfit text expands through `More` / `Show less`. This preauthorization permits the stale Style Feed safeguard to be updated to judge the approved behavior instead of forcing the retired link back into runtime source.
+
 ## Roadmap 12 — New Outfit / Style an Outfit — COMPLETE / DEPLOYED
 The three final source defects were implemented in released PR #101 and regression-protected:
 1. another wearer's best exact report is labeled **Best Available Matching Fit Report**, followed by **[NN]% Body Match**, Size and Fit Result;

@@ -2,6 +2,9 @@
 # These patterns are ready for owner-review enforcement once the AI uses a separate
 # development identity. The current single @likesized identity is not a true authority split.
 /AI_REPOSITORY_RULES.md @likesized
+/AGENTS.md @likesized
+/CLAUDE.md @likesized
+/.github/copilot-instructions.md @likesized
 /.github/CODEOWNERS @likesized
 /.github/workflows/ @likesized
 /.github/pull_request_template.md @likesized

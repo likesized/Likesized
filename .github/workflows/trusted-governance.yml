@@ -1,0 +1,47 @@
+name: LikeSized Governance
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  trusted-guard:
+    name: trusted-guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out trusted canonical base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: trusted
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check out candidate without credentials
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Ensure base commit is available for complete diff
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: git -C candidate fetch --no-tags https://github.com/${{ github.repository }}.git "$BASE_SHA" --depth=1
+
+      - name: Run trusted lane and governance guard
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node trusted/scripts/check-pr-governance.mjs trusted candidate
+
+      - name: Run trusted canonical integrity against candidate
+        working-directory: candidate
+        run: node ../trusted/scripts/check-canonical-integrity.mjs

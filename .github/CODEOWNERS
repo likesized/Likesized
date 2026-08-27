@@ -1,1 +1,12 @@
-* @likesized
+# Governance / constitution files.
+# These patterns are ready for owner-review enforcement once the AI uses a separate
+# development identity. The current single @likesized identity is not a true authority split.
+/AI_REPOSITORY_RULES.md @likesized
+/.github/CODEOWNERS @likesized
+/.github/workflows/ @likesized
+/.github/pull_request_template.md @likesized
+/.github/PULL_REQUEST_TEMPLATE/ @likesized
+/scripts/check-canonical-integrity.mjs @likesized
+/scripts/check-pr-governance.mjs @likesized
+/vercel.json @likesized
+/scripts/vercel-ignore-build.mjs @likesized

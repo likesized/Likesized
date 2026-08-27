@@ -9,6 +9,7 @@ const exploreFilters=readFileSync("components/ExploreFilters.tsx","utf8");
 const taxonomy=readFileSync("lib/garment-taxonomy.ts","utf8");
 const fixtures=readFileSync("lib/explore-fixtures.ts","utf8");
 const circle=readFileSync("app/circle/page.tsx","utf8");
+const people=readFileSync("app/people/page.tsx","utf8");
 const locker=readFileSync("app/likelocker/page.tsx","utf8");
 const menu=readFileSync("components/MemberMenu.tsx","utf8");
 const miniBrowser=readFileSync("components/ProductMiniBrowser.tsx","utf8");
@@ -57,15 +58,32 @@ test("Explore retains fit evidence, batching, shared mini-detail quick views, an
  assert.doesNotMatch(explore,/\bstar(?:s)?\b/i);
 });
 
-test("My Circle ranks full and regional Twin designations before ordinary following",()=>{
- assert.match(circle,/fit_twin_settings/);
- assert.match(circle,/p_match_category: "overall"/);
+test("Style Feed is Outfit-only following inspiration with Fit Twins as the default",()=>{
+ assert.match(circle,/from\("follows"\)/);
+ assert.match(circle,/from\("outfit_posts"\)/);
+ assert.match(circle,/\.eq\("status", "published"\)/);
+ assert.match(circle,/value === "all" \? "all" : "twins"/);
+ assert.match(circle,/>Fit Twins</);
+ assert.match(circle,/>All</);
  assert.match(circle,/p_match_category: "tops"/);
  assert.match(circle,/p_match_category: "bottoms"/);
- assert.match(circle,/fitTwinPriority\(designationFor/);
- assert.match(circle,/full Fit Twins first/);
- assert.match(circle,/Tops Twins and Bottoms Twins/);
- assert.match(circle,/without duplicates/);
+ assert.match(circle,/fitTwinLabel\(designationFor/);
+ assert.match(circle,/Search style tags/);
+ assert.match(circle,/outfit_style_tags/);
+ assert.match(circle,/OUTFIT_OCCASIONS/);
+ assert.match(circle,/See All Following/);
+ assert.match(circle,/Find More Fit Twins/);
+ assert.match(circle,/href="\/people"/);
+ assert.doesNotMatch(circle,/get_following_feed/);
+ assert.doesNotMatch(circle,/fit_report_added|closet_shared|fitTwinPriority|Overall Match/);
+});
+
+test("People My Size defaults to Twin-level discovery and keeps All Matches separate",()=>{
+ assert.match(people,/value === "all" \? "all" : "twins"/);
+ assert.match(people,/>Fit Twins</);
+ assert.match(people,/>All Matches</);
+ assert.match(people,/availableMatches\.filter\(\(person\) => Boolean\(designationFor\(person\.user_id\)\)\)/);
+ assert.match(people,/\$\{twinLabel\} Match/);
 });
 
 test("LikeLocker has one three-tab save destination",()=>{

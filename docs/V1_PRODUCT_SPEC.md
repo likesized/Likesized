@@ -32,7 +32,8 @@ Match % means **garment-relevant body similarity**, not probability a garment wi
 - Member preference is **Men / Women / Both**.
 - It is owner-private relevance metadata for people/wearer discovery, not a body measurement and not Product Department.
 - It never changes Match %.
-- People My Size and Style Feed may default to the saved preference and allow a temporary view switch without rewriting it.
+- **People My Size** defaults to the member's saved Fit Community and may temporarily switch community without rewriting the saved preference.
+- **Style Feed** is restricted to people the viewer already follows and does not use a separate Fit Community switch to hide followed people.
 - The community belongs to the person wearing/posting the garment. Wearing a men's or women's Department item does not change the member's community.
 - Fit Community is asked during first-time profile setup. After onboarding it is managed in Profile Settings, not My Measurements.
 
@@ -52,7 +53,12 @@ Match % means **garment-relevant body similarity**, not probability a garment wi
 - **Fit Twin** requires both Tops Match and Bottoms Match to clear that threshold.
 - **Tops Twin** means only Tops Match clears it. **Bottoms Twin** means only Bottoms Match clears it.
 - Overall Match remains the visible general body-similarity score but **does not grant Twin status by itself**.
-- Style Feed is the current UX name for the social-following surface. Its full Following-only rolling-feed behavior/ranking remains a later Roadmap 13 implementation; the visible rename must not be mistaken for completion of that later behavior.
+- **People My Size defaults to Twin-level discovery only.** Before someone is followed, a qualifying result may be described as a Fit Twin/Tops Twin/Bottoms Twin **Match** rather than implying a followed relationship already exists. **All Matches** is the alternate broader view.
+- **Style Feed** is the Following-only Outfit inspiration surface. Its default relationship filter is **Fit Twins**; **All** is the alternate view. The Fit Twins view includes followed Fit Twins, Tops Twins and Bottoms Twins.
+- Style Feed does **not** show Body Match/Overall Match percentages on posts. The current Twin badge is sufficient relationship context there.
+- Style Feed is chronological within the selected filters: newest published Outfit first. There is no hidden Match-based feed ranking.
+- Style Feed supports **Occasion** and **Style Tags** filtering. Style Tags must be searchable in the filter control rather than forcing the member to scan a long static list.
+- When viewing Fit Twins, the bottom of the feed offers **See All Following** and **Find More Fit Twins**. Find More Fit Twins routes to **People My Size**, whose default view is Twin-level discovery.
 - `/following` is compatibility-only and resolves to `/circle`.
 - Signed-in `/` currently resolves to `/circle`; logged-out `/` is the public homepage.
 - Follow alone does not enable person notifications.
@@ -505,6 +511,7 @@ Outfits are member-created mini editorial posts built from owned Closet garments
 - Safe already-resolved photo hotspots remain visible to logged-out visitors on published Outfits. Clicking one keeps public Product identification available while personalized fit intelligence remains authenticated/Fit-Profile gated.
 - Logged-out visitors may view the published Outfit normally: gallery, Headline, creator public identity/handle, Occasion, Style Tags, Outfit Story, social counts, readable comments and safe already-resolved tagged-Product identification remain visible. Logging out does not turn the Outfit itself into a crippled teaser page.
 - Creator/comment profile identity is resolved live from the member's current public profile identity/photo; old profile photos are not snapshotted onto Outfit/comment records.
+- Public compact identity presentation uses **Display Name + `@username` on one line** where space permits, with `@username` remaining visible/truncatable rather than being removed. Display Name alone is never treated as sufficient account identity on posts/comments.
 - The creator avatar/name opens one compact member quick view. The stat hierarchy is **Overall Match** alone, then **Tops Match | Bottoms Match**, then **Total Garments | Total Outfits**. These stats are not rendered as a bordered table/grid. Total Garments means distinct garment evidence/items rather than a relabeled raw Fit Report count. The quick view also provides **View Full Profile** and appropriate Follow/notification controls. Raw measurements never appear there.
 - Raw body measurements, historical body snapshots, private Closet linkage, unresolved candidate/review state, private City/State and authenticated member action state remain protected in every Outfit context.
 - Personalized tagged-item intelligence is account/Fit-Profile gated. A logged-out visitor who clicks a tagged item is kept in Outfit context and receives a compact **create account / sign in** gate instead of a fake personalized quick view. Before authentication LikeSized does **not** claim a Relevant Fit Report count, Body Match result, FITuition result or “not enough personalized evidence” state for that visitor.
@@ -533,7 +540,7 @@ Outfits are member-created mini editorial posts built from owned Closet garments
 - Outfit comments default to **Top** with **Newest** as the alternate sort. **Top** sorts by comment Like count descending, then newest first as the tie-break. Newest sorts newest first.
 - The Outfit Comments tab shows a small bounded preview rather than an unbounded vertical thread. **View all X comments** opens the dedicated full comments view/sheet. Both sorts use real server/database cursor pagination in bounded batches; the client must not fetch a fixed giant thread and merely reveal pieces of it in memory. The comment composer remains sticky at the bottom.
 - Comment creation, comment Like/unlike and Top/Newest switching update through the local/API interaction path without forcing whole-Outfit navigation/refresh for each interaction.
-- Comment identity is compact: avatar, Display Name, `@username` directly underneath, then comment text. Like/Flag/Delete actions stay tight to the comment they affect; Delete appears only when the viewer is authorized.
+- Comment identity is compact: avatar, **Display Name + `@username` on one line**, then comment text. The username remains visible/truncatable rather than hidden so a display name cannot stand alone as the account identifier. Like/Flag/Delete actions stay tight to the comment they affect; Delete appears only when the viewer is authorized.
 - Logged-out visitors may read visible comments but must sign in to comment.
 - Signed-in members may Like visible comments. Comment-Like state is private to the liking member while the safe aggregate count is visible.
 - Members may delete their own comments; an Outfit creator may remove comments on their Outfit. Outfit posts/comments support reporting; signed-in members may block another member from that member's profile context.
@@ -542,11 +549,16 @@ Outfits are member-created mini editorial posts built from owned Closet garments
 - Current Outfit View behavior is session-safe: reopening/refreshing the same Outfit within the same browser session does not repeatedly increment the View counter. A failed View request may clear the session marker so a real retry can occur.
 
 ## Feed/discovery boundary
-- Outfit browsing is **image-first with a Pinterest-like masonry/pinboard rhythm**: natural Main Photo proportions, staggered multi-column layout, minimal card chrome and lightweight Headline/creator/Occasion/Style/social metadata beneath the image. Normal mobile widths keep a compact two-column visual feed. Outfits must not collapse into one unnecessary full-width vertical stack when the viewport supports the intended pinboard layout. This is a visual direction, not a copy of Pinterest product behavior.
-- The current `/circle` surface is visibly named **Style Feed**, but full Roadmap 13 behavior remains intentionally not implemented yet.
-- Locked Roadmap 13 source/filter direction: Style Feed is a rolling inspiration feed of Outfits from people the viewer already follows; top controls are **All · Fit Twins · Occasion**. Fit Twins includes Fit Twin, Tops Twin and Bottoms Twin. There is **no Style Tag filter** in Style Feed. Explore/Search remain the intentional specific-discovery surfaces.
+- General Outfit browsing/discovery may use an **image-first Pinterest-like masonry/pinboard rhythm**: natural Main Photo proportions, staggered multi-column layout, minimal card chrome and lightweight Headline/creator/Occasion/Style/social metadata beneath the image. This remains distinct from the Following-only Style Feed.
+- **Style Feed (`/circle`) is a passive social Outfit feed from people the viewer already follows only.** It does not mix Fit Reports, Closet-add activity or generic Product discovery into the feed.
+- Style Feed defaults to **Fit Twins** and offers **All** as the alternate relationship filter. Fit Twins includes followed Fit Twin, Tops Twin and Bottoms Twin designations.
+- Style Feed shows the creator's current public identity and Twin badge where applicable, but **no Body Match/Overall Match percentage** on the feed card.
+- Style Feed ordering is **newest published Outfit first** inside the active filters; no Match-based priority/ranking is applied.
+- Style Feed filters are **Occasion** and **Style Tags**. Style Tags use a searchable filter control.
+- The default Fit Twins view never silently falls back to All. If there are no Twin Outfit posts for the active filters, the page says so. At the bottom it offers **See All Following** and **Find More Fit Twins**, with Find More Fit Twins routing to **People My Size**.
+- People My Size defaults to Twin-level qualifying results and exposes **All Matches** as the alternate broader discovery view.
 - Drafts never create feed activity.
-- Exact Style Feed ranking remains undefined until Roadmap 13 and must not be invented during Roadmap 12.
+- Explore/Search remain separate intentional Product/garment/Outfit discovery surfaces; Style Feed does not replace them.
 
 # 24. Images — LOCKED
 - Every **new Fit Report** requires at least one of **Front Fit Photo / Back Fit Photo / Product Photo**.

@@ -5,7 +5,7 @@ import sharp from "sharp";
 import { canonicalOutfitWebp } from "../lib/outfit-photo-server.ts";
 import { outfitFeedPhotoPath } from "../lib/outfit-photo-paths.ts";
 
-test("legacy feed helper remains compatible for existing Style Feed rows", () => {
+test("legacy feed helper remains compatible for existing Outfit photo paths", () => {
   assert.equal(outfitFeedPhotoPath("member/post/display.webp"), "member/post/feed.webp");
   assert.equal(outfitFeedPhotoPath("member/post/outfit.jpg"), "member/post/outfit.jpg");
 });
@@ -48,7 +48,9 @@ test("discovered Outfits and Style Feed serve feed derivatives while owned Outfi
   const circle = readFileSync(new URL("../app/circle/page.tsx", import.meta.url), "utf8");
   assert.match(explore, /outfitFeedPhotoPath\(post\.photo_url\)/);
   assert.match(explore, /storage\.from\("outfit-photos"\)\.createSignedUrl\(feedPath/);
-  assert.match(circle, /outfitFeedPhotoPath\(row\.outfit_photo_path!\)/);
+  assert.match(circle, /main\.feed_path/);
+  assert.match(circle, /outfitFeedPhotoPath\(post\.photo_url\)/);
+  assert.match(circle, /storage\.from\("outfit-photos"\)\.createSignedUrl\(path/);
   assert.match(outfitsIndex, /\/closet\?tab=outfits/);
   assert.doesNotMatch(outfitsIndex, /outfitFeedPhotoPath|feedPath/);
 });

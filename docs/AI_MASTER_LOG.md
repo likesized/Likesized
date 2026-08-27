@@ -25,6 +25,8 @@ Do not call a batch done merely because source was edited or a preview built. Ow
 
 A deployment authorization does **not** waive verification. If a later required gate fails, repair the underlying branch and continue automatically until the exact candidate passes. A failed/incomplete candidate may be deployed only if the owner is told the exact failed/skipped gates and then explicitly overrides them after that disclosure.
 
+**Planning is not implementation authorization.** Discussion, screenshot review, brainstorming, agreeing on a future design, or placing an item on the to-do list does not authorize repository writes. The owner must explicitly authorize implementation of the identified batch before branch/source/test/doc changes begin. This workflow rule is also locked in `AI_REPOSITORY_RULES.md`.
+
 ## Future app transition — OWNER LOCKED 2026-08-24
 LikeSized remains web-first while V1 is completed and owner-audited, with intended app transition after the web product is mature enough.
 
@@ -40,7 +42,7 @@ Going forward:
 # CURRENT STATUS — 2026-08-27
 
 ## Canonical source line — MAIN THROUGH PR #102
-Current `main` source is PR #102 squash merge **`41323f047cb63efc0768f6a95d9aefd74d16d8ba`**. PR #102 changed release-governance configuration only; the current Product behavior remains the PR #101 Roadmap 12 closeout behavior described below.
+Current `main` source is PR #102 squash merge **`41323f047cb63efc0768f6a95d9aefd74d16d8ba`**. PR #102 changed release-governance configuration only; current production Product behavior includes the released PR #101 Roadmap 12 Outfit closeout described below. Roadmap 13 work is branch-only until its exact candidate is verified, merged and deployed.
 
 PR #101 **Close Roadmap 12 Outfit evidence and canonical governance** release facts:
 - exact final branch head before squash merge: **`9d37c2e99ed40d0588e516ff40aae08c8233c45d`**;
@@ -76,30 +78,34 @@ Production Supabase includes, after the earlier Roadmap 12 migrations:
 
 PR #94, PR #95, PR #97, PR #98, PR #99, PR #100, PR #101 and PR #102 introduced no new production database migration. PR #96 introduced the Outfit tag-consistency migration above.
 
-## Current primary line — SETTLED
-Active branch: **NONE — canonical main**
+## Current primary line — ROADMAP 13 STYLE FEED REWORK
+Active branch: **`agent/roadmap-13-style-feed-rework`**
 
-No Product/runtime implementation branch is currently authoritative. PR #101's Product changes and PR #102's canonical release-boundary safeguards are merged into the single `main` line.
+This branch was created directly from canonical `main` at **`c405f96c840f1257eab0ca66bfbfaec051fa7083`** and is the one active Product implementation line.
 
-The release boundary is now canonical:
-1. `vercel.json` delegates ignored-build classification to `scripts/vercel-ignore-build.mjs`;
-2. the classifier fails open to a real build whenever it cannot safely classify a commit;
-3. only commits whose changed files are all explicitly enumerated non-runtime canonical docs/CI metadata/regression safeguards may skip a Vercel application build;
-4. runtime source, migrations, dependencies, `vercel.json`, and the classifier itself are not skippable;
-5. canonical CI and regression coverage fail if the boundary is weakened;
-6. a pure post-release non-runtime reconciliation may settle the master at **NONE — canonical main** instead of preserving a merged branch name as false current authority.
+Owner-authorized frozen batch:
+1. replace the obsolete `/circle` mixed activity feed with a true **Outfit-only Style Feed** sourced only from people the viewer follows;
+2. Style Feed defaults to **Fit Twins**, with **All** as the alternate relationship filter; Fit Twins includes Fit Twin, Tops Twin and Bottoms Twin;
+3. Style Feed shows **no Body Match / Overall Match percentage**; the Twin badge is sufficient relationship context;
+4. Style Feed ordering is **newest published Outfit first** inside the active filters, without inventing Match-based ranking;
+5. add **Occasion** and **searchable Style Tags** filters;
+6. the Fit Twins view does not silently fall back to All; at the bottom offer **See All Following** and **Find More Fit Twins**, with Find More Fit Twins routing to **People My Size**;
+7. **People My Size defaults to Twin-level matches only**, with **All Matches** as the broader alternate view; Explore remains a separate surface and is not part of this flow;
+8. compact public identity on the affected social surfaces uses **Display Name + `@username` on one line**, retaining the unique username rather than switching to display-name-only identity;
+9. reconcile stale tests/canonical docs to this owner-approved behavior instead of forcing the retired activity-feed behavior back into source;
+10. add the explicit repository safeguard that planning/to-do discussion does not authorize implementation writes.
 
-This removes two recurring drift loops found in the audit: deployment bookkeeping no longer needs to trigger another application deployment, and merged branch names no longer remain recorded as if they were still active.
+The owner explicitly authorized finishing and deploying this batch. No adjacent Product work is authorized.
 
-## Roadmap 12 — New Outfit / Style an Outfit — OWNER LIVE ACCEPTANCE GATE
-The three final owner-reported source defects are implemented in released PR #101 and regression-protected:
+## Roadmap 12 — New Outfit / Style an Outfit — COMPLETE / DEPLOYED
+The three final source defects were implemented in released PR #101 and regression-protected:
 1. another wearer's best exact report is labeled **Best Available Matching Fit Report**, followed by **[NN]% Body Match**, Size and Fit Result;
 2. the viewer's own surfaced exact report is labeled only **Your Fit Report**, with Size and Fit Result; **“Your own exact report”** is retired;
 3. strong Outfit FITuition aggregation uses the same eligible exact evidence units counted by `Relevant Fit Reports: X`, including the viewer's own eligible exact report; same person + Product + tracked variation counts once; distinct qualifying wearers count independently; related/similar variations remain excluded.
 
-Source, regression, exact-head CI, post-merge CI, production deployment health and a live public Outfit route are verified. The unauthenticated production fetch cannot truthfully prove the signed-in personalized FITuition presentation. **Roadmap 12 is therefore not marked COMPLETE yet.** The final acceptance gate is the owner's signed-in live verification of those three personalized behaviors on `likesized.com`.
+Source, regression, exact-head CI, post-merge CI, production deployment health and a live public Outfit route were verified. The owner confirmed the current dataset does not yet contain enough distinct logged garments/users to naturally render all three multi-user personalized scenarios. That unavailable-data condition is **not a Roadmap 12 completion blocker**. The three scenarios remain regression-protected and are deferred for future live-data QA once enough real/seeded evidence exists.
 
-Once the owner confirms those three live behaviors, mark Roadmap 12 / Style an Outfit **COMPLETE / DEPLOYED** and unblock Roadmap 13 without reopening completed Outfit work.
+Roadmap 12 / Style an Outfit is therefore **COMPLETE / DEPLOYED** and must not be reopened merely because the current dataset cannot produce a future QA scenario.
 
 # OWNER-LOCKED CURRENT PRODUCT DECISIONS
 
@@ -118,6 +124,8 @@ Once the owner confirms those three live behaviors, mark Roadmap 12 / Style an O
 - One canonical `follows` graph exists.
 - **Fit Twin is system-generated** among followed people from strong current regional Match quality.
 - Both Tops + Bottoms qualify → Fit Twin; Tops only → Tops Twin; Bottoms only → Bottoms Twin; Overall Match alone never grants Twin status.
+- **People My Size defaults to Twin-level qualifying people only.** A qualifying person who is not followed yet is discovery evidence/a Twin-level Match, not a claim that the follow relationship already exists. **All Matches** is the alternate view.
+- **Style Feed defaults to followed Fit Twins** and may switch to **All** followed people. The feed itself shows the Twin badge but no Body Match/Overall Match percentage.
 - Follow alone does not enable person notifications.
 
 ## Controlled Product identity trust
@@ -227,26 +235,32 @@ Raw/private body data, private Closet linkage, unresolved candidate/review state
 - Creator quick view hierarchy is **Overall Match** on its own row, **Tops Match | Bottoms Match**, then **Total Garments | Total Outfits**. Do not render these stats as a boxed table/grid with cell borders.
 - Total Garments means distinct garment evidence/items, not a relabeled raw Fit Report count.
 - Creator quick view may also show View Full Profile, Follow and notification state without exposing raw measurements.
+- **Compact public identity on affected Outfit/comment/social rows is Display Name + `@username` on one line.** Do not hide the unique username and do not fall back to display-name-only identity; truncate gracefully on narrow screens when necessary.
 - Comments default to **Top** and may switch to **Newest**. Top = Like count descending, newest tie-break. Newest = newest first.
 - Comment submit, Like/unlike and sort switching use the API/local interaction path rather than whole-Outfit navigation for every action.
 - Owner management controls—Edit, comments on/off, delete, Views, Follows generated—remain separate from viewer content actions.
 - New Outfit photo tagging opens on the current **Cover/Main photo**.
 - New Outfit back navigation returns to **My Closet → Outfits**.
 
-# OWNER-LOCKED STYLE FEED DIRECTION — ROADMAP 13, FULL BEHAVIOR NOT YET IMPLEMENTED
-The current `/circle` route has the visible **Style Feed** name, and homepage/navigation copy may point to it. This does **not** mean the full Roadmap 13 feed behavior is complete.
+# OWNER-LOCKED STYLE FEED — ROADMAP 13 ACTIVE IMPLEMENTATION
+Roadmap 13 is explicitly unblocked and authorized on branch `agent/roadmap-13-style-feed-rework`.
 
-When Roadmap 13 is explicitly unblocked:
-1. Style Feed is a passive Instagram/Pinterest-like rolling Outfit inspiration feed.
-2. Source is **people the viewer already follows only**.
-3. Top relationship controls are **All | Fit Twins**.
+Locked behavior:
+1. Style Feed is a passive social Outfit inspiration feed, not a mixed activity log.
+2. Source is **published Outfits from people the viewer already follows only**.
+3. Default relationship filter is **Fit Twins**; **All** is the alternate view.
 4. Fit Twins includes Fit Twin, Tops Twin and Bottoms Twin.
-5. **Occasion** is the only additional feed filter.
-6. **There is no Style Tag filter in Style Feed.**
-7. Explore/Search remain for intentional Product/garment discovery.
-8. Exact ranking remains undefined until the roadmap is reached; do not invent it earlier.
+5. **No Body Match / Overall Match percentage appears on Style Feed cards.** The Twin badge is enough relationship context.
+6. Ordering is **newest published Outfit first** inside the active filters. Do not invent hidden Match ranking.
+7. Additional filters are **Occasion** and **Style Tags**.
+8. **Style Tags are searchable** in the filter control.
+9. The default Fit Twins view never silently broadens to All.
+10. At the bottom of the Fit Twins view offer **See All Following** and **Find More Fit Twins**. Find More Fit Twins routes to **People My Size**, not Explore.
+11. **People My Size is a separate page from Explore and defaults to Twin-level matches only.** It offers All Matches as the alternate view.
+12. Explore/Search remain separate intentional discovery surfaces and are not part of this Style Feed flow.
+13. Public identity is compact **Display Name + `@username` on one line**; display-name-only presentation is not accepted because the username is the unique identity cue.
 
-Homepage third feature-card direction is locked:
+Homepage third feature-card direction remains locked:
 - eyebrow/title **FIT YOUR STYLE**;
 - headline **Follow people whose fit and style you trust.**;
 - supporting meaning: see what they wear, how they style it, what they recommend, and how they put it all together;
@@ -443,12 +457,12 @@ An admin-locked image always wins. A newly uploaded photo may score 100 and stil
 6. Notifications — audit remains.
 7. Unified Closet/member profile Closet — canonical visibility meaning reconciled; broader lifecycle/mutation audit remains.
 8. Post-submit Fit Report mutation/lifecycle model — remains.
-9. People My Size — broader audit remains; regional Twin rule live.
-10. Style Feed relationship semantics — direction locked above; full feed behavior remains Roadmap 13.
+9. **People My Size — default Twin-level discovery is in the active Roadmap 13 batch; broader page audit remains later.**
+10. **Style Feed relationship semantics — active Roadmap 13 implementation; full current behavior is locked above.**
 11. New Fit Report — evidence-first flow live; visible photo validation is live.
 11A. **Garment-question variation classification — COMPLETE / DEPLOYED.**
-12. **New Outfit / Style an Outfit — PR #101 RELEASED / OWNER LIVE ACCEPTANCE PENDING.** Source and automated verification are complete; the owner must still verify the three personalized FITuition closeout behaviors while signed in before this roadmap item is marked COMPLETE.
-13. **Style Feed full behavior/ranking — BLOCKED until the owner closes Roadmap 12.**
+12. **New Outfit / Style an Outfit — COMPLETE / DEPLOYED.** Future multi-user live-data QA is deferred until enough evidence exists and does not block completion.
+13. **Style Feed full behavior — ACTIVE IMPLEMENTATION on `agent/roadmap-13-style-feed-rework`; owner authorized finish + deploy.**
 13A. **Automatic Canonical Product Image Scoring — OWNER LOCKED / PLANNED; implement before Garment/Product detail, Explore, Search and Wish Locker audit so those surfaces consume one canonical image-selection system.**
 14. Garment/Product detail — Exact Variation consumes the canonical 11A map and Roadmap 13A canonical-image hierarchy when reached.
 15. Explore — consume Roadmap 13A canonical imagery rather than inventing its own image selection.
@@ -485,9 +499,10 @@ Later Roadmap 12 production mappings:
 Applied migrations are immutable. PR #94, PR #95, PR #97, PR #98, PR #99, PR #100, PR #101 and PR #102 added no migration. PR #96 added the Outfit tag-consistency migration and it is production-applied at the hosted timestamp above.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- No Product/runtime implementation branch is currently active. Do not start Roadmap 13 until the owner closes the Roadmap 12 signed-in live acceptance gate.
-- Keep PR #101's three Outfit closeout behaviors regression-protected; tests are verification consumers, not an independent product-decision ledger.
-- Owner signed-in live acceptance of those three personalized Outfit FITuition behaviors remains the only Product gate before Roadmap 12 can be marked COMPLETE.
+- The one active Product line is **`agent/roadmap-13-style-feed-rework`**. Do not open a competing Product branch while this batch is unreconciled.
+- Current batch scope is exactly the owner-authorized Style Feed replacement, People My Size Twin-default behavior, compact Display Name + `@username` identity presentation on the affected social rows, stale regression/doc reconciliation, and the explicit approval-before-write repository safeguard.
+- **Explore is separate and is not part of the Style Feed → Find More Fit Twins flow.** Find More Fit Twins routes to People My Size.
+- Keep PR #101's three Outfit closeout behaviors regression-protected. Future live-data QA of those states waits for enough real/seeded users/garments and does not reopen Roadmap 12 by itself.
 - Keep all canonical integrity, TypeScript, application safeguard, build, fresh migration replay and pgTAP/database behavior/privacy gates active. Do not treat PR #94/#95 verification exceptions as precedent.
 - The canonical Vercel non-runtime release boundary is installed and machine-protected. Operational skip/build behavior is checked against Vercel when needed rather than stale-cached as a permanent repository status.
 - Roadmap 13A Automatic Canonical Product Image Scoring is owner-locked and planned; do not implement it opportunistically before its roadmap turn unless the owner explicitly changes the order.
@@ -530,7 +545,9 @@ Recent released application/source lineage:
 - PR #102 — canonical Vercel release boundary — exact branch **`45310f1de87fa50e3b38bfb878ca2f91ea551c3f`**, merge **`41323f047cb63efc0768f6a95d9aefd74d16d8ba`**, exact-head CI **#1039 / `33033816436`** green, main push CI **#1040 / `33033937464`** green, no Product change and no migration; Vercel release `dpl_6RJgXWTQLbzErVVKLxdtLPcPpDbg` was verified READY for the boundary installation.
 
 # EXACT NEXT ACTION — CURRENT
-1. **Owner live acceptance:** while signed in on `likesized.com`, verify the three PR #101 personalized FITuition behaviors: Best Available Matching Fit Report labeling, clean Your Fit Report presentation, and aggregate evidence accounting for the same eligible exact units as Relevant Fit Reports.
-2. If those three behaviors are correct, record Roadmap 12 / Style an Outfit **COMPLETE / DEPLOYED** and unblock Roadmap 13 without reopening completed Outfit work.
-3. **Repository governance remains separate:** GitHub `main` protection/ruleset is still required and stale merged/retry branches still require salvage-safe cleanup. Do not call those audit items complete until the server-side protection and branch cleanup are actually done.
-4. Until the owner closes item 1, do not begin Roadmap 13 Product implementation.
+1. Finish the already-authorized Roadmap 13 batch on **`agent/roadmap-13-style-feed-rework`** without adding adjacent work.
+2. Run focused safeguards and the full required exact-candidate CI chain after the final source/test/doc change. Fix only in-scope failures; do not weaken safeguards.
+3. The owner has explicitly authorized this completed batch to be **deployed**. Once the exact candidate is fully green, merge that exact head, verify post-merge `main` CI and the Vercel production application deployment, then tell the owner the live site is ready to review.
+4. Owner live review should cover: Fit Twins default; All; Occasion; searchable Style Tags; Outfit-only followed feed; no body percentages; Twin badges; newest-first behavior; See All Following; Find More Fit Twins → People My Size; People My Size Twin-default; and one-line Display Name + `@username` identity.
+5. After this batch is deployed, do **not** begin Roadmap 13A or any other repository work merely because it is next on the roadmap. Return to list/discussion mode until the owner explicitly authorizes the next implementation batch.
+6. Repository governance remains separate: GitHub `main` protection/ruleset is still required and stale merged/retry branches still require salvage-safe cleanup. Do not call those audit items complete until the server-side protection and branch cleanup are actually done.

@@ -289,6 +289,7 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
       {scope === "twins" ? (
         <footer className={styles.feedFooter}>
           <p>Want more inspiration?</p>
+          <Link className="textLink" href={feedHref("all", occasion, styleTag)}>See All Following →</Link>
           <Link className="textLink" href="/people">Find More Fit Twins →</Link>
         </footer>
       ) : null}

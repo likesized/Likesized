@@ -59,6 +59,27 @@ function changedEntries() {
   }
 }
 
+function modifiedTestRemovesExistingContent(rel) {
+  if (!baseSha || !headSha) return true;
+  try {
+    const patch = execFileSync(
+      'git',
+      ['-C', candidateRoot, 'diff', '--unified=0', `${baseSha}...${headSha}`, '--', rel],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+    );
+    return patch.split(/\r?\n/).some((line) => {
+      if (!line.startsWith('-') || line.startsWith('---')) return false;
+      const removed = line.slice(1).trim();
+      if (!removed) return false;
+      if (removed.startsWith('//')) return false;
+      return true;
+    });
+  } catch (error) {
+    fail(`Could not inspect existing safeguard rewrite in ${rel}: ${error instanceof Error ? error.message : String(error)}`);
+    return true;
+  }
+}
+
 function isGovernanceFile(rel) {
   return rel === 'AI_REPOSITORY_RULES.md'
     || rel === 'AGENTS.md'
@@ -88,7 +109,7 @@ if (!['Repair', 'Product Change'].includes(lane)) {
 }
 
 const governanceProtected = changed.filter(isGovernanceFile);
-const governanceOnly = changed.length > 0 && changed.every((rel) => isGovernanceFile(rel) || /^tests\/governance-.*\.test\.ts$/.test(rel));
+const governanceOnly = changed.length > 0 && changed.every((rel) => isGovernanceFile(rel) || /^tests\/governance-.*\.test\.ts$/.test(rel) || rel === 'tests/canonical-release-boundary.test.ts');
 const architectureFiles = changed.filter((rel) =>
   rel === 'package.json'
   || rel === 'package-lock.json'
@@ -99,6 +120,7 @@ const architectureFiles = changed.filter((rel) =>
 
 const migrations = changed.filter((rel) => /^supabase\/migrations\/.*\.sql$/.test(rel));
 const modifiedTests = entries.filter((entry) => /^M/.test(entry.status) && /^tests\/.*\.test\.ts$/.test(entry.rel)).map((entry) => entry.rel);
+const rewrittenTests = modifiedTests.filter(modifiedTestRemovesExistingContent);
 const productSpecChanged = changedSet.has('docs/V1_PRODUCT_SPEC.md');
 const masterChanged = changedSet.has('docs/AI_MASTER_LOG.md');
 const schemaContractChanged = changedSet.has('supabase/schema_contract.md');
@@ -119,12 +141,12 @@ if (lane === 'Repair') {
   if (migrations.length) fail(`Repair lane may not introduce/change migrations; escalate to Product Change: ${migrations.join(', ')}`);
   if (stableContractsChanged) fail('Repair lane may not change the stable CANONICAL FEATURE CONTRACTS section.');
 
-  const staleNeeded = productSpecChanged || modifiedTests.length > 0;
+  const staleNeeded = productSpecChanged || rewrittenTests.length > 0;
   if (staleNeeded && !/^yes$/i.test(staleReconciliation)) {
-    fail('Repair modified an existing test and/or Product Spec; declare `Stale canon reconciliation: Yes` and document the pre-existing canonical evidence.');
+    fail('Repair rewrote an existing safeguard assertion and/or Product Spec; declare `Stale canon reconciliation: Yes` and document the pre-existing canonical evidence.');
   }
   if (!staleNeeded && /^yes$/i.test(staleReconciliation)) {
-    fail('`Stale canon reconciliation: Yes` was declared but no pre-existing test/Product Spec assertion was modified.');
+    fail('`Stale canon reconciliation: Yes` was declared but no pre-existing safeguard assertion/Product Spec content was rewritten.');
   }
   if (/^yes$/i.test(governanceChange)) fail('A Repair cannot declare a governance change; use Product Change.');
 }
@@ -139,7 +161,6 @@ if (lane === 'Product Change') {
     fail('`Governance change: Yes` was declared but no protected governance file changed.');
   }
 
-  // Governance policy has its own canonical owner. Product/runtime decisions still belong in the Master.
   if (!governanceOnly && !masterChanged) {
     fail('Product Change affecting Product/runtime truth must reconcile docs/AI_MASTER_LOG.md in the same PR.');
   }

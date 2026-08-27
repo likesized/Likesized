@@ -163,16 +163,20 @@
 
 .identityRow {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
+  min-width: 0;
 }
 
 .identityTrigger {
-  display: grid;
-  gap: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
   min-width: 0;
+  max-width: 100%;
   text-align: left;
+  white-space: nowrap;
 }
 
 .identityTrigger strong,
@@ -183,10 +187,13 @@
 }
 
 .identityTrigger strong {
+  min-width: 0;
   font-size: 11px;
 }
 
 .identityTrigger span {
+  flex: 0 1 auto;
+  min-width: 0;
   color: var(--muted);
   font-size: 9px;
   font-weight: 600;
@@ -400,6 +407,14 @@
   .actions :global(.reportFlagControl) textarea,
   .actions :global(.reportFlagControl) select {
     font-size: 16px;
+  }
+
+  .identityTrigger strong {
+    max-width: 46vw;
+  }
+
+  .identityTrigger span {
+    max-width: 34vw;
   }
 
   .textRow {

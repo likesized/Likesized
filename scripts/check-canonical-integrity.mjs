@@ -76,7 +76,17 @@ mustContain('docs/V1_PRODUCT_SPEC.md', 'Help Me Size It is fallback');
 mustContain('supabase/schema_contract.md', '`follows` is the one canonical **Following** relationship');
 mustContain('AI_REPOSITORY_RULES.md', 'Canonical CI must run `npm run canonical:check`');
 mustContain('AI_REPOSITORY_RULES.md', 'Owner scope lock — LOCKED');
+mustContain('AI_REPOSITORY_RULES.md', 'Every committed `tests/*.test.ts` safeguard must run automatically in CI by discovery.');
+mustContain('.github/workflows/ci.yml', 'for test_file in tests/*.test.ts; do');
+mustContain('supabase/storage.sql', 'Support/reference mirror only. This file is not a second canonical current-state schema.');
+mustNotContain('supabase/storage.sql', 'Canonical current-state storage model.');
 mustNotContain('docs/AI_MASTER_LOG.md', '## Live repair fast path');
+
+// Dynamic application/deployment status belongs only to the master. The schema contract may
+// record database behavior and immutable migration facts, but it must not become a stale
+// second ledger for the currently deployed application line or Vercel deployment status.
+mustNotContain('supabase/schema_contract.md', 'Current production application source is PR #');
+mustNotContain('supabase/schema_contract.md', 'Vercel production');
 
 const activeBranch = process.env.CANONICAL_HEAD_REF?.trim();
 if (activeBranch) {
@@ -84,12 +94,14 @@ if (activeBranch) {
 
   const changed = pullRequestChangedFiles();
   const changedSet = new Set(changed);
-  const productSourceChanged = changed.some((rel) => /^(?:app|components|lib)\//.test(rel));
+  const productOrSafeguardChanged = changed.some((rel) => /^(?:app|components|lib|tests|scripts|\.github\/workflows)\//.test(rel))
+    || changedSet.has('package.json')
+    || changedSet.has('package-lock.json');
   const productSpecChanged = changedSet.has('docs/V1_PRODUCT_SPEC.md');
   const migrationChanged = changed.some((rel) => /^supabase\/migrations\/.*\.sql$/.test(rel));
 
-  if ((productSourceChanged || productSpecChanged) && !changedSet.has('docs/AI_MASTER_LOG.md')) {
-    fail('Product/source changes must update docs/AI_MASTER_LOG.md on the same active branch.');
+  if ((productOrSafeguardChanged || productSpecChanged) && !changedSet.has('docs/AI_MASTER_LOG.md')) {
+    fail('Product/source/safeguard changes must update docs/AI_MASTER_LOG.md on the same active branch.');
   }
   if (migrationChanged && !changedSet.has('supabase/schema_contract.md')) {
     fail('Migration changes must update supabase/schema_contract.md in the same pull request.');
@@ -123,7 +135,7 @@ if (fs.existsSync(path.join(root, 'supabase/schema.sql'))) {
 }
 
 const allFiles = walk(root);
-const forbiddenFile = /(?:^|[-_.])(fixed|patched|v2|backup|temp|copy)(?=\.|$)/i;
+const forbiddenFile = /(?:^|[-_.])(fixed|patched|hotfix|v2|backup|temp|copy|new[-_.]?version)(?=\.|$)/i;
 for (const full of allFiles) {
   const rel = path.relative(root, full).replaceAll('\\', '/');
   const base = path.basename(full);

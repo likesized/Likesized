@@ -23,9 +23,6 @@ Do not call a batch done merely because source was edited or a preview built. Do
 
 An explicit owner deployment command is production authorization for the current frozen batch; do not ask for the same permission again. That authorization does **not** waive verification. If a later required gate fails, repair the underlying branch and continue automatically until the exact candidate passes. A failed/incomplete candidate may be deployed only if the owner is told the exact failed/skipped gates and then explicitly overrides them after that disclosure.
 
-## Live repair fast path — OWNER DIRECTED
-During an owner live audit, concrete owner-reported breakage plus a direction to fix it authorizes implementation on the one active repair branch. Do not stop for repeated approval questions, repeated status-only handoffs or parallel repair branches. “Fast path” means remove unnecessary conversational/process pauses—not remove canonical safeguards, exact-head CI, build, migration replay or database/privacy verification.
-
 ## Future app transition — OWNER LOCKED 2026-08-24
 LikeSized remains web-first while V1 is completed and owner-audited, with intended app transition after the web product is mature enough.
 
@@ -126,13 +123,15 @@ Production Supabase includes, after the earlier Roadmap 12 migrations:
 PR #94, PR #95, PR #97, PR #98 and PR #99 introduced no new production database migration. PR #96 introduced the Outfit tag-consistency migration above.
 
 ## Current primary line — ROADMAP 12 OWNER LIVE AUDIT
-Active branch: **`main`**
+Active branch: **`agent/outfit-owner-approved-repair`**
 
-No repair batch is currently open. PR #99 deployed the two latest owner-reported regressions:
-1. **Relevant Fit Reports now count the viewer's own eligible exact Product + exact tracked-variation Fit Report**, alongside qualifying other-wearer exact-variation evidence. Related/similar tracked variations remain excluded from the Outfit count and belong on full Garment Detail.
-2. **`+ Add a new garment` from the Outfit composer is fixed/current-viewport**, rather than rendering as content at the bottom of the document.
+The current owner-approved repair batch is frozen to exactly four problems and no others:
+1. **Restore the approved FITuition wording without paraphrase.** Insufficient-confidence state uses **“Not enough fit data to confidently recommend a size.”** Recommended state uses **“Our FITuition suggests: [SIZE]”** and **“Confidence: [label]”**.
+2. **Make the intermediate FITuition Details layer evidence-only.** Low-confidence state shows the best exact Relevant Fit Report and, when additional exact reports exist, a **View more Relevant Fit Reports →** control. Strong-recommendation state shows compact count + Size + Fit Result aggregate rows such as `7 | M | Just right` and `2 | L | Too big`. Do not repeat the quick-view recommendation/count explanation or redundant FITuition headings in this intermediate layer. The separate **View Garment Detail →** navigation remains.
+3. **Keep full Garment Detail loadable.** A failure in optional/supplemental FITuition enrichment must not crash the entire `/item/[slug]` page. Core Product/variant/evidence/history failures remain real errors; optional profile/product/snapshot/attribute enrichment may degrade without turning the Product page into a server error.
+4. **Restore strict scope safeguards after the prior speed-up process change.** The owner-approved batch is the complete writable scope; existing approved copy is immutable unless the owner explicitly changes it; tests/docs may not be rewritten to bless unapproved behavior; newly discovered issues stay notes-only; canonical PR synchronization checks inspect the full PR diff against `main`, not merely the final commit.
 
-These behaviors are awaiting owner visual verification on `likesized.com`. Do not reopen Search/Explore, gallery, hotspot, preload, garment-picker compactness, first-view Garment Detail navigation or other completed/deferred work unless the owner reports a new defect there.
+PR #99's own exact-report counting and embedded Add a Garment viewport repair remain protected and are **not reopened** by this batch. Search/Explore, gallery, hotspot, preload, garment-picker compactness and other completed/deferred work remain outside scope unless the owner explicitly reports a new defect there.
 
 PR #96's four repaired behaviors remain protected:
 1. **Relevant Fit Reports preload on every signed-in Tagged Items card.** Opening a garment is not required to make its count appear.
@@ -143,8 +142,8 @@ PR #96's four repaired behaviors remain protected:
 Current owner-locked Outfit fit-evidence semantics, superseding the mistaken PR #97 other-wearer-only note:
 1. **Visible Relevant Fit Report count includes eligible own exact evidence.** `Relevant Fit Reports: X` on the Outfit tagged item/quick view counts the viewer's own eligible exact Product + exact tracked-variation Fit Report plus qualifying other-wearer exact Product + exact tracked-variation evidence. Same-person repeated evidence for the same Product + tracked variation remains one evidence unit. Related/similar tracked variations do not inflate this Outfit count; broader related evidence belongs on full Garment Detail.
 2. **Zero exact Relevant Fit Reports never surfaces a tagged-item size recommendation.** The clicked quick view shows the compact notification state instead, using a visible bell/`Notify me` action and the existing FITuition notification explanation. A viewer who has an eligible own exact-variation report therefore does not incorrectly fall into zero merely because they authored it.
-3. **Positive exact evidence has two presentation states.** When one or more Relevant Fit Reports exist but confidence is insufficient, the quick view says FITuition cannot recommend a size yet, shows the count and opens a concise intermediate FITuition detail layer. When evidence is strong enough, the quick view shows recommended size + confidence and opens that same intermediate detail layer.
-4. **The intermediate FITuition detail layer stays inside Outfit context.** Low-confidence state shows the single best/closest exact report first and, when more reports exist, provides a control that leaves for the full Garment Detail page to see the rest. Recommendation state shows the aggregated strong exact-report summary. The intermediate layer has the explicit full Garment Detail navigation for broader evidence/related variations; the first click from the Outfit does not immediately eject the viewer from their Outfit position.
+3. **Positive exact evidence has two presentation states with owner-approved copy.** When one or more Relevant Fit Reports exist but confidence is insufficient, the quick view says **“Not enough fit data to confidently recommend a size.”**, shows **Relevant Fit Reports: X**, and opens the concise intermediate FITuition detail layer. When evidence is strong enough, the quick view says **“Our FITuition suggests: [SIZE]”**, shows **“Confidence: [label]”**, and opens that same intermediate detail layer.
+4. **The intermediate FITuition detail layer stays inside Outfit context and does not repeat the quick-view summary.** Low-confidence state shows the single best/closest exact report first and a compact **View more Relevant Fit Reports →** control when more exact reports exist. Recommendation state shows compact strong exact-report aggregate rows as count + Size + Fit Result. The layer retains explicit **View Garment Detail →** navigation for the full page/broader related evidence.
 5. **Tagged Items cards stay compact.** The normal card remains Product photo, Brand + Item, Category/Garment Type and Relevant Fit Reports count/status. Tracked-variation attributes appear only after the garment is clicked; they are not dumped onto the compact card/bar.
 6. **Edit Outfit unsaved navigation confirmation is immediately visible in the current viewport.** `Save Changes`/`Save Draft`, `Leave Without Saving` and `Keep Editing` remain the existing actions; the dialog is fixed/current-viewport rather than appended out of sight at the bottom of the editor.
 7. **Embedded Add a Garment is a current-viewport overlay.** The Outfit composer keeps the embedded Fit Report intake in context, but the containing dialog is fixed to the viewport with bounded scrolling rather than appearing at document bottom.
@@ -152,7 +151,7 @@ Current owner-locked Outfit fit-evidence semantics, superseding the mistaken PR 
 The separately reported Explore/Search behavior remains deferred to the later Search audit. Do not fold Search into Roadmap 12 Outfit work unless the owner explicitly changes scope.
 
 ## Roadmap 12 — New Outfit — CURRENT OWNER AUDIT GATE
-Roadmap 12 is production-live through verified PR #99 and remains under owner live audit. No active repair branch is open while the owner inspects the deployed result.
+Roadmap 12 is production-live through verified PR #99 and remains under owner live audit. The active branch **`agent/outfit-owner-approved-repair`** contains only the four owner-approved repairs above and is not production until its exact final head completes the mandatory verification/deployment chain.
 
 **Roadmap 13 remains blocked until the owner explicitly accepts the Roadmap 12/New Outfit stopping point.**
 
@@ -233,9 +232,9 @@ Recommendation evidence dedupes **same person + same Product + same tracked fit 
 
 FITuition combines Size Match evidence with the viewer's relevant Closet History. Exact Product/variation evidence is strongest; related variation is reduced fallback/support. Confidence is separate from recommendation score. `Would Buy Again` does not affect recommendation.
 
-For the **clicked Outfit tagged-garment quick view**, zero Relevant Fit Reports hard-gates the presentation: no size recommendation is shown, even if broader Closet History could otherwise produce a numerical winner. Instead the member receives the compact notification state. When one or more Relevant Fit Reports exist but confidence is insufficient, the quick view says it cannot recommend a size yet, shows the exact count and offers the in-Outfit FITuition details layer. When confidence is sufficient, it shows recommended size + confidence and that same FITuition details layer.
+For the **clicked Outfit tagged-garment quick view**, zero Relevant Fit Reports hard-gates the presentation: no size recommendation is shown, even if broader Closet History could otherwise produce a numerical winner. Instead the member receives the compact notification state. When one or more Relevant Fit Reports exist but confidence is insufficient, the quick view uses the locked wording **“Not enough fit data to confidently recommend a size.”**, shows the exact count and offers the in-Outfit FITuition details layer. When confidence is sufficient, it uses **“Our FITuition suggests: [SIZE]”** with **“Confidence: [label]”** and that same FITuition details layer.
 
-The intermediate FITuition details layer remains inside the Outfit modal/context. In low-confidence state it shows the single best/closest exact report first; if more exact reports exist, the full Garment Detail page is the destination for the rest. In recommendation state it shows the aggregated strong exact-report summary. The full Garment Detail page remains the place for the broader evidence set, including related/similar tracked variations.
+The intermediate FITuition details layer remains inside the Outfit modal/context and is evidence-only rather than a repeated summary of the quick view. In low-confidence state it shows the single best/closest exact report first and a **View more Relevant Fit Reports →** control when additional exact reports exist. In recommendation state it shows the aggregated strong exact-report evidence as compact count + Size + Fit Result rows. The separate **View Garment Detail →** navigation remains for the full page/broader evidence set, including related/similar tracked variations.
 
 On tagged Outfit quick view, when no Relevant Fit Reports are currently available, the member may opt into a compact bell + **Notify me** action. Its explanatory copy is **“FITuition will notify you when people close to your size post a Fit Report for this item.”** The notification control must not masquerade as a large primary CTA.
 
@@ -271,7 +270,7 @@ Raw/private body data, private Closet linkage, unresolved candidate/review state
 - Tagged Items compact cards remain compact Product identification; tracked-variation answers are exposed only after the user opens the tagged garment.
 - Tagged quick view is personalized only when the viewer is signed in and eligible for personalized evidence.
 - Where multiple legitimate entries share one base Product but differ by tracked fit variation, the Outfit garment-picker **list stays compact and does not display the tracked-variation answer dump**. Clicking a picker entry opens the garment quick view, and that clicked quick view exposes the answered variation-defining structured attributes needed to distinguish the legitimate entries. Same Product does not imply duplicate entry.
-- The first clicked tagged-garment quick view keeps direct **View Garment Detail →** navigation at its bottom in every FITuition state. FITuition Details still opens the in-Outfit intermediate evidence layer before any optional full-page navigation from that evidence path.
+- The first clicked tagged-garment quick view keeps direct **View Garment Detail →** navigation at its bottom in every FITuition state. FITuition Details opens the in-Outfit evidence-only intermediate layer before any optional full-page navigation.
 - **`+ Add a new garment` opens the embedded Fit Report intake in a fixed/current-viewport modal.** It must never render at the bottom of the Outfit composer merely because the dialog node is after the composer in the DOM.
 - Existing Outfit save keeps photo-hotspot relationships subordinate to the current Outfit selected-garment set; stale orphan relationships are healed rather than exposed as an internal consistency error.
 - Edit/New Outfit unsaved internal navigation uses the existing Save Changes/Save Draft · Leave Without Saving · Keep Editing confirmation in a fixed/current-viewport dialog; it must never render as an unnoticed block at the bottom of the composer.
@@ -502,7 +501,7 @@ An admin-locked image always wins. A newly uploaded photo may score 100 and stil
 10. Style Feed relationship semantics — direction locked above; full feed behavior remains Roadmap 13.
 11. New Fit Report — evidence-first flow live; visible photo validation is live.
 11A. **Garment-question variation classification — COMPLETE / DEPLOYED.**
-12. **New Outfit — CURRENT OWNER AUDIT GATE; production through verified PR #99; no repair batch is open while the owner inspects the deployed result.**
+12. **New Outfit — CURRENT OWNER AUDIT GATE; production through verified PR #99; active repair line `agent/outfit-owner-approved-repair` is frozen to the four owner-approved repairs recorded above.**
 13. **Style Feed full behavior/ranking — BLOCKED until the owner closes Roadmap 12.**
 13A. **Automatic Canonical Product Image Scoring — OWNER LOCKED / PLANNED; implement before Garment/Product detail, Explore, Search and Wish Locker audit so those surfaces consume one canonical image-selection system.**
 14. Garment/Product detail — Exact Variation consumes the canonical 11A map and Roadmap 13A canonical-image hierarchy when reached.
@@ -540,9 +539,10 @@ Later Roadmap 12 production mappings:
 Applied migrations are immutable. PR #94, PR #95, PR #97, PR #98 and PR #99 added no migration. PR #96 added the Outfit tag-consistency migration and it is production-applied at the hosted timestamp above.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- No current Outfit repair batch is open; PR #99 is deployed and awaiting owner visual verification before the Roadmap 12 live audit continues.
+- Complete only the frozen four-item repair on `agent/outfit-owner-approved-repair`: restore the exact approved FITuition wording, simplify FITuition Details to evidence-only best-report/view-more or strong aggregate rows, keep full Garment Detail from crashing on optional enrichment failures, and restore strict owner-scope/full-PR safeguard enforcement.
+- PR #99 own-report counting and Add a Garment viewport behavior are completed production behaviors and remain regression-protected; they are not open work in this batch.
 - Keep all canonical integrity, TypeScript, focused application, build, fresh migration replay and pgTAP/database behavior/privacy gates active. Do not treat PR #94/#95 verification exceptions as precedent; PR #96 restored the full exact-head/main verification chain and PR #97/#98/#99 preserved it.
-- Source-format regression tests that assert incidental JSX spelling/placement should be corrected to preserve the real behavior contract rather than forcing application code backward to satisfy stale regex. This is not permission to weaken behavioral checks.
+- Source-format regression tests that assert incidental JSX spelling/placement should preserve the real owner-approved behavior rather than forcing application code backward to satisfy stale regex. This is not permission to weaken behavioral checks or rewrite tests to bless unapproved behavior.
 - Roadmap 13A Automatic Canonical Product Image Scoring is owner-locked and planned; do not implement it opportunistically before its roadmap turn unless the owner explicitly changes the order.
 - Historical counted-report fingerprint reconciliation for retired structured questions remains separate from tracked-variation classification.
 - Exact public sex/body-specific measurement FAQ wording remains pending owner review.
@@ -550,7 +550,7 @@ Applied migrations are immutable. PR #94, PR #95, PR #97, PR #98 and PR #99 adde
 - Purchase-context aggregate/admin reporting UI remains open.
 - Broader Closet mutation/lifecycle semantics and exact post-submit Fit Report mutation model remain open.
 - Product merge/split, richer alias management, spam handling, broader Product-photo moderation, field lock/reopen, external barcode-provider evaluation, SerpAPI admin UX and starter-catalog enrichment remain open where previously scoped.
-- GitHub currently returns **no repository rulesets** for this repository. Branch-protection details are not readable through the connected integration, and the fact that failed PR #95 entered `main` proves there was no effective required-green-CI barrier for that merge. Machine-level protection should be added later only through an explicitly reviewed repository-governance change; meanwhile the repository rule and exact-head verification discipline are mandatory.
+- GitHub currently returns **no repository rulesets** for this repository. The `main` branch is not protected by required status checks. Machine-level protection should be added later only through an explicitly reviewed repository-governance change; meanwhile the repository rule and exact-head verification discipline are mandatory.
 
 # CANONICAL RECOVERY — COMPLETE
 The 2026-08-21 canonical recovery is complete. No recovery freeze is active. Historical repair branches and superseded files have no current authority; Git history preserves them for provenance while current canonical files and `main` define present truth. Do not resurrect an old branch/file as a competing source merely because it still exists in Git history.
@@ -579,8 +579,10 @@ Recent production lineage:
 - PR #99 — own Relevant Fit Report + embedded Add a Garment viewport repair — DEPLOYED, exact branch **`102265cbde14dfd61ebcff241c612e81715857d0`**, merge **`54f77889c56bea6b2e76aa4e0200add757e6a606`**, exact-head CI **#1020** green, main CI **#1021** green, production **`dpl_4hG6Zp57VAozSSs9ZSFD52W5FU4p`**, no database migration.
 
 # EXACT NEXT ACTION — CURRENT
-1. Owner visually verifies PR #99 on **`likesized.com`**: a viewer-owned eligible exact Product + exact tracked-variation Fit Report must prevent the false `Relevant Fit Reports: 0` state, and **`+ Add a new garment`** must open in the current viewport rather than at document bottom.
-2. If either behavior is still wrong, treat that exact observed behavior as the next live-audit repair without reopening completed/deferred scope.
-3. If both are accepted, continue the remaining Roadmap 12/New Outfit owner audit from the next owner-selected interaction.
-4. Search/Explore remains deferred to its later audit.
-5. Keep Roadmap 13 blocked until the owner explicitly closes Roadmap 12/New Outfit.
+1. Finish only the four owner-approved repairs on **`agent/outfit-owner-approved-repair`**; do not add adjacent, completed or deferred work.
+2. Verify exact FITuition copy: **“Not enough fit data to confidently recommend a size.”**, **“Our FITuition suggests: [SIZE]”**, and **“Confidence: [label]”**.
+3. Verify FITuition Details contains only the requested evidence: best exact report + **View more Relevant Fit Reports →** when needed, or strong aggregate count + Size + Fit Result rows; retain separate **View Garment Detail →**.
+4. Verify `/item/[slug]` no longer becomes a server-error page solely because supplemental FITuition enrichment fails.
+5. Verify the canonical scope safeguards inspect the entire PR diff and prevent unapproved copy/behavior drift while keeping all existing CI/build/database gates intact.
+6. Run the complete exact-head CI chain. Production remains PR #99 until the owner explicitly authorizes deployment of this verified repair candidate.
+7. Search/Explore remains deferred; Roadmap 13 remains blocked until the owner closes Roadmap 12/New Outfit.

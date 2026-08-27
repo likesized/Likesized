@@ -60,11 +60,18 @@ export default function TaggedItemsPanel({items,postId,signedIn,showCards=true,r
   },[postId,signedIn]);
 
   useEffect(()=>{
-    if(!signedIn||!items.length)return;
+    if(!signedIn||!items.length||!showCards)return;
     const controllers=items.map(()=>new AbortController());
     items.forEach((item,index)=>{void loadFitMeta(item.closetItemId,controllers[index].signal);});
     return()=>controllers.forEach((controller)=>controller.abort());
-  },[items,signedIn,loadFitMeta]);
+  },[items,signedIn,showCards,loadFitMeta]);
+
+  useEffect(()=>{
+    if(!selectedId||!signedIn)return;
+    const controller=new AbortController();
+    void loadFitMeta(selectedId,controller.signal);
+    return()=>controller.abort();
+  },[selectedId,signedIn,loadFitMeta]);
 
   useEffect(()=>{
     if(!selectedId||!signedIn)return;

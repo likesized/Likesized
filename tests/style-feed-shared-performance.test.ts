@@ -30,13 +30,13 @@ test("stay-open Follow persistence preserves the void action contract and bypass
   assert.doesNotMatch(peopleActions,/return \{ ok: true \}/);
 });
 
-test("shared gallery sizes from active and neighboring slides instead of active-only resizing",()=>{
-  assert.match(gallery,/stageHeights=useRef\(new Map<string,number>\(\)\)/);
-  assert.match(gallery,/previousImageElement=useRef<HTMLImageElement\|null>\(null\)/);
-  assert.match(gallery,/nextImageElement=useRef<HTMLImageElement\|null>\(null\)/);
-  assert.match(gallery,/Math\.max\(\.\.\.stageHeights\.current\.values\(\)\)/);
-  assert.match(gallery,/ref=\{previousImageElement\}[\s\S]*syncStageHeight\(event\.currentTarget,previous\.id\)/);
-  assert.match(gallery,/ref=\{nextImageElement\}[\s\S]*syncStageHeight\(event\.currentTarget,next\.id\)/);
+test("shared gallery keeps one stable viewport across mixed-aspect swipes",()=>{
+  assert.match(gallery,/const stableStageHeight="clamp\(260px,62dvh,620px\)"/);
+  assert.match(gallery,/style=\{\{height:stableStageHeight,[\s\S]*overflow:"hidden"\}\}/);
+  assert.match(gallery,/className=\{styles\.galleryMedia\} style=\{\{position:"relative",width:"100%",height:"100%"\}\}/);
+  assert.doesNotMatch(gallery,/stageHeights=useRef/);
+  assert.doesNotMatch(gallery,/syncStageHeight/);
+  assert.doesNotMatch(gallery,/transition:"min-height/);
 });
 
 test("tagged garment cards use one cached Outfit summary and full FITuition only for the selected garment",()=>{

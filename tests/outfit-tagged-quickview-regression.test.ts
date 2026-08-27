@@ -26,16 +26,18 @@ test("photo hotspots can open the canonical tagged quick view from any detail ta
   assert.match(css,/\.taggedTabDormant \.taggedGrid\{display:none\}/);
 });
 
-test("visible Relevant Fit Reports exclude the viewer while own Closet history remains recommendation evidence",()=>{
+test("visible Relevant Fit Reports include the viewer's eligible exact Product and tracked variation report",()=>{
   assert.match(taggedFit,/newestUniqueVariationEvidence/);
   assert.match(taggedFit,/objective_variant_key/);
   assert.match(taggedFit,/const relevantExact=candidates\.filter/);
   assert.match(taggedFit,/row\.historical_match_score>=STRONG_FIT_REPORT_MATCH_THRESHOLD/);
   assert.match(taggedFit,/const otherRelevantExact=relevantExact\.filter\(\(row\)=>row\.user_id!==viewerId\)/);
-  assert.match(taggedFit,/const relevantReports=strongOtherReports/);
+  assert.match(taggedFit,/const ownExactReports:RelevantReport\[\]=ownReports\.filter/);
+  assert.match(taggedFit,/report\.garment_condition==="normal"&&report\.product_id===product\.id&&\(report\.objective_variant_key\?\?""\)===targetVariation/);
+  assert.match(taggedFit,/bodyMatch:null/);
+  assert.match(taggedFit,/isOwn:true/);
+  assert.match(taggedFit,/const relevantReports=\[\.\.\.ownExactReports,\.\.\.strongOtherReports\]/);
   assert.match(taggedFit,/matchingFitReports:relevantReports\.length/);
-  assert.match(taggedFit,/strongFitReports:strongAggregate\(otherRelevantExact/);
-  assert.doesNotMatch(taggedFit,/const relevantReports=\[\.\.\.ownExactReports/);
   assert.match(taggedFit,/source:"community"/);
   assert.match(taggedFit,/source:"closet"/);
   assert.match(taggedFit,/recommendSize\(\[\.\.\.otherEvidence,\.\.\.ownHistory\]\)/);
@@ -58,7 +60,7 @@ test("tagged FITuition preloads every card and resolves failures instead of hang
   assert.doesNotMatch(taggedPanel,/if\(!selectedId\|\|!signedIn\|\|loadedFitMeta/);
 });
 
-test("zero other-wearer Relevant Fit Reports never surfaces a tagged-item size recommendation",()=>{
+test("zero exact Relevant Fit Reports never surfaces a tagged-item size recommendation",()=>{
   assert.match(taggedPanel,/const showRecommendation=Boolean\(meta\?\.recommendation&&meta\.matchingFitReports>0\)/);
   assert.match(taggedPanel,/showRecommendation&&meta\.recommendation/);
   assert.match(taggedPanel,/I don’t have enough useful evidence to recommend a size yet\./);

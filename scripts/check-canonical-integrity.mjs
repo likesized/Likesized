@@ -54,6 +54,17 @@ function pullRequestChangedFiles() {
   }
 }
 
+function isNonRuntimeReconciliationFile(rel) {
+  return rel.startsWith('docs/')
+    || rel === 'AI_REPOSITORY_RULES.md'
+    || rel === 'README.md'
+    || rel.startsWith('.github/')
+    || rel.startsWith('tests/')
+    || rel === 'supabase/schema_contract.md'
+    || rel === 'supabase/storage.sql'
+    || rel === 'scripts/check-canonical-integrity.mjs';
+}
+
 const canonicalDocs = [
   'AI_REPOSITORY_RULES.md',
   'docs/AI_MASTER_LOG.md',
@@ -120,10 +131,16 @@ for (const forbiddenRuntimeClassification of [
 
 const activeBranch = process.env.CANONICAL_HEAD_REF?.trim();
 if (activeBranch) {
-  mustContain('docs/AI_MASTER_LOG.md', `Active branch: **\`${activeBranch}\`**`);
-
   const changed = pullRequestChangedFiles();
   const changedSet = new Set(changed);
+  const nonRuntimeReconciliation = changed.length > 0 && changed.every(isNonRuntimeReconciliationFile);
+
+  if (nonRuntimeReconciliation) {
+    mustContain('docs/AI_MASTER_LOG.md', 'Active branch: **NONE — canonical main**');
+  } else {
+    mustContain('docs/AI_MASTER_LOG.md', `Active branch: **\`${activeBranch}\`**`);
+  }
+
   const productOrSafeguardChanged = changed.some((rel) => /^(?:app|components|lib|tests|scripts|\.github\/workflows)\//.test(rel))
     || changedSet.has('package.json')
     || changedSet.has('package-lock.json')

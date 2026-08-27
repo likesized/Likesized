@@ -98,22 +98,21 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
   const ownReports=(ownReportData??[]) as OwnReport[];
   const ownProductIds=[...new Set(ownReports.map((row)=>row.product_id))];
   const allProductIds=[...new Set([product.id,...evidenceProductIds,...ownProductIds])];
-  let profiles:Profile[]=[];let evidenceProducts:EvidenceProduct[]=[];
   const [profilesResult,productsResult,snapshotResult,attributeResult]=await Promise.all([
     profileIds.length?supabase.from("profiles").select("id,username,display_name").in("id",profileIds):Promise.resolve({data:[],error:null}),
     allProductIds.length?supabase.from("products").select("id,name,slug,brand_id,product_family_id,garment_type_key,category,brand:brands(name)").in("id",allProductIds):Promise.resolve({data:[],error:null}),
     ownReports.length?supabase.rpc("get_fit_report_snapshot_matches",{p_fit_report_ids:ownReports.map((row)=>row.id)}):Promise.resolve({data:[],error:null}),
     supabase.from("product_attribute_values").select("product_id,attribute_key,option_key").in("product_id",allProductIds).neq("source_status","rejected").gte("confidence",0.75),
   ]);
-  if(profilesResult.error||productsResult.error||snapshotResult.error||attributeResult.error)throw new Error("Could not assemble FITuition evidence.");
-  profiles=(profilesResult.data??[]) as Profile[];evidenceProducts=(productsResult.data??[]) as EvidenceProduct[];
+  const profiles=(profilesResult.error?[]:(profilesResult.data??[])) as Profile[];
+  const evidenceProducts=(productsResult.error?[]:(productsResult.data??[])) as EvidenceProduct[];
   const profileById=new Map(profiles.map((row)=>[row.id,row]));
   const productById=new Map(evidenceProducts.map((row)=>[row.id,row]));
   const sizes=(sizeData??[]) as SizeRow[];
   const sizeById=new Map(sizes.map((row)=>[row.id,row]));
   const safeSizes=buildSafeSizeAdjacency(sizes.map((row):NormalizedSizeDescriptor=>({id:row.id,normalizedKey:row.normalized_key,displayLabel:row.display_label,kind:row.kind,sizingSystem:row.sizing_system,alphaSize:row.alpha_size,numericSize:row.numeric_size,shoeSize:row.shoe_size}))) as Map<string,Adjacency>;
-  const snapshotByReport=new Map(((snapshotResult.data??[]) as SnapshotMatch[]).map((row)=>[row.fit_report_id,row]));
-  const attrs=attributeSets((attributeResult.data??[]) as AttributeRow[]);
+  const snapshotByReport=new Map((((snapshotResult.error?[]:snapshotResult.data)??[]) as SnapshotMatch[]).map((row)=>[row.fit_report_id,row]));
+  const attrs=attributeSets((((attributeResult.error?[]:attributeResult.data)??[]) as AttributeRow[]));
   const sharedDirectional=new Map(allCandidates.filter((row)=>row.user_id===viewerId).map((row)=>[row.fit_report_id,row.directional_fit_support]));
 
   const communityEvidence:RecommendationEvidence[]=ranked.map((row)=>{const size=sizeAdjacency(row.normalized_size_id,row.original_size_label,sizeById,safeSizes);return{sizeKey:size.current.sizeKey,sizeLabel:size.current.sizeLabel,fit:row.fit,matchScore:row.historical_match_score,coveragePercent:row.historical_coverage_percent,evidenceLevel:row.evidence_level,attributeOverlap:row.attribute_overlap,directionalFitSupport:row.directional_fit_support,source:"community",sourceRelevance:1,adjacentSizeUp:size.up,adjacentSizeDown:size.down};});

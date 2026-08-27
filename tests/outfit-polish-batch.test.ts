@@ -17,9 +17,6 @@ const closet=readFileSync(new URL("../app/closet/page.tsx",import.meta.url),"utf
 const firstQuickViewStart=tagged.indexOf("<div className={styles.itemPreviewTop}>");
 const firstQuickViewEnd=tagged.indexOf("{actionError?",firstQuickViewStart);
 const firstQuickView=tagged.slice(firstQuickViewStart,firstQuickViewEnd);
-const evidenceViewStart=tagged.indexOf("{evidenceOpen&&meta?<>");
-const evidenceViewEnd=tagged.indexOf("</>:<>",evidenceViewStart);
-const evidenceView=tagged.slice(evidenceViewStart,evidenceViewEnd);
 
 test("New Outfit keeps picker rows compact while clicked quick view retains garment variation evidence",()=>{
   assert.match(newPage,/garment_answers/);
@@ -71,9 +68,9 @@ test("Tagged garment quick view and FITuition evidence layer each keep their int
   assert.doesNotMatch(tagged,/See fit evidence/);
   assert.match(firstQuickView,/View Garment Detail →/);
   assert.match(firstQuickView,/href=\{selected\.href\}/);
-  assert.match(evidenceView,/View Garment Details →/);
-  assert.match(evidenceView,/href=\{selected\.href\}/);
+  assert.match(tagged,/View Garment Details →/);
   assert.match(tagged,/See FITuition Details →/);
+  assert.equal((tagged.match(/href=\{selected\.href\}/g)??[]).length,2);
   assert.doesNotMatch(tagged,/View Detailed Garment Report/);
 });
 

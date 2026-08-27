@@ -15,12 +15,36 @@ type StrongFitReport={sizeLabel:string;count:number;fitBreakdown:{fit:string;fit
 type SourceBreakdown={communityBlend:number;closetBlend:number;communityTopSizeLabel:string|null;closetTopSizeLabel:string|null;sourcesAgree:boolean|null};
 type Recommendation={sizeLabel:string;confidence:number;confidenceLabel:string;similarWearerCount:number;sizeEvidenceCount:number;sourceBreakdown:SourceBreakdown};
 type FitMeta={category:string;variationDetail:string;profileReady:boolean;matchingFitReports:number;objectiveVariantKey:string;recommendation:Recommendation|null;relevantReports:RelevantReport[];strongFitReports:StrongFitReport[];closetEvidenceCount:number};
+type FitSummary={profileReady:boolean;matchingFitReports:number};
+type FitSummaryPayload={profileReady:boolean;items:{closetItemId:string;matchingFitReports:number}[]};
+
+const FIT_SUMMARY_TTL_MS=30_000;
+const fitSummaryCache=new Map<string,{expiresAt:number;payload:FitSummaryPayload}>();
+const fitSummaryInFlight=new Map<string,Promise<FitSummaryPayload>>();
+
+async function loadFitSummaryBatch(postId:string){
+  const cached=fitSummaryCache.get(postId);
+  if(cached&&cached.expiresAt>Date.now())return cached.payload;
+  const pending=fitSummaryInFlight.get(postId);
+  if(pending)return pending;
+  const request=fetch(`/api/outfits/${postId}/tagged-fit-summary`,{cache:"no-store"}).then(async(response)=>{
+    if(!response.ok){const payload=await response.json().catch(()=>null) as {error?:string}|null;throw new Error(payload?.error||"Relevant Fit Reports could not load.");}
+    const payload=await response.json() as FitSummaryPayload;
+    fitSummaryCache.set(postId,{expiresAt:Date.now()+FIT_SUMMARY_TTL_MS,payload});
+    return payload;
+  }).finally(()=>fitSummaryInFlight.delete(postId));
+  fitSummaryInFlight.set(postId,request);
+  return request;
+}
 
 export default function TaggedItemsPanel({items,postId,signedIn,showCards=true,returnTo: returnToOverride}:{items:TaggedItem[];postId:string;signedIn:boolean;showCards?:boolean;returnTo?:string}){
   const [selectedId,setSelectedId]=useState<string|null>(null);
   const [gateItem,setGateItem]=useState<TaggedItem|null>(null);
   const [imageOpen,setImageOpen]=useState(false);
   const [evidenceOpen,setEvidenceOpen]=useState(false);
+  const [fitSummary,setFitSummary]=useState<Record<string,FitSummary>>({});
+  const [fitSummaryLoading,setFitSummaryLoading]=useState(Boolean(signedIn&&showCards&&items.length));
+  const [fitSummaryError,setFitSummaryError]=useState("");
   const [fitMeta,setFitMeta]=useState<Record<string,FitMeta>>({});
   const [fitLoading,setFitLoading]=useState<Record<string,boolean>>({});
   const [fitErrors,setFitErrors]=useState<Record<string,string>>({});
@@ -35,6 +59,7 @@ export default function TaggedItemsPanel({items,postId,signedIn,showCards=true,r
   const [watchPending,setWatchPending]=useState<Record<string,boolean>>({});
   const selected=items.find((item)=>item.closetItemId===selectedId)??null;
   const returnTo=returnToOverride??`/outfits/${postId}?tab=tagged`;
+  const itemKey=items.map((item)=>item.closetItemId).join("|");
 
   const loadFitMeta=useCallback(async(closetItemId:string,signal?:AbortSignal,force=false)=>{
     if(!signedIn)return;
@@ -50,6 +75,7 @@ export default function TaggedItemsPanel({items,postId,signedIn,showCards=true,r
       if(signal?.aborted)return;
       loadedFitMeta.current.add(closetItemId);
       setFitMeta((current)=>({...current,[closetItemId]:payload}));
+      setFitSummary((current)=>({...current,[closetItemId]:{profileReady:payload.profileReady,matchingFitReports:payload.matchingFitReports}}));
     }catch(error:unknown){
       if(signal?.aborted)return;
       setFitErrors((current)=>({...current,[closetItemId]:error instanceof Error?error.message:"FITuition evidence could not load."}));
@@ -60,11 +86,20 @@ export default function TaggedItemsPanel({items,postId,signedIn,showCards=true,r
   },[postId,signedIn]);
 
   useEffect(()=>{
-    if(!signedIn||!items.length||!showCards)return;
-    const controllers=items.map(()=>new AbortController());
-    items.forEach((item,index)=>{void loadFitMeta(item.closetItemId,controllers[index].signal);});
-    return()=>controllers.forEach((controller)=>controller.abort());
-  },[items,signedIn,showCards,loadFitMeta]);
+    if(!signedIn||!items.length||!showCards){setFitSummaryLoading(false);return;}
+    let cancelled=false;
+    setFitSummaryLoading(true);
+    setFitSummaryError("");
+    void loadFitSummaryBatch(postId).then((payload)=>{
+      if(cancelled)return;
+      const counts=new Map(payload.items.map((item)=>[item.closetItemId,item.matchingFitReports]));
+      setFitSummary(Object.fromEntries(items.map((item)=>[item.closetItemId,{profileReady:payload.profileReady,matchingFitReports:payload.profileReady?(counts.get(item.closetItemId)??0):0}])));
+    }).catch((error:unknown)=>{
+      if(cancelled)return;
+      setFitSummaryError(error instanceof Error?error.message:"Relevant Fit Reports could not load.");
+    }).finally(()=>{if(!cancelled)setFitSummaryLoading(false);});
+    return()=>{cancelled=true;};
+  },[postId,signedIn,showCards,itemKey]);
 
   useEffect(()=>{
     if(!selectedId||!signedIn)return;
@@ -105,7 +140,7 @@ export default function TaggedItemsPanel({items,postId,signedIn,showCards=true,r
   function renderRelevantReport(report:RelevantReport,bestAvailable=false){return <div className={styles.relevantReport} key={report.fitReportId}><div>{report.bodyMatch===null?<strong>Your Fit Report</strong>:bestAvailable?<><strong>Best Available Matching Fit Report</strong><span>{report.bodyMatch}% Body Match</span></>:<><strong>{report.bodyMatch}%</strong><span>Body Match</span></>}</div><div><span>Size</span><strong>{report.sizeLabel}</strong></div><div><span>Fit Result</span><strong>{report.fitLabel}</strong></div></div>;}
 
   return <div className={styles.taggedPanel}>
-    {showCards?<div className={styles.taggedGrid}>{items.map((item)=>{const cachedMeta=fitMeta[item.closetItemId];const cardLoading=Boolean(fitLoading[item.closetItemId]);const cardError=fitErrors[item.closetItemId];return <button className={styles.taggedCard} type="button" key={item.closetItemId} onClick={()=>openItem(item)}>{item.imageUrl?<img src={item.imageUrl} alt=""/>:<span className={styles.taggedFallback}>{item.label.slice(0,1).toUpperCase()}</span>}<span><strong>{item.label}</strong><small>{item.detail}</small>{signedIn?(cardLoading?<small>Relevant Fit Reports: Checking…</small>:cardError?<small>Relevant Fit Reports: unavailable</small>:cachedMeta?.profileReady?<small>Relevant Fit Reports: {cachedMeta.matchingFitReports}</small>:cachedMeta?<small>Complete your Fit Profile for personalized evidence.</small>:null):null}</span></button>;})}</div>:null}
+    {showCards?<div className={styles.taggedGrid}>{items.map((item)=>{const cachedMeta=fitMeta[item.closetItemId];const cardSummary=cachedMeta?{profileReady:cachedMeta.profileReady,matchingFitReports:cachedMeta.matchingFitReports}:fitSummary[item.closetItemId];const cardLoading=!cardSummary&&fitSummaryLoading;const cardError=!cardSummary?fitSummaryError:"";return <button className={styles.taggedCard} type="button" key={item.closetItemId} onClick={()=>openItem(item)}>{item.imageUrl?<img src={item.imageUrl} alt=""/>:<span className={styles.taggedFallback}>{item.label.slice(0,1).toUpperCase()}</span>}<span><strong>{item.label}</strong><small>{item.detail}</small>{signedIn?(cardLoading?<small>Relevant Fit Reports: Checking…</small>:cardError?<small>Relevant Fit Reports: unavailable</small>:cardSummary?.profileReady?<small>Relevant Fit Reports: {cardSummary.matchingFitReports}</small>:cardSummary?<small>Complete your Fit Profile for personalized evidence.</small>:null):null}</span></button>;})}</div>:null}
 
     {selected?<div className={styles.itemPreviewOverlay} role="dialog" aria-modal="true" aria-label={`${selected.label} quick view`} onClick={()=>setSelectedId(null)}><div className={styles.itemPreviewCard} onClick={(event)=>event.stopPropagation()}>
       <button className={styles.itemPreviewClose} type="button" aria-label="Close item preview" onClick={()=>setSelectedId(null)}>×</button>

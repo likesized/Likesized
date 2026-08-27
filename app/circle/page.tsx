@@ -8,7 +8,9 @@ import { OUTFIT_OCCASIONS } from "@/lib/outfit-taxonomy";
 import { currentProfilePhotoUrl } from "@/lib/profile-photo";
 import { createClient } from "@/lib/supabase/server";
 import { StyleFeedFilters } from "./StyleFeedFilters";
+import StyleFeedGarments from "./StyleFeedGarments";
 import { StyleFeedLikeButton } from "./StyleFeedLikeButton";
+import { StyleFeedNote } from "./StyleFeedNote";
 import { StyleFeedShareButton } from "./StyleFeedShareButton";
 import styles from "./circle.module.css";
 
@@ -26,13 +28,14 @@ type OutfitPost = {
   created_at: string;
   like_count: number;
   comment_count: number;
-  share_count: number;
   comments_enabled: boolean;
 };
 type Profile = { id: string; username: string; display_name: string | null; avatar_url: string | null };
 type FeedPhoto = { id:string;post_id:string;bucket:string;feed_path:string|null;display_path:string;sort_order:number;caption:string|null };
 type OccasionRow = { post_id: string; occasion: string; sort_order: number };
 type StyleTagRow = { post_id: string; normalized_tag: string; display_tag: string; sort_order: number };
+
+const QA_LONG_NOTE="QA scenario: this Outfit intentionally carries a long description so the Style Feed can be tested without waiting for a member to write one. The collapsed card should stay compact, More should reveal the complete text in place, and Show less should return it to the compact state without navigation, refreshing, or losing the member’s position in the feed. This extra sentence makes sure the scenario is comfortably beyond the normal collapsed length and remains useful for narrow mobile screens as well as desktop.";
 
 function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -49,21 +52,17 @@ function normalizeStyleTag(value: string | undefined) {
 function matchMap(data: unknown) {
   return new Map(((data ?? []) as Match[]).map((row) => [row.user_id, row.match_score]));
 }
-function feedHref(scope: FeedScope, occasion = "", styleTag = "") {
+function feedHref(scope: FeedScope, occasion = "", styleTag = "", qa=false) {
   const params = new URLSearchParams();
   if (scope === "all") params.set("scope", "all");
   if (occasion) params.set("occasion", occasion);
   if (styleTag) params.set("style", styleTag);
+  if (qa) params.set("qa", "1");
   const query = params.toString();
   return query ? `/circle?${query}` : "/circle";
 }
 function date(value: string | null, fallback: string) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(value ?? fallback));
-}
-function shortNote(value: string | null) {
-  const text = value?.trim();
-  if (!text) return null;
-  return text.length > 260 ? `${text.slice(0, 257).trimEnd()}…` : text;
 }
 function occasionLabel(value: string) {
   return OUTFIT_OCCASIONS.find((item) => item.value === value)?.label ?? value;
@@ -74,6 +73,7 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
   const scope = feedScope(first(params.scope));
   const occasion = clean(first(params.occasion));
   const styleTag = normalizeStyleTag(first(params.style));
+  const qa=first(params.qa)==="1";
   const supabase = await createClient();
   const { data: claims, error: claimsError } = await supabase.auth.getClaims();
   const viewerId = claims?.claims?.sub;
@@ -86,6 +86,7 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
     topsResult,
     bottomsResult,
     { data: twinSettings, error: twinSettingsError },
+    { data: qaProfiles, error: qaProfilesError },
   ] = await Promise.all([
     supabase.from("profiles").select("username").eq("id", viewerId).maybeSingle(),
     supabase.from("fit_profiles").select("completed_at").eq("user_id", viewerId).maybeSingle(),
@@ -93,8 +94,9 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
     supabase.rpc("get_fit_matches", { p_match_category: "tops", p_result_limit: 100 }),
     supabase.rpc("get_fit_matches", { p_match_category: "bottoms", p_result_limit: 100 }),
     supabase.from("fit_twin_settings").select("threshold_percent").eq("singleton", true).maybeSingle(),
+    qa?supabase.from("profiles").select("id").neq("id",viewerId).limit(20):Promise.resolve({data:[],error:null}),
   ]);
-  if (profileError || fitProfileError || followError || topsResult.error || bottomsResult.error || twinSettingsError) {
+  if (profileError || fitProfileError || followError || topsResult.error || bottomsResult.error || twinSettingsError || qaProfilesError) {
     throw new Error("Could not load Style Feed.");
   }
   if (!profile?.username || !fitProfile?.completed_at) redirect("/onboarding");
@@ -104,14 +106,16 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
   const bottoms = matchMap(bottomsResult.data);
   const threshold = twinSettings?.threshold_percent ?? 85;
   const designationFor = (userId: string) => fitTwinDesignation({ tops: tops.get(userId), bottoms: bottoms.get(userId) }, threshold);
+  const qaIds=(qaProfiles??[]).map((row:{id:string})=>row.id);
+  const feedSourceIds=qa?qaIds:scope==="twins"?followedIds.filter((userId)=>Boolean(designationFor(userId))):followedIds;
 
   let posts: OutfitPost[] = [];
-  if (followedIds.length) {
+  if (feedSourceIds.length) {
     const result = await supabase
       .from("outfit_posts")
-      .select("id,user_id,headline,story,caption,photo_url,published_at,created_at,like_count,comment_count,share_count,comments_enabled")
+      .select("id,user_id,headline,story,caption,photo_url,published_at,created_at,like_count,comment_count,comments_enabled")
       .eq("status", "published")
-      .in("user_id", followedIds)
+      .in("user_id", feedSourceIds)
       .order("published_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(120);
@@ -166,42 +170,34 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
   const likedPostIds = new Set((likeResult.data ?? []).map((row: { post_id: string }) => row.post_id));
 
   const feed = posts.filter((post) => {
-    if (scope === "twins" && !designationFor(post.user_id)) return false;
+    if (!qa) {
+      if (scope === "twins" && !designationFor(post.user_id)) return false;
+    }
     if (occasion && !(occasionsByPost.get(post.id) ?? []).some((row) => row.occasion === occasion)) return false;
     if (styleTag && !(styleTagsByPost.get(post.id) ?? []).some((row) => row.normalized_tag === styleTag)) return false;
     return true;
   });
 
   const galleryPhotosByPost = new Map<string, GalleryPhoto[]>();
-  await Promise.all(feed.map(async (post) => {
+  for(const post of feed){
     const rows=photoRowsByPost.get(post.id)??[];
     if(rows.length){
-      const resolved=await Promise.all(rows.map(async (row):Promise<GalleryPhoto|null>=>{
-        const {data:displayData}=await supabase.storage.from("outfit-photos").createSignedUrl(row.display_path,1800);
-        if(!displayData?.signedUrl)return null;
+      const photos=rows.map((row):GalleryPhoto=>{
+        const displayUrl=supabase.storage.from("outfit-photos").getPublicUrl(row.display_path).data.publicUrl;
         const previewPath=row.feed_path||outfitFeedPhotoPath(row.display_path);
-        let previewUrl=displayData.signedUrl;
-        if(previewPath&&previewPath!==row.display_path){
-          const {data:previewData}=await supabase.storage.from("outfit-photos").createSignedUrl(previewPath,1800);
-          if(previewData?.signedUrl)previewUrl=previewData.signedUrl;
-        }
-        return {id:row.id,url:displayData.signedUrl,previewUrl,caption:row.caption,tags:[]};
-      }));
-      const photos=resolved.filter((photo):photo is GalleryPhoto=>Boolean(photo));
-      if(photos.length)galleryPhotosByPost.set(post.id,photos);
-      return;
+        const previewUrl=previewPath?supabase.storage.from("outfit-photos").getPublicUrl(previewPath).data.publicUrl:displayUrl;
+        return {id:row.id,url:displayUrl,previewUrl,caption:row.caption,tags:[]};
+      });
+      galleryPhotosByPost.set(post.id,photos);
+      continue;
     }
-    if(!post.photo_url)return;
-    const {data:displayData}=await supabase.storage.from("outfit-photos").createSignedUrl(post.photo_url,1800);
-    if(!displayData?.signedUrl)return;
+    if(!post.photo_url)continue;
+    const displayUrl=supabase.storage.from("outfit-photos").getPublicUrl(post.photo_url).data.publicUrl;
     const previewPath=outfitFeedPhotoPath(post.photo_url);
-    let previewUrl=displayData.signedUrl;
-    if(previewPath!==post.photo_url){
-      const {data:previewData}=await supabase.storage.from("outfit-photos").createSignedUrl(previewPath,1800);
-      if(previewData?.signedUrl)previewUrl=previewData.signedUrl;
-    }
-    galleryPhotosByPost.set(post.id,[{id:`${post.id}-main`,url:displayData.signedUrl,previewUrl,caption:post.caption,tags:[]}]);
-  }));
+    const previewUrl=supabase.storage.from("outfit-photos").getPublicUrl(previewPath).data.publicUrl;
+    galleryPhotosByPost.set(post.id,[{id:`${post.id}-main`,url:displayUrl,previewUrl,caption:post.caption,tags:[]}]);
+  }
+  const qaPhotoPool=qa?[...galleryPhotosByPost.values()].flat().slice(0,3):[];
 
   const hasFilters = Boolean(occasion || styleTag);
   const selectedStyleDisplay = styleTagOptions.get(styleTag) ?? first(params.style) ?? "";
@@ -209,6 +205,7 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
 
   return (
     <main className="pageShell">
+      {qa?<div className={styles.qaBanner}><strong>STYLE FEED QA</strong><span>Production-only test scenarios. No fake member records are added to discovery or metrics.</span></div>:null}
       <header className={styles.pageHeader}>
         <span className="eyebrow">STYLE FEED</span>
         <h1>Style Feed</h1>
@@ -216,22 +213,25 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
       </header>
 
       <nav className={styles.scopeTabs} aria-label="Style Feed people filter">
-        <Link className={scope === "twins" ? styles.activeTab : styles.tab} href={feedHref("twins", occasion, styleTag)}>Fit Twins</Link>
-        <Link className={scope === "all" ? styles.activeTab : styles.tab} href={feedHref("all", occasion, styleTag)}>All Following</Link>
+        <Link className={scope === "twins" ? styles.activeTab : styles.tab} href={feedHref("twins", occasion, styleTag, qa)}>Fit Twins</Link>
+        <Link className={scope === "all" ? styles.activeTab : styles.tab} href={feedHref("all", occasion, styleTag, qa)}>All Following</Link>
       </nav>
 
-      <StyleFeedFilters scope={scope} occasion={occasion} styleDisplay={String(selectedStyleDisplay)} styleOptions={styleOptions}/>
-      {hasFilters?<div className={styles.filterActions}><Link className="textLink" href={feedHref(scope)}>Clear filters</Link></div>:null}
+      <StyleFeedFilters scope={scope} occasion={occasion} styleDisplay={String(selectedStyleDisplay)} styleOptions={styleOptions} qa={qa}/>
+      {hasFilters?<div className={styles.filterActions}><Link className="textLink" href={feedHref(scope,"","",qa)}>Clear filters</Link></div>:null}
 
       {feed.length ? (
         <section className={styles.feed} aria-label="Outfits from people you follow">
-          {feed.map((post) => {
+          {feed.map((post,feedIndex) => {
             const person = profiles.get(post.user_id);
             if (!person) return null;
             const name = person.display_name?.trim() || person.username;
             const twinLabel = fitTwinLabel(designationFor(post.user_id));
-            const photos=galleryPhotosByPost.get(post.id)??[];
-            const note = shortNote(post.story ?? post.caption);
+            let photos=galleryPhotosByPost.get(post.id)??[];
+            if(qa&&feedIndex===0&&qaPhotoPool.length){
+              photos=qaPhotoPool.length>1?qaPhotoPool:photos.length?[photos[0],{...photos[0],id:`${photos[0].id}-qa-2`},{...photos[0],id:`${photos[0].id}-qa-3`}]:photos;
+            }
+            const note=qa&&feedIndex===0?QA_LONG_NOTE:(post.story??post.caption)?.trim()||null;
             const postOccasions = occasionsByPost.get(post.id) ?? [];
             const postStyleTags = styleTagsByPost.get(post.id) ?? [];
             const liked = likedPostIds.has(post.id);
@@ -254,12 +254,13 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
                 </div>
 
                 <div className={styles.body}>
+                  {qa&&feedIndex===0?<span className={styles.qaMarker}>LONG DESCRIPTION · MULTI-PHOTO</span>:null}
                   <h2 className={styles.headline}>{post.headline?.trim() || "Outfit"}</h2>
-                  {note ? <p className={styles.note}>{note}</p> : null}
+                  {note?<StyleFeedNote text={note}/>:null}
                   {(postOccasions.length || postStyleTags.length) ? (
                     <div className={styles.tags}>
-                      {postOccasions.map((row) => <Link key={`${post.id}-occasion-${row.occasion}`} href={feedHref(scope, row.occasion, styleTag)}>{occasionLabel(row.occasion)}</Link>)}
-                      {postStyleTags.map((row) => <Link key={`${post.id}-style-${row.normalized_tag}`} href={feedHref(scope, occasion, row.normalized_tag)}>#{row.display_tag}</Link>)}
+                      {postOccasions.map((row) => <Link key={`${post.id}-occasion-${row.occasion}`} href={feedHref(scope, row.occasion, styleTag, qa)}>{occasionLabel(row.occasion)}</Link>)}
+                      {postStyleTags.map((row) => <Link key={`${post.id}-style-${row.normalized_tag}`} href={feedHref(scope, occasion, row.normalized_tag, qa)}>#{row.display_tag}</Link>)}
                     </div>
                   ) : null}
                   <div className={styles.actions}>
@@ -267,7 +268,7 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
                     {post.comments_enabled?<CommentThread postId={post.id} commentCount={post.comment_count} signedIn signIn={null} triggerOnly triggerClassName={styles.actionButton} triggerLabel={`Comments${post.comment_count?` ${post.comment_count}`:""}`}/>:<span className={styles.disabledAction}>Comments off</span>}
                     <StyleFeedShareButton className={styles.actionButton} postId={post.id} headline={post.headline?.trim() || "LikeSized Outfit"} />
                   </div>
-                  <Link prefetch={false} className={styles.fullOutfitLink} href={`/outfits/${post.id}`} data-full-navigation="true">View Full Outfit →</Link>
+                  <StyleFeedGarments postId={post.id}/>
                 </div>
               </article>
             );
@@ -277,16 +278,22 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
         <section className={styles.emptyState}>
           <h2>{scope === "twins" ? "No Fit Twin Outfits here yet." : "No Outfits here yet."}</h2>
           <p>{hasFilters ? "No followed Outfits match these filters." : scope === "twins" ? "When your Fit Twins post Outfits, they’ll appear here." : "Follow people to bring their Outfit posts into your Style Feed."}</p>
-          {hasFilters ? <Link className="textLink" href={feedHref(scope)}>Clear filters</Link> : null}
+          {hasFilters ? <Link className="textLink" href={feedHref(scope,"","",qa)}>Clear filters</Link> : null}
         </section>
       )}
 
       {scope === "twins" ? (
         <footer className={styles.feedFooter}>
-          <Link className="textLink" href={feedHref("all", occasion, styleTag)}>See All Following →</Link>
+          <p>You’re all caught up with your Fit Twins.</p>
+          {qa?<Link className="textLink" href={feedHref("all", occasion, styleTag, true)}>See All Following →</Link>:<Link className="textLink" href={feedHref("all", occasion, styleTag)}>See All Following →</Link>}
           <Link className="textLink" href="/people">Find More Fit Twins →</Link>
         </footer>
-      ) : null}
+      ) : (
+        <footer className={styles.feedFooter}>
+          <p>You’re all caught up.</p>
+          <Link className="textLink" href="/explore?view=outfits&scope=all">Discover More Outfits →</Link>
+        </footer>
+      )}
     </main>
   );
 }

@@ -29,8 +29,8 @@ test("normal desktop Outfit gallery has explicit Previous and Next photo control
   assert.match(detailStyles,/\.galleryNav\{/);
   assert.match(detailStyles,/\.galleryPrev\{left:10px\}/);
   assert.match(detailStyles,/\.galleryNext\{right:10px\}/);
-  assert.match(gallery,/event\.stopPropagation\(\);move\(-1\)/);
-  assert.match(gallery,/event\.stopPropagation\(\);move\(1\)/);
+  assert.match(gallery,/event\.stopPropagation\(\);animateStageMove\(-1\)/);
+  assert.match(gallery,/event\.stopPropagation\(\);animateStageMove\(1\)/);
 });
 
 test("Outfit edit save heals stale hotspot-to-item relationships instead of throwing the owner-facing error",()=>{

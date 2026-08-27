@@ -114,7 +114,7 @@ test("profile photos are live identity instead of Outfit or comment snapshots",(
 test("opened Outfit is a direct-navigation one-photo gallery with one canonical tagged-item quick view",()=>{
  assert.match(gallery,/onPointerDown=\{pointerDown\}/);
  assert.match(gallery,/onPointerUp=\{pointerUp\}/);
- assert.match(gallery,/move\(1\)/);
+ assert.match(gallery,/animateStageMove\(1\)/);
  assert.match(gallery,/ArrowLeft/);
  assert.match(gallery,/likesized:open-tagged-item/);
  assert.doesNotMatch(gallery,/Full details →/);

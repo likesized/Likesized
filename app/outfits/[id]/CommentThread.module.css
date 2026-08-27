@@ -226,7 +226,7 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 7px;
   flex: 0 0 auto;
 }
 
@@ -240,15 +240,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 4px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 7px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 7px;
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   cursor: pointer;
   list-style: none;
@@ -261,6 +261,21 @@
   border: 0;
 }
 
+.actions :global(.reportFlagControl) > summary {
+  min-width: 58px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.actions :global(.reportFlagControl) > summary:hover,
+.actions :global(.reportFlagControl)[open] > summary {
+  border-color: var(--line-strong);
+  background: var(--panel);
+}
+
 .actions :global(.reportFlagControl) > summary::-webkit-details-marker {
   display: none;
 }
@@ -268,7 +283,7 @@
 .actions :global(.reportFlagControl) > form {
   position: absolute;
   z-index: 30;
-  top: 27px;
+  top: 40px;
   right: 0;
   width: min(290px, calc(100vw - 30px));
   display: grid;

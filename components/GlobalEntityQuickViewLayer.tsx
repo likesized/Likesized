@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CanonicalPersonQuickViewCard } from "@/components/CanonicalPersonQuickViewCard";
+import { loadPersonQuickView, readPersonQuickView, warmPersonQuickView, type PersonQuickViewSummary } from "@/lib/person-quick-view-client";
 import entityStyles from "./EntityQuickView.module.css";
 import personStyles from "@/app/outfits/[id]/CreatorQuickView.module.css";
 
@@ -23,10 +24,52 @@ function explicitFullNavigation(anchor:HTMLAnchorElement){
   return /^(View Full Profile|View Garment|View Detailed Garment Report|View Full Outfit)\b/i.test(text);
 }
 
+function personView(activeView:ViewState,payload:PersonQuickViewSummary):ViewState{
+  const name=payload.displayName?.trim()||payload.username||activeView.key;
+  return {...activeView,title:name,subtitle:`@${payload.username||activeView.key}`,imageUrl:payload.avatarUrl,userId:payload.userId,signedIn:payload.signedIn,owner:payload.owner,following:payload.following,notificationsOn:payload.notificationsOn,overallMatch:payload.overallMatch,topsMatch:payload.topsMatch,bottomsMatch:payload.bottomsMatch,totalGarments:payload.totalGarments,totalOutfits:payload.totalOutfits,loading:false};
+}
+
+function personKeyFromAnchor(anchor:HTMLAnchorElement){
+  const url=new URL(anchor.href,window.location.href);
+  if(url.origin!==window.location.origin)return null;
+  const entity=entityFrom(url);
+  return entity?.kind==="person"?entity.key:null;
+}
+
 export function GlobalEntityQuickViewLayer(){
   const [view,setView]=useState<ViewState|null>(null);
 
   useEffect(()=>{
+    const observer=new IntersectionObserver((entries)=>{
+      for(const entry of entries){
+        if(!entry.isIntersecting||!(entry.target instanceof HTMLAnchorElement))continue;
+        const username=personKeyFromAnchor(entry.target);
+        if(username)warmPersonQuickView(username);
+        observer.unobserve(entry.target);
+      }
+    },{rootMargin:"350px 0px"});
+
+    function observePersonLinks(root:ParentNode){
+      root.querySelectorAll<HTMLAnchorElement>("a[href]").forEach((anchor)=>{if(personKeyFromAnchor(anchor))observer.observe(anchor);});
+    }
+    observePersonLinks(document);
+    const mutations=new MutationObserver((records)=>{
+      for(const record of records)for(const node of record.addedNodes)if(node instanceof Element){
+        if(node instanceof HTMLAnchorElement&&personKeyFromAnchor(node))observer.observe(node);
+        observePersonLinks(node);
+      }
+    });
+    mutations.observe(document.body,{childList:true,subtree:true});
+
+    function warmFromEvent(event:Event){
+      const target=event.target;
+      if(!(target instanceof Element))return;
+      const anchor=target.closest("a[href]");
+      if(!(anchor instanceof HTMLAnchorElement))return;
+      const username=personKeyFromAnchor(anchor);
+      if(username)warmPersonQuickView(username);
+    }
+
     function onClick(event:MouseEvent){
       if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
       const target=event.target;
@@ -39,24 +82,39 @@ export function GlobalEntityQuickViewLayer(){
       if(!entity)return;
       event.preventDefault();
       const fallback=decodeURIComponent(entity.key).replaceAll("-"," ");
-      setView({kind:entity.kind,key:entity.key,href:`${url.pathname}${url.search}${url.hash}`,returnTo:`${window.location.pathname}${window.location.search}${window.location.hash}`,title:fallback,subtitle:null,imageUrl:null,description:null,details:[],loading:true});
+      const base:ViewState={kind:entity.kind,key:entity.key,href:`${url.pathname}${url.search}${url.hash}`,returnTo:`${window.location.pathname}${window.location.search}${window.location.hash}`,title:fallback,subtitle:null,imageUrl:null,description:null,details:[],loading:true};
+      if(entity.kind==="person"){
+        const cached=readPersonQuickView(entity.key);
+        setView(cached?personView(base,cached):base);
+      }else setView(base);
     }
+    document.addEventListener("pointerover",warmFromEvent,true);
+    document.addEventListener("pointerdown",warmFromEvent,true);
+    document.addEventListener("focusin",warmFromEvent,true);
     document.addEventListener("click",onClick,true);
-    return()=>document.removeEventListener("click",onClick,true);
+    return()=>{
+      observer.disconnect();
+      mutations.disconnect();
+      document.removeEventListener("pointerover",warmFromEvent,true);
+      document.removeEventListener("pointerdown",warmFromEvent,true);
+      document.removeEventListener("focusin",warmFromEvent,true);
+      document.removeEventListener("click",onClick,true);
+    };
   },[]);
 
   useEffect(()=>{
     const active=view;if(!active?.loading)return;let cancelled=false;
     async function load(activeView:ViewState){
-      const endpoint=activeView.kind==="person"?`/api/people/${encodeURIComponent(activeView.key)}/quick-view`:activeView.kind==="garment"?`/api/items/${encodeURIComponent(activeView.key)}/quick-view`:`/api/outfits/${encodeURIComponent(activeView.key)}/quick-view`;
       try{
-        const response=await fetch(endpoint,{cache:"no-store"});if(!response.ok)throw new Error();const payload=await response.json() as Record<string,unknown>;if(cancelled)return;
         if(activeView.kind==="person"){
-          const name=(typeof payload.displayName==="string"&&payload.displayName.trim())||String(payload.username??activeView.key);
-          setView((current)=>current?{...current,title:name,subtitle:`@${String(payload.username??activeView.key)}`,imageUrl:typeof payload.avatarUrl==="string"?payload.avatarUrl:null,userId:typeof payload.userId==="string"?payload.userId:null,signedIn:Boolean(payload.signedIn),owner:Boolean(payload.owner),following:Boolean(payload.following),notificationsOn:Boolean(payload.notificationsOn),overallMatch:typeof payload.overallMatch==="number"?payload.overallMatch:null,topsMatch:typeof payload.topsMatch==="number"?payload.topsMatch:null,bottomsMatch:typeof payload.bottomsMatch==="number"?payload.bottomsMatch:null,totalGarments:typeof payload.totalGarments==="number"?payload.totalGarments:null,totalOutfits:typeof payload.totalOutfits==="number"?payload.totalOutfits:null,loading:false}:current);
-        }else{
-          setView((current)=>current?{...current,title:typeof payload.title==="string"?payload.title:current.title,subtitle:typeof payload.subtitle==="string"?payload.subtitle:null,imageUrl:typeof payload.imageUrl==="string"?payload.imageUrl:null,description:typeof payload.description==="string"?payload.description:null,details:Array.isArray(payload.details)?payload.details as Detail[]:[],loading:false}:current);
+          const payload=await loadPersonQuickView(activeView.key);
+          if(cancelled)return;
+          setView((current)=>current&&payload?personView(current,payload):current?{...current,loading:false}:current);
+          return;
         }
+        const endpoint=activeView.kind==="garment"?`/api/items/${encodeURIComponent(activeView.key)}/quick-view`:`/api/outfits/${encodeURIComponent(activeView.key)}/quick-view`;
+        const response=await fetch(endpoint,{cache:"no-store"});if(!response.ok)throw new Error();const payload=await response.json() as Record<string,unknown>;if(cancelled)return;
+        setView((current)=>current?{...current,title:typeof payload.title==="string"?payload.title:current.title,subtitle:typeof payload.subtitle==="string"?payload.subtitle:null,imageUrl:typeof payload.imageUrl==="string"?payload.imageUrl:null,description:typeof payload.description==="string"?payload.description:null,details:Array.isArray(payload.details)?payload.details as Detail[]:[],loading:false}:current);
       }catch{if(!cancelled)setView((current)=>current?{...current,loading:false}:current);}
     }
     void load(active);return()=>{cancelled=true;};

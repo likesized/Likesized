@@ -128,11 +128,6 @@ Active branch: **NONE — canonical main**
 
 The owner-authorized Style Feed regression + safeguard-separation incident is implemented, verified and released through PR #106 and PR #108. No Product/runtime implementation branch is currently authoritative. The exact live interaction must now be owner-tested on `likesized.com`; any newly observed defect starts a new owner-scoped repair item and does not reopen unrelated roadmap work automatically.
 
-## Pending owner-approved safeguard change — 2026-08-27 Style Feed polish repair
-- Implementation branch: `agent/style-feed-polish-repair`
-- Authorized safeguard files: `tests/explore-circle-likelocker.test.ts`, `tests/new-outfit-v1.test.ts`, `tests/outfit-interaction-photo-requirement.test.ts`, `tests/outfit-owner-audit-contract.test.ts`, `tests/outfit-photo-pipeline.test.ts`
-- Owner-approved behavior change: this repair keeps `View Garments →` in-place and long Outfit text behind `More` / `Show less`; it also uses the shared animated Outfit gallery path for arrow/keyboard/swipe movement, the adjacent-slide full-size transform for smooth drag, and public Outfit-photo URLs in Style Feed instead of per-photo signed-URL generation because published Outfit photos are public. These exact safeguards may be reconciled to judge that approved behavior instead of forcing the retired direct `move()` path, retired single-image transform, or server signing work back into runtime source.
-
 ## Roadmap 12 — New Outfit / Style an Outfit — COMPLETE / DEPLOYED
 The three final source defects were implemented in released PR #101 and regression-protected:
 1. another wearer's best exact report is labeled **Best Available Matching Fit Report**, followed by **[NN]% Body Match**, Size and Fit Result;
@@ -614,3 +609,12 @@ Recent released application/source lineage:
 - PR #108 completed the remaining structural universal-person-preview consolidation.
 - Canonical runtime is now `main` through **`2d30ed30861ed7e0cd6d199123f37109262fe33e`**; production deployment **`dpl_CPRipAfxBQd3pemDDG2UCCH31ZK7`** is verified READY on `likesized.com`.
 - No Product/runtime branch remains authoritative. Owner live QA is the next step.
+
+## Active Style Feed polish repair — 2026-08-27
+Active branch: **`agent/style-feed-polish-repair`**
+
+This active branch supersedes the settled-status wording above only for the duration of the current owner-authorized repair batch. The owner explicitly authorized the accumulated Style Feed repair list and directed that repairs be implemented one at a time internally, then verified as one completed production batch rather than requiring owner QA between each item.
+
+Current authorized repair scope is limited to the Style Feed/shared interaction defects found during live owner QA: restore the mobile-visible Fit Twins / All Following relationship control; correct Fit Twins and All Following caught-up states; replace redundant full-Outfit navigation with in-feed tagged-garment access and direct Garment Detail navigation; fix shared Outfit/Style Feed image loading and swipe behavior; warm the one canonical person quick view and canonical comments sheet before tap; enlarge/space the shared comment Report action; preserve local optimistic Likes/comments; support in-feed More / Show less for long Outfit descriptions; remove identified Style Feed server-render bottlenecks; and provide an explicit isolated production QA mode without inserting fake member records into ordinary discovery or metrics.
+
+No database migration is part of this repair. The stable `CANONICAL FEATURE CONTRACTS` section is unchanged on this runtime branch. A dedicated regression safeguard will be added after the runtime candidate merges, as a separate non-runtime safeguard/reconciliation change, so the runtime implementation does not author its own judging rule.

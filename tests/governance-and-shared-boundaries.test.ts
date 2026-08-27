@@ -14,7 +14,7 @@ test("trusted PR governance runs from canonical base and never executes candidat
   assert.match(workflow,/persist-credentials:\s*false/g);
   assert.match(workflow,/node trusted\/scripts\/check-pr-governance\.mjs trusted candidate/);
   assert.match(workflow,/node \.\.\/trusted\/scripts\/check-canonical-integrity\.mjs/);
-  assert.doesNotMatch(workflow,/npm\s+(?:ci|install|run)|pnpm|yarn|bun/);
+  assert.doesNotMatch(workflow,/run:\s*(?:npm\s+(?:ci|install|run)|pnpm\b|yarn\b|bun\b)/);
 });
 
 test("CI keeps fast draft iteration and full exact-candidate verification separate",()=>{

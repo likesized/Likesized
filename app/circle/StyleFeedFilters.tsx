@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { OUTFIT_OCCASIONS } from "@/lib/outfit-taxonomy";
 import styles from "./circle.module.css";
 
 type FeedScope="twins"|"all";
@@ -34,7 +35,7 @@ export function StyleFeedFilters({scope,occasion,styleDisplay,styleOptions}:{sco
       <span>Occasion</span>
       <select value={occasion} onChange={(event)=>router.push(destination(event.target.value,styleValue))}>
         <option value="">All occasions</option>
-        {OUTFIT_OPTIONS.map((item)=><option key={item.value} value={item.value}>{item.label}</option>)}
+        {OUTFIT_OCCASIONS.map((item)=><option key={item.value} value={item.value}>{item.label}</option>)}
       </select>
     </label>
     <label>
@@ -58,25 +59,8 @@ export function StyleFeedFilters({scope,occasion,styleDisplay,styleOptions}:{sco
         }}
       />
       <datalist id="style-feed-tags">
-        {styleOptions.map((option)=><option key={option.key} value={option.label}/>) }
+        {styleOptions.map((option)=><option key={option.key} value={option.label}/>)}
       </datalist>
     </label>
   </div>;
 }
-
-const OUTFIT_OPTIONS=[
-  {value:"everyday",label:"Everyday"},
-  {value:"work",label:"Work"},
-  {value:"date_night",label:"Date Night"},
-  {value:"going_out",label:"Going Out"},
-  {value:"formal",label:"Formal"},
-  {value:"wedding_guest",label:"Wedding Guest"},
-  {value:"vacation",label:"Vacation"},
-  {value:"travel",label:"Travel"},
-  {value:"athleisure",label:"Athleisure"},
-  {value:"workout",label:"Workout"},
-  {value:"outdoors",label:"Outdoors"},
-  {value:"festival",label:"Festival"},
-  {value:"holiday",label:"Holiday"},
-  {value:"other",label:"Other"},
-] as const;

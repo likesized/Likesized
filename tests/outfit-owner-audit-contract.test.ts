@@ -9,12 +9,14 @@ const newPage=readFileSync(new URL("../app/outfits/new/page.tsx",import.meta.url
 const composer=readFileSync(new URL("../app/outfits/new/OutfitComposer.tsx",import.meta.url),"utf8");
 const consistencyMigration=readFileSync(new URL("../supabase/migrations/20260826190000_outfit_tag_consistency.sql",import.meta.url),"utf8");
 
-test("tagged Outfit cards preload Relevant Fit Reports before a garment is opened",()=>{
-  assert.match(tagged,/const loadFitMeta=useCallback/);
-  assert.match(tagged,/items\.forEach\(\(item,index\)=>\{void loadFitMeta\(item\.closetItemId,controllers\[index\]\.signal\);\}\)/);
+test("tagged Outfit cards batch Relevant Fit Report summaries before a garment is opened",()=>{
+  assert.match(tagged,/loadFitSummaryBatch\(postId\)/);
+  assert.match(tagged,/tagged-fit-summary/);
+  assert.match(tagged,/fitSummaryCache/);
   assert.match(tagged,/Relevant Fit Reports: Checking…/);
-  assert.match(tagged,/Relevant Fit Reports: \{cachedMeta\.matchingFitReports\}/);
-  assert.doesNotMatch(tagged,/if\(!selectedId\|\|!signedIn\|\|loadedFitMeta/);
+  assert.match(tagged,/Relevant Fit Reports: \{cardSummary\.matchingFitReports\}/);
+  assert.match(tagged,/void loadFitMeta\(selectedId,controller\.signal\)/);
+  assert.doesNotMatch(tagged,/items\.forEach\(\(item,index\)=>\{void loadFitMeta\(item\.closetItemId,controllers\[index\]\.signal\);\}\)/);
 });
 
 test("normal desktop Outfit gallery has explicit Previous and Next photo controls owned by the canonical stylesheet",()=>{

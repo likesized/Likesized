@@ -56,11 +56,13 @@ test("discovered Outfits and Style Feed keep feed derivatives while in-card and 
   assert.doesNotMatch(gallery, /src=\{current\.previewUrl\?\?current\.url\}/);
   assert.match(gallery, /src=\{current\.url\}/);
   assert.match(gallery, /activeImageElement=useRef<HTMLImageElement\|null>\(null\)/);
-  assert.match(gallery, /if\(image\.complete\)measure\(\)/);
+  assert.match(gallery, /stageHeights=useRef\(new Map<string,number>\(\)\)/);
+  assert.match(gallery, /const nextHeight=Math\.max\(\.\.\.stageHeights\.current\.values\(\)\)/);
+  assert.match(gallery, /images\.forEach\(\(\{image\}\)=>\{if\(image\?\.complete\)measure\(\);\}\)/);
   assert.match(gallery, /requestAnimationFrame\(measure\)/);
-  assert.match(gallery, /new ResizeObserver\(\(\)=>measure\(\)\)/);
-  assert.match(gallery, /observer\.observe\(image\)/);
-  assert.match(gallery, /\[current\?\.id,stageViewportWidth\]/);
+  assert.match(gallery, /new ResizeObserver\(measure\)/);
+  assert.match(gallery, /images\.forEach\(\(\{image\}\)=>\{if\(image\)observer\.observe\(image\);\}\)/);
+  assert.match(gallery, /\[previous\?\.id,current\?\.id,next\?\.id,stageViewportWidth\]/);
   assert.match(gallery, /ref=\{activeImageElement\}/);
   assert.match(outfitsIndex, /\/closet\?tab=outfits/);
   assert.doesNotMatch(outfitsIndex, /outfitFeedPhotoPath|feedPath/);

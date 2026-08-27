@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { followFromOutfit } from "@/app/outfits/actions";
 import { followPerson, unfollowPerson } from "@/app/people/actions";
 import { UniversalActionBar, UniversalActionButton, UniversalActionLink } from "@/components/UniversalActionBar";
 import { createClient } from "@/lib/supabase/client";
@@ -33,16 +32,45 @@ function stat(value: number | null | undefined) {
   return typeof value === "number" ? `${value}%` : "—";
 }
 
-export function CanonicalPersonQuickViewCard({ displayName, username, avatarUrl, userId, signedIn, owner, following, notificationsOn, overallMatch, topsMatch, bottomsMatch, garmentCount, outfitCount, returnTo, onClose, profileLink, loading = false, outfitPostId = null }: Props) {
+export function CanonicalPersonQuickViewCard({ displayName, username, avatarUrl, userId, signedIn, owner, following, notificationsOn, overallMatch, topsMatch, bottomsMatch, garmentCount, outfitCount, returnTo, onClose, profileLink, loading = false }: Props) {
+  const [followActive,setFollowActive]=useState(following);
+  const [followPending,setFollowPending]=useState(false);
+  const [followError,setFollowError]=useState("");
   const [notifyActive,setNotifyActive]=useState(notificationsOn);
   const [notifyPending,setNotifyPending]=useState(false);
   const [notifyError,setNotifyError]=useState("");
+
+  useEffect(()=>{
+    setFollowActive(following);
+    setFollowPending(false);
+    setFollowError("");
+  },[following,userId]);
 
   useEffect(()=>{
     setNotifyActive(notificationsOn);
     setNotifyPending(false);
     setNotifyError("");
   },[notificationsOn,userId]);
+
+  async function toggleFollow(){
+    if(!userId||followPending)return;
+    const next=!followActive;
+    setFollowActive(next);
+    setFollowPending(true);
+    setFollowError("");
+    const formData=new FormData();
+    formData.set("target_user_id",userId);
+    formData.set("return_to",returnTo);
+    formData.set("stay_open","1");
+    try{
+      await(next?followPerson:unfollowPerson)(formData);
+    }catch{
+      setFollowActive(!next);
+      setFollowError(next?"Could not follow this person. Try again.":"Could not unfollow this person. Try again.");
+    }finally{
+      setFollowPending(false);
+    }
+  }
 
   async function toggleNotifications(){
     if(!userId||notifyPending)return;
@@ -78,18 +106,10 @@ export function CanonicalPersonQuickViewCard({ displayName, username, avatarUrl,
       </div>}
       {!signedIn && !owner ? <p className={styles.helper}>Sign in to see how closely your measurements match.</p> : null}
       {!owner && userId ? <UniversalActionBar className={styles.actions} ariaLabel="Profile actions">
-        {signedIn ? following ? <form action={unfollowPerson}>
-          <input type="hidden" name="target_user_id" value={userId}/><input type="hidden" name="return_to" value={returnTo}/>
-          <UniversalActionButton action="follow" active type="submit" showLabel/>
-        </form> : outfitPostId ? <form action={followFromOutfit}>
-          <input type="hidden" name="post_id" value={outfitPostId}/><input type="hidden" name="return_to" value={returnTo}/>
-          <UniversalActionButton action="follow" type="submit" showLabel/>
-        </form> : <form action={followPerson}>
-          <input type="hidden" name="target_user_id" value={userId}/><input type="hidden" name="return_to" value={returnTo}/>
-          <UniversalActionButton action="follow" type="submit" showLabel/>
-        </form> : <UniversalActionLink action="follow" href={`/login?next=${encodeURIComponent(returnTo)}`} showLabel/>}
+        {signedIn ? <UniversalActionButton action="follow" active={followActive} type="button" disabled={followPending} onClick={()=>void toggleFollow()} showLabel/> : <UniversalActionLink action="follow" href={`/login?next=${encodeURIComponent(returnTo)}`} showLabel/>}
         {signedIn ? <UniversalActionButton action="notify" active={notifyActive} type="button" disabled={notifyPending} onClick={()=>void toggleNotifications()} showLabel/> : <UniversalActionLink action="notify" href={`/login?next=${encodeURIComponent(returnTo)}`} showLabel/>}
       </UniversalActionBar> : null}
+      {followError?<p className={styles.helper} role="status">{followError}</p>:null}
       {notifyError?<p className={styles.helper} role="status">{notifyError}</p>:null}
       {profileLink}
     </section>

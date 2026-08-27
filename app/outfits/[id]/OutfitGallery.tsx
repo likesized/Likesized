@@ -28,7 +28,10 @@ export default function OutfitGallery({photos,garments}:{photos:GalleryPhoto[];g
   const stagePointerId=useRef<number|null>(null);
   const stageWidth=useRef(0);
   const stageElement=useRef<HTMLDivElement|null>(null);
+  const previousImageElement=useRef<HTMLImageElement|null>(null);
   const activeImageElement=useRef<HTMLImageElement|null>(null);
+  const nextImageElement=useRef<HTMLImageElement|null>(null);
+  const stageHeights=useRef(new Map<string,number>());
   const preloadedFull=useRef(new Set<string>());
   const lightboxStart=useRef<Point|null>(null);
   const lightboxPointerId=useRef<number|null>(null);
@@ -51,13 +54,19 @@ export default function OutfitGallery({photos,garments}:{photos:GalleryPhoto[];g
   function clearStageTimer(){if(stageTimer.current){clearTimeout(stageTimer.current);stageTimer.current=null;}}
   function clearLightboxTimer(){if(lightboxTimer.current){clearTimeout(lightboxTimer.current);lightboxTimer.current=null;}}
   function openTaggedItem(closetItemId:string){window.dispatchEvent(new CustomEvent("likesized:open-tagged-item",{detail:{closetItemId}}));}
-  function syncStageHeight(image:HTMLImageElement|null,photoId:string|null){
+  function syncStageHeight(image:HTMLImageElement|null,photoId:string|null,markLoaded=false){
     if(!image||!photoId)return;
     const height=Math.ceil(image.getBoundingClientRect().height);
     if(height<=0)return;
-    const nextHeight=Math.max(220,height);
-    setLoadedPhotoId(photoId);
+    stageHeights.current.set(photoId,Math.max(220,height));
+    if(markLoaded)setLoadedPhotoId(photoId);
+    const nextHeight=Math.max(...stageHeights.current.values());
     setStageHeight((currentHeight)=>currentHeight===nextHeight?currentHeight:nextHeight);
+  }
+  function syncVisibleStageHeights(){
+    if(previous)syncStageHeight(previousImageElement.current,previous.id);
+    if(current)syncStageHeight(activeImageElement.current,current.id,true);
+    if(next)syncStageHeight(nextImageElement.current,next.id);
   }
   function preloadFullPhoto(url:string){
     if(!url||preloadedFull.current.has(url))return;
@@ -220,20 +229,29 @@ export default function OutfitGallery({photos,garments}:{photos:GalleryPhoto[];g
     return()=>observer.disconnect();
   },[]);
   useEffect(()=>{
-    const image=activeImageElement.current;
-    if(!image||!current)return;
-    const photoId=current.id;
-    const measure=()=>syncStageHeight(image,photoId);
-    if(image.complete)measure();
+    stageHeights.current.clear();
+    setStageHeight(null);
+    const frame=requestAnimationFrame(syncVisibleStageHeights);
+    return()=>cancelAnimationFrame(frame);
+  },[stageViewportWidth]);
+  useEffect(()=>{
+    const images=[
+      previous?{image:previousImageElement.current,id:previous.id,active:false}:null,
+      current?{image:activeImageElement.current,id:current.id,active:true}:null,
+      next?{image:nextImageElement.current,id:next.id,active:false}:null,
+    ].filter((entry):entry is {image:HTMLImageElement|null;id:string;active:boolean}=>Boolean(entry));
+    if(!images.length)return;
+    const measure=()=>images.forEach(({image,id,active})=>syncStageHeight(image,id,active));
+    images.forEach(({image})=>{if(image?.complete)measure();});
     const frame=requestAnimationFrame(measure);
     if(typeof ResizeObserver==="undefined"){
       window.addEventListener("resize",measure);
       return()=>{cancelAnimationFrame(frame);window.removeEventListener("resize",measure);};
     }
-    const observer=new ResizeObserver(()=>measure());
-    observer.observe(image);
+    const observer=new ResizeObserver(measure);
+    images.forEach(({image})=>{if(image)observer.observe(image);});
     return()=>{cancelAnimationFrame(frame);observer.disconnect();};
-  },[current?.id,stageViewportWidth]);
+  },[previous?.id,current?.id,next?.id,stageViewportWidth]);
   useEffect(()=>{
     const element=stageElement.current;
     if(!element||!current)return;
@@ -260,9 +278,9 @@ export default function OutfitGallery({photos,garments}:{photos:GalleryPhoto[];g
   return <section className={styles.gallery} aria-label="Outfit photo gallery">
     <div ref={stageElement} className={styles.galleryStage} style={{minHeight:stageHeight?`${stageHeight}px`:"clamp(260px,72vw,520px)",background:loadedPhotoId===current.id?"transparent":"var(--panel)",transition:"min-height 140ms ease, background 140ms ease",overflow:"hidden"}} role="button" tabIndex={0} aria-label={photos.length>1?`Outfit photo ${index+1} of ${photos.length}. Open full-size photo or use Previous and Next to change photos.`:"Open full-size Outfit photo"} onPointerEnter={primeFullPhotos} onFocus={primeFullPhotos} onPointerDown={pointerDown} onPointerMove={stagePointerMove} onPointerUp={pointerUp} onPointerCancel={cancelStagePointer} onClick={()=>{if(suppressClick.current){suppressClick.current=false;return;}primeFullPhotos();setLightboxOpen(true);}} onKeyDown={(event)=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();primeFullPhotos();setLightboxOpen(true);}else if(event.key==="ArrowRight"){event.preventDefault();animateStageMove(1);}else if(event.key==="ArrowLeft"){event.preventDefault();animateStageMove(-1);}}}>
       <div className={styles.galleryMedia} style={{position:"relative",width:"100%",minHeight:stageHeight?`${stageHeight}px`:"clamp(260px,72vw,520px)"}}>
-        {previous&&stageViewportWidth?<div style={slideStyle(-1)} aria-hidden="true"><img className={styles.galleryMain} src={previous.url} alt="" draggable={false}/></div>:null}
-        <div style={slideStyle(0)}><div style={{position:"relative",display:"inline-block",maxWidth:"100%",lineHeight:0}}><img ref={activeImageElement} className={styles.galleryMain} src={current.url} alt={`Outfit photo ${index+1}`} draggable={false} onLoad={(event)=>{const image=event.currentTarget;syncStageHeight(image,current.id);requestAnimationFrame(()=>syncStageHeight(image,current.id));}}/>{showTags?current.tags.map((tag,tagIndex)=>{const garment=garmentById.get(tag.closetItemId);if(!garment)return null;return <button key={`${tag.closetItemId}-${tagIndex}`} className={styles.hotspot} style={{left:`${tag.x*100}%`,top:`${tag.y*100}%`}} type="button" aria-label={`Open ${garment.label}`} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();openTaggedItem(tag.closetItemId);}}>+</button>;}):null}{current.caption&&showCaption?<div className={styles.galleryCaptionPanel} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>event.stopPropagation()}>{current.caption}</div>:null}{current.caption?<button className={styles.galleryCaptionToggle} type="button" aria-expanded={showCaption} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();setShowCaption((value)=>!value);}}>Caption</button>:null}</div></div>
-        {next&&stageViewportWidth?<div style={slideStyle(1)} aria-hidden="true"><img className={styles.galleryMain} src={next.url} alt="" draggable={false}/></div>:null}
+        {previous&&stageViewportWidth?<div style={slideStyle(-1)} aria-hidden="true"><img ref={previousImageElement} className={styles.galleryMain} src={previous.url} alt="" draggable={false} onLoad={(event)=>syncStageHeight(event.currentTarget,previous.id)}/></div>:null}
+        <div style={slideStyle(0)}><div style={{position:"relative",display:"inline-block",maxWidth:"100%",lineHeight:0}}><img ref={activeImageElement} className={styles.galleryMain} src={current.url} alt={`Outfit photo ${index+1}`} draggable={false} onLoad={(event)=>{const image=event.currentTarget;syncStageHeight(image,current.id,true);requestAnimationFrame(()=>syncStageHeight(image,current.id,true));}}/>{showTags?current.tags.map((tag,tagIndex)=>{const garment=garmentById.get(tag.closetItemId);if(!garment)return null;return <button key={`${tag.closetItemId}-${tagIndex}`} className={styles.hotspot} style={{left:`${tag.x*100}%`,top:`${tag.y*100}%`}} type="button" aria-label={`Open ${garment.label}`} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();openTaggedItem(tag.closetItemId);}}>+</button>;}):null}{current.caption&&showCaption?<div className={styles.galleryCaptionPanel} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>event.stopPropagation()}>{current.caption}</div>:null}{current.caption?<button className={styles.galleryCaptionToggle} type="button" aria-expanded={showCaption} onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();setShowCaption((value)=>!value);}}>Caption</button>:null}</div></div>
+        {next&&stageViewportWidth?<div style={slideStyle(1)} aria-hidden="true"><img ref={nextImageElement} className={styles.galleryMain} src={next.url} alt="" draggable={false} onLoad={(event)=>syncStageHeight(event.currentTarget,next.id)}/></div>:null}
       </div>
       {photos.length>1?<><button className={`${styles.galleryNav} ${styles.galleryPrev}`} type="button" aria-label="Previous Outfit photo" onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();animateStageMove(-1);}}>‹</button><button className={`${styles.galleryNav} ${styles.galleryNext}`} type="button" aria-label="Next Outfit photo" onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();animateStageMove(1);}}>›</button><span className={styles.galleryCounter}>{index+1} / {photos.length}</span></>:null}{current.tags.length?<button className={styles.galleryTagToggle} type="button" onPointerDown={(event)=>event.stopPropagation()} onPointerUp={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();setShowTags((value)=>!value);}}>{showTags?"Hide tags":"Show tags"}</button>:null}
     </div>

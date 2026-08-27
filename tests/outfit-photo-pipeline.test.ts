@@ -42,7 +42,7 @@ test("Safari JPEG transport fallback is normalized to real WebP before storage",
   assert.ok(normalized.byteLength <= 600 * 1024);
 });
 
-test("discovered Outfits and Style Feed keep feed derivatives while full-size galleries use display images", () => {
+test("discovered Outfits and Style Feed keep feed derivatives while in-card and full-size galleries use display images", () => {
   const explore = readFileSync(new URL("../app/explore/page.tsx", import.meta.url), "utf8");
   const outfitsIndex = readFileSync(new URL("../app/outfits/page.tsx", import.meta.url), "utf8");
   const circle = readFileSync(new URL("../app/circle/page.tsx", import.meta.url), "utf8");
@@ -53,7 +53,7 @@ test("discovered Outfits and Style Feed keep feed derivatives while full-size ga
   assert.match(circle, /storage\.from\("outfit-photos"\)\.getPublicUrl\(row\.display_path\)/);
   assert.match(circle, /storage\.from\("outfit-photos"\)\.getPublicUrl\(previewPath\)/);
   assert.doesNotMatch(circle, /createSignedUrl/);
-  assert.match(gallery, /src=\{current\.previewUrl\?\?current\.url\}/);
+  assert.doesNotMatch(gallery, /src=\{current\.previewUrl\?\?current\.url\}/);
   assert.match(gallery, /src=\{current\.url\}/);
   assert.match(outfitsIndex, /\/closet\?tab=outfits/);
   assert.doesNotMatch(outfitsIndex, /outfitFeedPhotoPath|feedPath/);

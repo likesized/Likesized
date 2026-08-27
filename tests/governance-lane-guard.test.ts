@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { appendFileSync, cpSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
@@ -21,7 +21,7 @@ function setup(){
   writeFileSync(join(root,"AI_REPOSITORY_RULES.md"),"rules\n");
   git(root,"init");git(root,"config","user.email","test@example.com");git(root,"config","user.name","LikeSized Test");
   const base=commit(root,"base");
-  const trusted=join(root,"trusted-base");
+  const trusted=mkdtempSync(join(tmpdir(),"likesized-trusted-"));
   mkdirSync(join(trusted,"docs"),{recursive:true});
   cpSync(join(root,"docs/AI_MASTER_LOG.md"),join(trusted,"docs/AI_MASTER_LOG.md"));
   return {root,trusted,base};
@@ -48,7 +48,7 @@ test("Repair cannot modify protected governance",()=>{
   assert.match(result.stderr,/Repair lane may not modify protected governance/);
 });
 
-test("modified existing safeguard requires explicit stale-canon reconciliation",()=>{
+test("rewriting an existing safeguard requires explicit stale-canon reconciliation",()=>{
   const {root,trusted,base}=setup();
   writeFileSync(join(root,"tests/existing.test.ts"),"export const expected=2;\n");
   const head=commit(root,"stale assertion");
@@ -57,6 +57,14 @@ test("modified existing safeguard requires explicit stale-canon reconciliation",
   assert.match(blocked.stderr,/Stale canon reconciliation: Yes/);
   const allowed=run(root,trusted,base,head,repair("Yes"));
   assert.equal(allowed.status,0,allowed.stderr);
+});
+
+test("adding coverage to an existing safeguard does not require stale-test ceremony",()=>{
+  const {root,trusted,base}=setup();
+  appendFileSync(join(root,"tests/existing.test.ts"),"export const regression=true;\n");
+  const head=commit(root,"add regression coverage");
+  const result=run(root,trusted,base,head,repair());
+  assert.equal(result.status,0,result.stderr);
 });
 
 test("a new Repair regression safeguard does not require stale-test ceremony",()=>{

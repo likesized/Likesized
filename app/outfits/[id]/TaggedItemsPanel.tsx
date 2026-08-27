@@ -16,7 +16,7 @@ type SourceBreakdown={communityBlend:number;closetBlend:number;communityTopSizeL
 type Recommendation={sizeLabel:string;confidence:number;confidenceLabel:string;similarWearerCount:number;sizeEvidenceCount:number;sourceBreakdown:SourceBreakdown};
 type FitMeta={category:string;variationDetail:string;profileReady:boolean;matchingFitReports:number;objectiveVariantKey:string;recommendation:Recommendation|null;relevantReports:RelevantReport[];strongFitReports:StrongFitReport[];closetEvidenceCount:number};
 
-export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedItem[];postId:string;signedIn:boolean}){
+export default function TaggedItemsPanel({items,postId,signedIn,showCards=true,returnTo: returnToOverride}:{items:TaggedItem[];postId:string;signedIn:boolean;showCards?:boolean;returnTo?:string}){
   const [selectedId,setSelectedId]=useState<string|null>(null);
   const [gateItem,setGateItem]=useState<TaggedItem|null>(null);
   const [imageOpen,setImageOpen]=useState(false);
@@ -34,7 +34,7 @@ export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedIt
   const [watching,setWatching]=useState<Record<string,boolean>>({});
   const [watchPending,setWatchPending]=useState<Record<string,boolean>>({});
   const selected=items.find((item)=>item.closetItemId===selectedId)??null;
-  const returnTo=`/outfits/${postId}?tab=tagged`;
+  const returnTo=returnToOverride??`/outfits/${postId}?tab=tagged`;
 
   const loadFitMeta=useCallback(async(closetItemId:string,signal?:AbortSignal,force=false)=>{
     if(!signedIn)return;
@@ -86,7 +86,7 @@ export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedIt
   async function requestWatch(item:TaggedItem){if(watchPending[item.closetItemId]||watching[item.closetItemId])return;setActionError("");setWatchPending((current)=>({...current,[item.closetItemId]:true}));try{const response=await fetch(`/api/outfits/${postId}/tagged-fit/watch`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({closetItemId:item.closetItemId})});if(!response.ok)throw new Error();setWatching((current)=>({...current,[item.closetItemId]:true}));}catch{setActionError("Notification request could not be saved. Try again.");}finally{setWatchPending((current)=>({...current,[item.closetItemId]:false}));}}
   function renderWatchPrompt(item:TaggedItem){return <div className={quickStyles.notifyPrompt}>{watching[item.closetItemId]?<span className={quickStyles.watchState}>Notifications on</span>:<button className={quickStyles.notifyAction} type="button" disabled={Boolean(watchPending[item.closetItemId])} onClick={()=>void requestWatch(item)}><span aria-hidden="true">🔔</span>{watchPending[item.closetItemId]?"Saving…":"Notify me"}</button>}<span>FITuition will notify you when people close to your size post a Fit Report for this item.</span></div>;}
 
-  if(!items.length)return <p className="muted">No tagged items on this Outfit.</p>;
+  if(!items.length)return showCards?<p className="muted">No tagged items on this Outfit.</p>:null;
   const meta=selected?fitMeta[selected.closetItemId]:null;
   const isLoading=selected?Boolean(fitLoading[selected.closetItemId]):false;
   const fitError=selected?fitErrors[selected.closetItemId]:null;
@@ -98,7 +98,7 @@ export default function TaggedItemsPanel({items,postId,signedIn}:{items:TaggedIt
   function renderRelevantReport(report:RelevantReport,bestAvailable=false){return <div className={styles.relevantReport} key={report.fitReportId}><div>{report.bodyMatch===null?<strong>Your Fit Report</strong>:bestAvailable?<><strong>Best Available Matching Fit Report</strong><span>{report.bodyMatch}% Body Match</span></>:<><strong>{report.bodyMatch}%</strong><span>Body Match</span></>}</div><div><span>Size</span><strong>{report.sizeLabel}</strong></div><div><span>Fit Result</span><strong>{report.fitLabel}</strong></div></div>;}
 
   return <div className={styles.taggedPanel}>
-    <div className={styles.taggedGrid}>{items.map((item)=>{const cachedMeta=fitMeta[item.closetItemId];const cardLoading=Boolean(fitLoading[item.closetItemId]);const cardError=fitErrors[item.closetItemId];return <button className={styles.taggedCard} type="button" key={item.closetItemId} onClick={()=>openItem(item)}>{item.imageUrl?<img src={item.imageUrl} alt=""/>:<span className={styles.taggedFallback}>{item.label.slice(0,1).toUpperCase()}</span>}<span><strong>{item.label}</strong><small>{item.detail}</small>{signedIn?(cardLoading?<small>Relevant Fit Reports: Checking…</small>:cardError?<small>Relevant Fit Reports: unavailable</small>:cachedMeta?.profileReady?<small>Relevant Fit Reports: {cachedMeta.matchingFitReports}</small>:cachedMeta?<small>Complete your Fit Profile for personalized evidence.</small>:null):null}</span></button>;})}</div>
+    {showCards?<div className={styles.taggedGrid}>{items.map((item)=>{const cachedMeta=fitMeta[item.closetItemId];const cardLoading=Boolean(fitLoading[item.closetItemId]);const cardError=fitErrors[item.closetItemId];return <button className={styles.taggedCard} type="button" key={item.closetItemId} onClick={()=>openItem(item)}>{item.imageUrl?<img src={item.imageUrl} alt=""/>:<span className={styles.taggedFallback}>{item.label.slice(0,1).toUpperCase()}</span>}<span><strong>{item.label}</strong><small>{item.detail}</small>{signedIn?(cardLoading?<small>Relevant Fit Reports: Checking…</small>:cardError?<small>Relevant Fit Reports: unavailable</small>:cachedMeta?.profileReady?<small>Relevant Fit Reports: {cachedMeta.matchingFitReports}</small>:cachedMeta?<small>Complete your Fit Profile for personalized evidence.</small>:null):null}</span></button>;})}</div>:null}
 
     {selected?<div className={styles.itemPreviewOverlay} role="dialog" aria-modal="true" aria-label={`${selected.label} quick view`} onClick={()=>setSelectedId(null)}><div className={styles.itemPreviewCard} onClick={(event)=>event.stopPropagation()}>
       <button className={styles.itemPreviewClose} type="button" aria-label="Close item preview" onClick={()=>setSelectedId(null)}>×</button>

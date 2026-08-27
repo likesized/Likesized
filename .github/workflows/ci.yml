@@ -36,43 +36,17 @@ jobs:
         run: |
           set +e
           failures=0
-          run_test() {
-            label="$1"
-            shift
+          for test_file in tests/*.test.ts; do
+            label="${test_file#tests/}"
             echo "::group::$label"
-            "$@"
+            node --test "$test_file"
             status=$?
             echo "::endgroup::"
             if [ "$status" -ne 0 ]; then
               echo "::error::$label failed"
               failures=1
             fi
-          }
-
-          run_test "Recommendation confidence calibration" node --test tests/recommendation-confidence.test.ts
-          if [ -f tests/fit-match-audit-ui.test.ts ]; then
-            run_test "Fit Match audit UI semantics" node --test tests/fit-match-audit-ui.test.ts
-          fi
-          run_test "Outfit photo pipeline safeguards" node --test tests/outfit-photo-pipeline.test.ts
-          run_test "New Outfit V1 safeguards" node --test tests/new-outfit-v1.test.ts
-          run_test "Outfit polish batch safeguards" node --test tests/outfit-polish-batch.test.ts
-          run_test "Outfit interaction and Fit Report photo safeguards" node --test tests/outfit-interaction-photo-requirement.test.ts
-          run_test "Tagged-item quick-view safeguards" node --test tests/outfit-tagged-quickview-regression.test.ts
-          run_test "Tracked Outfit variation evidence safeguards" node --test tests/outfit-variation-evidence.test.ts
-          run_test "Outfit live-audit repair safeguards" node --test tests/outfit-live-audit-repairs.test.ts
-          run_test "Current Outfit owner-audit closure safeguards" node --test tests/outfit-owner-audit-contract.test.ts
-          run_test "Comment sheet and global quick-view safeguards" node --test tests/comments-global-quickview.test.ts
-          run_test "Public homepage content safeguards" node --test tests/public-homepage-content.test.ts
-          run_test "Grouped navigation safeguards" node --test tests/navigation-layout.test.ts
-          run_test "Settings profile consolidation safeguards" node --test tests/settings-profile-consolidation.test.ts
-          run_test "Canonical UI system safeguards" node --test tests/canonical-ui-system.test.ts
-          run_test "Explore, My Circle, and LikeLocker safeguards" node --test tests/explore-circle-likelocker.test.ts
-          run_test "Controlled Fit Report and community catalog safeguards" node --test tests/fit-report-taxonomy.test.ts
-          run_test "Tracked variation-definition safeguards" node --test tests/variation-definition-map.test.ts
-          run_test "Fit Report UI regression safeguards" node --test tests/fit-report-ui-regressions.test.ts
-          run_test "Sleepwear and purchase-context safeguards" node --test tests/sleepwear-purchase-context.test.ts
-          run_test "Moderation and garment-confirmation safeguards" node --test tests/moderation-foundation.test.ts
-
+          done
           exit "$failures"
       - name: Build
         run: npm run build

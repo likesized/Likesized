@@ -74,16 +74,18 @@ test("published Outfit hotspots remain public while personalized fit stays gated
   assert.match(tagged,/if\(signedIn\)\{setEvidenceOpen\(false\);setSelectedId\(item\.closetItemId\);\}else setGateItem\(item\)/);
 });
 
-test("Outfit photos open a full-size viewer without stealing tag or Caption clicks",()=>{
+test("Outfit photos use the one smooth full-size viewer without stealing tag or Caption clicks",()=>{
   assert.match(gallery,/setLightboxOpen\(true\)/);
   assert.match(gallery,/role="dialog"/);
   assert.match(gallery,/Close full-size photo/);
   assert.match(gallery,/Previous photo/);
   assert.match(gallery,/Next photo/);
   assert.match(gallery,/onPointerMove=\{lightboxPointerMove\}/);
-  assert.match(gallery,/translate\(\$\{lightboxDragX\}px, \$\{lightboxDragY\}px\)/);
-  assert.match(gallery,/Math\.abs\(dx\)>=38&&Math\.abs\(dx\)>Math\.abs\(rawDy\)/);
-  assert.match(gallery,/dy>=70&&dy>Math\.abs\(dx\)/);
+  assert.match(gallery,/setStageDragX\(dx\)/);
+  assert.match(gallery,/translate3d\(\$\{lightboxDragX\}px,\$\{lightboxDragY\}px,0\)/);
+  assert.match(gallery,/setLightboxDragY\(Math\.max\(0,dy\)\)/);
+  assert.match(gallery,/setLightboxAnimating\(true\)/);
+  assert.match(gallery,/touchAction:"none"/);
   assert.match(gallery,/openTaggedItem\(tag\.closetItemId\)/);
   assert.match(gallery,/event\.stopPropagation\(\);setShowCaption/);
 });

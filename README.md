@@ -101,4 +101,4 @@ One Product may have multiple valid retailer listings. Listings append/dedupe ra
 `supabase/migrations/` is executable database history. Do not rewrite applied migrations. `supabase/schema.sql` is retired as an alternate schema source.
 
 ## Verification
-Canonical CI runs `npm run canonical:check`, TypeScript, focused safeguards, production build, fresh migration replay and database behavior/privacy tests. Current branch status and exact next action are recorded only in `docs/AI_MASTER_LOG.md`.
+Pull requests are classified as Repair or Product Change. Trusted governance is evaluated from canonical base logic, fast PR verification is change-aware during iteration, and the exact final candidate must pass the full `Release Verification` gate before protected `main` can accept it. Current branch status and exact next action are recorded only in `docs/AI_MASTER_LOG.md`.

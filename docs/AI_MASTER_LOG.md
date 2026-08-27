@@ -660,6 +660,8 @@ Applied migrations are immutable. PR #94, PR #95, PR #97, PR #98, PR #99, PR #10
 
 ## Pending owner-approved safeguard change — Style Feed shared QA repair
 Owner authorization: on 2026-08-27 the owner explicitly authorized implementation of the exact four-item Style Feed/shared-system QA repair batch by saying **“Continue.”** This authorization does not broaden the batch.
+- Implementation branch: `repair/style-feed-shared-qa-canonical`
+- Authorized safeguard files: `tests/explore-circle-likelocker.test.ts`, `tests/outfit-photo-pipeline.test.ts`
 
 Fresh runtime implementation branch authorized by this record: **`repair/style-feed-shared-qa-canonical`**.
 

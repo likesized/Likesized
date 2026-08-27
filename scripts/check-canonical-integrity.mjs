@@ -54,6 +54,56 @@ function pullRequestChangedFiles() {
   }
 }
 
+function readCanonicalBase(rel) {
+  try {
+    return execFileSync('git', ['show', `origin/main:${rel}`], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (error) {
+    fail(`Could not read canonical main version of ${rel}: ${error instanceof Error ? error.message : String(error)}`);
+    return '';
+  }
+}
+
+function isRuntimeProductFile(rel) {
+  return /^(?:app|components|lib|public)\//.test(rel)
+    || /^supabase\/migrations\/.*\.sql$/.test(rel)
+    || rel === 'package.json'
+    || rel === 'package-lock.json'
+    || rel === 'next.config.ts'
+    || rel === 'proxy.ts'
+    || rel === 'vercel.json'
+    || rel === 'scripts/vercel-ignore-build.mjs';
+}
+
+function extractFeatureContracts(content) {
+  const startMarker = '# CANONICAL FEATURE CONTRACTS — OWNER LOCKED';
+  const endMarker = '# END CANONICAL FEATURE CONTRACTS';
+  const start = content.indexOf(startMarker);
+  const end = content.indexOf(endMarker);
+  if (start === -1 || end === -1 || end < start) return null;
+  return content.slice(start, end + endMarker.length).trim();
+}
+
+function authorizedSafeguardFiles(baseMaster, branch) {
+  const lines = baseMaster.split(/\r?\n/);
+  const allowed = new Set();
+  const branchNeedle = `- Implementation branch: \`${branch}\``;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    if (!lines[i].startsWith('## Pending owner-approved safeguard change — ')) continue;
+    const block = [];
+    for (let j = i + 1; j < lines.length; j += 1) {
+      if (/^#{1,2}\s/.test(lines[j])) break;
+      block.push(lines[j]);
+    }
+    if (!block.includes(branchNeedle)) continue;
+    const authorizedLine = block.find((line) => line.startsWith('- Authorized safeguard files:'));
+    if (!authorizedLine) continue;
+    for (const match of authorizedLine.matchAll(/`([^`]+)`/g)) allowed.add(match[1]);
+  }
+
+  return allowed;
+}
+
 function isNonRuntimeReconciliationFile(rel) {
   return rel.startsWith('docs/')
     || rel === 'AI_REPOSITORY_RULES.md'
@@ -83,16 +133,28 @@ for (const rel of ['docs/AI_MASTER_LOG.md', 'docs/V1_PRODUCT_SPEC.md', 'README.m
   mustContain(rel, 'no current V1 1–5-star Fit Rating UI');
 }
 mustContain('docs/AI_MASTER_LOG.md', 'CANONICAL RECOVERY');
+mustContain('docs/AI_MASTER_LOG.md', '# CANONICAL FEATURE CONTRACTS — OWNER LOCKED');
+mustContain('docs/AI_MASTER_LOG.md', '# END CANONICAL FEATURE CONTRACTS');
 mustContain('docs/V1_PRODUCT_SPEC.md', 'Help Me Size It is fallback');
 mustContain('supabase/schema_contract.md', '`follows` is the one canonical **Following** relationship');
 mustContain('AI_REPOSITORY_RULES.md', 'Canonical CI must run `npm run canonical:check`');
 mustContain('AI_REPOSITORY_RULES.md', 'Owner scope lock — LOCKED');
+mustContain('AI_REPOSITORY_RULES.md', 'Runtime/safeguard separation gate — LOCKED');
 mustContain('AI_REPOSITORY_RULES.md', 'Every committed `tests/*.test.ts` safeguard must run automatically in CI by discovery.');
 mustContain('AI_REPOSITORY_RULES.md', '`vercel.json` + `scripts/vercel-ignore-build.mjs` own the canonical non-runtime release boundary.');
 mustContain('.github/workflows/ci.yml', 'for test_file in tests/*.test.ts; do');
 mustContain('supabase/storage.sql', 'Support/reference mirror only. This file is not a second canonical current-state schema.');
 mustNotContain('supabase/storage.sql', 'Canonical current-state storage model.');
 mustNotContain('docs/AI_MASTER_LOG.md', '## Live repair fast path');
+
+// Style Feed relationship/footer behavior is owner locked. Keep the two end-of-feed actions
+// distinct: one switches to All Following, the other discovers more Fit Twins.
+mustContain('app/circle/page.tsx', 'href={feedHref("all", occasion, styleTag)}>See All Following →</Link>');
+mustContain('app/circle/page.tsx', 'href="/people">Find More Fit Twins →</Link>');
+mustContain('docs/AI_MASTER_LOG.md', '**See All Following →**');
+mustContain('docs/AI_MASTER_LOG.md', '**Find More Fit Twins →**');
+mustContain('docs/V1_PRODUCT_SPEC.md', '**See All Following →**');
+mustContain('docs/V1_PRODUCT_SPEC.md', '**Find More Fit Twins →**');
 
 // Dynamic application/release status belongs only to the master. The schema contract may
 // record database behavior and immutable migration facts, but it must not become a stale
@@ -156,6 +218,42 @@ if (activeBranch) {
   }
   if (migrationChanged && !changedSet.has('docs/AI_MASTER_LOG.md')) {
     fail('Migration changes must update docs/AI_MASTER_LOG.md in the same pull request.');
+  }
+
+  // This gate intentionally activates only after the separation rule already exists on
+  // canonical main. That permits the one owner-authorized bootstrap PR installing the gate,
+  // then permanently prevents future runtime PRs from authoring their own judging rules.
+  const baseRules = readCanonicalBase('AI_REPOSITORY_RULES.md');
+  const separationGateActive = baseRules.includes('### Runtime/safeguard separation gate — LOCKED');
+  const runtimeProductChanged = changed.some(isRuntimeProductFile);
+
+  if (separationGateActive && runtimeProductChanged) {
+    const forbiddenGovernanceChanges = changed.filter((rel) => rel === 'AI_REPOSITORY_RULES.md'
+      || rel === 'scripts/check-canonical-integrity.mjs'
+      || rel.startsWith('.github/workflows/'));
+    for (const rel of forbiddenGovernanceChanges) {
+      fail(`Runtime Product PRs may not modify governance/safeguard machinery in the same PR: ${rel}`);
+    }
+
+    const baseMaster = readCanonicalBase('docs/AI_MASTER_LOG.md');
+    const currentMaster = read('docs/AI_MASTER_LOG.md');
+    const baseContracts = extractFeatureContracts(baseMaster);
+    const currentContracts = extractFeatureContracts(currentMaster);
+    if (!baseContracts || !currentContracts) {
+      fail('Runtime Product PRs require the marked CANONICAL FEATURE CONTRACTS section on both canonical main and the candidate branch.');
+    } else if (baseContracts !== currentContracts) {
+      fail('Runtime Product PRs may not rewrite stable CANONICAL FEATURE CONTRACTS. Record an owner-approved pending decision before implementation and reconcile the stable contract afterward.');
+    }
+
+    const conditionalProtected = changed.filter((rel) => /^tests\/.*\.test\.ts$/.test(rel) || rel === 'docs/V1_PRODUCT_SPEC.md');
+    if (conditionalProtected.length) {
+      const authorized = authorizedSafeguardFiles(baseMaster, activeBranch);
+      for (const rel of conditionalProtected) {
+        if (!authorized.has(rel)) {
+          fail(`Runtime Product PR changed protected safeguard/spec without a pre-existing Pending owner-approved safeguard change on canonical main for ${activeBranch}: ${rel}`);
+        }
+      }
+    }
   }
 }
 

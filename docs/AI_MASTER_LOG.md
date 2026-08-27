@@ -592,3 +592,6 @@ Recent released application/source lineage:
 5. Owner review should confirm: top Fit Twins | All Following still works; exhausted Fit Twins shows **See All Following →** and **Find More Fit Twins →** as separate actions; See All Following switches the feed; Find More Fit Twins routes to People My Size; existing PR #105 gallery/comments/filter/View Full Outfit behavior has not been altered by this narrow repair.
 6. After this batch is settled, do **not** begin Roadmap 13A or any other repository work merely because it is next on the roadmap. Return to list/discussion mode until the owner explicitly authorizes the next implementation batch.
 7. Repository governance remains separately incomplete at the GitHub settings layer: `main` protection/ruleset and stale merged/retry branch cleanup still require supported server-side actions before they can be called complete.
+
+## Active incident continuation — 2026-08-27
+- `agent/style-feed-regression-repair` is finishing the already owner-authorized Style Feed incident by consolidating the Outfit creator, inline/comment, and global person previews onto one canonical shared person-card implementation. This is structural reuse of the approved Outfit preview, not a new Product behavior decision.

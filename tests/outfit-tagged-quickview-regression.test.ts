@@ -15,6 +15,7 @@ const firstQuickViewStart=taggedPanel.indexOf("<div className={styles.itemPrevie
 const firstQuickViewEnd=taggedPanel.indexOf("{actionError?",firstQuickViewStart);
 const firstQuickViewMarkup=taggedPanel.slice(firstQuickViewStart,firstQuickViewEnd);
 const unsavedDialogCss=pickerCss.match(/:global\(\[role="dialog"\]\[aria-label="Unsaved Outfit"\]\)\{([^}]*)\}/)?.[1]??"";
+const garmentDialogCss=pickerCss.match(/:global\(\[role="dialog"\]\[aria-label="Add a new Closet garment"\]\)\{([^}]*)\}/)?.[1]??"";
 
 test("photo hotspots can open the canonical tagged quick view from any detail tab",()=>{
   assert.match(tabs,/tab==="style"\?<div ref=\{styleRef\}/);
@@ -101,6 +102,15 @@ test("unsaved Outfit navigation confirmation is fixed in the current viewport",(
   assert.match(unsavedDialogCss,/inset:0!important/);
   assert.match(unsavedDialogCss,/place-items:center!important/);
   assert.match(unsavedDialogCss,/z-index:240!important/);
+});
+
+test("Add a new garment from the Outfit opens in the current viewport instead of at document bottom",()=>{
+  assert.ok(garmentDialogCss,"Add-garment dialog rule must exist");
+  assert.match(garmentDialogCss,/position:fixed!important/);
+  assert.match(garmentDialogCss,/inset:0!important/);
+  assert.match(garmentDialogCss,/place-items:center!important/);
+  assert.match(garmentDialogCss,/z-index:240!important/);
+  assert.match(pickerCss,/:global\(\[role="dialog"\]\[aria-label="Add a new Closet garment"\] iframe\)\{[^}]*height:/);
 });
 
 test("mobile tagged quick view stays readable inside the safe-area modal",()=>{

@@ -46,6 +46,8 @@ When an owner-locked decision changes product meaning, update the master and eve
 - Never start a second divergent product future while meaningful owner-approved work remains unclassified on another branch.
 
 ### Owner scope lock — LOCKED
+- **Discussion, planning, brainstorming, reviewing screenshots, adding items to a to-do list, or agreeing on a future direction does not authorize repository writes.** Before an AI creates a branch or changes source, tests, canonical documents, schema, or configuration for a new batch, the owner must explicitly authorize implementation of that identified batch (for example: **do it, implement it, start it, proceed with this batch**). Do not infer implementation permission merely because a decision was approved.
+- After explicit implementation authorization, strictly necessary source/test/canonical-document work for that frozen batch may proceed without repeatedly asking for permission for each file. New adjacent items still require explicit addition to scope.
 - The exact defects, behaviors, and copy the owner explicitly authorizes for a repair batch are the complete writable scope for that batch.
 - A direction to **fix** a named defect authorizes implementation of that defect only. It does not authorize adjacent cleanup, redesign, copy changes, refactors, test rewrites, documentation rewrites, or reopening completed/deferred work unless those changes are strictly necessary to implement or verify the named defect.
 - Existing owner-approved wording is immutable unless the owner explicitly authorizes a wording change. Do not paraphrase, improve, modernize, shorten, or otherwise rewrite approved copy while repairing nearby behavior.

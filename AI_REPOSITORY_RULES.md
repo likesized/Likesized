@@ -28,6 +28,10 @@ This file is the canonical repository/source-of-truth policy for every AI agent 
 
 If these documents disagree, STOP feature work and reconcile them before implementation continues.
 
+A canonical document must not duplicate fast-changing status that belongs to another canonical owner. In particular, deployment/production PR status and the current active application line belong only in `docs/AI_MASTER_LOG.md`; other canonical documents must cross-reference the master instead of copying a PR number or deployment checkpoint that can go stale.
+
+A supporting/reference artifact must never label itself a second canonical current-state source when authority is assigned above. `supabase/storage.sql` is a support/reference mirror only; it does not override ordered migrations or `supabase/schema_contract.md`.
+
 ### Atomic documentation rule
 When an owner-locked decision changes product meaning, update the master and every canonical document that owns the affected meaning in the same canonical change set. Do not leave an old statement marked LOCKED and add a newer contradictory statement elsewhere. Rewrite/remove stale current-state wording; Git history is the archive.
 
@@ -39,6 +43,16 @@ When an owner-locked decision changes product meaning, update the master and eve
 - Before a different feature/decision branch begins, the prior active line must be reconciled into the single recovery/canonical line or explicitly parked in the master with exact source branch + commit SHA and a salvage status.
 - Never start a second divergent product future while meaningful owner-approved work remains unclassified on another branch.
 
+### Owner scope lock — LOCKED
+- The exact defects, behaviors, and copy the owner explicitly authorizes for a repair batch are the complete writable scope for that batch.
+- A direction to **fix** a named defect authorizes implementation of that defect only. It does not authorize adjacent cleanup, redesign, copy changes, refactors, test rewrites, documentation rewrites, or reopening completed/deferred work unless those changes are strictly necessary to implement or verify the named defect.
+- Existing owner-approved wording is immutable unless the owner explicitly authorizes a wording change. Do not paraphrase, improve, modernize, shorten, or otherwise rewrite approved copy while repairing nearby behavior.
+- Newly discovered defects outside the active scope are notes only. Do not implement them until the owner explicitly adds them to scope.
+- Completed or deferred issues never re-enter active scope merely because their code is nearby or a prior test mentions them.
+- Tests and canonical documents protect the owner-approved behavior. They must never be rewritten to bless an unapproved implementation or to redefine the owner's requirement after the fact.
+- Regression tests are verification consumers, not an independent product-decision ledger. If the owner explicitly changes a locked decision, every overlapping older test assertion must be reconciled in the same change so the suite cannot protect two contradictory answers. A historical test filename or prior green run does not make retired wording/behavior canonical.
+- Before merge, every changed file must map directly to at least one owner-approved item in the frozen batch. Any unrelated change must be removed before the candidate is considered complete.
+
 ## 5. Branch discipline / salvage protection — LOCKED
 
 1. Only one primary active implementation/recovery line should exist at a time unless the owner explicitly authorizes parallel work.
@@ -48,7 +62,9 @@ When an owner-locked decision changes product meaning, update the master and eve
 5. A docs-only decision is still product state. It follows the same active-line rule as code and migrations.
 6. Do not delete a branch or close a salvage PR until every meaningful changed file/decision has been classified as one of: **RECOVERED / SUPERSEDED / OBSOLETE / DUPLICATE / DEFERRED**.
 7. Any DEFERRED work must remain recorded in `docs/AI_MASTER_LOG.md` with the exact source branch/commit until recovered or explicitly discarded by the owner.
-8. At phase completion, clean obsolete merged/retry/verification branches after the salvage ledger proves nothing unique remains.
+8. At phase completion, clean obsolete merged/retry/verification branches after the salvage ledger proves nothing unique remains. Remote retry branches are not an archive; Git history and the salvage ledger are the archive.
+9. `main` must be protected by GitHub server-side settings/rulesets. At minimum: changes reach `main` through a pull request; the current required `LikeSized CI / verify` check must succeed before merge; force pushes and branch deletion are blocked. These controls are repository settings, not optional prose rules.
+10. After a merged branch is classified/salvaged and no unique work remains, delete the merged head branch. Prefer repository auto-delete for merged branches so stale AI retry branches do not accumulate indefinitely.
 
 ## 6. Master synchronization rule — LOCKED
 
@@ -68,6 +84,7 @@ The current active branch recorded in `docs/AI_MASTER_LOG.md` must match the act
 - Ordered files in `supabase/migrations/` are the executable database history and replay source.
 - Never hard-code a migration count as architectural truth. The current count is whatever ordered migration files exist in the canonical directory.
 - `supabase/schema.sql` is retired and must not exist as an alternate schema representation.
+- `supabase/storage.sql` is support/reference only. It must never describe itself as an independent canonical current-state schema.
 - Applied migrations are immutable. Future database changes use new ordered migrations.
 - Dormant legacy columns/types/functions do not define current product semantics merely because their old names remain.
 - A PR that adds or changes an ordered migration must update `supabase/schema_contract.md` and `docs/AI_MASTER_LOG.md` in the same branch before it can pass the canonical gate.
@@ -91,13 +108,22 @@ Canonical CI must run `npm run canonical:check` before typecheck/build/database 
 - current 1–5-star Fit Rating UI/source;
 - hard-coded migration-count claims in canonical database docs;
 - a live `supabase/schema.sql` alternate schema;
+- a support/reference schema file falsely claiming independent canonical current-state authority;
 - forbidden temp/noop/version-suffixed source artifacts;
 - missing required current terminology in canonical docs;
+- duplicated deployment/current-application status outside the master;
 - a pull request whose recorded active branch does not match the actual PR head;
-- an application/source PR that leaves the master untouched;
-- a migration PR that leaves the schema contract or master untouched.
+- an application/source/safeguard PR that leaves the master untouched;
+- a migration PR that leaves the schema contract or master untouched;
+- owner-locked source/copy regressions that are explicitly protected by the canonical integrity check.
 
-Do not weaken or remove these checks to make a branch pass. Fix the underlying drift.
+Pull-request synchronization and drift checks must inspect the **entire PR diff against canonical `main`**, not only the final commit. A multi-commit PR may not hide earlier application/test/doc changes from the canonical gate.
+
+Every committed `tests/*.test.ts` safeguard must run automatically in CI by discovery. Do not maintain a manual allowlist of test filenames that can silently omit a committed regression suite.
+
+When an owner-approved change retires exact wording/behavior that older regression tests assert, the canonical gate and/or focused suite must reject the retired assertion. Do not keep mutually contradictory regression assertions and then change source back and forth to satisfy whichever test was noticed last.
+
+Do not weaken or remove these checks to make a branch pass. Do not rewrite a failing regression test to accept an unapproved behavior. Fix the underlying drift; when the owner explicitly changed the behavior, reconcile the stale test to that recorded owner decision.
 
 ## 10. Verification gates — LOCKED
 
@@ -111,6 +137,8 @@ For relevant changes, verify as applicable:
 - mobile + desktop owner verification where required.
 
 The exact candidate proposed for merge must have a successful full required CI run after its final code/test/canonical-doc change. A green historical run on another branch or an earlier SHA is evidence worth preserving, not proof that the current candidate passes. A failed or incomplete run is not a deployable candidate unless the explicit post-failure owner override rule in Section 8 is satisfied.
+
+For owner-reported UI regressions, green source/CI checks are not a substitute for the owner being able to verify the exact interaction on the production site after deployment.
 
 ## 11. Recovery freeze — LOCKED until cleared in master
 

@@ -68,9 +68,10 @@ test("Tagged garment quick view and FITuition evidence layer each keep their int
   assert.doesNotMatch(tagged,/See fit evidence/);
   assert.match(firstQuickView,/View Garment Detail →/);
   assert.match(firstQuickView,/href=\{selected\.href\}/);
-  assert.match(tagged,/View Garment Details →/);
+  assert.equal((tagged.match(/View Garment Detail →/g)??[]).length,2);
   assert.match(tagged,/See FITuition Details →/);
   assert.equal((tagged.match(/href=\{selected\.href\}/g)??[]).length,2);
+  assert.doesNotMatch(tagged,/View Garment Details →/);
   assert.doesNotMatch(tagged,/View Detailed Garment Report/);
 });
 

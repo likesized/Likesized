@@ -96,14 +96,16 @@ test("Style Feed reuses canonical Outfit interactions and keeps garment/detail r
  assert.match(circle,/StyleFeedNote/);
  assert.doesNotMatch(circle,/>View Full Outfit →<\/Link>/);
  assert.match(circleGarments,/>View Garments →<\/button>/);
- assert.match(circleGarments,/data-full-navigation="true"/);
+ assert.match(circleGarments,/TaggedItemsPanel/);
+ assert.match(circleGarments,/likesized:open-tagged-item/);
+ assert.doesNotMatch(circleGarments,/data-full-navigation="true"/);
  assert.match(circleNote,/COLLAPSED_LENGTH=260/);
  assert.match(circleNote,/"Show less":"More"/);
  assert.doesNotMatch(circle,/createSignedUrl/);
  assert.match(circle,/getPublicUrl/);
  assert.doesNotMatch(circle,/className=\{styles\.photoLink\}/);
  assert.match(outfitGallery,/previewUrl\?:string/);
- assert.match(outfitGallery,/src=\{current\.previewUrl\?\?current\.url\}/);
+ assert.doesNotMatch(outfitGallery,/src=\{current\.previewUrl\?\?current\.url\}/);
  assert.match(outfitGallery,/src=\{current\.url\}/);
  assert.match(outfitGallery,/setStageDragX\(dx\)/);
  assert.match(outfitGallery,/setLightboxDragY\(Math\.max\(0,dy\)\)/);

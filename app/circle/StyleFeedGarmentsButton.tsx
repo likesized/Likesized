@@ -1,18 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import TaggedItemsPanel, { type TaggedItem } from "@/app/outfits/[id]/TaggedItemsPanel";
 import styles from "./StyleFeedGarmentsButton.module.css";
 
-export type StyleFeedGarmentItem = {
-  closetItemId: string;
-  label: string;
-  detail: string;
-  href: string;
-  imageUrl: string | null;
-};
+export type StyleFeedGarmentItem = TaggedItem;
 
-export function StyleFeedGarmentsButton({items}:{items:StyleFeedGarmentItem[]}){
+export function StyleFeedGarmentsButton({items,postId}:{items:StyleFeedGarmentItem[];postId:string}){
   const [open,setOpen]=useState(false);
 
   useEffect(()=>{
@@ -26,13 +20,19 @@ export function StyleFeedGarmentsButton({items}:{items:StyleFeedGarmentItem[]}){
 
   if(!items.length)return null;
 
+  function openQuickView(closetItemId:string){
+    setOpen(false);
+    window.dispatchEvent(new CustomEvent("likesized:open-tagged-item",{detail:{closetItemId}}));
+  }
+
   return <>
     <button className={styles.trigger} type="button" onClick={()=>setOpen(true)}>View Garments →</button>
     {open?<div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Garments in this Outfit" onClick={()=>setOpen(false)}>
       <section className={styles.card} onClick={(event)=>event.stopPropagation()}>
         <header className={styles.header}><h2>Garments</h2><button className={styles.close} type="button" aria-label="Close garments" onClick={()=>setOpen(false)}>×</button></header>
-        <div className={styles.list}>{items.map((item)=><Link className={styles.item} key={item.closetItemId} href={item.href} data-full-navigation="true" onClick={()=>setOpen(false)}>{item.imageUrl?<img src={item.imageUrl} alt=""/>:<span className={styles.fallback}>{item.label.slice(0,1).toUpperCase()}</span>}<span className={styles.identity}><strong>{item.label}</strong><span>{item.detail}</span></span></Link>)}</div>
+        <div className={styles.list}>{items.map((item)=><button className={styles.item} type="button" key={item.closetItemId} onClick={()=>openQuickView(item.closetItemId)}>{item.imageUrl?<img src={item.imageUrl} alt=""/>:<span className={styles.fallback}>{item.label.slice(0,1).toUpperCase()}</span>}<span className={styles.identity}><strong>{item.label}</strong><span>{item.detail}</span></span></button>)}</div>
       </section>
     </div>:null}
+    <TaggedItemsPanel items={items} postId={postId} signedIn showCards={false} returnTo="/circle"/>
   </>;
 }

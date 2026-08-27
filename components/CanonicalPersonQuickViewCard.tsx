@@ -1,9 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { followFromOutfit } from "@/app/outfits/actions";
-import { followPerson, setFollowingNotificationSubscription, unfollowPerson } from "@/app/people/actions";
+import { followPerson, unfollowPerson } from "@/app/people/actions";
 import { UniversalActionBar, UniversalActionButton, UniversalActionLink } from "@/components/UniversalActionBar";
+import { createClient } from "@/lib/supabase/client";
 import styles from "@/app/outfits/[id]/CreatorQuickView.module.css";
 
 type Props = {
@@ -32,6 +34,34 @@ function stat(value: number | null | undefined) {
 }
 
 export function CanonicalPersonQuickViewCard({ displayName, username, avatarUrl, userId, signedIn, owner, following, notificationsOn, overallMatch, topsMatch, bottomsMatch, garmentCount, outfitCount, returnTo, onClose, profileLink, loading = false, outfitPostId = null }: Props) {
+  const [notifyActive,setNotifyActive]=useState(notificationsOn);
+  const [notifyPending,setNotifyPending]=useState(false);
+  const [notifyError,setNotifyError]=useState("");
+
+  useEffect(()=>{
+    setNotifyActive(notificationsOn);
+    setNotifyPending(false);
+    setNotifyError("");
+  },[notificationsOn,userId]);
+
+  async function toggleNotifications(){
+    if(!userId||notifyPending)return;
+    const next=!notifyActive;
+    setNotifyActive(next);
+    setNotifyPending(true);
+    setNotifyError("");
+    try{
+      const supabase=createClient();
+      const {error}=await supabase.rpc("set_following_notification_subscription",{p_followed_id:userId,p_enabled:next});
+      if(error)throw error;
+    }catch{
+      setNotifyActive(!next);
+      setNotifyError("Notifications could not update. Try again.");
+    }finally{
+      setNotifyPending(false);
+    }
+  }
+
   return <div className={styles.overlay} role="dialog" aria-modal="true" aria-label={`${displayName} quick view`} onClick={onClose}>
     <section className={styles.card} onClick={(event) => event.stopPropagation()}>
       <button className={styles.close} type="button" aria-label="Close profile quick view" onClick={onClose}>×</button>
@@ -58,11 +88,9 @@ export function CanonicalPersonQuickViewCard({ displayName, username, avatarUrl,
           <input type="hidden" name="target_user_id" value={userId}/><input type="hidden" name="return_to" value={returnTo}/>
           <UniversalActionButton action="follow" type="submit" showLabel/>
         </form> : <UniversalActionLink action="follow" href={`/login?next=${encodeURIComponent(returnTo)}`} showLabel/>}
-        {signedIn ? <form action={setFollowingNotificationSubscription}>
-          <input type="hidden" name="target_user_id" value={userId}/><input type="hidden" name="enabled" value={notificationsOn ? "false" : "true"}/><input type="hidden" name="return_to" value={returnTo}/>
-          <UniversalActionButton action="notify" active={notificationsOn} type="submit" showLabel/>
-        </form> : <UniversalActionLink action="notify" href={`/login?next=${encodeURIComponent(returnTo)}`} showLabel/>}
+        {signedIn ? <UniversalActionButton action="notify" active={notifyActive} type="button" disabled={notifyPending} onClick={()=>void toggleNotifications()} showLabel/> : <UniversalActionLink action="notify" href={`/login?next=${encodeURIComponent(returnTo)}`} showLabel/>}
       </UniversalActionBar> : null}
+      {notifyError?<p className={styles.helper} role="status">{notifyError}</p>:null}
       {profileLink}
     </section>
   </div>;

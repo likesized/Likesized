@@ -24,6 +24,7 @@ type SizeRow={id:string;normalized_key:string;display_label:string;kind:string;s
 type AttributeRow={product_id:string;attribute_key:string;option_key:string};
 type Adjacency={current:{sizeKey:string;sizeLabel:string};up:{sizeKey:string;sizeLabel:string}|null;down:{sizeKey:string;sizeLabel:string}|null};
 type RelevantReport={fitReportId:string;bodyMatch:number|null;sizeLabel:string;fitLabel:string;isOwn:boolean};
+type StrongAggregateEvidence={sizeLabel:string;fit:RecommendationEvidence["fit"]};
 
 function firstProduct(value:ProductRelation){return Array.isArray(value)?(value[0]??null):value;}
 function variationDetail(garmentTypeKey:string|null,answers:Record<string,string>|null){
@@ -61,9 +62,9 @@ function evidenceLevelForOwn(report:OwnReport,target:ProductRow,source:ProductRo
   if(source.brand_id===target.brand_id&&source.garment_type_key===target.garment_type_key)return"brand_garment_type";
   return"category_fit";
 }
-function strongAggregate(rows:Candidate[],sizeLabel:(row:Candidate)=>string){
+function strongAggregate(rows:StrongAggregateEvidence[]){
   const groups=new Map<string,{sizeLabel:string;count:number;fits:Record<RecommendationEvidence["fit"],number>}>();
-  for(const row of rows){const label=sizeLabel(row);const group=groups.get(label)??{sizeLabel:label,count:0,fits:{too_small:0,snug:0,just_right:0,relaxed:0,too_big:0}};group.count+=1;group.fits[row.fit]+=1;groups.set(label,group);}
+  for(const row of rows){const group=groups.get(row.sizeLabel)??{sizeLabel:row.sizeLabel,count:0,fits:{too_small:0,snug:0,just_right:0,relaxed:0,too_big:0}};group.count+=1;group.fits[row.fit]+=1;groups.set(row.sizeLabel,group);}
   return [...groups.values()].sort((a,b)=>b.count-a.count||a.sizeLabel.localeCompare(b.sizeLabel)).map((group)=>({
     sizeLabel:group.sizeLabel,
     count:group.count,
@@ -130,7 +131,8 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
     return row.evidence_product_id===product.id&&(identity?.objective_variant_key??"")===targetVariation&&row.historical_match_score>=STRONG_FIT_REPORT_MATCH_THRESHOLD;
   }).sort((a,b)=>b.historical_match_score-a.historical_match_score||b.historical_coverage_percent-a.historical_coverage_percent);
   const otherRelevantExact=relevantExact.filter((row)=>row.user_id!==viewerId);
-  const ownExactReports:RelevantReport[]=ownReports.filter((report)=>report.garment_condition==="normal"&&report.product_id===product.id&&(report.objective_variant_key??"")===targetVariation).map((report)=>({fitReportId:report.id,bodyMatch:null,sizeLabel:report.size_label,fitLabel:FIT_RESULT_LABELS[report.fit]??report.fit,isOwn:true}));
+  const ownRelevantExact=ownReports.filter((report)=>report.garment_condition==="normal"&&report.product_id===product.id&&(report.objective_variant_key??"")===targetVariation);
+  const ownExactReports:RelevantReport[]=ownRelevantExact.map((report)=>({fitReportId:report.id,bodyMatch:null,sizeLabel:report.size_label,fitLabel:FIT_RESULT_LABELS[report.fit]??report.fit,isOwn:true}));
 
   const ownProductById=new Map<string,ProductRow>();
   for(const report of ownReports){const source=firstProduct(report.product);if(source)ownProductById.set(source.id,source);}
@@ -161,6 +163,10 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
   const sizeLabelForCandidate=(row:Candidate)=>sizeAdjacency(row.normalized_size_id,row.original_size_label,sizeById,safeSizes).current.sizeLabel;
   const strongOtherReports:RelevantReport[]=otherRelevantExact.map((row)=>({fitReportId:row.fit_report_id,bodyMatch:row.historical_match_score,sizeLabel:sizeLabelForCandidate(row),fitLabel:FIT_RESULT_LABELS[row.fit]??row.fit,isOwn:false}));
   const relevantReports=[...ownExactReports,...strongOtherReports];
+  const strongExactEvidence:StrongAggregateEvidence[]=[
+    ...ownRelevantExact.map((report)=>({sizeLabel:report.size_label,fit:report.fit})),
+    ...otherRelevantExact.map((row)=>({sizeLabel:sizeLabelForCandidate(row),fit:row.fit})),
+  ];
 
   return Response.json({
     category,
@@ -177,7 +183,7 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
       sourceBreakdown:recommendation.sourceBreakdown,
     }:null,
     relevantReports,
-    strongFitReports:strongAggregate(otherRelevantExact,sizeLabelForCandidate),
+    strongFitReports:strongAggregate(strongExactEvidence),
     closetEvidenceCount:ownHistory.length,
   });
 }

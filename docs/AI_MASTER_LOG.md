@@ -223,8 +223,6 @@ Fit Report/Closet display priority is **Front Fit Photo → Product Photo → Ba
 
 Optional Additional Information remains collapsed for purchase context, UPC when not scanned, Style/Article Number and Material/Fabric Composition; Product Photo is not duplicated there.
 
-If a member attempts to submit without any required Front/Back/Product photo, the UI must visibly explain the missing-photo requirement in the Photos section and take the member to that error. Silent submit failure is not acceptable.
-
 ## Tracked fit variation — LOCKED
 - only structured questions LikeSized actually asks for the Garment Type are eligible;
 - every current remaining structured Type question is variation-defining;
@@ -443,7 +441,7 @@ exposure           = 0.87
 photo_quality_score = 90.95
 ```
 
-Weights are the starting configuration, not a reason to hard-code the algorithm so rigidly that later calibration requires redesigning the selection system.
+Weights are the starting configuration, not a reason to hard-code the algorithm so rigidly that later calibration requires redesigning the system.
 
 ## Suggested persisted fields
 At minimum plan for:
@@ -702,8 +700,8 @@ Recent released application/source lineage:
 - PR #107 — person-preview consolidation attempt — **SUPERSEDED / CLOSED WITHOUT MERGE**, exact head **`36a370a0efc9fa249163671717dee75d53fc79b7`**; no unique current Product authority remains outside released PR #108.
 - PR #108 — canonical person quick-view consolidation — exact branch **`9fb72dba543a75c63ada1369ce69492736371904`**, merge **`2d30ed30861ed7e0cd6d199123f37109262fe33e`**, exact-head CI **#1068 / `33072141110`** green, main push CI **#1069 / `33072475137`** green, no migration; owner authorized production by saying **“ok proceed”**; Vercel release **`dpl_CPRipAfxBQd3pemDDG2UCCH31ZK7`** was verified READY on `likesized.com` with no alias error.
 - PR #109 — PR #108 release reconciliation — exact branch **`f1dafdef65058135da18550b665e7fbfe2b0ebba`**, merge **`0954d9e25f7264c2865953084359909cba0edba4`**, exact-head CI **#1070 / `33073182977`** green and main CI **#1071 / `33073414907`** green; docs-only, no Product behavior and no migration.
-- PR #111 — Style Feed safeguard preauthorization — exact branch **`919b488e2e16a5b3a222ff498c0fe4b17e99ab2c`**, merge **`68d95da58213223ffd4ce0e9fac78610ce1affb0`**, exact-head LikeSized CI **#1081 / `33084058737`** green; docs-only authorization for the named safeguard files, no Product behavior and no migration.
-- PR #112 — remaining Style Feed safeguard preauthorization — exact branch **`fccaaacd9e7838fb663c0f666b3cad4fcb12fe61`**, merge **`114de2850209a9907f5374ed55ca26296a080bb8`**, exact-head LikeSized CI **#1085 / `33088117718`** green; docs-only authorization for the additional named safeguard files, no Product behavior and no migration.
+- PR #111 — Style Feed safeguard preauthorization — exact branch **`919b488e2e16a5b3a222ff498c0fe4b17e99ab2c`**, merge **`68d95da58213223ffd4ce0e9fac78610ce1affb0`**, exact-head CI **#1081 / `33084058737`** green; docs-only authorization for the named safeguard files, no Product behavior and no migration.
+- PR #112 — remaining Style Feed safeguard preauthorization — exact branch **`fccaaacd9e7838fb663c0f666b3cad4fcb12fe61`**, merge **`114de2850209a9907f5374ed55ca26296a080bb8`**, exact-head CI **#1085 / `33088117718`** green; docs-only authorization for the additional named safeguard files, no Product behavior and no migration.
 - PR #110 — Style Feed polish/performance repair — exact branch **`85399208796b368b044359873a416c4e334a8a51`**, merge **`a4db9989fec96ad15b8f895f0ddf851bdd5aaf95`**, exact-head CI **#1087 / `33089052645`** green, main push CI **#1088 / `33089339088`** green, no migration; Vercel release **`dpl_NaisTCYEBDgYJX3n4kHaYCLjAFY8`** was verified READY on `likesized.com` with no alias error.
 
 # EXACT NEXT ACTION — CURRENT

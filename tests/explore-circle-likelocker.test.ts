@@ -10,6 +10,8 @@ const taxonomy=readFileSync("lib/garment-taxonomy.ts","utf8");
 const fixtures=readFileSync("lib/explore-fixtures.ts","utf8");
 const circle=readFileSync("app/circle/page.tsx","utf8");
 const circleFilters=readFileSync("app/circle/StyleFeedFilters.tsx","utf8");
+const circleLike=readFileSync("app/circle/StyleFeedLikeButton.tsx","utf8");
+const circleLikeApi=readFileSync("app/api/outfits/[id]/like/route.ts","utf8");
 const outfitGallery=readFileSync("app/outfits/[id]/OutfitGallery.tsx","utf8");
 const commentThread=readFileSync("app/outfits/[id]/CommentThread.tsx","utf8");
 const people=readFileSync("app/people/page.tsx","utf8");
@@ -73,9 +75,9 @@ test("Style Feed is Outfit-only following inspiration with Fit Twins as the defa
  assert.match(circle,/fitTwinLabel\(designationFor/);
  assert.match(circle,/outfit_style_tags/);
  assert.match(circle,/OUTFIT_OCCASIONS/);
- assert.match(circle,/Find More Fit Twins/);
- assert.match(circle,/href="\/people"/);
- assert.doesNotMatch(circle,/See All Following/);
+ assert.match(circle,/href=\{feedHref\("all", occasion, styleTag\)\}>See All Following →<\/Link>/);
+ assert.match(circle,/href="\/people">Find More Fit Twins →<\/Link>/);
+ assert.doesNotMatch(circle,/Want more inspiration/);
  assert.doesNotMatch(circle,/get_following_feed/);
  assert.doesNotMatch(circle,/fit_report_added|closet_shared|fitTwinPriority|Overall Match/);
 });
@@ -91,9 +93,23 @@ test("Style Feed reuses canonical Outfit interaction surfaces instead of page-sp
  assert.match(outfitGallery,/previewUrl\?:string/);
  assert.match(outfitGallery,/src=\{current\.previewUrl\?\?current\.url\}/);
  assert.match(outfitGallery,/src=\{current\.url\}/);
- assert.match(outfitGallery,/Math\.abs\(dx\)>=38/);
+ assert.match(outfitGallery,/setStageDragX\(dx\)/);
+ assert.match(outfitGallery,/setLightboxDragY\(Math\.max\(0,dy\)\)/);
+ assert.match(outfitGallery,/touchAction:"none"/);
+ assert.match(outfitGallery,/lightboxPrev/);
+ assert.match(outfitGallery,/lightboxNext/);
  assert.match(commentThread,/triggerOnly\?:boolean/);
  assert.match(commentThread,/!open&&triggerOnly/);
+ assert.match(commentThread,/onPointerDown=\{primeFull\}/);
+});
+
+test("Style Feed Like stays local and optimistic instead of submitting a page-revalidating form",()=>{
+ assert.match(circle,/StyleFeedLikeButton/);
+ assert.doesNotMatch(circle,/action=\{liked \? unlikeOutfit : likeOutfit\}/);
+ assert.match(circleLike,/setLiked\(nextLiked\)/);
+ assert.match(circleLike,/fetch\(`\/api\/outfits\/\$\{postId\}\/like`/);
+ assert.match(circleLikeApi,/export async function PATCH/);
+ assert.match(circleLikeApi,/from\("outfit_likes"\)/);
 });
 
 test("Style Feed relationship and discovery filters stay compact and do not require a giant Apply action",()=>{

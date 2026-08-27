@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { reportContent } from "@/app/moderation/actions";
 import { PersonQuickView } from "@/components/PersonQuickView";
 import CommentComposer, { type SubmittedComment } from "./CommentComposer";
@@ -27,6 +27,7 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
   const [fullLoaded,setFullLoaded]=useState(false);
   const [loadingEarlier,setLoadingEarlier]=useState(false);
   const [interactionError,setInteractionError]=useState("");
+  const prefetching=useRef(false);
   const returnTo=`/outfits/${postId}?tab=comments&comments=1`;
 
   async function requestPage(limit:number,sortMode:SortMode,before?:Cursor|null):Promise<PagePayload|null>{
@@ -52,6 +53,12 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
     setFullLoaded(true);
   }
 
+  function primeFull(){
+    if(fullLoaded||prefetching.current)return;
+    prefetching.current=true;
+    void loadFull(sort).finally(()=>{prefetching.current=false;});
+  }
+
   async function loadEarlier(){
     if(!cursor||loadingEarlier)return;
     setLoadingEarlier(true);
@@ -63,9 +70,7 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
   function openComments(){
     setInteractionError("");
     setOpen(true);
-    setFullLoaded(false);
-    setCursor(null);
-    void loadFull(sort);
+    if(!fullLoaded&&!prefetching.current)primeFull();
   }
 
   function closeComments(){
@@ -82,13 +87,10 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
     setSort(next);
     setCursor(null);
     setInteractionError("");
-    if(open){
-      setFullLoaded(false);
-      void loadFull(next);
-    }else if(!triggerOnly){
-      setPreviewLoaded(false);
-      void loadPreview(next);
-    }
+    setFullLoaded(false);
+    prefetching.current=false;
+    if(open){void loadFull(next);}
+    else if(!triggerOnly){setPreviewLoaded(false);void loadPreview(next);}
   }
 
   function updateActiveComment(commentId:string,updater:(comment:CommentItem)=>CommentItem){
@@ -150,8 +152,9 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
   useEffect(()=>{
     setCount(commentCount);
     setSort("top");
+    prefetching.current=false;
     if(initialOpen){setOpen(true);setFullLoaded(false);void loadFull("top");}
-    else if(triggerOnly){setOpen(false);setPreview([]);setPreviewLoaded(true);}
+    else if(triggerOnly){setOpen(false);setFull([]);setFullLoaded(false);setPreview([]);setPreviewLoaded(true);}
     else{setOpen(false);setPreviewLoaded(false);void loadPreview("top");}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[postId,triggerOnly]);
@@ -182,11 +185,11 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
   }
 
   return <div className={styles.host}>
-    {!open&&triggerOnly?<button className={triggerClassName??styles.openButton} type="button" onClick={openComments}>{triggerLabel??(count?`Comments ${count}`:"Comments")}</button>:null}
+    {!open&&triggerOnly?<button className={triggerClassName??styles.openButton} type="button" onPointerEnter={primeFull} onPointerDown={primeFull} onFocus={primeFull} onClick={openComments}>{triggerLabel??(count?`Comments ${count}`:"Comments")}</button>:null}
     {!open&&!triggerOnly?<div className={styles.preview}>
       <SortButtons/>
       {!previewLoaded?<p className="muted">Loading comments…</p>:preview.length?<div className={styles.commentList}>{preview.map(renderComment)}</div>:<p className="muted">No comments yet.</p>}
-      <button className={styles.openButton} type="button" onClick={openComments}>{count?`View all ${count} comment${count===1?"":"s"}`:"Add a comment"}</button>
+      <button className={styles.openButton} type="button" onPointerEnter={primeFull} onPointerDown={primeFull} onFocus={primeFull} onClick={openComments}>{count?`View all ${count} comment${count===1?"":"s"}`:"Add a comment"}</button>
     </div>:null}
     {open?<div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Outfit comments" onClick={closeComments}>
       <section className={styles.sheet} onClick={(event)=>event.stopPropagation()}>

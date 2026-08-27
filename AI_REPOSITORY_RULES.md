@@ -40,8 +40,8 @@ When an owner-locked decision changes product meaning, update the master and eve
 ## 4. Owner-decision rule — LOCKED
 
 - An owner-approved decision is not safely recorded while it exists only in chat or on a long-lived feature branch.
-- During branch work, record the decision in that branch's master immediately and mark branch-only implementation status accurately.
-- While a primary active line exists, new owner-approved product decisions belong on that same line by default. Do not branch from stale `main` merely because the change is docs-only or appears independent.
+- During implementation branch work, record the decision in that branch's master immediately and mark branch-only implementation status accurately.
+- While a primary active implementation line exists, new owner-approved product decisions belong on that same line by default. Do not branch from stale `main` merely because the change is docs-only or appears independent.
 - Before a different feature/decision branch begins, the prior active line must be reconciled into the single recovery/canonical line or explicitly parked in the master with exact source branch + commit SHA and a salvage status.
 - Never start a second divergent product future while meaningful owner-approved work remains unclassified on another branch.
 
@@ -59,9 +59,9 @@ When an owner-locked decision changes product meaning, update the master and eve
 
 1. Only one primary active implementation/recovery line should exist at a time unless the owner explicitly authorizes parallel work.
 2. Before new work starts, compare the active branch with canonical `main`. If it is materially behind/diverged, reconcile first.
-3. Before creating **any additional branch or PR**, compare its intended base with both `main` and the current primary active line. If the intended base is missing owner-approved commits/decisions from the active line, STOP. Either put the work directly on the active line or explicitly reconcile/park that active work first.
-4. A branch created from `main` while an unreconciled active line exists must not be used for product decisions, canonical documentation changes, schema architecture, or overlapping implementation unless the owner explicitly authorizes that parallel line.
-5. A docs-only decision is still product state. It follows the same active-line rule as code and migrations.
+3. Before creating **any additional implementation branch or PR**, compare its intended base with both `main` and the current primary active implementation line. If the intended base is missing owner-approved commits/decisions from the active line, STOP. Either put the work directly on the active line or explicitly reconcile/park that active work first.
+4. A branch created from `main` while an unreconciled active implementation line exists must not be used for product decisions, canonical schema architecture, or overlapping implementation unless the owner explicitly authorizes that parallel line.
+5. A docs-only product decision is still product state and follows the same active implementation-line rule. A post-release non-runtime reconciliation that records already-settled facts is not a second product-decision line.
 6. Do not delete a branch or close a salvage PR until every meaningful changed file/decision has been classified as one of: **RECOVERED / SUPERSEDED / OBSOLETE / DUPLICATE / DEFERRED**.
 7. Any DEFERRED work must remain recorded in `docs/AI_MASTER_LOG.md` with the exact source branch/commit until recovered or explicitly discarded by the owner.
 8. At phase completion, clean obsolete merged/retry/verification branches after the salvage ledger proves nothing unique remains. Remote retry branches are not an archive; Git history and the salvage ledger are the archive.
@@ -79,7 +79,7 @@ A task is not complete until:
 
 Never mark planned, attempted, preview-only, failed, branch-only, unverified, or partially salvaged work COMPLETE.
 
-The current active branch recorded in `docs/AI_MASTER_LOG.md` must match the actual pull-request head branch. A PR with an out-of-date active-line record is canonical drift and must fail verification until reconciled.
+While a Product/runtime implementation PR is open, any `Active branch:` record in `docs/AI_MASTER_LOG.md` must match the actual pull-request head branch. Once the implementation is merged and reconciled, the settled master must use **`Active branch: NONE — canonical main`** rather than preserving a merged branch name as if it were still authoritative. A purely non-runtime post-release reconciliation may use that settled state because it is closing already-verified lineage, not opening a second product future.
 
 Some immutable release facts—such as the final squash SHA, post-merge `main` CI result, and Vercel deployment result—do not exist until after merge. Record owner authorization and all pre-merge product truth on the release branch first. After deployment verification, any follow-up reconciliation that changes **only** non-runtime canonical documentation/CI metadata/regression safeguards must use the canonical Vercel release boundary so it does not create another production application build merely to record the prior release. Never modify runtime source, add a noop, or trigger a second deployment just to close bookkeeping.
 
@@ -119,7 +119,8 @@ Canonical CI must run `npm run canonical:check` before typecheck/build/database 
 - forbidden temp/noop/version-suffixed source artifacts;
 - missing required current terminology in canonical docs;
 - duplicated current-application/release status outside the master;
-- a pull request whose recorded active branch does not match the actual PR head;
+- a Product/runtime implementation PR whose recorded active branch does not match the actual PR head;
+- a PR claiming settled `Active branch: NONE — canonical main` while changing runtime/Product/release-boundary source;
 - an application/source/safeguard PR that leaves the master untouched;
 - a migration PR that leaves the schema contract or master untouched;
 - owner-locked source/copy regressions that are explicitly protected by the canonical integrity check;

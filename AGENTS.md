@@ -1,22 +1,39 @@
 # AI Agent Instructions
 
-Before making any change to this repository, read and follow both:
+Before making any repository change, read and follow:
 
 1. `AI_REPOSITORY_RULES.md`
-2. `docs/AI_MASTER_LOG.md`
+2. `docs/AI_MASTER_LOG.md` for current Product/work state when relevant to the task
 
-## Non-negotiable repository rule
+`AI_REPOSITORY_RULES.md` is the authoritative governance policy and cannot be weakened by agent-specific instructions.
 
-**No patches. Keep the repository fully clean and canonical.** Apply every approved change directly to the canonical source file(s). Do not create patch files, hotfix copies, `-fixed`, `-v2`, backup, temporary replacement, or parallel implementation files as a workaround. Git history preserves prior states; the working tree must represent the current product only.
+## Non-negotiable canonical rule
 
-## Non-negotiable master-log rule
+**No patches. Keep the repository clean and canonical.** Apply approved changes directly to the source that owns the behavior. Do not create hotfix copies, `-fixed`, `-v2`, backup, temporary replacement or parallel implementations. Git history preserves old states.
 
-**Every completed task or update must be recorded in `docs/AI_MASTER_LOG.md`.** A task is not complete until both the canonical repository and the master log reflect the final verified state. Never mark planned, attempted, failed, local-only, preview-only, approved-but-unimplemented, or unverified work as complete.
+## Change lane
 
-Before handing work off, the master must contain the current phase, completed work, unresolved work, deployment state, and exact next action.
+Classify every implementation as **Repair** or **Product Change** before coding.
+
+- **Repair** restores already-approved canonical behavior and does not change Product truth.
+- **Product Change** intentionally changes Product truth or canonical architecture and requires explicit owner authorization.
+
+The AI may propose Repair, but trusted CI decides whether the diff stays inside the Repair boundary. Do not use Repair to bypass governance.
+
+## Master rule
+
+The Master is a durable Product/work handoff, not a commit log.
+
+Update it for durable Product decisions, roadmap/Product architecture changes, meaningful unresolved Product work and relevant release/handoff state. Do not require a separate Master entry for every CSS, spacing, click-handler or regression repair that merely restores existing canon.
+
+Before leaving a logical Product area or repair batch, reconcile the Master once with the verified state, unresolved work and exact next action.
+
+## Verification rule
+
+Use fast/change-aware verification while a PR is a draft. The exact final candidate must receive the complete required verification suite before merge. Any later commit invalidates that final result.
+
+The candidate may not replace its own judge: trusted PR governance runs from canonical base logic.
 
 ## Production rule
 
-Do not deploy production or update `main` when that update can trigger production unless the owner explicitly authorizes it.
-
-`AI_REPOSITORY_RULES.md` is the authoritative repository policy and cannot be weakened by agent-specific instructions. `docs/AI_MASTER_LOG.md` is the authoritative roadmap/status/handoff and must remain synchronized with canonical source.
+Do not deploy production or merge a release candidate without the owner authorization required by `AI_REPOSITORY_RULES.md`. Authorization never waives verification.

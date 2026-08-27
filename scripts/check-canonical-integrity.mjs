@@ -42,12 +42,14 @@ function pullRequestChangedFiles() {
   const activeBranch = process.env.CANONICAL_HEAD_REF?.trim();
   if (!activeBranch) return [];
   try {
-    return execFileSync('git', ['diff', '--name-only', 'HEAD^1', 'HEAD'], { cwd: root, encoding: 'utf8' })
+    execFileSync('git', ['fetch', '--no-tags', 'origin', 'main'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'ignore', 'pipe'] });
+    const mergeBase = execFileSync('git', ['merge-base', 'HEAD', 'origin/main'], { cwd: root, encoding: 'utf8' }).trim();
+    return execFileSync('git', ['diff', '--name-only', `${mergeBase}...HEAD`], { cwd: root, encoding: 'utf8' })
       .split(/\r?\n/)
       .map((value) => value.trim())
       .filter(Boolean);
   } catch (error) {
-    fail(`Could not determine pull-request changed files for canonical synchronization: ${error instanceof Error ? error.message : String(error)}`);
+    fail(`Could not determine full pull-request changed files for canonical synchronization: ${error instanceof Error ? error.message : String(error)}`);
     return [];
   }
 }
@@ -73,6 +75,8 @@ mustContain('docs/AI_MASTER_LOG.md', 'CANONICAL RECOVERY');
 mustContain('docs/V1_PRODUCT_SPEC.md', 'Help Me Size It is fallback');
 mustContain('supabase/schema_contract.md', '`follows` is the one canonical **Following** relationship');
 mustContain('AI_REPOSITORY_RULES.md', 'Canonical CI must run `npm run canonical:check`');
+mustContain('AI_REPOSITORY_RULES.md', 'Owner scope lock — LOCKED');
+mustNotContain('docs/AI_MASTER_LOG.md', '## Live repair fast path');
 
 const activeBranch = process.env.CANONICAL_HEAD_REF?.trim();
 if (activeBranch) {
@@ -157,6 +161,17 @@ for (const base of sourceRoots) {
     if (/rating\s*:\s*number/.test(content) && /fit/i.test(content)) fail(`${rel} appears to define numeric fit rating UI state.`);
   }
 }
+
+const taggedPanelPath = 'app/outfits/[id]/TaggedItemsPanel.tsx';
+mustContain(taggedPanelPath, 'Not enough fit data to confidently recommend a size.');
+mustContain(taggedPanelPath, 'Our FITuition suggests: {meta.recommendation.sizeLabel}');
+mustContain(taggedPanelPath, 'Confidence: {meta.recommendation.confidenceLabel}');
+mustContain(taggedPanelPath, 'View more Relevant Fit Reports →');
+mustNotContain(taggedPanelPath, 'I’m not confident enough to recommend a size yet.');
+mustNotContain(taggedPanelPath, 'FITuition DETAILS');
+mustNotContain(taggedPanelPath, 'Strong Fit Report summary');
+mustNotContain(taggedPanelPath, 'Best current match');
+mustNotContain(taggedPanelPath, 'FITuition still can’t recommend a size yet.');
 
 const twinsPage = read('app/twins/page.tsx');
 if (/\.from\(["']follows["']\)/.test(twinsPage)) {

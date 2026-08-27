@@ -51,7 +51,7 @@ test("Closet picker is progressive and selection is explicit",()=>{
  assert.doesNotMatch(composer,/option value="type">Garment Type<\/option>/);
 });
 
-test("garment quick view uses real Closet detail evidence",()=>{
+test("garment quick view uses real Closet detail evidence while the picker list stays compact",()=>{
  assert.match(newPage,/garment_answers/);
  assert.doesNotMatch(newPage,/product_attribute_values/);
  assert.match(newPage,/fit_reference_photos/);
@@ -59,7 +59,8 @@ test("garment quick view uses real Closet detail evidence",()=>{
  assert.match(newPage,/const color=item\.variant_id\?variantById\.get\(item\.variant_id\)\?\.color_label\?\?null:null/);
  assert.match(newPage,/photoUrls/);
  assert.match(newPage,/answers/);
- assert.match(newPage,/variationDetail/);
+ assert.match(newPage,/detail: \[garmentTypeLabel,`Size \$\{item\.size_label\}`,color\]\.filter\(Boolean\)\.join\(" · "\)/);
+ assert.doesNotMatch(newPage,/const variationDetail=answers\.map/);
  assert.match(composer,/BRAND/);
  assert.match(composer,/ITEM \/ MODEL/);
  assert.match(composer,/GARMENT TYPE/);

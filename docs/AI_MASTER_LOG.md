@@ -185,7 +185,7 @@ Production Supabase includes, after the earlier Roadmap 12 migrations:
 PR #94, PR #95, PR #97, PR #98, PR #99, PR #100, PR #101, PR #102, PR #103, PR #104, PR #105, PR #106, PR #108, PR #110, PR #117 and PR #119 introduced no new production database migration. PR #96 introduced the Outfit tag-consistency migration above.
 
 ## Current primary line — ACTIVE FINAL STYLE FEED LIVE-QA REPAIR
-Active branch: **repair/style-feed-final-live-qa**
+Active branch: **`repair/style-feed-final-live-qa`**
 
 Canonical production runtime remains `main` through PR #117. Canonical governance/preauthorization is `main` through PR #119. The owner-authorized two-item live-QA repair is implemented only on the active runtime branch and remains unverified/unmerged/unreleased until the exact candidate passes full CI and receives separate production authorization.
 

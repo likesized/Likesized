@@ -15,6 +15,7 @@ const firstQuickViewStart=taggedPanel.indexOf("<div className={styles.itemPrevie
 const firstQuickViewEnd=taggedPanel.indexOf("{actionError?",firstQuickViewStart);
 const firstQuickViewMarkup=taggedPanel.slice(firstQuickViewStart,firstQuickViewEnd);
 const unsavedDialogCss=pickerCss.match(/:global\(\[role="dialog"\]\[aria-label="Unsaved Outfit"\]\)\{([^}]*)\}/)?.[1]??"";
+const garmentDialogCss=pickerCss.match(/:global\(\[role="dialog"\]\[aria-label="Add a new Closet garment"\]\)\{([^}]*)\}/)?.[1]??"";
 
 test("photo hotspots can open the canonical tagged quick view from any detail tab",()=>{
   assert.match(tabs,/tab==="style"\?<div ref=\{styleRef\}/);
@@ -26,16 +27,18 @@ test("photo hotspots can open the canonical tagged quick view from any detail ta
   assert.match(css,/\.taggedTabDormant \.taggedGrid\{display:none\}/);
 });
 
-test("visible Relevant Fit Reports exclude the viewer while own Closet history remains recommendation evidence",()=>{
+test("visible Relevant Fit Reports include the viewer's eligible exact Product and tracked variation report",()=>{
   assert.match(taggedFit,/newestUniqueVariationEvidence/);
   assert.match(taggedFit,/objective_variant_key/);
   assert.match(taggedFit,/const relevantExact=candidates\.filter/);
   assert.match(taggedFit,/row\.historical_match_score>=STRONG_FIT_REPORT_MATCH_THRESHOLD/);
   assert.match(taggedFit,/const otherRelevantExact=relevantExact\.filter\(\(row\)=>row\.user_id!==viewerId\)/);
-  assert.match(taggedFit,/const relevantReports=strongOtherReports/);
+  assert.match(taggedFit,/const ownExactReports:RelevantReport\[\]=ownReports\.filter/);
+  assert.match(taggedFit,/report\.garment_condition==="normal"&&report\.product_id===product\.id&&\(report\.objective_variant_key\?\?""\)===targetVariation/);
+  assert.match(taggedFit,/bodyMatch:null/);
+  assert.match(taggedFit,/isOwn:true/);
+  assert.match(taggedFit,/const relevantReports=\[\.\.\.ownExactReports,\.\.\.strongOtherReports\]/);
   assert.match(taggedFit,/matchingFitReports:relevantReports\.length/);
-  assert.match(taggedFit,/strongFitReports:strongAggregate\(otherRelevantExact/);
-  assert.doesNotMatch(taggedFit,/const relevantReports=\[\.\.\.ownExactReports/);
   assert.match(taggedFit,/source:"community"/);
   assert.match(taggedFit,/source:"closet"/);
   assert.match(taggedFit,/recommendSize\(\[\.\.\.otherEvidence,\.\.\.ownHistory\]\)/);
@@ -58,7 +61,7 @@ test("tagged FITuition preloads every card and resolves failures instead of hang
   assert.doesNotMatch(taggedPanel,/if\(!selectedId\|\|!signedIn\|\|loadedFitMeta/);
 });
 
-test("zero other-wearer Relevant Fit Reports never surfaces a tagged-item size recommendation",()=>{
+test("zero exact Relevant Fit Reports never surfaces a tagged-item size recommendation",()=>{
   assert.match(taggedPanel,/const showRecommendation=Boolean\(meta\?\.recommendation&&meta\.matchingFitReports>0\)/);
   assert.match(taggedPanel,/showRecommendation&&meta\.recommendation/);
   assert.match(taggedPanel,/I don’t have enough useful evidence to recommend a size yet\./);
@@ -99,6 +102,15 @@ test("unsaved Outfit navigation confirmation is fixed in the current viewport",(
   assert.match(unsavedDialogCss,/inset:0!important/);
   assert.match(unsavedDialogCss,/place-items:center!important/);
   assert.match(unsavedDialogCss,/z-index:240!important/);
+});
+
+test("Add a new garment from the Outfit opens in the current viewport instead of at document bottom",()=>{
+  assert.ok(garmentDialogCss,"Add-garment dialog rule must exist");
+  assert.match(garmentDialogCss,/position:fixed!important/);
+  assert.match(garmentDialogCss,/inset:0!important/);
+  assert.match(garmentDialogCss,/place-items:center!important/);
+  assert.match(garmentDialogCss,/z-index:240!important/);
+  assert.match(pickerCss,/:global\(\[role="dialog"\]\[aria-label="Add a new Closet garment"\] iframe\)\{[^}]*height:/);
 });
 
 test("mobile tagged quick view stays readable inside the safe-area modal",()=>{

@@ -23,7 +23,7 @@ type TargetReport=OwnReport;
 type SizeRow={id:string;normalized_key:string;display_label:string;kind:string;sizing_system:string|null;alpha_size:string|null;numeric_size:number|null;shoe_size:number|null};
 type AttributeRow={product_id:string;attribute_key:string;option_key:string};
 type Adjacency={current:{sizeKey:string;sizeLabel:string};up:{sizeKey:string;sizeLabel:string}|null;down:{sizeKey:string;sizeLabel:string}|null};
-type RelevantReport={fitReportId:string;bodyMatch:number;sizeLabel:string;fitLabel:string;isOwn:false};
+type RelevantReport={fitReportId:string;bodyMatch:number|null;sizeLabel:string;fitLabel:string;isOwn:boolean};
 
 function firstProduct(value:ProductRelation){return Array.isArray(value)?(value[0]??null):value;}
 function variationDetail(garmentTypeKey:string|null,answers:Record<string,string>|null){
@@ -130,6 +130,7 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
     return row.evidence_product_id===product.id&&(identity?.objective_variant_key??"")===targetVariation&&row.historical_match_score>=STRONG_FIT_REPORT_MATCH_THRESHOLD;
   }).sort((a,b)=>b.historical_match_score-a.historical_match_score||b.historical_coverage_percent-a.historical_coverage_percent);
   const otherRelevantExact=relevantExact.filter((row)=>row.user_id!==viewerId);
+  const ownExactReports:RelevantReport[]=ownReports.filter((report)=>report.garment_condition==="normal"&&report.product_id===product.id&&(report.objective_variant_key??"")===targetVariation).map((report)=>({fitReportId:report.id,bodyMatch:null,sizeLabel:report.size_label,fitLabel:FIT_RESULT_LABELS[report.fit]??report.fit,isOwn:true}));
 
   const ownProductById=new Map<string,ProductRow>();
   for(const report of ownReports){const source=firstProduct(report.product);if(source)ownProductById.set(source.id,source);}
@@ -159,7 +160,7 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
   const canRecommend=Boolean(recommendation&&recommendation.confidence>=45);
   const sizeLabelForCandidate=(row:Candidate)=>sizeAdjacency(row.normalized_size_id,row.original_size_label,sizeById,safeSizes).current.sizeLabel;
   const strongOtherReports:RelevantReport[]=otherRelevantExact.map((row)=>({fitReportId:row.fit_report_id,bodyMatch:row.historical_match_score,sizeLabel:sizeLabelForCandidate(row),fitLabel:FIT_RESULT_LABELS[row.fit]??row.fit,isOwn:false}));
-  const relevantReports=strongOtherReports;
+  const relevantReports=[...ownExactReports,...strongOtherReports];
 
   return Response.json({
     category,

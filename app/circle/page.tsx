@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { likeOutfit, unlikeOutfit } from "@/app/outfits/actions";
 import CommentThread from "@/app/outfits/[id]/CommentThread";
 import OutfitGallery, { type GalleryPhoto } from "@/app/outfits/[id]/OutfitGallery";
 import { fitTwinDesignation, fitTwinLabel } from "@/lib/fit-twin";
@@ -9,6 +8,7 @@ import { OUTFIT_OCCASIONS } from "@/lib/outfit-taxonomy";
 import { currentProfilePhotoUrl } from "@/lib/profile-photo";
 import { createClient } from "@/lib/supabase/server";
 import { StyleFeedFilters } from "./StyleFeedFilters";
+import { StyleFeedLikeButton } from "./StyleFeedLikeButton";
 import { StyleFeedShareButton } from "./StyleFeedShareButton";
 import styles from "./circle.module.css";
 
@@ -203,7 +203,6 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
     galleryPhotosByPost.set(post.id,[{id:`${post.id}-main`,url:displayData.signedUrl,previewUrl,caption:post.caption,tags:[]}]);
   }));
 
-  const returnTo = feedHref(scope, occasion, styleTag);
   const hasFilters = Boolean(occasion || styleTag);
   const selectedStyleDisplay = styleTagOptions.get(styleTag) ?? first(params.style) ?? "";
   const styleOptions=[...styleTagOptions.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([key,label])=>({key,label}));
@@ -264,11 +263,7 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
                     </div>
                   ) : null}
                   <div className={styles.actions}>
-                    <form action={liked ? unlikeOutfit : likeOutfit}>
-                      <input type="hidden" name="post_id" value={post.id} />
-                      <input type="hidden" name="return_to" value={returnTo} />
-                      <button type="submit" aria-pressed={liked}>{liked ? "♥" : "♡"} Like{post.like_count ? ` ${post.like_count}` : ""}</button>
-                    </form>
+                    <StyleFeedLikeButton className={styles.actionButton} postId={post.id} initialLiked={liked} initialCount={post.like_count}/>
                     {post.comments_enabled?<CommentThread postId={post.id} commentCount={post.comment_count} signedIn signIn={null} triggerOnly triggerClassName={styles.actionButton} triggerLabel={`Comments${post.comment_count?` ${post.comment_count}`:""}`}/>:<span className={styles.disabledAction}>Comments off</span>}
                     <StyleFeedShareButton className={styles.actionButton} postId={post.id} headline={post.headline?.trim() || "LikeSized Outfit"} />
                   </div>
@@ -288,7 +283,6 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
 
       {scope === "twins" ? (
         <footer className={styles.feedFooter}>
-          <p>Want more inspiration?</p>
           <Link className="textLink" href={feedHref("all", occasion, styleTag)}>See All Following →</Link>
           <Link className="textLink" href="/people">Find More Fit Twins →</Link>
         </footer>

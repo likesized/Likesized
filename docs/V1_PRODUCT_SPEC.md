@@ -54,11 +54,15 @@ Match % means **garment-relevant body similarity**, not probability a garment wi
 - **Tops Twin** means only Tops Match clears it. **Bottoms Twin** means only Bottoms Match clears it.
 - Overall Match remains the visible general body-similarity score but **does not grant Twin status by itself**.
 - **People My Size defaults to Twin-level discovery only.** Before someone is followed, a qualifying result may be described as a Fit Twin/Tops Twin/Bottoms Twin **Match** rather than implying a followed relationship already exists. **All Matches** is the alternate broader view.
-- **Style Feed** is the Following-only Outfit inspiration surface. Its default relationship filter is **Fit Twins**; **All** is the alternate view. The Fit Twins view includes followed Fit Twins, Tops Twins and Bottoms Twins.
+- **Style Feed** is the Following-only Outfit inspiration surface. Its default relationship filter is **Fit Twins**; **All Following** is the alternate view. The two relationship choices appear at the top of the feed as the first feed control. The Fit Twins view includes followed Fit Twins, Tops Twins and Bottoms Twins.
 - Style Feed does **not** show Body Match/Overall Match percentages on posts. The current Twin badge is sufficient relationship context there.
 - Style Feed is chronological within the selected filters: newest published Outfit first. There is no hidden Match-based feed ranking.
-- Style Feed supports **Occasion** and **Style Tags** filtering. Style Tags must be searchable in the filter control rather than forcing the member to scan a long static list.
-- When viewing Fit Twins, the bottom of the feed offers **See All Following** and **Find More Fit Twins**. Find More Fit Twins routes to **People My Size**, whose default view is Twin-level discovery.
+- Style Feed supports **Occasion** and **Style Tags** filtering. Style Tags must be searchable in the filter control rather than forcing the member to scan a long static list. These controls stay compact on constrained screens and do not require a large standalone Apply button.
+- Style Feed Outfit cards reuse the canonical Outfit gallery: all Outfit photos may be swiped in-card, and tapping the photo opens the full-screen multi-photo viewer rather than navigating or opening an Outfit metadata quick view.
+- Style Feed Comments opens the canonical comments sheet over the feed instead of forcing navigation to full Outfit details.
+- Creator avatar / Display Name / `@username` uses the one universal Person quick-view behavior. Do not create separate Style Feed-specific member/profile preview systems.
+- Full Outfit navigation is a separate explicit **View Full Outfit →** control. Photo and creator identity are not full-detail navigation.
+- The default Fit Twins view never silently broadens to All Following. The bottom prompt offers **Find More Fit Twins**, routing to **People My Size**; it does not duplicate the All Following switch already available at the top.
 - `/following` is compatibility-only and resolves to `/circle`.
 - Signed-in `/` currently resolves to `/circle`; logged-out `/` is the public homepage.
 - Follow alone does not enable person notifications.
@@ -551,11 +555,16 @@ Outfits are member-created mini editorial posts built from owned Closet garments
 ## Feed/discovery boundary
 - General Outfit browsing/discovery may use an **image-first Pinterest-like masonry/pinboard rhythm**: natural Main Photo proportions, staggered multi-column layout, minimal card chrome and lightweight Headline/creator/Occasion/Style/social metadata beneath the image. This remains distinct from the Following-only Style Feed.
 - **Style Feed (`/circle`) is a passive social Outfit feed from people the viewer already follows only.** It does not mix Fit Reports, Closet-add activity or generic Product discovery into the feed.
-- Style Feed defaults to **Fit Twins** and offers **All** as the alternate relationship filter. Fit Twins includes followed Fit Twin, Tops Twin and Bottoms Twin designations.
+- Style Feed defaults to **Fit Twins** and offers **All Following** beside it at the top as the alternate relationship filter. Fit Twins includes followed Fit Twin, Tops Twin and Bottoms Twin designations.
 - Style Feed shows the creator's current public identity and Twin badge where applicable, but **no Body Match/Overall Match percentage** on the feed card.
 - Style Feed ordering is **newest published Outfit first** inside the active filters; no Match-based priority/ranking is applied.
-- Style Feed filters are **Occasion** and **Style Tags**. Style Tags use a searchable filter control.
-- The default Fit Twins view never silently falls back to All. If there are no Twin Outfit posts for the active filters, the page says so. At the bottom it offers **See All Following** and **Find More Fit Twins**, with Find More Fit Twins routing to **People My Size**.
+- Style Feed filters are **Occasion** and **Style Tags**. Style Tags use a searchable filter control. On mobile/constrained screens these controls remain compact and do not sit inside a large filter card or require a giant standalone Apply button.
+- Each Style Feed Outfit reuses the **canonical Outfit gallery** rather than a feed-specific photo viewer. All Outfit photos are swipeable in the card, the current photo can be tapped into the same full-screen multi-photo viewer, and feed rendering may use the optimized feed derivative while full-screen uses the display image.
+- A Style Feed photo tap is a photo-viewing action only. It does not navigate to `/outfits/[id]` and does not invoke the generic Outfit metadata quick-view popup.
+- The Style Feed **Comments** action opens the canonical comments sheet over the feed so the viewer can read/add comments without navigating away from their feed position.
+- Creator avatar / Display Name / `@username` uses the same universal Person quick view used elsewhere. LikeSized does not maintain separate per-page Person or garment preview implementations.
+- Full Outfit details are reached through a dedicated explicit **View Full Outfit →** navigation control; photo and creator identity are not full-detail navigation targets.
+- The default Fit Twins view never silently falls back to All Following. If there are no Twin Outfit posts for the active filters, the page says so. The bottom prompt offers **Find More Fit Twins** and routes to **People My Size**; it does not repeat All Following because that relationship control is already at the top.
 - People My Size defaults to Twin-level qualifying results and exposes **All Matches** as the alternate broader discovery view.
 - Drafts never create feed activity.
 - Explore/Search remain separate intentional Product/garment/Outfit discovery surfaces; Style Feed does not replace them.

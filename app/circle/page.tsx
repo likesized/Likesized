@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { likeOutfit, unlikeOutfit } from "@/app/outfits/actions";
+import CommentThread from "@/app/outfits/[id]/CommentThread";
+import OutfitGallery, { type GalleryPhoto } from "@/app/outfits/[id]/OutfitGallery";
 import { fitTwinDesignation, fitTwinLabel } from "@/lib/fit-twin";
 import { outfitFeedPhotoPath } from "@/lib/outfit-photo-paths";
 import { OUTFIT_OCCASIONS } from "@/lib/outfit-taxonomy";
 import { currentProfilePhotoUrl } from "@/lib/profile-photo";
 import { createClient } from "@/lib/supabase/server";
+import { StyleFeedFilters } from "./StyleFeedFilters";
 import { StyleFeedShareButton } from "./StyleFeedShareButton";
 import styles from "./circle.module.css";
 
@@ -27,7 +30,7 @@ type OutfitPost = {
   comments_enabled: boolean;
 };
 type Profile = { id: string; username: string; display_name: string | null; avatar_url: string | null };
-type MainPhoto = { post_id: string; bucket: string; feed_path: string; display_path: string };
+type FeedPhoto = { id:string;post_id:string;bucket:string;feed_path:string|null;display_path:string;sort_order:number;caption:string|null };
 type OccasionRow = { post_id: string; occasion: string; sort_order: number };
 type StyleTagRow = { post_id: string; normalized_tag: string; display_tag: string; sort_order: number };
 
@@ -123,7 +126,7 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
         authorIds.length
           ? supabase.from("profiles").select("id,username,display_name,avatar_url").in("id", authorIds)
           : Promise.resolve({ data: [], error: null }),
-        supabase.from("outfit_photos").select("post_id,bucket,feed_path,display_path").in("post_id", postIds).eq("is_main", true),
+        supabase.from("outfit_photos").select("id,post_id,bucket,feed_path,display_path,sort_order,caption").in("post_id", postIds).eq("bucket", "outfit-photos").order("sort_order"),
         supabase.from("outfit_occasions").select("post_id,occasion,sort_order").in("post_id", postIds).order("sort_order"),
         supabase.from("outfit_style_tags").select("post_id,normalized_tag,display_tag,sort_order").in("post_id", postIds).order("sort_order"),
         supabase.from("outfit_likes").select("post_id").eq("user_id", viewerId).in("post_id", postIds),
@@ -140,7 +143,12 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
   }
 
   const profiles = new Map(((profileResult.data ?? []) as Profile[]).map((person) => [person.id, person]));
-  const mainPhotos = new Map(((photoResult.data ?? []) as MainPhoto[]).map((photo) => [photo.post_id, photo]));
+  const photoRowsByPost = new Map<string, FeedPhoto[]>();
+  for (const photo of (photoResult.data ?? []) as FeedPhoto[]) {
+    const current=photoRowsByPost.get(photo.post_id)??[];
+    current.push(photo);
+    photoRowsByPost.set(photo.post_id,current);
+  }
   const occasionsByPost = new Map<string, OccasionRow[]>();
   for (const row of (occasionResult.data ?? []) as OccasionRow[]) {
     const current = occasionsByPost.get(row.post_id) ?? [];
@@ -164,24 +172,41 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
     return true;
   });
 
-  const signedPhotos = new Map<string, string>();
+  const galleryPhotosByPost = new Map<string, GalleryPhoto[]>();
   await Promise.all(feed.map(async (post) => {
-    const main = mainPhotos.get(post.id);
-    const candidates = main
-      ? [main.feed_path, main.display_path]
-      : [outfitFeedPhotoPath(post.photo_url), post.photo_url];
-    for (const path of [...new Set(candidates.filter(Boolean))]) {
-      const { data } = await supabase.storage.from("outfit-photos").createSignedUrl(path, 1800);
-      if (data?.signedUrl) {
-        signedPhotos.set(post.id, data.signedUrl);
-        break;
-      }
+    const rows=photoRowsByPost.get(post.id)??[];
+    if(rows.length){
+      const resolved=await Promise.all(rows.map(async (row):Promise<GalleryPhoto|null>=>{
+        const {data:displayData}=await supabase.storage.from("outfit-photos").createSignedUrl(row.display_path,1800);
+        if(!displayData?.signedUrl)return null;
+        const previewPath=row.feed_path||outfitFeedPhotoPath(row.display_path);
+        let previewUrl=displayData.signedUrl;
+        if(previewPath&&previewPath!==row.display_path){
+          const {data:previewData}=await supabase.storage.from("outfit-photos").createSignedUrl(previewPath,1800);
+          if(previewData?.signedUrl)previewUrl=previewData.signedUrl;
+        }
+        return {id:row.id,url:displayData.signedUrl,previewUrl,caption:row.caption,tags:[]};
+      }));
+      const photos=resolved.filter((photo):photo is GalleryPhoto=>Boolean(photo));
+      if(photos.length)galleryPhotosByPost.set(post.id,photos);
+      return;
     }
+    if(!post.photo_url)return;
+    const {data:displayData}=await supabase.storage.from("outfit-photos").createSignedUrl(post.photo_url,1800);
+    if(!displayData?.signedUrl)return;
+    const previewPath=outfitFeedPhotoPath(post.photo_url);
+    let previewUrl=displayData.signedUrl;
+    if(previewPath!==post.photo_url){
+      const {data:previewData}=await supabase.storage.from("outfit-photos").createSignedUrl(previewPath,1800);
+      if(previewData?.signedUrl)previewUrl=previewData.signedUrl;
+    }
+    galleryPhotosByPost.set(post.id,[{id:`${post.id}-main`,url:displayData.signedUrl,previewUrl,caption:post.caption,tags:[]}]);
   }));
 
   const returnTo = feedHref(scope, occasion, styleTag);
   const hasFilters = Boolean(occasion || styleTag);
   const selectedStyleDisplay = styleTagOptions.get(styleTag) ?? first(params.style) ?? "";
+  const styleOptions=[...styleTagOptions.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([key,label])=>({key,label}));
 
   return (
     <main className="pageShell">
@@ -193,28 +218,11 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
 
       <nav className={styles.scopeTabs} aria-label="Style Feed people filter">
         <Link className={scope === "twins" ? styles.activeTab : styles.tab} href={feedHref("twins", occasion, styleTag)}>Fit Twins</Link>
-        <Link className={scope === "all" ? styles.activeTab : styles.tab} href={feedHref("all", occasion, styleTag)}>All</Link>
+        <Link className={scope === "all" ? styles.activeTab : styles.tab} href={feedHref("all", occasion, styleTag)}>All Following</Link>
       </nav>
 
-      <form className={styles.filters} action="/circle">
-        {scope === "all" ? <input type="hidden" name="scope" value="all" /> : null}
-        <label>
-          <span>Occasion</span>
-          <select name="occasion" defaultValue={occasion}>
-            <option value="">All occasions</option>
-            {OUTFIT_OCCASIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-          </select>
-        </label>
-        <label>
-          <span>Style Tags</span>
-          <input name="style" defaultValue={selectedStyleDisplay} list="style-feed-tags" placeholder="Search style tags" autoComplete="off" />
-          <datalist id="style-feed-tags">
-            {[...styleTagOptions.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([key, label]) => <option key={key} value={label} />)}
-          </datalist>
-        </label>
-        <button className="secondaryButton" type="submit">Apply</button>
-        {hasFilters ? <Link className="textLink" href={feedHref(scope)}>Clear filters</Link> : null}
-      </form>
+      <StyleFeedFilters scope={scope} occasion={occasion} styleDisplay={String(selectedStyleDisplay)} styleOptions={styleOptions}/>
+      {hasFilters?<div className={styles.filterActions}><Link className="textLink" href={feedHref(scope)}>Clear filters</Link></div>:null}
 
       {feed.length ? (
         <section className={styles.feed} aria-label="Outfits from people you follow">
@@ -223,7 +231,7 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
             if (!person) return null;
             const name = person.display_name?.trim() || person.username;
             const twinLabel = fitTwinLabel(designationFor(post.user_id));
-            const photo = signedPhotos.get(post.id);
+            const photos=galleryPhotosByPost.get(post.id)??[];
             const note = shortNote(post.story ?? post.caption);
             const postOccasions = occasionsByPost.get(post.id) ?? [];
             const postStyleTags = styleTagsByPost.get(post.id) ?? [];
@@ -232,7 +240,7 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
             return (
               <article className={styles.card} key={post.id}>
                 <div className={styles.creatorRow}>
-                  <Link className={styles.creator} href={`/people/${person.username}`}>
+                  <Link prefetch={false} className={styles.creator} href={`/people/${person.username}`}>
                     {avatar ? <img className={styles.avatar} src={avatar} alt="" /> : <span className={styles.avatarFallback}>{name.slice(0, 1).toUpperCase()}</span>}
                     <span className={styles.identity}><strong>{name}</strong><span>@{person.username}</span></span>
                   </Link>
@@ -242,12 +250,12 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
                   </div>
                 </div>
 
-                <Link className={styles.photoLink} href={`/outfits/${post.id}`} aria-label={`View ${post.headline?.trim() || "Outfit"}`}>
-                  {photo ? <img className={styles.photo} src={photo} alt={`Outfit by ${name}`} /> : <span className={styles.photoFallback}>OUTFIT</span>}
-                </Link>
+                <div className={styles.feedGallery}>
+                  {photos.length?<OutfitGallery photos={photos} garments={[]}/>:<span className={styles.photoFallback}>OUTFIT</span>}
+                </div>
 
                 <div className={styles.body}>
-                  <Link className={styles.headline} href={`/outfits/${post.id}`}>{post.headline?.trim() || "Outfit"}</Link>
+                  <h2 className={styles.headline}>{post.headline?.trim() || "Outfit"}</h2>
                   {note ? <p className={styles.note}>{note}</p> : null}
                   {(postOccasions.length || postStyleTags.length) ? (
                     <div className={styles.tags}>
@@ -261,9 +269,10 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
                       <input type="hidden" name="return_to" value={returnTo} />
                       <button type="submit" aria-pressed={liked}>{liked ? "♥" : "♡"} Like{post.like_count ? ` ${post.like_count}` : ""}</button>
                     </form>
-                    <Link href={`/outfits/${post.id}?tab=comments`}>Comments{post.comment_count ? ` ${post.comment_count}` : ""}</Link>
+                    {post.comments_enabled?<CommentThread postId={post.id} commentCount={post.comment_count} signedIn signIn={null} triggerOnly triggerClassName={styles.actionButton} triggerLabel={`Comments${post.comment_count?` ${post.comment_count}`:""}`}/>:<span className={styles.disabledAction}>Comments off</span>}
                     <StyleFeedShareButton className={styles.actionButton} postId={post.id} headline={post.headline?.trim() || "LikeSized Outfit"} />
                   </div>
+                  <Link prefetch={false} className={styles.fullOutfitLink} href={`/outfits/${post.id}`} data-full-navigation="true">View Full Outfit →</Link>
                 </div>
               </article>
             );
@@ -280,10 +289,7 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
       {scope === "twins" ? (
         <footer className={styles.feedFooter}>
           <p>Want more inspiration?</p>
-          <div>
-            <Link className="secondaryButton" href={feedHref("all", occasion, styleTag)}>See All Following</Link>
-            <Link className="textLink" href="/people">Find More Fit Twins →</Link>
-          </div>
+          <Link className="textLink" href="/people">Find More Fit Twins →</Link>
         </footer>
       ) : null}
     </main>

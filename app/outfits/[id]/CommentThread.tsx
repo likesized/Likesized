@@ -16,7 +16,7 @@ type PagePayload={comments:CommentItem[];nextCursor:Cursor|null};
 function formatDate(value:string){return new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric"}).format(new Date(value));}
 function sortComments(items:CommentItem[],sort:SortMode){return [...items].sort((a,b)=>sort==="top"?b.likeCount-a.likeCount||Date.parse(b.createdAt)-Date.parse(a.createdAt)||b.id.localeCompare(a.id):Date.parse(b.createdAt)-Date.parse(a.createdAt)||b.id.localeCompare(a.id));}
 
-export default function CommentThread({postId,commentCount,signedIn,signIn,initialOpen=false,error}:{postId:string;commentCount:number;signedIn:boolean;signIn:ReactNode;initialOpen?:boolean;error?:ReactNode}){
+export default function CommentThread({postId,commentCount,signedIn,signIn,initialOpen=false,error,triggerOnly=false,triggerClassName,triggerLabel}:{postId:string;commentCount:number;signedIn:boolean;signIn:ReactNode;initialOpen?:boolean;error?:ReactNode;triggerOnly?:boolean;triggerClassName?:string;triggerLabel?:ReactNode}){
   const [open,setOpen]=useState(initialOpen);
   const [sort,setSort]=useState<SortMode>("top");
   const [count,setCount]=useState(commentCount);
@@ -71,8 +71,10 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
   function closeComments(){
     setOpen(false);
     setInteractionError("");
-    setPreviewLoaded(false);
-    void loadPreview(sort);
+    if(!triggerOnly){
+      setPreviewLoaded(false);
+      void loadPreview(sort);
+    }
   }
 
   function changeSort(next:SortMode){
@@ -83,7 +85,7 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
     if(open){
       setFullLoaded(false);
       void loadFull(next);
-    }else{
+    }else if(!triggerOnly){
       setPreviewLoaded(false);
       void loadPreview(next);
     }
@@ -139,7 +141,7 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
     if(open){
       setFull((current)=>sortComments([comment,...current.filter((row)=>row.id!==comment.id)],sort));
       setFullLoaded(true);
-    }else{
+    }else if(!triggerOnly){
       setPreview((current)=>sortComments([comment,...current.filter((row)=>row.id!==comment.id)],sort).slice(0,3));
       setPreviewLoaded(true);
     }
@@ -149,9 +151,10 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
     setCount(commentCount);
     setSort("top");
     if(initialOpen){setOpen(true);setFullLoaded(false);void loadFull("top");}
+    else if(triggerOnly){setOpen(false);setPreview([]);setPreviewLoaded(true);}
     else{setOpen(false);setPreviewLoaded(false);void loadPreview("top");}
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[postId]);
+  },[postId,triggerOnly]);
 
   function SortButtons(){return <div className={styles.sortRow} aria-label="Sort comments">
     <button className={styles.sortButton} type="button" aria-pressed={sort==="top"} onClick={()=>changeSort("top")}>Top</button>
@@ -179,7 +182,8 @@ export default function CommentThread({postId,commentCount,signedIn,signIn,initi
   }
 
   return <div className={styles.host}>
-    {!open?<div className={styles.preview}>
+    {!open&&triggerOnly?<button className={triggerClassName??styles.openButton} type="button" onClick={openComments}>{triggerLabel??(count?`Comments ${count}`:"Comments")}</button>:null}
+    {!open&&!triggerOnly?<div className={styles.preview}>
       <SortButtons/>
       {!previewLoaded?<p className="muted">Loading comments…</p>:preview.length?<div className={styles.commentList}>{preview.map(renderComment)}</div>:<p className="muted">No comments yet.</p>}
       <button className={styles.openButton} type="button" onClick={openComments}>{count?`View all ${count} comment${count===1?"":"s"}`:"Add a comment"}</button>

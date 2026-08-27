@@ -9,6 +9,9 @@ const exploreFilters=readFileSync("components/ExploreFilters.tsx","utf8");
 const taxonomy=readFileSync("lib/garment-taxonomy.ts","utf8");
 const fixtures=readFileSync("lib/explore-fixtures.ts","utf8");
 const circle=readFileSync("app/circle/page.tsx","utf8");
+const circleFilters=readFileSync("app/circle/StyleFeedFilters.tsx","utf8");
+const outfitGallery=readFileSync("app/outfits/[id]/OutfitGallery.tsx","utf8");
+const commentThread=readFileSync("app/outfits/[id]/CommentThread.tsx","utf8");
 const people=readFileSync("app/people/page.tsx","utf8");
 const locker=readFileSync("app/likelocker/page.tsx","utf8");
 const menu=readFileSync("components/MemberMenu.tsx","utf8");
@@ -64,18 +67,41 @@ test("Style Feed is Outfit-only following inspiration with Fit Twins as the defa
  assert.match(circle,/\.eq\("status", "published"\)/);
  assert.match(circle,/value === "all" \? "all" : "twins"/);
  assert.match(circle,/>Fit Twins</);
- assert.match(circle,/>All</);
+ assert.match(circle,/>All Following</);
  assert.match(circle,/p_match_category: "tops"/);
  assert.match(circle,/p_match_category: "bottoms"/);
  assert.match(circle,/fitTwinLabel\(designationFor/);
- assert.match(circle,/Search style tags/);
  assert.match(circle,/outfit_style_tags/);
  assert.match(circle,/OUTFIT_OCCASIONS/);
- assert.match(circle,/See All Following/);
  assert.match(circle,/Find More Fit Twins/);
  assert.match(circle,/href="\/people"/);
+ assert.doesNotMatch(circle,/See All Following/);
  assert.doesNotMatch(circle,/get_following_feed/);
  assert.doesNotMatch(circle,/fit_report_added|closet_shared|fitTwinPriority|Overall Match/);
+});
+
+test("Style Feed reuses canonical Outfit interaction surfaces instead of page-specific previews",()=>{
+ assert.match(circle,/OutfitGallery/);
+ assert.match(circle,/CommentThread/);
+ assert.match(circle,/triggerOnly/);
+ assert.match(circle,/href=\{`\/people\/\$\{person\.username\}`\}/);
+ assert.match(circle,/data-full-navigation="true"/);
+ assert.match(circle,/>View Full Outfit →<\/Link>/);
+ assert.doesNotMatch(circle,/className=\{styles\.photoLink\}/);
+ assert.match(outfitGallery,/previewUrl\?:string/);
+ assert.match(outfitGallery,/src=\{current\.previewUrl\?\?current\.url\}/);
+ assert.match(outfitGallery,/src=\{current\.url\}/);
+ assert.match(outfitGallery,/Math\.abs\(dx\)>=38/);
+ assert.match(commentThread,/triggerOnly\?:boolean/);
+ assert.match(commentThread,/!open&&triggerOnly/);
+});
+
+test("Style Feed relationship and discovery filters stay compact and do not require a giant Apply action",()=>{
+ assert.match(circle,/StyleFeedFilters/);
+ assert.match(circleFilters,/Search style tags/);
+ assert.match(circleFilters,/router\.push/);
+ assert.match(circleFilters,/OUTFIT_OCCASIONS/);
+ assert.doesNotMatch(circleFilters,/>Apply</);
 });
 
 test("People My Size defaults to Twin-level discovery and keeps All Matches separate",()=>{

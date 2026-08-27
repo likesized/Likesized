@@ -5,34 +5,40 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  verify:
+  release_verify:
+    name: Release Verification
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - name: Check out canonical source
+      - name: Check out exact final candidate
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Use Node 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+
       - name: Canonical integrity / drift guard
-        env:
-          CANONICAL_HEAD_REF: ${{ github.head_ref }}
-        run: npm run canonical:check
+        run: node scripts/check-canonical-integrity.mjs
+
       - name: Install exact dependencies
         run: npm ci
+
       - name: Typecheck
         run: npm run typecheck
-      - name: Application safeguard suite
+
+      - name: Complete application safeguard suite
         run: |
           set +e
           failures=0
@@ -48,19 +54,24 @@ jobs:
             fi
           done
           exit "$failures"
-      - name: Build
+
+      - name: Production build
         run: npm run build
+
       - name: Install pinned Supabase CLI
         uses: supabase/setup-cli@v2
         with:
           version: 2.84.2
           github-token: ${{ github.token }}
+
       - name: Initialize disposable local Supabase configuration
         run: |
           if [ ! -f supabase/config.toml ]; then
             supabase init
           fi
+
       - name: Replay all canonical migrations on a fresh local database
         run: supabase db start
-      - name: Run canonical database behavior tests
+
+      - name: Run canonical database behavior/privacy tests
         run: supabase test db --db-url postgresql://postgres:postgres@127.0.0.1:54322/postgres

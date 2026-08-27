@@ -19,15 +19,18 @@ const changedFiles = diff.stdout
 const isNonRuntimeOnly = (file) =>
   file.startsWith("docs/") ||
   file === "AI_REPOSITORY_RULES.md" ||
+  file === "AGENTS.md" ||
+  file === "CLAUDE.md" ||
   file === "README.md" ||
   file.startsWith(".github/") ||
   file.startsWith("tests/") ||
   file === "supabase/schema_contract.md" ||
   file === "supabase/storage.sql" ||
-  file === "scripts/check-canonical-integrity.mjs";
+  file === "scripts/check-canonical-integrity.mjs" ||
+  file === "scripts/check-pr-governance.mjs";
 
 if (changedFiles.length > 0 && changedFiles.every(isNonRuntimeOnly)) {
-  console.log("Only canonical docs, CI metadata, or regression safeguards changed; skip Vercel production build.");
+  console.log("Only canonical docs, governance, CI metadata, or regression safeguards changed; skip Vercel production build.");
   process.exit(0);
 }
 

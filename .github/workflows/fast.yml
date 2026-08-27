@@ -1,0 +1,109 @@
+name: LikeSized Fast CI
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  fast_verify:
+    name: Fast Repair Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Classify changed paths
+        id: changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          runtime=false
+          database=false
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            case "$file" in
+              app/*|components/*|lib/*|public/*|package.json|package-lock.json|next.config.ts|proxy.ts|vercel.json|scripts/vercel-ignore-build.mjs)
+                runtime=true
+                ;;
+            esac
+            case "$file" in
+              supabase/*|app/api/*|*/actions.ts|proxy.ts|package.json|package-lock.json)
+                database=true
+                ;;
+              app/*|components/*|lib/*)
+                if [ -f "$file" ] && grep -Eq 'createClient|supabase|\.from\(|\.rpc\(|auth\.' "$file"; then
+                  database=true
+                fi
+                ;;
+            esac
+          done < <(git diff --name-only "$BASE_SHA...$HEAD_SHA")
+          echo "runtime=$runtime" >> "$GITHUB_OUTPUT"
+          echo "database=$database" >> "$GITHUB_OUTPUT"
+          echo "Runtime-sensitive: $runtime"
+          echo "Database-sensitive: $database"
+
+      - name: Canonical integrity / drift guard
+        run: node scripts/check-canonical-integrity.mjs
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Application safeguard suite
+        run: |
+          set +e
+          failures=0
+          for test_file in tests/*.test.ts; do
+            label="${test_file#tests/}"
+            echo "::group::$label"
+            node --test "$test_file"
+            status=$?
+            echo "::endgroup::"
+            if [ "$status" -ne 0 ]; then
+              echo "::error::$label failed"
+              failures=1
+            fi
+          done
+          exit "$failures"
+
+      - name: Build runtime-affecting candidate
+        if: steps.changes.outputs.runtime == 'true'
+        run: npm run build
+
+      - name: Install pinned Supabase CLI for database-sensitive candidate
+        if: steps.changes.outputs.database == 'true'
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.84.2
+          github-token: ${{ github.token }}
+
+      - name: Initialize disposable local Supabase configuration
+        if: steps.changes.outputs.database == 'true'
+        run: |
+          if [ ! -f supabase/config.toml ]; then
+            supabase init
+          fi
+
+      - name: Replay canonical migrations for database-sensitive candidate
+        if: steps.changes.outputs.database == 'true'
+        run: supabase db start
+
+      - name: Run database behavior/privacy tests for database-sensitive candidate
+        if: steps.changes.outputs.database == 'true'
+        run: supabase test db --db-url postgresql://postgres:postgres@127.0.0.1:54322/postgres

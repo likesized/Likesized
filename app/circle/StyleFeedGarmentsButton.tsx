@@ -20,19 +20,13 @@ export function StyleFeedGarmentsButton({items,postId}:{items:StyleFeedGarmentIt
 
   if(!items.length)return null;
 
-  function openQuickView(closetItemId:string){
-    setOpen(false);
-    window.dispatchEvent(new CustomEvent("likesized:open-tagged-item",{detail:{closetItemId}}));
-  }
-
   return <>
     <button className={styles.trigger} type="button" onClick={()=>setOpen(true)}>View Garments →</button>
     {open?<div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Garments in this Outfit" onClick={()=>setOpen(false)}>
       <section className={styles.card} onClick={(event)=>event.stopPropagation()}>
         <header className={styles.header}><h2>Garments</h2><button className={styles.close} type="button" aria-label="Close garments" onClick={()=>setOpen(false)}>×</button></header>
-        <div className={styles.list}>{items.map((item)=><button className={styles.item} type="button" key={item.closetItemId} onClick={()=>openQuickView(item.closetItemId)}>{item.imageUrl?<img src={item.imageUrl} alt=""/>:<span className={styles.fallback}>{item.label.slice(0,1).toUpperCase()}</span>}<span className={styles.identity}><strong>{item.label}</strong><span>{item.detail}</span></span></button>)}</div>
+        <TaggedItemsPanel items={items} postId={postId} signedIn showCards returnTo="/circle"/>
       </section>
     </div>:null}
-    <TaggedItemsPanel items={items} postId={postId} signedIn showCards={false} returnTo="/circle"/>
   </>;
 }

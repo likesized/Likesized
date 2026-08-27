@@ -1,6 +1,5 @@
 -- LikeSized V1 Storage configuration
--- Support/reference mirror only. This file is not a second canonical current-state schema.
--- Ordered files in supabase/migrations/ are the executable database history; supabase/schema_contract.md owns current database behavior/privacy meaning.
+-- Canonical current-state storage model.
 -- Fit/reference photos, Outfit photos, and profile photos are optional.
 -- Profile photos are member-facing identity and are readable only by authenticated members.
 

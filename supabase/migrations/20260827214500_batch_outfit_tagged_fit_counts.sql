@@ -52,12 +52,24 @@ community_counts as (
     and candidate.historical_match_score >= least(greatest(p_match_threshold, 0), 100)
   group by target.closet_item_id
 ),
+viewer_recent as (
+  select
+    fr.product_id,
+    fr.objective_variant_key,
+    fr.garment_condition,
+    fr.created_at,
+    fr.id
+  from public.fit_reports fr
+  where fr.user_id = auth.uid()
+  order by fr.created_at desc, fr.id desc
+  limit 200
+),
 own_latest as (
   select distinct on (fr.product_id, coalesce(fr.objective_variant_key, ''))
     fr.product_id,
     coalesce(fr.objective_variant_key, '') as objective_variant_key,
     fr.garment_condition
-  from public.fit_reports fr
+  from viewer_recent fr
   join (
     select distinct product_id, objective_variant_key
     from targets
@@ -65,7 +77,6 @@ own_latest as (
   ) target_identity
     on target_identity.product_id = fr.product_id
    and target_identity.objective_variant_key = coalesce(fr.objective_variant_key, '')
-  where fr.user_id = auth.uid()
   order by fr.product_id, coalesce(fr.objective_variant_key, ''), fr.created_at desc, fr.id desc
 ),
 own_counts as (

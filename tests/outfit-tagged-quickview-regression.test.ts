@@ -69,14 +69,17 @@ test("approved tagged FITuition wording is locked for insufficient and recommend
   assert.doesNotMatch(taggedPanel,/current exact-variation evidence does not point clearly enough to one size/);
 });
 
-test("tagged FITuition preloads every card and resolves failures instead of hanging forever",()=>{
+test("tagged FITuition batches card summaries and resolves selected failures instead of hanging forever",()=>{
   assert.match(taggedPanel,/const loadFitMeta=useCallback/);
-  assert.match(taggedPanel,/items\.forEach\(\(item,index\)=>\{void loadFitMeta\(item\.closetItemId,controllers\[index\]\.signal\);\}\)/);
+  assert.match(taggedPanel,/loadFitSummaryBatch\(postId\)/);
+  assert.match(taggedPanel,/tagged-fit-summary/);
+  assert.match(taggedPanel,/fitSummaryCache/);
+  assert.match(taggedPanel,/void loadFitMeta\(selectedId,controller\.signal\)/);
+  assert.doesNotMatch(taggedPanel,/items\.forEach\(\(item,index\)=>\{void loadFitMeta\(item\.closetItemId,controllers\[index\]\.signal\);\}\)/);
   assert.match(taggedPanel,/fitErrors/);
   assert.match(taggedPanel,/FITuition couldn’t load this evidence/);
   assert.match(taggedPanel,/>Try again<\/button>/);
   assert.match(taggedPanel,/void loadFitMeta\(item\.closetItemId,undefined,true\)/);
-  assert.doesNotMatch(taggedPanel,/if\(!selectedId\|\|!signedIn\|\|loadedFitMeta/);
 });
 
 test("zero exact Relevant Fit Reports never surfaces a tagged-item size recommendation",()=>{

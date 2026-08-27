@@ -55,6 +55,13 @@ test("discovered Outfits and Style Feed keep feed derivatives while in-card and 
   assert.doesNotMatch(circle, /createSignedUrl/);
   assert.doesNotMatch(gallery, /src=\{current\.previewUrl\?\?current\.url\}/);
   assert.match(gallery, /src=\{current\.url\}/);
+  assert.match(gallery, /activeImageElement=useRef<HTMLImageElement\|null>\(null\)/);
+  assert.match(gallery, /if\(image\.complete\)measure\(\)/);
+  assert.match(gallery, /requestAnimationFrame\(measure\)/);
+  assert.match(gallery, /new ResizeObserver\(\(\)=>measure\(\)\)/);
+  assert.match(gallery, /observer\.observe\(image\)/);
+  assert.match(gallery, /\[current\?\.id,stageViewportWidth\]/);
+  assert.match(gallery, /ref=\{activeImageElement\}/);
   assert.match(outfitsIndex, /\/closet\?tab=outfits/);
   assert.doesNotMatch(outfitsIndex, /outfitFeedPhotoPath|feedPath/);
 });

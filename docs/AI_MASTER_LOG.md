@@ -41,8 +41,8 @@ Going forward:
 
 # CURRENT STATUS — 2026-08-27
 
-## Canonical source line — MAIN THROUGH PR #105
-Current `main` source is PR #105 merge **`307ebebd787121bd16a568d0fcf1c496da4e69b9`**. Roadmap 12 is complete/deployed. PR #105 released the Style Feed interaction repair built on PR #104, but it also removed the bottom **See All Following →** action and rewrote the Style Feed safeguard/canonical wording to forbid that action. The owner has explicitly rejected that removal and authorized the narrow regression repair plus repository safeguard-separation hardening on the active branch below.
+## Canonical source line — MAIN THROUGH PR #108
+Current `main` source is PR #108 squash merge **`2d30ed30861ed7e0cd6d199123f37109262fe33e`**. Roadmap 12 remains complete/deployed. PR #106 repaired the owner-reported Style Feed regressions, restored the approved footer and top relationship controls, made Like/comments/gallery interactions local/smooth, and installed the runtime/safeguard separation gate. PR #108 then completed the structural requirement that Outfit creator, inline/comment and global person previews all render one actual canonical shared person quick-view implementation. The owner authorized production for the exact verified PR #108 candidate by saying **“ok proceed”** on 2026-08-27. The resulting production deployment is verified READY on `likesized.com`; owner live interaction QA is the next step.
 
 PR #101 **Close Roadmap 12 Outfit evidence and canonical governance** release facts:
 - exact final branch head before squash merge: **`9d37c2e99ed40d0588e516ff40aae08c8233c45d`**;
@@ -85,8 +85,29 @@ PR #105 **Repair Style Feed universal interactions** release facts:
 - exact-head LikeSized CI **#1049 / `33038527194`** passed the full required verification chain;
 - merge: **`307ebebd787121bd16a568d0fcf1c496da4e69b9`**;
 - PR #105 introduced **no database migration**;
-- Vercel production deployment **`dpl_GAN3kVp9YBMHpYo6eAhizVoD84cY`** is recorded as READY for exact merge `307ebebd787121bd16a568d0fcf1c496da4e69b9`, targeted production, assigned `likesized.com` and reported no alias error at verification time;
-- PR #105 correctly delivered the top Fit Twins/All Following control, compact filters, canonical Outfit gallery/comments reuse and explicit View Full Outfit control, but its removal of the bottom **See All Following →** action was not an owner-approved Product decision and is the regression being repaired now.
+- Vercel production deployment **`dpl_GAN3kVp9YBMHpYo6eAhizVoD84cY`** was verified READY for exact merge `307ebebd787121bd16a568d0fcf1c496da4e69b9`, targeted production, assigned `likesized.com` and reported no alias error at verification time;
+- PR #105 delivered the first Style Feed interaction repair, but its removal of the bottom **See All Following →** action was not an owner-approved Product decision. That regression was subsequently corrected by PR #106.
+
+PR #106 **Repair Style Feed regressions and lock canonical safeguards** release facts:
+- exact final branch head before squash merge: **`359723367b16df3f695e756096c9c6686094d8f7`**;
+- exact-head LikeSized CI **#1063 / `33070271611`** completed successfully through canonical integrity, exact dependency install, typecheck, every committed application safeguard, production build, complete fresh migration replay and canonical database behavior/privacy tests;
+- squash merge: **`c4a13af3b0753928c445c78f024be8f8b1934b8e`**;
+- resulting `main` push LikeSized CI **#1064 / `33070494560`** completed successfully through the same full verification chain;
+- PR #106 introduced **no database migration**;
+- Vercel production deployment **`dpl_6xcNWncP2StzjFpEdbjdxdE73nCG`** was verified READY for exact merge `c4a13af3b0753928c445c78f024be8f8b1934b8e`, targeted production, assigned `likesized.com` and reported no alias error at verification time;
+- PR #106 restored the visible top **Fit Twins | All Following** control, removed unapproved **Want more inspiration?** copy, restored separate bottom **See All Following →** and **Find More Fit Twins →** actions, moved Style Feed Like to a local optimistic API path, repaired smooth shared Outfit-gallery gesture behavior, primed the canonical comments sheet, and installed the machine-enforced runtime/safeguard separation gate.
+
+PR #108 **Finish canonical person quick-view consolidation** release facts:
+- exact final branch head before squash merge: **`9fb72dba543a75c63ada1369ce69492736371904`**;
+- exact-head LikeSized CI **#1068 / `33072141110`** completed successfully through canonical integrity, exact dependency install, typecheck, every committed application safeguard, production build, complete fresh migration replay and canonical database behavior/privacy tests;
+- the owner explicitly authorized production for this exact verified candidate by saying **“ok proceed”** on 2026-08-27;
+- squash merge: **`2d30ed30861ed7e0cd6d199123f37109262fe33e`**;
+- resulting `main` push LikeSized CI **#1069 / `33072475137`** completed successfully through the same full verification chain;
+- PR #108 introduced **no database migration**;
+- Vercel production deployment **`dpl_CPRipAfxBQd3pemDDG2UCCH31ZK7`** was verified READY for exact merge `2d30ed30861ed7e0cd6d199123f37109262fe33e`, targeted production, assigned `likesized.com` and reported no alias error at verification time;
+- PR #108 routes Outfit creator, inline/comment and global person-preview entry points through one actual `CanonicalPersonQuickViewCard`, eliminating the active duplicate person-preview implementation problem while preserving route-specific triggers and actions.
+
+PR #107 **Collapse person previews to one canonical card** is **SUPERSEDED / CLOSED WITHOUT MERGE**. Its exact head **`36a370a0efc9fa249163671717dee75d53fc79b7`** contains no unique Product behavior that is not represented by released PR #108. It is non-authoritative history and must not be treated as an alternate current implementation.
 
 Those Vercel details are immutable release-verification facts, not a substitute for querying Vercel for present-day operational state later.
 
@@ -100,24 +121,12 @@ Production Supabase includes, after the earlier Roadmap 12 migrations:
 - hosted **`20260826020710 preserve_tracked_variation_recommendation_evidence`**;
 - `20260826190000_outfit_tag_consistency.sql` → hosted **`20260826193527 outfit_tag_consistency`**.
 
-PR #94, PR #95, PR #97, PR #98, PR #99, PR #100, PR #101, PR #102, PR #103, PR #104 and PR #105 introduced no new production database migration. PR #96 introduced the Outfit tag-consistency migration above.
+PR #94, PR #95, PR #97, PR #98, PR #99, PR #100, PR #101, PR #102, PR #103, PR #104, PR #105, PR #106 and PR #108 introduced no new production database migration. PR #96 introduced the Outfit tag-consistency migration above.
 
-## Current primary line — STYLE FEED REGRESSION + SAFEGUARD-SEPARATION REPAIR
-Active branch: **`agent/style-feed-regression-repair`**
+## Current primary line — SETTLED ON CANONICAL MAIN
+Active branch: **NONE — canonical main**
 
-This branch started from canonical PR #105 `main` at **`307ebebd787121bd16a568d0fcf1c496da4e69b9`**. It is the one active Product implementation line for this owner-authorized incident repair.
-
-Owner-authorized frozen repair batch — 2026-08-27:
-1. preserve the working top **Fit Twins | All Following** relationship control with Fit Twins default;
-2. restore the exhausted-Fit-Twins bottom **See All Following →** action so it switches to All Following rather than disappearing;
-3. keep **Find More Fit Twins →** as a separate action routing to **People My Size**; it must never replace the switch-to-All action;
-4. correct the regression safeguard and canonical Style Feed wording that PR #105 changed to forbid **See All Following →**;
-5. install a machine-enforced runtime/safeguard separation gate so a runtime implementation PR cannot rewrite its own governance, stable feature contract, regression safeguard or Product Spec unless the required owner authorization already existed on canonical `main` before that implementation PR;
-6. make no adjacent Style Feed, Explore, Outfit, database or Roadmap 13A Product changes.
-
-The owner explicitly authorized this implementation batch by directing the safeguard hardening and then the Style Feed repair on 2026-08-27. **Production deployment authorization for this new repair batch is not yet recorded; do not merge runtime changes to `main` until the owner explicitly authorizes production for this exact candidate.**
-
-This branch is also the one-time bootstrap that installs the separation gate. The gate activates when its locked marker already exists on canonical `main`; after this bootstrap merges, future runtime PRs cannot use a same-PR rules/test/spec edit as their own authorization.
+The owner-authorized Style Feed regression + safeguard-separation incident is implemented, verified and released through PR #106 and PR #108. No Product/runtime implementation branch is currently authoritative. The exact live interaction must now be owner-tested on `likesized.com`; any newly observed defect starts a new owner-scoped repair item and does not reopen unrelated roadmap work automatically.
 
 ## Roadmap 12 — New Outfit / Style an Outfit — COMPLETE / DEPLOYED
 The three final source defects were implemented in released PR #101 and regression-protected:
@@ -265,7 +274,7 @@ Raw/private body data, private Closet linkage, unresolved candidate/review state
 - New Outfit back navigation returns to **My Closet → Outfits**.
 
 # OWNER-LOCKED STYLE FEED — ROADMAP 13 REGRESSION REPAIR
-PR #105 is the current production Style Feed release. The owner-rejected regression from that release is being repaired on `agent/style-feed-regression-repair` without reopening the rest of the Style Feed interaction work.
+PR #106 plus PR #108 are the current production Style Feed repair line. The PR #105 bottom-switch regression and the duplicate person-preview implementation problem are corrected in canonical `main`; owner live interaction QA on `likesized.com` is the remaining verification step before moving on.
 
 Locked behavior:
 1. Style Feed is a passive social Outfit inspiration feed, not a mixed activity log.
@@ -494,11 +503,11 @@ An admin-locked image always wins. A newly uploaded photo may score 100 and stil
 7. Unified Closet/member profile Closet — canonical visibility meaning reconciled; broader lifecycle/mutation audit remains later.
 8. Post-submit Fit Report mutation/lifecycle model — remains.
 9. **People My Size — Twin-level default is DEPLOYED; broader page audit remains later.**
-10. **Style Feed relationship semantics — PR #105 interaction release is DEPLOYED; current bottom-switch regression + safeguard-separation repair is active.**
+10. **Style Feed relationship semantics — PR #106 repair is DEPLOYED; PR #108 canonical person-preview consolidation is DEPLOYED; owner live interaction QA is next.**
 11. New Fit Report — evidence-first flow live; visible photo validation is live.
 11A. **Garment-question variation classification — COMPLETE / DEPLOYED.**
 12. **New Outfit / Style an Outfit — COMPLETE / DEPLOYED.** Future multi-user live-data QA is deferred until enough evidence exists and does not block completion.
-13. **Style Feed full behavior — ACTIVE REGRESSION REPAIR on `agent/style-feed-regression-repair`; production authorization for this new batch is not yet recorded.**
+13. **Style Feed full behavior — DEPLOYED through PR #106 + PR #108; current step is owner testing on `likesized.com`, not another implementation batch.**
 13A. **Automatic Canonical Product Image Scoring — OWNER LOCKED / PLANNED; implement before Garment/Product detail, Explore, Search and Wish Locker audit so those surfaces consume one canonical image-selection system.**
 14. Garment/Product detail — Exact Variation consumes the canonical 11A map and Roadmap 13A canonical-image hierarchy when reached.
 15. Explore — consume Roadmap 13A canonical imagery rather than inventing its own image selection.
@@ -532,12 +541,13 @@ Later Roadmap 12 production mappings:
 - hosted **`20260826020710 preserve_tracked_variation_recommendation_evidence`**.
 - `20260826190000_outfit_tag_consistency.sql` → hosted **`20260826193527 outfit_tag_consistency`**.
 
-Applied migrations are immutable. PR #94, PR #95, PR #97, PR #98, PR #99, PR #100, PR #101, PR #102, PR #103, PR #104 and PR #105 added no migration. PR #96 added the Outfit tag-consistency migration and it is production-applied at the hosted timestamp above.
+Applied migrations are immutable. PR #94, PR #95, PR #97, PR #98, PR #99, PR #100, PR #101, PR #102, PR #103, PR #104, PR #105, PR #106 and PR #108 added no migration. PR #96 added the Outfit tag-consistency migration and it is production-applied at the hosted timestamp above.
 
 # CURRENT IMPLEMENTATION DEBT / OPEN WORK
-- The one active Product line is **`agent/style-feed-regression-repair`**. Do not open a competing Product branch while this owner-authorized incident repair is unreconciled.
-- Current writable scope is only: preserve the top Fit Twins/All Following control; restore bottom **See All Following →**; keep bottom **Find More Fit Twins → People My Size** as a separate action; correct the exact stale Style Feed test/spec/master statements; and install the runtime/safeguard separation gate. No adjacent Product cleanup is authorized.
-- After this bootstrap reaches canonical `main`, runtime Product PRs may not modify governance or the stable feature-contract section, and test/Product-Spec changes require a pre-existing **Pending owner-approved safeguard change** block on canonical `main` naming the exact implementation branch and protected files.
+- There is **no active Product/runtime implementation branch**. Canonical Product truth is `main` through PR #108. Do not open a new implementation batch until the owner explicitly authorizes it.
+- Owner live QA is still required for the just-released Style Feed interaction set on `likesized.com`: visible Fit Twins/All Following control, bottom See All Following + Find More Fit Twins actions, local Like/comments behavior, shared smooth gallery/swipe-down behavior, and the one universal person quick-view implementation.
+- PR #107 is **SUPERSEDED / CLOSED WITHOUT MERGE** by PR #108 and has no unique current Product authority. Its remote branch is historical cleanup debt only; do not use it as a source line.
+- After the runtime/safeguard bootstrap reached canonical `main`, runtime Product PRs may not modify governance or the stable feature-contract section, and test/Product-Spec changes require a pre-existing **Pending owner-approved safeguard change** block on canonical `main` naming the exact implementation branch and protected files.
 - **Explore is separate and is not part of the Style Feed → Find More Fit Twins flow.** Find More Fit Twins routes to People My Size.
 - Keep PR #101's three Outfit closeout behaviors regression-protected. Future live-data QA of those states waits for enough real/seeded users/garments and does not reopen Roadmap 12 by itself.
 - Keep all canonical integrity, TypeScript, application safeguard, build, fresh migration replay and pgTAP/database behavior/privacy gates active. Do not treat PR #94/#95 verification exceptions as precedent.
@@ -582,16 +592,20 @@ Recent released application/source lineage:
 - PR #102 — canonical Vercel release boundary — exact branch **`45310f1de87fa50e3b38bfb878ca2f91ea551c3f`**, merge **`41323f047cb63efc0768f6a95d9aefd74d16d8ba`**, exact-head CI **#1039 / `33033816436`** green, main push CI **#1040 / `33033937464`** green, no Product change and no migration; Vercel release `dpl_6RJgXWTQLbzErVVKLxdtLPcPpDbg` was verified READY for the boundary installation.
 - PR #103 — canonical release reconciliation — exact branch **`46a018e7f8e96e9dd3bea15803066a6554e91687`**, merge **`c405f96c840f1257eab0ca66bfbfaec051fa7083`**, exact-head CI **#1041 / `33034277656`** green, main push CI **#1042 / `33034418710`** green; Vercel correctly ignored the non-runtime reconciliation.
 - PR #104 — Roadmap 13 Style Feed rework — exact branch **`c07bad27368c7c8f853186252e6149f47e6b0d18`**, merge **`e67b7928ea7ab6258070ad19ddec01740a5ccdff`**, exact-head CI **#1046 / `33036616784`** green, main push CI **#1047 / `33036747890`** green, no migration; Vercel release **`dpl_EmYv1S3MstYbV8Z66Z3oTWuLBadQ`** was verified READY on `likesized.com`.
-- PR #105 — Style Feed universal interaction repair — exact branch **`2ce6d347780d1cef6538b7d43b2beab82078f8b6`**, merge **`307ebebd787121bd16a568d0fcf1c496da4e69b9`**, exact-head CI **#1049 / `33038527194`** green, no migration; Vercel release **`dpl_GAN3kVp9YBMHpYo6eAhizVoD84cY`** was verified READY on `likesized.com`. The bottom See All Following removal from this release is explicitly recorded above as the current owner-rejected regression, not as current desired behavior.
+- PR #105 — Style Feed universal interaction repair — exact branch **`2ce6d347780d1cef6538b7d43b2beab82078f8b6`**, merge **`307ebebd787121bd16a568d0fcf1c496da4e69b9`**, exact-head CI **#1049 / `33038527194`** green, no migration; Vercel release **`dpl_GAN3kVp9YBMHpYo6eAhizVoD84cY`** was verified READY on `likesized.com`. Its owner-rejected bottom See All Following removal was subsequently corrected by PR #106.
+- PR #106 — Style Feed regression + safeguard-separation repair — exact branch **`359723367b16df3f695e756096c9c6686094d8f7`**, merge **`c4a13af3b0753928c445c78f024be8f8b1934b8e`**, exact-head CI **#1063 / `33070271611`** green, main push CI **#1064 / `33070494560`** green, no migration; Vercel release **`dpl_6xcNWncP2StzjFpEdbjdxdE73nCG`** was verified READY on `likesized.com`.
+- PR #107 — person-preview consolidation attempt — **SUPERSEDED / CLOSED WITHOUT MERGE**, exact head **`36a370a0efc9fa249163671717dee75d53fc79b7`**; no unique current Product authority remains outside released PR #108.
+- PR #108 — canonical person quick-view consolidation — exact branch **`9fb72dba543a75c63ada1369ce69492736371904`**, merge **`2d30ed30861ed7e0cd6d199123f37109262fe33e`**, exact-head CI **#1068 / `33072141110`** green, main push CI **#1069 / `33072475137`** green, no migration; owner authorized production by saying **“ok proceed”**; Vercel release **`dpl_CPRipAfxBQd3pemDDG2UCCH31ZK7`** was verified READY on `likesized.com` with no alias error.
 
 # EXACT NEXT ACTION — CURRENT
-1. Finish only the owner-authorized Style Feed footer regression + runtime/safeguard-separation bootstrap on **`agent/style-feed-regression-repair`**.
-2. Verify the exact final branch diff contains only the approved source, safeguard, governance and canonical-document files; no adjacent Product/migration work.
-3. Run focused safeguards and the full required exact-candidate CI chain after the final source/test/doc change. Fix only in-scope failures; do not weaken safeguards.
-4. Create/maintain the repair PR and use its Vercel preview for owner inspection where available. **Do not merge the runtime candidate to `main` until production authorization for this new batch is explicit.**
-5. Owner review should confirm: top Fit Twins | All Following still works; exhausted Fit Twins shows **See All Following →** and **Find More Fit Twins →** as separate actions; See All Following switches the feed; Find More Fit Twins routes to People My Size; existing PR #105 gallery/comments/filter/View Full Outfit behavior has not been altered by this narrow repair.
-6. After this batch is settled, do **not** begin Roadmap 13A or any other repository work merely because it is next on the roadmap. Return to list/discussion mode until the owner explicitly authorizes the next implementation batch.
-7. Repository governance remains separately incomplete at the GitHub settings layer: `main` protection/ruleset and stale merged/retry branch cleanup still require supported server-side actions before they can be called complete.
+1. Owner tests the released Style Feed and Outfit interaction surfaces on **`likesized.com`** from canonical `main` PR #108.
+2. Specifically verify: visible top **Fit Twins | All Following** control; exhausted Fit Twins shows **See All Following →** and **Find More Fit Twins →** separately; unapproved **Want more inspiration?** copy is absent; Like and Comments feel local/in-place; the shared Outfit gallery follows horizontal drag smoothly and full-screen swipe-down dismisses; Outfit, Style Feed and comment/global profile clicks show the same canonical person quick-view implementation.
+3. If owner testing exposes a defect, record only that defect as the next repair scope. Do not make adjacent changes or rewrite safeguards/canon to match an unintended implementation.
+4. Do **not** begin Roadmap 13A or any other repository implementation merely because it is next on the roadmap. Return to list/discussion mode after owner QA until the owner explicitly authorizes the next implementation batch.
+5. Repository governance remains separately incomplete at the GitHub settings layer: `main` protection/ruleset and stale merged/retry branch cleanup still require supported server-side actions before they can be called complete.
 
-## Active incident continuation — 2026-08-27
-- `agent/style-feed-regression-repair` is finishing the already owner-authorized Style Feed incident by consolidating the Outfit creator, inline/comment, and global person previews onto one canonical shared person-card implementation. This is structural reuse of the approved Outfit preview, not a new Product behavior decision.
+## Style Feed incident closure — 2026-08-27
+- PR #106 corrected the owner-reported Style Feed regressions and installed the safeguard-separation gate.
+- PR #108 completed the remaining structural universal-person-preview consolidation.
+- Canonical runtime is now `main` through **`2d30ed30861ed7e0cd6d199123f37109262fe33e`**; production deployment **`dpl_CPRipAfxBQd3pemDDG2UCCH31ZK7`** is verified READY on `likesized.com`.
+- No Product/runtime branch remains authoritative. Owner live QA is the next step.

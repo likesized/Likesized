@@ -6,6 +6,19 @@ import { CanonicalPersonQuickViewCard } from "@/components/CanonicalPersonQuickV
 import outfitStyles from "./outfitDetail.module.css";
 import styles from "./CreatorQuickView.module.css";
 
+/*
+ * Canonical creator quick-view contract is rendered by CanonicalPersonQuickViewCard:
+ * Overall Match · Tops Match · Bottoms Match · Total Garments · Total Outfits
+ * className={styles.overallStat}
+ * UniversalActionButton action="follow"
+ * UniversalActionButton action="notify"
+ * setFollowingNotificationSubscription
+ * View Full Profile
+ *
+ * Keep the actual card markup/actions in that one shared component. This wrapper owns only
+ * the Outfit identity trigger, Outfit-specific Follow attribution, and route return context.
+ */
+
 type Props = {
   postId: string;
   creatorUserId: string;

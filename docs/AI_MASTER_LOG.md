@@ -145,7 +145,7 @@ Production Supabase includes, after the earlier Roadmap 12 migrations:
 PR #94, PR #95, PR #97, PR #98, PR #99, PR #100, PR #101, PR #102, PR #103, PR #104, PR #105, PR #106, PR #108 and PR #110 introduced no new production database migration. PR #96 introduced the Outfit tag-consistency migration above.
 
 ## Current primary line — ACTIVE OWNER-AUTHORIZED STYLE FEED QA REPAIR
-Active branch: **repair/style-feed-shared-qa**
+Active branch: **`repair/style-feed-shared-qa`**
 
 The owner explicitly authorized the exact four-item Style Feed/shared-system QA repair batch on 2026-08-27 by saying **“Continue”** after reviewing the repository rules, master plan and frozen repair list. `repair/style-feed-shared-qa` is the sole active Product/runtime implementation line. Source implementation for the four repairs is present on this branch but is **not yet verified, merged or released**. No adjacent Product work is authorized on this line.
 

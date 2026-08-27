@@ -320,6 +320,17 @@ Repeated reports from the same **person + Product + tracked fit variation** repr
 
 Before Product Detail consumes `exact_variant`, recommendation/evidence/Admin behavior must consume `GARMENT_VARIATION_DEFINITION_MAP`. Size and Color must never become exact-variation key fields. Body Match remains body similarity and must not be collapsed with Fit Result into a synthetic fit percentage.
 
+## Bounded Outfit tagged-fit count projection — OWNER-AUTHORIZED / PR #123 BRANCH
+Migration `20260827214500_batch_outfit_tagged_fit_counts.sql` adds `public.get_outfit_tagged_fit_counts(uuid,integer)` as the one lightweight personalized batch boundary for the counts displayed on an Outfit's tagged-garment cards.
+
+- The function is `security invoker`, executable only by `authenticated`, and returns only tagged `closet_item_id` plus the derived personalized `matching_fit_reports` count; it exposes no raw body measurements or private report bodies.
+- One application request resolves the complete bounded tagged set for an Outfit. The projection reuses the canonical `get_product_evidence_candidates` matcher with the same per-target evidence cap used by detailed FITuition rather than launching a separate HTTP/full-FITuition request for every visible garment.
+- Count semantics remain exact Product + exact objective tracked variation. Qualifying other-wearer evidence must clear the supplied strong-match threshold; the viewer's eligible own latest exact evidence is included consistently with the existing bounded recent-Closet evidence window.
+- The application passes the threshold from the canonical `STRONG_FIT_REPORT_MATCH_THRESHOLD` constant instead of hard-coding a second matching rule in the route.
+- This batch projection is only the compact-card summary. Full recommendation, Body Match, strong-report breakdown and Closet-history FITuition remain lazy and are loaded through the existing detailed selected-garment boundary only after the member opens that garment.
+
+This section describes the branch-only Product Change until PR #123 is verified, merged and applied. It must not be described as production schema before deployment verification.
+
 # 15. Current implementation debt / open verification
 - Application deployment/current-line facts and historical CI exceptions live only in `docs/AI_MASTER_LOG.md`; this database contract intentionally does not duplicate them.
 - `profile_locations` is production-applied at hosted migration **`20260825192738 private_profile_location_metadata`**; current application setup/settings require both City and State while the table retains pair-null compatibility for historical/compatibility rows.

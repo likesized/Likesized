@@ -20,6 +20,12 @@ test("trusted PR governance runs from canonical base and never executes candidat
 test("CI keeps fast draft iteration and full exact-candidate verification separate",()=>{
   const fast=read(".github/workflows/fast.yml");
   const full=read(".github/workflows/ci.yml");
+  assert.match(fast,/fast_verify:/);
+  assert.match(fast,/name:\s*Fast Repair Verification/);
+  assert.match(full,/release_verify:/);
+  assert.match(full,/name:\s*Release Verification/);
+  assert.doesNotMatch(fast,/name:\s*Release Verification/);
+  assert.doesNotMatch(full,/name:\s*Fast Repair Verification/);
   assert.match(fast,/Classify changed paths/);
   assert.match(fast,/database=false/);
   assert.match(fast,/app\/\*\|components\/\*\|lib\/\*/);

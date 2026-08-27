@@ -42,15 +42,18 @@ test("Safari JPEG transport fallback is normalized to real WebP before storage",
   assert.ok(normalized.byteLength <= 600 * 1024);
 });
 
-test("discovered Outfits and Style Feed serve feed derivatives while owned Outfits stay in My Closet", () => {
+test("discovered Outfits and Style Feed keep feed derivatives while full-size galleries use display images", () => {
   const explore = readFileSync(new URL("../app/explore/page.tsx", import.meta.url), "utf8");
   const outfitsIndex = readFileSync(new URL("../app/outfits/page.tsx", import.meta.url), "utf8");
   const circle = readFileSync(new URL("../app/circle/page.tsx", import.meta.url), "utf8");
+  const gallery = readFileSync(new URL("../app/outfits/[id]/OutfitGallery.tsx", import.meta.url), "utf8");
   assert.match(explore, /outfitFeedPhotoPath\(post\.photo_url\)/);
   assert.match(explore, /storage\.from\("outfit-photos"\)\.createSignedUrl\(feedPath/);
-  assert.match(circle, /main\.feed_path/);
-  assert.match(circle, /outfitFeedPhotoPath\(post\.photo_url\)/);
-  assert.match(circle, /storage\.from\("outfit-photos"\)\.createSignedUrl\(path/);
+  assert.match(circle, /row\.feed_path\|\|outfitFeedPhotoPath\(row\.display_path\)/);
+  assert.match(circle, /createSignedUrl\(row\.display_path,1800\)/);
+  assert.match(circle, /createSignedUrl\(previewPath,1800\)/);
+  assert.match(gallery, /src=\{current\.previewUrl\?\?current\.url\}/);
+  assert.match(gallery, /src=\{current\.url\}/);
   assert.match(outfitsIndex, /\/closet\?tab=outfits/);
   assert.doesNotMatch(outfitsIndex, /outfitFeedPhotoPath|feedPath/);
 });

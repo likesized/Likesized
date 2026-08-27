@@ -10,7 +10,7 @@ Canonical ownership:
 - `supabase/schema_contract.md` — current database behavior/privacy plus explicit implementation debt.
 - `supabase/migrations/` — immutable ordered executable database history.
 
-GitHub `likesized/Likesized` is the source of truth for application source and recorded product decisions. `main` is the single production source line. Current files describe current truth only.
+GitHub `likesized/Likesized` is the source of truth for application source and recorded product decisions. `main` is the single production source line. Current files describe current product truth; Git history preserves superseded attempts. Never create patch/fixed/v2/temp/backup implementations, parallel product systems or a second master plan.
 
 **Vercel owns live deployment operational truth.** This master records immutable release facts after they are verified, but whether a deployment is currently READY, rolled back, reassigned or unhealthy must be read from Vercel when that current operational state matters.
 

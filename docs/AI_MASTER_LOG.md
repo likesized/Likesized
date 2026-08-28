@@ -782,3 +782,48 @@ Recent released application/source lineage:
 3. **Batched Relevant Fit Report summaries.** Visible canonical tagged cards make one bounded Outfit summary request, with short-lived client result caching and concurrent request deduplication. New authenticated-only database function `get_outfit_tagged_fit_counts(uuid,integer)` returns the derived exact Product/exact-variation personalized counts in one batch boundary. Full FITuition recommendation/body-match/Closet-history work remains lazy and loads only for the selected garment through the existing detailed route.
 
 The short card-level **Checking…** state is allowed while the one summary request completes. “Optimization later” is not an accepted reason to restore per-garment full-evidence fan-out or redirect/revalidation-heavy local interactions.
+
+# CURRENT ROADMAP 13A BRANCH RECONCILIATION — 2026-08-28
+This section is the authoritative current branch-status override for Roadmap 13A and supersedes older **planned / not implemented** and PR #123-as-current wording above where those historical snapshots conflict with the present branch. Immutable historical release facts above remain historical facts; they are not rewritten by this branch-only status update.
+
+## Current production and active work
+- Canonical production/runtime remains `main` at **`cbd7d97047ab66cfecc54b969ebec6f88419af7f`** through released PR #124. The Style Feed gallery remains unresolved in owner live QA; Follow/Following passed live QA; tagged garment count functionality is restored, while user-perceived garment-detail speed remains unresolved and is not part of Roadmap 13A.
+- PR #125 was rejected in preview, closed without merge and neutralized; it has no unique active implementation authority.
+- The one active Product Change is **draft PR #126**, branch **`product/roadmap-13a-canonical-product-images`**, based on production `main` `cbd7d97047ab66cfecc54b969ebec6f88419af7f`.
+- Roadmap 13A has explicit owner implementation authorization. PR #126 is branch-only and must not be merged or deployed until the exact final candidate passes trusted governance plus complete Release Verification and the owner separately authorizes that identified candidate for production.
+
+## Roadmap 13A implemented branch architecture
+PR #126 implements the one canonical Product-image representation system required before Garment/Product Detail, Explore, Search and Wish Locker consume generic Product imagery:
+- a **persisted winning canonical Product-image pointer/selection**, recalculated only when relevant Product/Fit Photo evidence or admin state changes rather than ranking all candidates on every read;
+- report-specific Fit Photos remain attached to their original Fit Report/member evidence and are never overwritten or detached by canonical selection;
+- deterministic server-authoritative Fit Photo technical scoring persisted on `fit_reference_photos`, using the owner-locked starting weights: **garment visibility 35 / sharpness 20 / resolution 15 / framing 20 / exposure 10**;
+- the current server scorer calculates deterministic technical image measurements and dimensions and does **not** claim a full garment-recognition model exists; suitability/missing-garment exceptions remain enforceable through canonical eligibility and moderation/admin review without inventing an opaque AI quality score;
+- private perceptual **dHash** fingerprints with configurable Hamming-distance threshold group near-identical Fit Photos so duplicate copies do not compete independently; ordinary members cannot read the private fingerprint store;
+- exact tracked-variation image selection remains deliberately separate from counted-report `objective_variant_key`; Size and Color do not become tracked-variation identity;
+- hierarchy remains **admin-locked exact variation → best eligible exact-variation Fit Photo → broader Product Fit Photo canonical → eligible Product Photo evidence / official-imported fallback → placeholder at the consuming surface**, with an admin lock always winning;
+- automatic Fit Photo anti-churn uses the configurable **+5** improvement margin between genuinely measured Fit Photo candidates;
+- pre-13A `legacy_neutral` rows carry only synthetic bootstrap scores, so the first eligible measured candidate may replace a legacy-neutral incumbent without having to clear a meaningless synthetic +5 hurdle; once a measured incumbent exists, the normal +5 rule resumes;
+- admin controls provide audited **Set as Product Image / Lock Product Image / Unlock Product Image** plus Fit Photo eligibility review; internal reasons/selection metadata stay behind admin or safe resolver boundaries;
+- one bounded batch resolver returns canonical imagery for up to 200 Product requests at once and batches private Fit Photo URL signing, avoiding per-Product N+1 resolver/signing work;
+- official/imported imagery remains fallback rather than a quality-score competitor against an eligible real-world Fit Photo.
+
+## Branch-only database history
+PR #126 adds ordered migrations:
+- `20260828001000_canonical_product_image_scoring.sql` — scoring fields, tracked-variation image identity, persisted winner, automatic recompute, admin Set/Lock/Unlock and bounded resolver;
+- `20260828001100_canonical_product_image_privacy_boundary.sql` — admin-only internal selection reads and safe audited eligibility boundary;
+- `20260828001200_fit_photo_perceptual_duplicates.sql` — private perceptual fingerprint registration/grouping and duplicate representative behavior;
+- `20260828001300_canonical_product_image_legacy_score_transition.sql` — legacy-neutral bootstrap transition without weakening the measured-photo +5 anti-churn rule.
+
+None of those migrations are production schema truth until PR #126 is exact-final verified, separately authorized for production, merged and applied through the canonical release path.
+
+## Current verification state
+- Latest implementation head before this Master reconciliation was **`70d94e473c1a50108e0fc367f3e615924779f425`**.
+- Fast CI #71 / run **`33133570100`** completed successfully on that head through canonical integrity, exact dependency install, TypeScript, application safeguards, production build, complete fresh migration replay and database behavior/privacy tests.
+- The trusted governance failure on that same pre-doc head was documentation metadata only: the PR body lacked the exact `Owner authorization: Confirmed` line and `docs/AI_MASTER_LOG.md` had not yet been reconciled. The PR body now contains the required owner-authorization declaration; this section supplies the required Master reconciliation. A new head/check run must be treated as the current candidate after this commit.
+
+## Exact next action — Roadmap 13A
+1. Keep PR #126 draft while this Master/Product/schema truth is finalized and trusted + fast draft checks rerun on the new head.
+2. Do not broaden scope into Garment Detail, Explore, Search, Wish Locker, gallery repair or garment-speed work; those surfaces may consume the shared resolver later in their own roadmap audits.
+3. Once branch source/tests/docs are frozen and draft checks are green, mark PR #126 ready so the full exact-candidate **Release Verification** runs.
+4. Any commit after a green full verification invalidates that candidate and requires full final verification again.
+5. Only after exact-final verification is green may an identified candidate be presented for the owner’s separate production authorization. No merge, Supabase production migration application or Vercel production release occurs before that authorization.

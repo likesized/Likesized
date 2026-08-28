@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 type Params=Promise<{username:string}>;
 type ProfileRecord={id:string;username:string;display_name:string|null;bio:string|null;avatar_url:string|null};
-type MatchRecord={user_id:string;match_score:number};
+type MatchRecord={match_category:"overall"|"tops"|"bottoms";match_score:number|null};
 type ReportRecord={id:string;closet_item_id:string;size_label:string;fit:string;would_buy_again:boolean|null;created_at:string;product:unknown};
 type ProductRecord={name:string;slug:string;category:string;garment_type_key:string|null;brand:unknown};
 type BrandRecord={name:string};
@@ -19,12 +19,7 @@ type NotificationSubscription={followed_id:string};
 const FIT_LABELS:Record<string,string>={too_small:"Too small",snug:"Snug",just_right:"Just right",relaxed:"Relaxed",too_big:"Too big"};
 function one<T>(value:unknown):T|null{return Array.isArray(value)?((value[0] as T|undefined)??null):((value as T|null)??null);}
 function dateLabel(value:string){return new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric"}).format(new Date(value));}
-
-async function scoreFor(supabase:Awaited<ReturnType<typeof createClient>>,targetUserId:string,category:"overall"|"tops"|"bottoms"){
-  const {data,error}=await supabase.rpc("get_fit_matches",{p_match_category:category,p_result_limit:100});
-  if(error)throw error;
-  return ((data??[]) as MatchRecord[]).find((row)=>row.user_id===targetUserId)?.match_score;
-}
+function matchScore(rows:MatchRecord[],category:MatchRecord["match_category"]){const value=rows.find((row)=>row.match_category===category)?.match_score;return typeof value==="number"?value:undefined;}
 
 export default async function MemberProfilePage({params}:{params:Params}){
   const {username}=await params;
@@ -39,17 +34,19 @@ export default async function MemberProfilePage({params}:{params:Params}){
   const profile=profileData as ProfileRecord;
   const isSelf=profile.id===viewerId;
 
-  const [{data:reportsData,error:reportsError},{data:followData,error:followError},{data:notificationData,error:notificationError},{data:twinSettings,error:twinSettingsError},overall,tops,bottoms]=await Promise.all([
+  const [{data:reportsData,error:reportsError},{data:followData,error:followError},{data:notificationData,error:notificationError},{data:twinSettings,error:twinSettingsError},matchResult]=await Promise.all([
     supabase.from("fit_reports").select("id,closet_item_id,size_label,fit,would_buy_again,created_at,product:products(name,slug,category,garment_type_key,brand:brands(name))").eq("user_id",profile.id).order("created_at",{ascending:false}).limit(50),
     isSelf?Promise.resolve({data:null,error:null}):supabase.from("follows").select("followed_id").eq("follower_id",viewerId).eq("followed_id",profile.id).maybeSingle(),
     isSelf?Promise.resolve({data:[],error:null}):supabase.rpc("get_following_notification_subscriptions"),
     isSelf?Promise.resolve({data:null,error:null}):supabase.from("fit_twin_settings").select("threshold_percent").eq("singleton",true).maybeSingle(),
-    isSelf?Promise.resolve(undefined):scoreFor(supabase,profile.id,"overall"),
-    isSelf?Promise.resolve(undefined):scoreFor(supabase,profile.id,"tops"),
-    isSelf?Promise.resolve(undefined):scoreFor(supabase,profile.id,"bottoms"),
+    isSelf?Promise.resolve({data:[] as MatchRecord[],error:null}):supabase.rpc("get_person_fit_match_cached",{p_target_user_id:profile.id}),
   ]);
-  if(reportsError||followError||notificationError||twinSettingsError)throw new Error("Could not load member fit evidence.");
+  if(reportsError||followError||notificationError||twinSettingsError||matchResult.error)throw new Error("Could not load member fit evidence.");
 
+  const matchRows=(matchResult.data??[]) as MatchRecord[];
+  const overall=isSelf?undefined:matchScore(matchRows,"overall");
+  const tops=isSelf?undefined:matchScore(matchRows,"tops");
+  const bottoms=isSelf?undefined:matchScore(matchRows,"bottoms");
   const reports=(reportsData??[]) as ReportRecord[];
   const closetIds=[...new Set(reports.map((row)=>row.closet_item_id))];
   const reportIds=reports.map((row)=>row.id);

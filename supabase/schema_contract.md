@@ -388,3 +388,19 @@ The branch database contract is:
 - The private evidence core preserves `garment_condition='normal'`, the authenticated/shared Closet evidence boundary, `objective_variant_key` tracked-evidence deduplication, exact historical snapshot scoring and the established evidence hierarchy.
 - Public compatibility functions expose only the same safe derived Match/recommendation outputs; the new private tables/functions do not grant ordinary members or anonymous callers raw Match inputs, fingerprints, cache internals or another member's private body state.
 - The architecture deliberately does not materialize all person × person or person × garment combinations. Derived records are demand-driven, bounded and version-invalidated.
+
+## PR #130 production reconciliation — 2026-08-28
+The branch-only heading immediately above is retained as historical branch wording, but its release condition has now been satisfied. PR #130 was exact-final verified, separately production-authorized, squash-merged to `main` as **`ec7838fa8257ff704287b756c3484863c79d8f66`**, and its seven ordered migrations were applied and verified on production Supabase. Hosted Supabase assigned versions `20260828194418`, `20260828194621`, `20260828194634`, `20260828194653`, `20260828194811`, `20260828194835`, and `20260828194851` to the seven local canonical migration names above. The Match/FITuition scale architecture described above is therefore current production database truth.
+
+## Advisor security / RLS hardening — PR #132 BRANCH ONLY
+Draft Product Change PR #132 adds ordered migration **`20260828203000_advisor_security_and_rls_hardening.sql`**. It is not production schema until its exact final candidate is verified, separately production-authorized, merged, and the hosted migration is applied/verified.
+
+Current branch database contract:
+- Product meaning does not change: the existing Product Spec already defines Outfit drafts as unpublished owner-only work. The migration closes a stale RLS path that conflicted with that rule.
+- The legacy `members read shared outfit item links` policy is removed. Because current V1 locks every Closet item to compatibility `visibility='shared'`, that policy could otherwise let another authenticated member read a draft Outfit's `outfit_post_items` relationship solely because the linked garment was shared. The surviving canonical policy requires Outfit ownership or a published, unblocked Outfit.
+- Advisor-warned duplicate permissive policies for Outfit/Fit Photo reads/deletes are consolidated into equivalent single OR policies so intended owner, published, blocking, commenter, Outfit-owner and admin behavior is preserved without evaluating redundant policies.
+- Anonymous `SECURITY DEFINER` access remains deliberately limited to the narrow published-Outfit projection/counter surface. Raw Profile, Closet, Fit Report and private body stores do not become anonymous-readable merely to silence an advisor warning.
+- Public `admin_*` `SECURITY DEFINER` functions remain behind the existing `private.is_admin(...)` authorization boundary; the additive safeguard asserts anonymous admin execution stays blocked and the guard remains present.
+- Covering indexes are added for the foreign-key relationships currently reported by the Supabase advisor. Newly deployed or otherwise legitimate indexes are not removed merely because production telemetry has not used them yet; an `unused_index` observation is not by itself proof an index is unnecessary.
+- Supabase leaked-password protection is an Auth service configuration rather than database SQL. It remains a separate operational follow-up and is not falsely represented as changed by this migration.
+- `supabase/tests/advisor_security_and_rls_hardening.test.sql` proves the draft Outfit item-link boundary, the intended anonymous definer allowlist, admin guard expectations, representative FK indexes and raw-table anonymity boundaries.

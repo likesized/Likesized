@@ -483,9 +483,12 @@ declare
 begin
   if v_user_id is null then raise exception 'Authentication required' using errcode='28000'; end if;
 
-  select array_agg(distinct category order by category::text) into v_categories
-  from unnest(coalesce(p_match_categories,'{}'::public.fit_match_category[])) q(category)
-  where category in ('overall'::public.fit_match_category,'tops'::public.fit_match_category,'bottoms'::public.fit_match_category);
+  select array_agg(category order by category::text) into v_categories
+  from (
+    select distinct category
+    from unnest(coalesce(p_match_categories,'{}'::public.fit_match_category[])) q(category)
+    where category in ('overall'::public.fit_match_category,'tops'::public.fit_match_category,'bottoms'::public.fit_match_category)
+  ) requested_categories;
   if coalesce(array_length(v_categories,1),0)=0 then return; end if;
 
   select fp.match_input_version,coalesce(p_fit_community,fp.fit_community,'both'::public.fit_community)

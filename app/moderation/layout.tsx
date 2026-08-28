@@ -1,11 +1,14 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
-import CanonicalProductImageAdmin from "./CanonicalProductImageAdmin";
 
 export default function ModerationLayout({ children }: { children: ReactNode }) {
   return <>
-    {children}
     <div className="pageShell">
-      <CanonicalProductImageAdmin />
+      <nav aria-label="Admin catalog sections" style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+        <Link href="/moderation">Catalog + moderation</Link>
+        <Link href="/moderation/product-images">Product images</Link>
+      </nav>
     </div>
+    {children}
   </>;
 }

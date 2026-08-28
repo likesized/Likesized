@@ -48,7 +48,7 @@ const PRODUCT_SEEDS: Array<[string,string,string,string,string,Record<string,str
   ["Uniqlo","AIRism Cotton T-shirt","t_shirt","blue","M",{intended_fit:"oversized",cropped:"no",sleeve_length:"short",neckline:"crew"}],
   ["American Eagle","Curvy Mom Jean","jeans","blue","10",{cut:"straight",rise:"high",length_profile:"regular"}],
   ["Champion","Reverse Weave Hoodie","hoodie","gray","L",{intended_fit:"regular",cropped:"no",closure:"pullover"}],
-  ["Tommy Hilfiger","Classic Fit Polo","polo","navy","M",{intended_fit:"regular",sleeve_length:"short",opening:"button_placket"}],
+  ["Tommy Hilfiger","Classic Fit Polo","polo","blue","M",{intended_fit:"regular",sleeve_length:"short",opening:"button_placket"}],
   ["New Balance","574 Sneaker","sneakers","gray","9",{shoe_height:"low",shoe_use:"casual",shoe_closure:"lace"}],
   ["Mango","Pleated Midi Skirt","skirt","black","M",{shape:"a_line",rise:"high",length_profile:"midi",skort:"no"}],
   ["Outdoor Voices","CloudKnit Jogger","joggers","blue","M",{intended_fit:"relaxed",rise:"mid",length_profile:"full"}],

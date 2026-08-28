@@ -11,7 +11,7 @@ Ordered SQL files in `supabase/migrations/` are the executable database history 
 
 This file owns current database behavior/privacy plus explicit implementation debt. Product meaning lives in `docs/V1_PRODUCT_SPEC.md`; roadmap/status/deployment history live in `docs/AI_MASTER_LOG.md`.
 
-# Production database checkpoint — 2026-08-26
+# Production database checkpoint — 2026-08-27
 Production Supabase project: `rlksidwniuoxoacumyaf`.
 
 Application merge/deployment status is intentionally not duplicated here. `docs/AI_MASTER_LOG.md` is the sole owner of the current application line, CI/deployment status and production deployment history.
@@ -24,7 +24,7 @@ The established Roadmap 12 foundation migrations remain immutable production his
 - `20260824133800_canonical_public_closet_and_outfit_public_identity.sql` → production `20260824164452 canonical_public_closet_and_outfit_public_identity`;
 - `20260824133900_fix_outfit_compatibility_photo_registration.sql` → production `20260824164507 fix_outfit_compatibility_photo_registration`.
 
-Later immutable Roadmap 12 production history includes:
+Later immutable Roadmap 12/13 production history includes:
 - `20260824231500_outfit_comment_likes.sql` → production **`20260825000654 outfit_comment_likes`**;
 - `20260824234500_live_profile_identity.sql` → production **`20260825000708 live_profile_identity`**;
 - `20260825000500_fix_live_comment_like_count_projection.sql` → production **`20260825000722 fix_live_comment_like_count_projection`**;
@@ -36,7 +36,8 @@ Later immutable Roadmap 12 production history includes:
 - production **`20260826001531 exact_variation_evidence_watches`**;
 - `20260826003000_atomic_outfit_cover_switch.sql` → production **`20260826020651 atomic_outfit_cover_switch`**;
 - production **`20260826020710 preserve_tracked_variation_recommendation_evidence`**;
-- `20260826190000_outfit_tag_consistency.sql` → production **`20260826193527 outfit_tag_consistency`**.
+- `20260826190000_outfit_tag_consistency.sql` → production **`20260826193527 outfit_tag_consistency`**;
+- `20260827214500_batch_outfit_tagged_fit_counts.sql` → production **`20260827214500 batch_outfit_tagged_fit_counts`**.
 
 Earlier catalog, Fit Report, identity, privacy and security migrations remain immutable applied history. Supabase-assigned production timestamps may differ from local canonical filenames; never rename applied local migration history to chase generated timestamps.
 
@@ -46,7 +47,8 @@ Hosted verification across these production batches confirms, among other bounda
 - `public.outfit_comment_likes` exists and its safe aggregate projection uses the declared `bigint` count;
 - `public.get_outfit_comments_page(uuid,timestamptz,uuid,integer)` exists as immutable prior cursor-pagination history;
 - `public.get_public_outfit_tagged_items(uuid)` and `public.get_public_outfit_hotspots(uuid)` are security-definer minimum-field public projections available to `anon` and `authenticated` callers for published Outfit identification;
-- `public.get_outfit_comments_sorted_page(uuid,text,bigint,timestamptz,uuid,integer)` is the current sorted/paginated comment projection, with **Top** and **Newest** behavior described below.
+- `public.get_outfit_comments_sorted_page(uuid,text,bigint,timestamptz,uuid,integer)` is the current sorted/paginated comment projection, with **Top** and **Newest** behavior described below;
+- `public.get_outfit_tagged_fit_counts(uuid,integer)` exists as the bounded authenticated tagged-garment summary projection used by current Outfit cards.
 
 PR #94 and PR #95 introduced no production database migration. PR #96 introduced ordered migration **`20260826190000_outfit_tag_consistency.sql`**, now applied to production as hosted **`20260826193527 outfit_tag_consistency`**.
 
@@ -195,10 +197,28 @@ Barcode confidence is separate from Product confidence.
 - Current new-Fit-Report application/server validation requires at least one of **Product Photo, Front Fit Photo or Back Fit Photo**. This requirement was intentionally not imposed as a blanket database constraint on historical reports that may predate the rule.
 - Fit Report/Closet presentation priority is **Front Fit Photo → Product Photo → Back Fit Photo**. This is separate from scanner Product-identification priority and does not change evidence roles.
 
-## Planned automatic canonical Product image scoring — ROADMAP 13A
-No Roadmap 13A scoring columns/table are production schema yet. When implemented, it must use a new ordered migration and preserve the distinction between report-specific imagery and generic Product representation.
+## Automatic canonical Product image scoring — ROADMAP 13A / PR #126 BRANCH ONLY
+Roadmap 13A is implemented on draft Product Change PR #126 but is **not production schema** until the exact candidate is verified, owner-authorized, merged and its migrations are applied/verified. The branch uses ordered migrations rather than ad-hoc hosted schema changes:
+- `20260828001000_canonical_product_image_scoring.sql` — quality fields, tracked-variation key, persisted winners/config, automatic recompute, safe batch resolver and audited admin controls;
+- `20260828001100_canonical_product_image_privacy_boundary.sql` — admin-only direct canonical-selection metadata and generic member-visible ineligibility reason boundary;
+- `20260828001200_fit_photo_perceptual_duplicates.sql` — private 64-bit dHash fingerprints and product-scoped perceptual duplicate grouping.
 
-Planned hierarchy is admin-locked image → eligible scored Fit Report wear image → official/imported fallback → placeholder. Exact-variation selection has the more specific hierarchy recorded in `docs/AI_MASTER_LOG.md`. Scoring/eligibility fields such as quality component scores, duplicate relationship, canonical eligibility and lock state must remain auditable and must never overwrite the original photo attached to an individual Fit Report.
+The branch database contract is:
+- `fit_reference_photos` carries normalized technical component scores, dimensions, `duplicate_of`, canonical eligibility and generated `photo_quality_score`; the Product-image selector never rewrites the original Fit Photo/storage object attached to the member's report;
+- score weighting is deterministic at **garment visibility 35 / sharpness 20 / resolution 15 / framing 20 / exposure 10**;
+- current Fit Photo technical analysis is computed from the submitted file on the server action path; the database stores the resulting auditable numeric components while moderation/admin eligibility remains authoritative when the garment is missing or the image is unsuitable;
+- `private.fit_photo_perceptual_fingerprints` stores the dHash itself; ordinary members never receive that fingerprint through table access or the canonical resolver;
+- perceptual duplicate matching starts at Hamming distance **≤5** and is configurable in `canonical_product_image_config`; among near duplicates the stronger deterministic candidate remains the representative and weaker copies receive `duplicate_of`, preventing duplicate photos from competing independently;
+- `fit_reports.tracked_variation_key` is a separate current tracked-variation identity derived from current controlled variation-defining garment answers. It deliberately does not reuse counted-report `objective_variant_key`, and Size/Color never enter it;
+- `canonical_product_images` is the persisted winning pointer for Product-level and exact tracked-variation image selection. Reads do not re-rank all candidates on every request;
+- automatic Fit Photo-to-Fit Photo replacement uses the configurable five-point margin. Admin locks always win until explicitly unlocked;
+- automatic eligibility excludes deleted/duplicate/ineligible photos, currently open moderation reports and newly scored extremely low-resolution photos; dismissed reports may return to eligibility through the same recompute path;
+- `public.get_canonical_product_images(uuid[],text[])` is the single bounded authenticated resolver, capped at 200 requested Products. It returns only the chosen source/path metadata needed by the application; private Fit Photo URLs are signed in one batched storage operation rather than one request per Product;
+- ordinary members do not directly read `canonical_product_images`, lock reasons or private fingerprints. Admin direct selection/audit reads remain behind `private.is_admin()`;
+- admin RPCs provide intentional **Set as Product Image**, **Lock Product Image**, unlock and Fit Photo eligibility decisions with required audit reasons;
+- exact tracked-variation Fit Photo winners override the Product-level winner. When no exact row exists the resolver falls back to the broader Product winner. The current catalog has no separate authoritative exact-variation official-image field, so the system does not invent one; Product-level Product Photo/official imagery remains the current non-wear fallback.
+
+This section describes the **draft PR #126 branch contract only**. It must be relabeled production only after the release path and hosted migration verification actually complete.
 
 # 8. Direct Product search — LOCKED
 `search_catalog_products` is the canonical broad textual Product search. Direct Product search does not accept Fit Community or Department as a hidden gate.
@@ -320,8 +340,8 @@ Repeated reports from the same **person + Product + tracked fit variation** repr
 
 Before Product Detail consumes `exact_variant`, recommendation/evidence/Admin behavior must consume `GARMENT_VARIATION_DEFINITION_MAP`. Size and Color must never become exact-variation key fields. Body Match remains body similarity and must not be collapsed with Fit Result into a synthetic fit percentage.
 
-## Bounded Outfit tagged-fit count projection — OWNER-AUTHORIZED / PR #123 BRANCH
-Migration `20260827214500_batch_outfit_tagged_fit_counts.sql` adds `public.get_outfit_tagged_fit_counts(uuid,integer)` as the one lightweight personalized batch boundary for the counts displayed on an Outfit's tagged-garment cards.
+## Bounded Outfit tagged-fit count projection — PRODUCTION
+Migration `20260827214500_batch_outfit_tagged_fit_counts.sql` adds `public.get_outfit_tagged_fit_counts(uuid,integer)` as the one lightweight personalized batch boundary for the counts displayed on an Outfit's tagged-garment cards. It is applied in production under the same canonical version/name.
 
 - The function is `security invoker`, executable only by `authenticated`, and returns only tagged `closet_item_id` plus the derived personalized `matching_fit_reports` count; it exposes no raw body measurements or private report bodies.
 - One application request resolves the complete bounded tagged set for an Outfit. The projection reuses the canonical `get_product_evidence_candidates` matcher with the same per-target evidence cap used by detailed FITuition rather than launching a separate HTTP/full-FITuition request for every visible garment.
@@ -329,17 +349,16 @@ Migration `20260827214500_batch_outfit_tagged_fit_counts.sql` adds `public.get_o
 - The application passes the threshold from the canonical `STRONG_FIT_REPORT_MATCH_THRESHOLD` constant instead of hard-coding a second matching rule in the route.
 - This batch projection is only the compact-card summary. Full recommendation, Body Match, strong-report breakdown and Closet-history FITuition remain lazy and are loaded through the existing detailed selected-garment boundary only after the member opens that garment.
 
-This section describes the branch-only Product Change until PR #123 is verified, merged and applied. It must not be described as production schema before deployment verification.
+The production schema/function is verified present. Owner live QA confirmed tagged-garment results work again after the migration was applied; user-perceived card latency remains a separate unresolved application-performance issue and is not represented here as a database correctness failure.
 
 # 15. Current implementation debt / open verification
 - Application deployment/current-line facts and historical CI exceptions live only in `docs/AI_MASTER_LOG.md`; this database contract intentionally does not duplicate them.
 - `profile_locations` is production-applied at hosted migration **`20260825192738 private_profile_location_metadata`**; current application setup/settings require both City and State while the table retains pair-null compatibility for historical/compatibility rows.
-- Production also includes `20260826001512 username_change_cooldown`, `20260826001531 exact_variation_evidence_watches`, `20260826020651 atomic_outfit_cover_switch`, `20260826020710 preserve_tracked_variation_recommendation_evidence`, and **`20260826193527 outfit_tag_consistency`**.
+- Production also includes `20260826001512 username_change_cooldown`, `20260826001531 exact_variation_evidence_watches`, `20260826020651 atomic_outfit_cover_switch`, `20260826020710 preserve_tracked_variation_recommendation_evidence`, **`20260826193527 outfit_tag_consistency`**, and **`20260827214500 batch_outfit_tagged_fit_counts`**.
 - The local canonical Outfit tag-consistency migration is **`20260826190000_outfit_tag_consistency.sql`**; Supabase assigned hosted version `20260826193527`. Do not rename the local immutable file to chase the hosted timestamp.
-- Owner live re-audit remains the Roadmap 12 gate; Roadmap 13 full Style Feed behavior must not be treated as unblocked until the owner finishes the New Outfit audit.
-- Roadmap 13A canonical Product-image scoring remains planned. No scoring schema is production truth until a later ordered migration is designed, verified and applied.
+- Roadmap 13A canonical Product-image scoring is active only on draft PR #126 until exact-final verification/release. Its three new ordered migrations are not production truth yet.
+- The current catalog does not yet carry a separate authoritative exact-tracked-variation official/imported image source. Roadmap 13A therefore resolves an exact Fit Photo when available and otherwise falls back to the Product-level canonical image; it does not invent parallel variation imagery.
 - The legacy physical `closet_items.visibility` column remains intentionally in immutable replay history and locked to compatibility `shared`; broader Closet lifecycle/mutation rules remain future audit work.
-- Historical counted-report fingerprint reconciliation for retired questions remains separate from tracked-variation/Outfit work.
-- The current `/circle` route has the Style Feed visible rename, but the locked Following-only rolling-feed behavior/ranking is later Roadmap 13 work. Do not invent ranking or add a Style Tag feed filter during Roadmap 12.
+- Historical counted-report fingerprint reconciliation for retired questions remains separate from tracked-variation image selection.
 - Proposed sex/body-specific public measurement FAQ wording remains pending owner copy approval.
 - Complete all-Products admin priority/filter/merge/split UX, purchase-context aggregate/admin analytics, Product merge/split, richer alias UX, spam moderation, broader Product-photo review, external barcode-provider feasibility and SerpAPI admin UX remain open where separately scoped.

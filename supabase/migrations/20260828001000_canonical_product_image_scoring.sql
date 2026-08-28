@@ -32,6 +32,66 @@ create index fit_reference_photos_canonical_score_idx
   on public.fit_reference_photos(photo_quality_score desc, created_at desc)
   where canonical_eligible and duplicate_of is null;
 
+-- Tracked variation is deliberately separate from the counted-report objective fingerprint.
+-- Current V1 stores only owner-audited controlled item questions in garment_answers; every
+-- currently asked question is variation-defining. Size and Color live outside garment_answers.
+-- The two retired question keys below must stay inert for historical rows.
+alter table public.fit_reports
+  add column tracked_variation_key text
+  check (tracked_variation_key is null or tracked_variation_key ~ '^[0-9a-f]{64}$');
+
+create or replace function private.current_tracked_variation_key(
+  p_garment_type_key text,
+  p_garment_answers jsonb
+) returns text
+language plpgsql stable security definer set search_path=''
+as $$
+declare
+  v_answers text;
+  v_payload text;
+begin
+  if p_garment_type_key is null then return null; end if;
+  if not exists(
+    select 1 from public.garment_types gt
+    where gt.key=p_garment_type_key and gt.intake_active
+  ) then return null; end if;
+  if pg_catalog.jsonb_typeof(coalesce(p_garment_answers,'{}'::jsonb)) <> 'object' then return null; end if;
+
+  select pg_catalog.string_agg(e.key||'='||e.value,'|' order by e.key)
+    into v_answers
+  from pg_catalog.jsonb_each_text(coalesce(p_garment_answers,'{}'::jsonb)) e
+  where e.key not in ('intended_fit','shoe_use')
+    and e.value <> 'not_sure';
+
+  v_payload:=p_garment_type_key||'|'||coalesce(v_answers,'');
+  return pg_catalog.md5(v_payload)||pg_catalog.md5('tracked-v1|'||v_payload);
+end;
+$$;
+revoke all on function private.current_tracked_variation_key(text,jsonb) from public,anon,authenticated;
+
+create or replace function private.set_fit_report_tracked_variation_key()
+returns trigger
+language plpgsql security definer set search_path=''
+as $$
+begin
+  new.tracked_variation_key:=private.current_tracked_variation_key(new.garment_type_key,new.garment_answers);
+  return new;
+end;
+$$;
+revoke all on function private.set_fit_report_tracked_variation_key() from public,anon,authenticated;
+create trigger set_fit_report_tracked_variation_key
+  before insert or update of garment_type_key,garment_answers
+  on public.fit_reports
+  for each row execute function private.set_fit_report_tracked_variation_key();
+
+update public.fit_reports fr
+set tracked_variation_key=private.current_tracked_variation_key(fr.garment_type_key,fr.garment_answers)
+where fr.garment_type_key is not null;
+
+create index fit_reports_tracked_variation_idx
+  on public.fit_reports(product_id,tracked_variation_key,created_at desc)
+  where product_id is not null and tracked_variation_key is not null;
+
 create table public.canonical_product_image_config (
   singleton boolean primary key default true check (singleton),
   fit_photo_replacement_margin smallint not null default 5 check (fit_photo_replacement_margin between 0 and 25),
@@ -113,11 +173,11 @@ create or replace function private.fit_photo_variation_key(p_photo_id uuid)
 returns text
 language sql stable security definer set search_path=''
 as $$
-  select fr.objective_variant_key
+  select fr.tracked_variation_key
   from public.fit_reference_photos fp
   join public.fit_reports fr on fr.closet_item_id=fp.closet_item_id
   where fp.id=p_photo_id
-    and fr.objective_variant_key is not null
+    and fr.tracked_variation_key is not null
   order by fr.created_at desc,fr.id desc
   limit 1;
 $$;
@@ -133,7 +193,7 @@ as $$
   from public.fit_reference_photos fp
   join public.closet_items ci on ci.id=fp.closet_item_id
   left join lateral (
-    select fr.objective_variant_key
+    select fr.tracked_variation_key
     from public.fit_reports fr
     where fr.closet_item_id=fp.closet_item_id
     order by fr.created_at desc,fr.id desc
@@ -143,7 +203,14 @@ as $$
     and fp.canonical_eligible
     and fp.duplicate_of is null
     and fp.quality_scored_at is not null
-    and (p_variation_key is null or latest_report.objective_variant_key=p_variation_key)
+    and (fp.quality_source='legacy_neutral' or fp.resolution_score>=50)
+    and not exists(
+      select 1 from public.content_reports cr
+      where cr.target_type='fit_reference_photo'::public.moderation_target_type
+        and cr.target_id=fp.id
+        and cr.status='open'::public.moderation_report_status
+    )
+    and (p_variation_key is null or latest_report.tracked_variation_key=p_variation_key)
   order by fp.photo_quality_score desc,
            case fp.photo_role when 'front' then 0 else 1 end,
            fp.created_at desc,
@@ -214,6 +281,13 @@ begin
          select 1 from public.fit_reference_photos fp
          where fp.id=v_current.fit_reference_photo_id
            and fp.canonical_eligible and fp.duplicate_of is null and fp.quality_scored_at is not null
+           and (fp.quality_source='legacy_neutral' or fp.resolution_score>=50)
+           and not exists(
+             select 1 from public.content_reports cr
+             where cr.target_type='fit_reference_photo'::public.moderation_target_type
+               and cr.target_id=fp.id
+               and cr.status='open'::public.moderation_report_status
+           )
        ) then
       return;
     end if;
@@ -278,12 +352,12 @@ begin
   );
 
   for v_variation in
-    select distinct fr.objective_variant_key
+    select distinct fr.tracked_variation_key
     from public.fit_reference_photos fp
     join public.closet_items ci on ci.id=fp.closet_item_id
     join public.fit_reports fr on fr.closet_item_id=fp.closet_item_id
     where ci.product_id=p_product_id
-      and fr.objective_variant_key is not null
+      and fr.tracked_variation_key is not null
   loop
     select * into v_fit from private.best_fit_photo_for_product(p_product_id,v_variation);
     perform private.upsert_automatic_canonical_product_image(
@@ -301,8 +375,15 @@ begin
       join public.closet_items ci on ci.id=fp.closet_item_id
       join public.fit_reports fr on fr.closet_item_id=fp.closet_item_id
       where ci.product_id=p_product_id
-        and fr.objective_variant_key=c.variation_key
+        and fr.tracked_variation_key=c.variation_key
         and fp.canonical_eligible and fp.duplicate_of is null and fp.quality_scored_at is not null
+        and (fp.quality_source='legacy_neutral' or fp.resolution_score>=50)
+        and not exists(
+          select 1 from public.content_reports cr
+          where cr.target_type='fit_reference_photo'::public.moderation_target_type
+            and cr.target_id=fp.id
+            and cr.status='open'::public.moderation_report_status
+        )
     );
 end;
 $$;
@@ -329,6 +410,27 @@ create trigger refresh_canonical_product_image_after_fit_photo
   after insert or update of storage_path,garment_visibility_score,sharpness_score,resolution_score,framing_score,exposure_score,duplicate_of,canonical_eligible,quality_scored_at or delete
   on public.fit_reference_photos
   for each row execute function private.refresh_canonical_product_image_after_fit_photo();
+
+create or replace function private.refresh_canonical_product_image_after_fit_report_variation()
+returns trigger
+language plpgsql security definer set search_path=''
+as $$
+declare
+  v_product_id uuid;
+begin
+  v_product_id:=coalesce(new.product_id,old.product_id);
+  perform private.recompute_canonical_product_images(v_product_id);
+  if old.product_id is distinct from new.product_id then
+    perform private.recompute_canonical_product_images(old.product_id);
+  end if;
+  return coalesce(new,old);
+end;
+$$;
+revoke all on function private.refresh_canonical_product_image_after_fit_report_variation() from public,anon,authenticated;
+create trigger refresh_canonical_product_image_after_fit_report_variation
+  after insert or update of product_id,tracked_variation_key or delete
+  on public.fit_reports
+  for each row execute function private.refresh_canonical_product_image_after_fit_report_variation();
 
 create or replace function private.refresh_canonical_product_image_after_product_photo()
 returns trigger
@@ -358,6 +460,30 @@ revoke all on function private.refresh_canonical_product_image_after_official_im
 create trigger refresh_canonical_product_image_after_official_image
   after update of image_url on public.products
   for each row execute function private.refresh_canonical_product_image_after_official_image();
+
+create or replace function private.refresh_canonical_product_image_after_content_report()
+returns trigger
+language plpgsql security definer set search_path=''
+as $$
+declare
+  v_target_type public.moderation_target_type;
+  v_target_id uuid;
+  v_product_id uuid;
+begin
+  v_target_type:=coalesce(new.target_type,old.target_type);
+  v_target_id:=coalesce(new.target_id,old.target_id);
+  if v_target_type='fit_reference_photo'::public.moderation_target_type then
+    v_product_id:=private.fit_photo_product_id(v_target_id);
+    perform private.recompute_canonical_product_images(v_product_id);
+  end if;
+  return coalesce(new,old);
+end;
+$$;
+revoke all on function private.refresh_canonical_product_image_after_content_report() from public,anon,authenticated;
+create trigger refresh_canonical_product_image_after_content_report
+  after insert or update of status,target_id,target_type or delete
+  on public.content_reports
+  for each row execute function private.refresh_canonical_product_image_after_content_report();
 
 create or replace function public.get_canonical_product_images(
   p_product_ids uuid[],
@@ -568,6 +694,7 @@ begin
 end;
 $$;
 
+comment on column public.fit_reports.tracked_variation_key is 'Roadmap 11A tracked-variation identity for Product-image selection. It is derived from current controlled variation-defining garment answers and is deliberately separate from objective_variant_key; Size and Color never participate.';
 comment on table public.canonical_product_images is 'Roadmap 13A persisted winning Product-image pointer. Exact tracked variation rows fall back to the Product-level row at read time; admin locks always win.';
 comment on column public.fit_reference_photos.photo_quality_score is 'Deterministic 0-100 score: garment visibility 30%, sharpness 20%, resolution 20%, framing 15%, exposure 15%. Original Fit Photo evidence is never modified by selection.';
 comment on function public.get_canonical_product_images(uuid[],text[]) is 'Bounded batch resolver for canonical Product imagery. Returns source references so private Fit Photo storage can be signed by the application without per-Product resolver queries.';

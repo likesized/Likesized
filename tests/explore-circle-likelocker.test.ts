@@ -43,7 +43,8 @@ test("Explore has grouped in-place search and strict type-aware filters",()=>{
 });
 
 test("Explore retains fit evidence, batching, shared mini-detail quick views, and preview safeguards",()=>{
- assert.match(explore,/get_product_evidence_candidates/);
+ assert.match(explore,/get_product_evidence_summaries/);
+ assert.doesNotMatch(explore,/products\.filter\(\(item\)=>!item\.fixture\)\.map\(async\(product\)/);
  assert.match(explore,/>=75/);
  assert.match(explore,/Garments/);
  assert.match(explore,/Outfits/);
@@ -73,8 +74,8 @@ test("Style Feed is Outfit-only following inspiration with Fit Twins as the defa
  assert.match(circle,/value === "all" \? "all" : "twins"/);
  assert.match(circle,/>Fit Twins</);
  assert.match(circle,/>All Following</);
- assert.match(circle,/p_match_category: "tops"/);
- assert.match(circle,/p_match_category: "bottoms"/);
+ assert.match(circle,/get_fit_matches_batch/);
+ assert.match(circle,/\["tops", "bottoms"\]/);
  assert.match(circle,/fitTwinLabel\(designationFor/);
  assert.match(circle,/outfit_style_tags/);
  assert.match(circle,/OUTFIT_OCCASIONS/);

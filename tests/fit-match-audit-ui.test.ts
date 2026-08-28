@@ -39,10 +39,11 @@ test("body Match UI never treats measurement coverage as confidence",()=>{
   assert.doesNotMatch(card,/confidenceLabel/);
 });
 
-test("product recommendation hides numeric confidence and labels historical coverage accurately",()=>{
+test("product recommendation keeps qualitative confidence and explains Body Match accurately",()=>{
   const item=readFileSync(new URL("../app/item\/[slug]\/page.tsx",import.meta.url),"utf8");
   assert.match(item,/recommendationConfidenceLabel\(recommendation\.confidence\)/);
   assert.doesNotMatch(item,/\{recommendation\.confidence\}% confidence/);
-  assert.match(item,/measurement coverage/);
+  assert.match(item,/Body Match shows how closely your measurements match the person who submitted this Fit Report/);
+  assert.match(item,/not how likely the garment is to fit you/);
   assert.doesNotMatch(item,/matchConfidenceLabel/);
 });

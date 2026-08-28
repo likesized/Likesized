@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-const SAFE_RETURN = /^\/(?:explore|likelocker)(?:\?[^\s]*)?$|^\/outfits\/[0-9a-f-]{36}(?:\?[^\s]*)?$/i;
+const SAFE_RETURN = /^\/(?:explore|likelocker)(?:\?[^\s]*)?$|^\/outfits\/[0-9a-f-]{36}(?:\?[^\s]*)?$|^\/item\/[a-z0-9-]+(?:\?[^\s]*)?$/i;
 
 function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -40,7 +40,7 @@ async function change(table: "product_likes" | "wish_locker_items" | "product_ev
   if (stayOpen) return;
   revalidatePath("/explore");
   revalidatePath("/likelocker");
-  if (destination.startsWith("/outfits/")) revalidatePath(destination.split("?")[0]);
+  if (destination.startsWith("/outfits/") || destination.startsWith("/item/")) revalidatePath(destination.split("?")[0]);
   redirect(destination);
 }
 

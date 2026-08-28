@@ -105,7 +105,7 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
     supabase.from("product_likes").select("product_id").eq("user_id",viewerId).eq("product_id",product.id).maybeSingle(),
     supabase.from("wish_locker_items").select("product_id").eq("user_id",viewerId).eq("product_id",product.id).maybeSingle(),
   ]);
-  if(targetVariationsResult.error||candidateResult.error||ownReportResult.error||sizeResult.error||retailerResult.error||likeResult.error||wishResult.error)throw new Error("Could not load garment detail evidence.");
+  if(targetVariationsResult.error||candidateResult.error||ownReportResult.error||sizeResult.error)throw new Error("Could not load garment detail evidence.");
 
   const variations=variationOptions((targetVariationsResult.data??[]) as TargetVariationRow[],product.garment_type_key);
   const selectedVariation=variations.find((variation)=>variation.key===requestedVariation)??variations[0]??null;
@@ -126,9 +126,8 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
     allProductIds.length?supabase.from("product_attribute_values").select("product_id,attribute_key,option_key").in("product_id",allProductIds).neq("source_status","rejected").gte("confidence",0.75):Promise.resolve({data:[],error:null}),
     resolveCanonicalProductImages(supabase,[{productId:product.id,variationKey:selectedVariationKey}]),
   ]);
-  if(candidateMetaResult.error||profilesResult.error||productsResult.error||snapshotResult.error||attributeResult.error)throw new Error("Could not prepare garment detail evidence.");
 
-  const candidateMeta=(candidateMetaResult.data??[]) as CandidateMeta[];
+  const candidateMeta=(candidateMetaResult.error?[]:(candidateMetaResult.data??[])) as CandidateMeta[];
   const metaById=new Map(candidateMeta.map((row)=>[row.id,row]));
   const deduped=dedupeCandidates(rawCandidates,metaById);
   const community=deduped.filter((row)=>row.user_id!==viewerId).sort((a,b)=>{
@@ -136,15 +135,17 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
     const ranks:Record<EvidenceLevel,number>={exact_variant:1,exact_product:2,product_family:3,similar_garments:4,brand_garment_type:5,category_fit:6};
     return ranks[ar]-ranks[br]||b.historical_match_score-a.historical_match_score||b.historical_coverage_percent-a.historical_coverage_percent;
   });
-  const profiles=(profilesResult.data??[]) as Profile[];
+  const profiles=(profilesResult.error?[]:(profilesResult.data??[])) as Profile[];
   const profileById=new Map(profiles.map((row)=>[row.id,row]));
-  const evidenceProducts=(productsResult.data??[]) as EvidenceProduct[];
+  const evidenceProducts=(productsResult.error?[]:(productsResult.data??[])) as EvidenceProduct[];
   const productById=new Map(evidenceProducts.map((row)=>[row.id,row]));
   const sizes=(sizeResult.data??[]) as SizeRow[];
   const sizeById=new Map(sizes.map((row)=>[row.id,row]));
   const safeSizes=buildSafeSizeAdjacency(sizes.map((row):NormalizedSizeDescriptor=>({id:row.id,normalizedKey:row.normalized_key,displayLabel:row.display_label,kind:row.kind,sizingSystem:row.sizing_system,alphaSize:row.alpha_size,numericSize:row.numeric_size,shoeSize:row.shoe_size}))) as Map<string,Adjacency>;
-  const snapshotByReport=new Map(((snapshotResult.data??[]) as SnapshotMatch[]).map((row)=>[row.fit_report_id,row]));
-  const attrs=attributeSets((attributeResult.data??[]) as AttributeRow[]);
+  const snapshotMatches=((snapshotResult.error?[]:snapshotResult.data)??[]) as SnapshotMatch[];
+  const snapshotByReport=new Map(snapshotMatches.map((row)=>[row.fit_report_id,row]));
+  const attributeRows=((attributeResult.error?[]:attributeResult.data)??[]) as AttributeRow[];
+  const attrs=attributeSets(attributeRows);
   const sharedDirectional=new Map(deduped.filter((row)=>row.user_id===viewerId).map((row)=>[row.fit_report_id,row.directional_fit_support]));
 
   const communityEvidence:RecommendationEvidence[]=community.map((row)=>{const size=sizeAdjacency(row.normalized_size_id,row.original_size_label,sizeById,safeSizes);return{sizeKey:size.current.sizeKey,sizeLabel:size.current.sizeLabel,fit:row.fit,matchScore:row.historical_match_score,coveragePercent:row.historical_coverage_percent,evidenceLevel:evidenceLevel(row,metaById.get(row.fit_report_id),product.id,selectedVariationKey),attributeOverlap:row.attribute_overlap,directionalFitSupport:row.directional_fit_support,source:"community",sourceRelevance:1,adjacentSizeUp:size.up,adjacentSizeDown:size.down};});
@@ -172,7 +173,7 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
   const relatedDetail=relatedMeta?trackedVariationDetail(product.garment_type_key,relatedMeta.garment_answers):"";
   const image=canonicalImages.get(canonicalProductImageKey(product.id,selectedVariationKey));
   const placeholder=product.name.replace(/[^A-Za-z0-9]/g,"").slice(0,3).toUpperCase()||"FIT";
-  const retailers:RetailerListing[]=((retailerResult.data??[]) as RetailerRow[]).flatMap((row)=>{const retailer=one<RetailerRelation>(row.retailer);return row.product_url?[{id:row.id,name:retailer?.name?.trim()||"Retailer",url:row.product_url}]:[];});
+  const retailers:RetailerListing[]=((retailerResult.error?[]:(retailerResult.data??[])) as RetailerRow[]).flatMap((row)=>{const retailer=one<RetailerRelation>(row.retailer);return row.product_url?[{id:row.id,name:retailer?.name?.trim()||"Retailer",url:row.product_url}]:[];});
 
   const closetExact=ownReports.filter((report)=>report.garment_condition==="normal"&&report.product_id===product.id&&Boolean(selectedVariationKey&&report.tracked_variation_key===selectedVariationKey));
   const closetJustRight=closetEvidence.filter((row)=>row.fit==="just_right");
@@ -186,7 +187,7 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
         <h1>{product.name}</h1>
         {variations.length?<><div className={styles.variationPicker}>{variations.map((variation)=><Link key={variation.key} prefetch={false} className={`${styles.variationLink} ${variation.key===selectedVariationKey?styles.variationLinkActive:""}`} href={`/item/${slug}?variation=${encodeURIComponent(variation.key)}`}>{variation.label}</Link>)}</div>{selectedVariation?.detail?<div className={styles.variationDetail}>{selectedVariation.detail}</div>:null}</>:null}
         {recommendation?<><div className="recommendation"><span>OUR FITUITION SUGGESTS</span><strong>{recommendation.sizeLabel}</strong><b>{recommendationConfidenceLabel(recommendation.confidence)}</b></div><div className="tiny">{mixed?<>Mixed evidence: Size Match currently leans <b>{recommendation.sourceBreakdown.communityTopSizeLabel??"another size"}</b>, while your Closet History leans <b>{recommendation.sourceBreakdown.closetTopSizeLabel??"another size"}</b>.</>:recommendation.sourceBreakdown.communityBlend>0&&recommendation.sourceBreakdown.closetBlend>0?<>Size Match evidence and your relevant Closet History point most strongly to this size.</>:recommendation.sourceBreakdown.closetBlend>0?<>Your relevant Closet History provides the strongest current signal.</>:<>Relevant Size Match evidence provides the strongest current signal.</>}</div></>:<><div className="recommendation"><span>OUR FITUITION SUGGESTS</span><strong>—</strong><b>Not enough relevant evidence yet</b></div><div className="tiny">FITuition waits until Size Match and/or Closet evidence can support a size safely.</div></>}
-        <ItemActionsClient productId={product.id} productName={`${brand?.name?`${brand.name} `:""}${product.name}`} returnTo={canonicalReturnTo} initialLiked={Boolean(likeResult.data)} initialWished={Boolean(wishResult.data)} retailers={retailers}/>
+        <ItemActionsClient productId={product.id} productName={`${brand?.name?`${brand.name} `:""}${product.name}`} returnTo={canonicalReturnTo} initialLiked={Boolean(likeResult.error?null:likeResult.data)} initialWished={Boolean(wishResult.error?null:wishResult.data)} retailers={retailers}/>
       </div>
     </section>
 

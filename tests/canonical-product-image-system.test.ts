@@ -23,7 +23,8 @@ test("13A automatic eligibility excludes flagged and extremely low-resolution sc
 
 test("canonical Product image reads stay bounded and batch private URL signing", () => {
   assert.match(resolver, /get_canonical_product_images/);
-  assert.match(resolver, /requests\.length > 200/);
+  assert.match(resolver, /MAX_CANONICAL_IMAGE_BATCH = 200/);
+  assert.match(resolver, /requests\.length > MAX_CANONICAL_IMAGE_BATCH/);
   assert.match(resolver, /createSignedUrls/);
   assert.ok(!resolver.includes("createSignedUrl("), "canonical image resolver must not sign Fit Photos one at a time");
 });

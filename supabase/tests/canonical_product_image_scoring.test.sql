@@ -3,7 +3,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions,auth,private;
-select plan(17);
+select plan(22);
 
 select has_function(
   'public','get_canonical_product_images',array['uuid[]','text[]'],

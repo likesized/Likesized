@@ -118,6 +118,9 @@ test("closest and strong FITuition evidence live directly in the first quick vie
   assert.match(fitCard,/group\.sizeLabel/);
   assert.match(fitCard,/fit\.fitLabel/);
   assert.match(fitCard,/RelevantReport report=\{report\}/);
+  const closestIndex=fitCard.indexOf("<RelevantReport report={report}/>");
+  const strongIndex=fitCard.indexOf("<StrongReports groups={meta.strongFitReports}/>");
+  assert.ok(closestIndex>=0&&strongIndex>closestIndex,"closest exact report must render before the Strong Fit Reports aggregate");
   assert.match(taggedPanel,/See Full Details →/);
 });
 

@@ -472,22 +472,21 @@ begin
     raise exception 'Unknown Product image source';
   end if;
 
-  insert into public.canonical_product_images(
-    product_id,variation_key,source_kind,fit_reference_photo_id,product_photo_evidence_id,source_image_url,photo_quality_score,canonical_locked,locked_by,lock_reason,selected_at,updated_at
-  ) values(
-    p_product_id,p_variation_key,p_source_kind,v_fit_id,v_product_photo_id,v_url,v_score,coalesce(p_lock,false),
-    case when coalesce(p_lock,false) then v_admin else null end,
-    case when coalesce(p_lock,false) then btrim(p_reason) else null end,
-    now(),now()
-  )
-  on conflict (product_id) where variation_key is null
-  do update set source_kind=excluded.source_kind,fit_reference_photo_id=excluded.fit_reference_photo_id,
-    product_photo_evidence_id=excluded.product_photo_evidence_id,source_image_url=excluded.source_image_url,
-    photo_quality_score=excluded.photo_quality_score,canonical_locked=excluded.canonical_locked,locked_by=excluded.locked_by,
-    lock_reason=excluded.lock_reason,selected_at=now(),updated_at=now()
-  where excluded.variation_key is null;
-
-  if p_variation_key is not null then
+  if p_variation_key is null then
+    insert into public.canonical_product_images(
+      product_id,variation_key,source_kind,fit_reference_photo_id,product_photo_evidence_id,source_image_url,photo_quality_score,canonical_locked,locked_by,lock_reason,selected_at,updated_at
+    ) values(
+      p_product_id,null,p_source_kind,v_fit_id,v_product_photo_id,v_url,v_score,coalesce(p_lock,false),
+      case when coalesce(p_lock,false) then v_admin else null end,
+      case when coalesce(p_lock,false) then btrim(p_reason) else null end,
+      now(),now()
+    )
+    on conflict (product_id) where variation_key is null
+    do update set source_kind=excluded.source_kind,fit_reference_photo_id=excluded.fit_reference_photo_id,
+      product_photo_evidence_id=excluded.product_photo_evidence_id,source_image_url=excluded.source_image_url,
+      photo_quality_score=excluded.photo_quality_score,canonical_locked=excluded.canonical_locked,locked_by=excluded.locked_by,
+      lock_reason=excluded.lock_reason,selected_at=now(),updated_at=now();
+  else
     insert into public.canonical_product_images(
       product_id,variation_key,source_kind,fit_reference_photo_id,product_photo_evidence_id,source_image_url,photo_quality_score,canonical_locked,locked_by,lock_reason,selected_at,updated_at
     ) values(

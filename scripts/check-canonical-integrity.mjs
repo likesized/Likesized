@@ -64,6 +64,8 @@ mustContain('AI_REPOSITORY_RULES.md', 'Candidate must not control its own judge 
 mustContain('AI_REPOSITORY_RULES.md', 'Every committed `tests/*.test.ts` safeguard must run automatically in CI by discovery.');
 mustContain('AI_REPOSITORY_RULES.md', '`vercel.json` + `scripts/vercel-ignore-build.mjs` own the non-runtime Vercel release boundary.');
 mustContain('.github/workflows/ci.yml', 'for test_file in tests/*.test.ts; do');
+mustContain('.github/workflows/ci.yml', 'npm audit --omit=dev --audit-level=high');
+mustContain('.github/workflows/fast.yml', 'npm audit --omit=dev --audit-level=high');
 mustContain('.github/workflows/trusted-governance.yml', 'pull_request_target:');
 mustContain('.github/workflows/trusted-governance.yml', 'node trusted/scripts/check-pr-governance.mjs trusted candidate');
 mustContain('.github/workflows/trusted-governance.yml', 'permissions:');
@@ -140,6 +142,95 @@ for (const full of allFiles) {
   const base = path.basename(full);
   if (base === 'noop') fail(`Forbidden trigger/debug artifact committed: ${rel}`);
   if (forbiddenFile.test(base)) fail(`Forbidden patch/version-suffixed file committed: ${rel}`);
+}
+
+// High-confidence, offline sensitive-data leak detection. This check reports and fails only;
+// it never rewrites repository content. The checker file itself is excluded because it contains
+// the detection signatures as source code and is already protected by trusted governance.
+const sensitiveScanSkip = new Set(['scripts/check-canonical-integrity.mjs']);
+const safeEmailDomains = new Set([
+  'example.com',
+  'example.org',
+  'example.net',
+  'users.noreply.github.com',
+  'likesized.com',
+]);
+const sensitiveTextFile = /\.(?:ts|tsx|js|jsx|mjs|cjs|json|md|yml|yaml|sql|toml|txt|css|html|sh|env|example)$/i;
+const secretTokenPatterns = [
+  ['private key material', /-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----/g],
+  ['AWS access key', /\bAKIA[0-9A-Z]{16}\b/g],
+  ['GitHub access token', /\bgh[pousr]_[A-Za-z0-9]{30,}\b/g],
+  ['GitHub fine-grained token', /\bgithub_pat_[A-Za-z0-9_]{20,}\b/g],
+  ['OpenAI-style secret key', /\bsk-[A-Za-z0-9]{20,}\b/g],
+  ['Stripe live secret key', /\bsk_live_[A-Za-z0-9]{16,}\b/g],
+  ['Slack token', /\bxox[baprs]-[A-Za-z0-9-]{20,}\b/g],
+  ['Google API key', /\bAIza[0-9A-Za-z_-]{35}\b/g],
+  ['SendGrid API key', /\bSG\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\b/g],
+];
+const emailPattern = /\b[A-Z0-9._%+-]+@([A-Z0-9.-]+\.[A-Z]{2,})\b/gi;
+const ssnPattern = /\b\d{3}-\d{2}-\d{4}\b/g;
+const literalSecretAssignment = /\b(?:api[_-]?key|apiKey|secret[_-]?key|secretKey|service[_-]?role[_-]?key|serviceRoleKey|access[_-]?token|accessToken|auth[_-]?token|authToken|client[_-]?secret|clientSecret)\b\s*[:=]\s*(["'`])([^"'`\r\n]{12,})\1/gi;
+
+function lineNumberAt(content, index) {
+  return content.slice(0, index).split('\n').length;
+}
+
+function looksLikePlaceholder(value) {
+  const normalized = value.toLowerCase();
+  return [
+    'example',
+    'sample',
+    'mock',
+    'dummy',
+    'placeholder',
+    'redacted',
+    'changeme',
+    'change-me',
+    'not-a-real',
+    'not_real',
+    'fake',
+    'test-only',
+    'test_only',
+  ].some((marker) => normalized.includes(marker));
+}
+
+function sensitiveFailure(rel, content, index, label) {
+  fail(`${rel}:${lineNumberAt(content, index)} contains ${label}. Remove the hard-coded value and rotate any real credential that was exposed.`);
+}
+
+for (const full of allFiles) {
+  const rel = path.relative(root, full).replaceAll('\\', '/');
+  if (sensitiveScanSkip.has(rel)) continue;
+  if (!sensitiveTextFile.test(rel) && !['.gitignore', 'Dockerfile'].includes(path.basename(full))) continue;
+
+  let content;
+  try {
+    content = fs.readFileSync(full, 'utf8');
+  } catch {
+    continue;
+  }
+
+  for (const [label, pattern] of secretTokenPatterns) {
+    pattern.lastIndex = 0;
+    for (const match of content.matchAll(pattern)) sensitiveFailure(rel, content, match.index ?? 0, label);
+  }
+
+  emailPattern.lastIndex = 0;
+  for (const match of content.matchAll(emailPattern)) {
+    const domain = match[1].toLowerCase();
+    if (safeEmailDomains.has(domain) || domain.endsWith('.example.com') || domain.endsWith('.example.org') || domain.endsWith('.example.net')) continue;
+    sensitiveFailure(rel, content, match.index ?? 0, 'a hard-coded non-placeholder email address');
+  }
+
+  ssnPattern.lastIndex = 0;
+  for (const match of content.matchAll(ssnPattern)) sensitiveFailure(rel, content, match.index ?? 0, 'a Social Security number pattern');
+
+  literalSecretAssignment.lastIndex = 0;
+  for (const match of content.matchAll(literalSecretAssignment)) {
+    const value = match[2];
+    if (looksLikePlaceholder(value)) continue;
+    sensitiveFailure(rel, content, match.index ?? 0, 'a literal API key/secret/token assignment');
+  }
 }
 
 const sourceRoots = ['app', 'components', 'lib'];

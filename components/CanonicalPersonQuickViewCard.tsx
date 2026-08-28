@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { followPerson, unfollowPerson } from "@/app/people/actions";
+import { MatchPercentageBadge } from "@/components/MatchPercentageBadge";
 import { UniversalActionBar, UniversalActionButton, UniversalActionLink } from "@/components/UniversalActionBar";
 import { createClient } from "@/lib/supabase/client";
 import styles from "@/app/outfits/[id]/CreatorQuickView.module.css";
@@ -28,8 +29,9 @@ type Props = {
   outfitPostId?: string | null;
 };
 
-function stat(value: number | null | undefined) {
-  return typeof value === "number" ? `${value}%` : "—";
+function matchStat(value: number | null | undefined, owner: boolean) {
+  if (owner || typeof value !== "number") return "—";
+  return <MatchPercentageBadge score={value} compact />;
 }
 
 export function CanonicalPersonQuickViewCard({ displayName, username, avatarUrl, userId, signedIn, owner, following, notificationsOn, overallMatch, topsMatch, bottomsMatch, garmentCount, outfitCount, returnTo, onClose, profileLink, loading = false }: Props) {
@@ -98,9 +100,9 @@ export function CanonicalPersonQuickViewCard({ displayName, username, avatarUrl,
         <div><strong>{displayName}</strong>{username ? <small>@{username}</small> : null}</div>
       </div>
       {loading ? <p className={styles.helper}>Loading profile details…</p> : <div className={styles.stats}>
-        <div className={styles.overallStat}><strong>{owner ? "—" : stat(overallMatch)}</strong><span>Overall Match</span></div>
-        <div><strong>{owner ? "—" : stat(topsMatch)}</strong><span>Tops Match</span></div>
-        <div><strong>{owner ? "—" : stat(bottomsMatch)}</strong><span>Bottoms Match</span></div>
+        <div className={styles.overallStat}><strong>{matchStat(overallMatch,owner)}</strong><span>Overall Match</span></div>
+        <div><strong>{matchStat(topsMatch,owner)}</strong><span>Tops Match</span></div>
+        <div><strong>{matchStat(bottomsMatch,owner)}</strong><span>Bottoms Match</span></div>
         <div><strong>{garmentCount ?? "—"}</strong><span>Total Garments</span></div>
         <div><strong>{outfitCount ?? "—"}</strong><span>Total Outfits</span></div>
       </div>}

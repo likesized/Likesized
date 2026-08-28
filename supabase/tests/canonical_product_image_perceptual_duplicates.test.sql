@@ -30,8 +30,7 @@ values('e1200000-0000-4000-8000-000000000001','e1100000-0000-4000-8000-000000000
 
 insert into public.closet_items(id,user_id,product_id,size_label) values
 ('e1300000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000001','e1200000-0000-4000-8000-000000000001','M'),
-('e1300000-0000-4000-8000-000000000002','e1000000-0000-4000-8000-000000000001','e1200000-0000-4000-8000-000000000001','M'),
-('e1300000-0000-4000-8000-000000000003','e1000000-0000-4000-8000-000000000001','e1200000-0000-4000-8000-000000000001','M');
+('e1300000-0000-4000-8000-000000000002','e1000000-0000-4000-8000-000000000001','e1200000-0000-4000-8000-000000000001','M');
 
 insert into public.fit_reference_photos(
   id,user_id,closet_item_id,storage_path,photo_role,
@@ -39,8 +38,7 @@ insert into public.fit_reference_photos(
   quality_source,quality_scored_at
 ) values
 ('e1400000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000001','e1300000-0000-4000-8000-000000000001','dup/base.webp','front',80,80,80,80,80,'automatic',now()),
-('e1400000-0000-4000-8000-000000000002','e1000000-0000-4000-8000-000000000001','e1300000-0000-4000-8000-000000000002','dup/better-near.webp','front',90,90,90,90,90,'automatic',now()),
-('e1400000-0000-4000-8000-000000000003','e1000000-0000-4000-8000-000000000001','e1300000-0000-4000-8000-000000000003','dup/different.webp','front',95,95,95,95,95,'automatic',now());
+('e1400000-0000-4000-8000-000000000002','e1000000-0000-4000-8000-000000000001','e1300000-0000-4000-8000-000000000002','dup/better-near.webp','front',90,90,90,90,90,'automatic',now());
 
 set local role authenticated;
 set local request.jwt.claim.role='authenticated';
@@ -67,6 +65,18 @@ select is(
    where product_id='e1200000-0000-4000-8000-000000000001' and variation_key is null),
   'e1400000-0000-4000-8000-000000000002'::uuid,
   'Canonical Product selection follows the stronger perceptual duplicate representative'
+);
+
+-- A different higher-scoring photo is added only after the duplicate-group assertion so it
+-- cannot invalidate the behavior this fixture is isolating.
+insert into public.closet_items(id,user_id,product_id,size_label)
+values('e1300000-0000-4000-8000-000000000003','e1000000-0000-4000-8000-000000000001','e1200000-0000-4000-8000-000000000001','M');
+insert into public.fit_reference_photos(
+  id,user_id,closet_item_id,storage_path,photo_role,
+  garment_visibility_score,sharpness_score,resolution_score,framing_score,exposure_score,
+  quality_source,quality_scored_at
+) values(
+  'e1400000-0000-4000-8000-000000000003','e1000000-0000-4000-8000-000000000001','e1300000-0000-4000-8000-000000000003','dup/different.webp','front',95,95,95,95,95,'automatic',now()
 );
 
 set local role authenticated;

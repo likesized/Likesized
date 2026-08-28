@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { followPerson, unfollowPerson } from "@/app/people/actions";
 import { MatchCard } from "@/components/MatchCard";
 import { fitTwinDesignation, fitTwinLabel } from "@/lib/fit-twin";
+import { currentProfilePhotoUrl } from "@/lib/profile-photo";
 import { createClient } from "@/lib/supabase/server";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -11,6 +12,7 @@ type FitCommunity = "men" | "women" | "both";
 type PeopleScope = "twins" | "all";
 
 type FitMatch = {
+  match_category: MatchCategory;
   user_id: string;
   username: string;
   display_name: string | null;
@@ -48,8 +50,8 @@ function peopleHref(category: MatchCategory, community: FitCommunity, scope: Peo
   params.set("community", community);
   return `/people?${params.toString()}`;
 }
-function matchMap(data: unknown) {
-  return new Map(((data ?? []) as FitMatch[]).map((row) => [row.user_id, row.match_score]));
+function matchMap(data: FitMatch[], category: MatchCategory) {
+  return new Map(data.filter((row) => row.match_category === category).map((row) => [row.user_id, row.match_score]));
 }
 
 export default async function PeoplePage({ searchParams }: { searchParams: SearchParams }) {
@@ -74,34 +76,25 @@ export default async function PeoplePage({ searchParams }: { searchParams: Searc
 
   const savedCommunity = fitProfile.fit_community === "men" || fitProfile.fit_community === "women" ? fitProfile.fit_community : "both";
   const community = fitCommunity(requestedCommunity, savedCommunity);
-  const [overallResult, topsResult, bottomsResult, { data: followData, error: followLoadError }, { data: twinSettings, error: twinSettingsError }] = await Promise.all([
-    supabase.rpc("get_fit_matches", { p_match_category: "overall", p_result_limit: 100, p_fit_community: community }),
-    supabase.rpc("get_fit_matches", { p_match_category: "tops", p_result_limit: 100, p_fit_community: community }),
-    supabase.rpc("get_fit_matches", { p_match_category: "bottoms", p_result_limit: 100, p_fit_community: community }),
+  const [matchResult, { data: followData, error: followLoadError }, { data: twinSettings, error: twinSettingsError }] = await Promise.all([
+    supabase.rpc("get_fit_matches_batch", { p_match_categories: ["overall", "tops", "bottoms"], p_result_limit: 100, p_fit_community: community }),
     supabase.from("follows").select("followed_id").eq("follower_id", userId),
     supabase.from("fit_twin_settings").select("threshold_percent").eq("singleton", true).maybeSingle(),
   ]);
-  if (overallResult.error || topsResult.error || bottomsResult.error || followLoadError || twinSettingsError) throw new Error("Could not load Fit Matches.");
+  if (matchResult.error || followLoadError || twinSettingsError) throw new Error("Could not load Fit Matches.");
 
-  const overall = matchMap(overallResult.data);
-  const tops = matchMap(topsResult.data);
-  const bottoms = matchMap(bottomsResult.data);
+  const allMatches = (matchResult.data ?? []) as FitMatch[];
+  const overall = matchMap(allMatches, "overall");
+  const tops = matchMap(allMatches, "tops");
+  const bottoms = matchMap(allMatches, "bottoms");
   const threshold = twinSettings?.threshold_percent ?? 85;
   const designationFor = (targetUserId: string) => fitTwinDesignation({
     overall: overall.get(targetUserId),
     tops: tops.get(targetUserId),
     bottoms: bottoms.get(targetUserId),
   }, threshold);
-  const matchData = category === "tops" ? topsResult.data : category === "bottoms" ? bottomsResult.data : overallResult.data;
-  const availableMatches = (matchData ?? []) as FitMatch[];
+  const availableMatches = allMatches.filter((person) => person.match_category === category);
   const matches = (scope === "twins" ? availableMatches.filter((person) => Boolean(designationFor(person.user_id))) : availableMatches).slice(0, 30);
-
-  const avatarUrlByUser = new Map<string, string>();
-  await Promise.all(matches.map(async (person) => {
-    if (!person.avatar_url) return;
-    const { data: signed } = await supabase.storage.from("profile-photos").createSignedUrl(person.avatar_url, 60 * 30);
-    if (signed?.signedUrl) avatarUrlByUser.set(person.user_id, signed.signedUrl);
-  }));
 
   const followedIds = new Set((followData ?? []).map((row: { followed_id: string }) => row.followed_id));
   const categoryLabel = CATEGORY_LABELS[category];
@@ -144,13 +137,14 @@ export default async function PeoplePage({ searchParams }: { searchParams: Searc
             const followed = followedIds.has(person.user_id);
             const designation = designationFor(person.user_id);
             const twinLabel = fitTwinLabel(designation);
+            const avatar = currentProfilePhotoUrl(supabase, person.avatar_url);
             return (
               <MatchCard
                 key={person.user_id}
                 name={person.display_name?.trim() || person.username}
                 handle={`@${person.username}`}
                 style={followed ? twinLabel ? `Following · ${twinLabel}` : "Following" : twinLabel ? `${twinLabel} Match` : `${categoryLabel} Fit Match`}
-                avatarUrl={avatarUrlByUser.get(person.user_id) ?? null}
+                avatarUrl={avatar}
                 match={person.match_score}
                 secondary={`${categoryLabel} measurements · exact measurements stay private`}
                 description={`How closely this person’s ${categoryLabel.toLowerCase()}-relevant body measurements match yours.`}

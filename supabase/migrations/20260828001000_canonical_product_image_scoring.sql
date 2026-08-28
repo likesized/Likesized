@@ -16,11 +16,11 @@ alter table public.fit_reference_photos
   add column quality_scored_at timestamptz,
   add column photo_quality_score smallint generated always as (
     round((
-      garment_visibility_score * 30
+      garment_visibility_score * 35
       + sharpness_score * 20
-      + resolution_score * 20
-      + framing_score * 15
-      + exposure_score * 15
+      + resolution_score * 15
+      + framing_score * 20
+      + exposure_score * 10
     )::numeric / 100)::smallint
   ) stored;
 
@@ -696,5 +696,5 @@ $$;
 
 comment on column public.fit_reports.tracked_variation_key is 'Roadmap 11A tracked-variation identity for Product-image selection. It is derived from current controlled variation-defining garment answers and is deliberately separate from objective_variant_key; Size and Color never participate.';
 comment on table public.canonical_product_images is 'Roadmap 13A persisted winning Product-image pointer. Exact tracked variation rows fall back to the Product-level row at read time; admin locks always win.';
-comment on column public.fit_reference_photos.photo_quality_score is 'Deterministic 0-100 score: garment visibility 30%, sharpness 20%, resolution 20%, framing 15%, exposure 15%. Original Fit Photo evidence is never modified by selection.';
+comment on column public.fit_reference_photos.photo_quality_score is 'Deterministic 0-100 score: garment visibility 35%, sharpness 20%, resolution 15%, framing 20%, exposure 10%. Original Fit Photo evidence is never modified by selection.';
 comment on function public.get_canonical_product_images(uuid[],text[]) is 'Bounded batch resolver for canonical Product imagery. Returns source references so private Fit Photo storage can be signed by the application without per-Product resolver queries.';

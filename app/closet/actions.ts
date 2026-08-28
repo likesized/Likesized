@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { COLOR_FAMILIES, GARMENT_TYPE_BY_KEY, isAllowedGarmentAnswer, questionsForGarmentType } from "@/lib/garment-taxonomy";
 import { createClient } from "@/lib/supabase/server";
 import type { GarmentMarketSegment, GarmentSizeKind } from "@/lib/domain";
+import { analyzeFitPhotoQuality } from "@/lib/fit-photo-quality-server";
 
 const FIT_RESULTS = new Set(["too_small", "snug", "just_right", "relaxed", "too_big"]);
 const REPORTED_CONDITIONS = new Set(["new", "used", "altered"]);
@@ -222,20 +223,41 @@ async function savePurchaseContext(supabase: SupabaseClient, userId: string, fit
 }
 
 async function saveFitPhoto(supabase: SupabaseClient, userId: string, closetItemId: string, photo: File, role: FitPhotoRole) {
+  const quality = await analyzeFitPhotoQuality(photo);
   const extension = PHOTO_TYPES[photo.type];
   const storagePath = `${userId}/${closetItemId}/${role}-${randomUUID()}.${extension}`;
   const { data: existing, error: lookupError } = await supabase.from("fit_reference_photos").select("id,storage_path").eq("closet_item_id", closetItemId).eq("user_id", userId).eq("photo_role", role).maybeSingle();
   if (lookupError) throw lookupError;
   const { error: uploadError } = await supabase.storage.from("fit-reference-photos").upload(storagePath, await photo.arrayBuffer(), { contentType: photo.type, upsert: false });
   if (uploadError) throw uploadError;
+  const qualityRow = {
+    garment_visibility_score: quality.garment_visibility_score,
+    sharpness_score: quality.sharpness_score,
+    resolution_score: quality.resolution_score,
+    framing_score: quality.framing_score,
+    exposure_score: quality.exposure_score,
+    image_width: quality.image_width,
+    image_height: quality.image_height,
+    quality_source: quality.quality_source,
+    quality_scored_at: new Date().toISOString(),
+  };
+  let photoId = existing?.id ?? null;
   if (existing) {
-    const { error: updateError } = await supabase.from("fit_reference_photos").update({ storage_path: storagePath }).eq("id", existing.id).eq("user_id", userId);
+    const { error: updateError } = await supabase.from("fit_reference_photos").update({ storage_path: storagePath, ...qualityRow }).eq("id", existing.id).eq("user_id", userId);
     if (updateError) { await supabase.storage.from("fit-reference-photos").remove([storagePath]); throw updateError; }
-    await supabase.storage.from("fit-reference-photos").remove([existing.storage_path]);
   } else {
-    const { error: metadataError } = await supabase.from("fit_reference_photos").insert({ user_id: userId, closet_item_id: closetItemId, storage_path: storagePath, photo_role: role });
-    if (metadataError) { await supabase.storage.from("fit-reference-photos").remove([storagePath]); throw metadataError; }
+    const { data: inserted, error: metadataError } = await supabase.from("fit_reference_photos").insert({ user_id: userId, closet_item_id: closetItemId, storage_path: storagePath, photo_role: role, ...qualityRow }).select("id").single();
+    if (metadataError || !inserted) { await supabase.storage.from("fit-reference-photos").remove([storagePath]); throw metadataError ?? new Error("Could not save Fit Photo metadata"); }
+    photoId = inserted.id as string;
   }
+  if (photoId) {
+    const { error: fingerprintError } = await supabase.rpc("record_fit_photo_perceptual_fingerprint", {
+      p_photo_id: photoId,
+      p_perceptual_hash: quality.perceptual_hash,
+    });
+    if (fingerprintError) throw fingerprintError;
+  }
+  if (existing) await supabase.storage.from("fit-reference-photos").remove([existing.storage_path]);
   return storagePath;
 }
 

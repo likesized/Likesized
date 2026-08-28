@@ -192,3 +192,57 @@ export async function removeCanonicalProductPhoto(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/moderation"); revalidatePath("/explore");
 }
+
+export async function setCanonicalProductImage(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const productId = String(formData.get("product_id") ?? "");
+  const variationKey = String(formData.get("variation_key") ?? "").trim() || null;
+  const sourceKind = String(formData.get("source_kind") ?? "");
+  const sourceId = String(formData.get("source_id") ?? "").trim() || null;
+  const shouldLock = String(formData.get("lock") ?? "") === "1";
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
+  const sourceKinds = new Set(["fit_reference_photo", "product_photo_evidence", "official_product_image"]);
+  if (!UUID.test(productId) || !sourceKinds.has(sourceKind) || (!sourceId && sourceKind !== "official_product_image") || (sourceId && !UUID.test(sourceId)) || !reason) {
+    throw new Error("Choose a valid Product image source and record the reason.");
+  }
+  const { error } = await supabase.rpc("admin_set_canonical_product_image", {
+    p_product_id: productId,
+    p_variation_key: variationKey,
+    p_source_kind: sourceKind,
+    p_source_id: sourceId,
+    p_lock: shouldLock,
+    p_reason: reason,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/moderation"); revalidatePath("/explore");
+}
+
+export async function unlockCanonicalProductImage(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const productId = String(formData.get("product_id") ?? "");
+  const variationKey = String(formData.get("variation_key") ?? "").trim() || null;
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
+  if (!UUID.test(productId) || !reason) throw new Error("A valid Product and unlock reason are required.");
+  const { error } = await supabase.rpc("admin_unlock_canonical_product_image", {
+    p_product_id: productId,
+    p_variation_key: variationKey,
+    p_reason: reason,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/moderation"); revalidatePath("/explore");
+}
+
+export async function setFitPhotoCanonicalEligibility(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const photoId = String(formData.get("photo_id") ?? "");
+  const eligible = String(formData.get("eligible") ?? "") === "1";
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
+  if (!UUID.test(photoId) || !reason) throw new Error("A valid Fit Photo and review reason are required.");
+  const { error } = await supabase.rpc("admin_set_fit_photo_canonical_eligibility", {
+    p_photo_id: photoId,
+    p_eligible: eligible,
+    p_reason: reason,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/moderation"); revalidatePath("/explore");
+}

@@ -628,3 +628,21 @@ The FAQ includes the community-built catalog explanation and a dedicated explana
 **Controlled when possible. Normalize when necessary. Free text only when useful.**
 
 For implementation status, production checkpoints, owner re-audit order and exact next work, read `docs/AI_MASTER_LOG.md`.
+
+## Roadmap 13A branch implementation reconciliation — PR #126 / NOT PRODUCTION YET
+The Roadmap 13A image-selection direction above is now implemented on the explicitly owner-authorized draft Product Change branch `product/roadmap-13a-canonical-product-images`. This branch section supersedes the word **Planned** above only for PR #126 branch truth; production remains unchanged until exact-final verification, separate owner production authorization, merge and migration application.
+
+The implemented Product contract is:
+- generic Product representation uses one **persisted canonical winner** rather than page-specific ranking or request-time rescoring;
+- individual Fit Report/Closet/Outfit evidence continues to use the member/report-specific image where that evidence is what the surface represents; canonical selection never rewrites the original Fit Photo;
+- candidate technical scoring is server-authoritative and deterministic, with owner-locked starting weights **garment visibility 35 / sharpness 20 / resolution 15 / framing 20 / exposure 10**;
+- the current scorer computes technical image metrics and dimensions and does not pretend that a full garment-recognition model exists; moderation/admin eligibility remains the authoritative escape hatch when the relevant garment is absent or the image is unsuitable;
+- near-identical Fit Photos are grouped from private perceptual **dHash** fingerprints so duplicate copies do not compete independently;
+- the automatic replacement margin is configurable and begins at **+5 points between measured Fit Photo candidates**; a pre-13A `legacy_neutral` synthetic bootstrap score yields to the first eligible measured candidate without forcing that candidate to clear an artificial +5 gap, after which the normal measured-to-measured anti-churn rule resumes;
+- exact tracked-variation image identity remains separate from counted-report `objective_variant_key`; Size and Color do not become tracked-variation identity;
+- exact variation resolves to its eligible Fit Photo winner when present, otherwise to the broader Product canonical. The current catalog does not invent a second exact-variation official-image store solely for 13A;
+- real eligible Fit Photo imagery outranks Product Photo/official-imported fallback tiers; official/imported imagery is not a numeric-score competitor against real wear imagery;
+- audited admin **Set as Product Image / Lock Product Image / Unlock Product Image** and eligibility controls remain authoritative, with a lock always winning;
+- one bounded batch resolver handles up to 200 requested Products and batches private Fit Photo URL signing so consuming surfaces can later reuse the same canonical read boundary without N+1 selection/signing work.
+
+Roadmaps 14–17 may consume this shared canonical resolver when their own audits are authorized; PR #126 does not opportunistically redesign Garment Detail, Explore, Search or Wish Locker.

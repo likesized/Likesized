@@ -293,9 +293,9 @@ FITuition combines Size Match evidence with the viewer's relevant Closet History
 
 For tagged-garment compact cards, the page/sheet may render immediately with a short **Checking…** state, but all visible tagged-garment counts are loaded through **one bounded Outfit-level personalized summary request**, not one full FITuition request per garment. That summary request is deduped/cached for the current client experience. Full selected-garment FITuition recommendation/body-match/evidence work remains lazy and is requested only when the member opens that garment.
 
-For the **clicked Outfit tagged-garment quick view**, zero Relevant Fit Reports hard-gates the presentation: no size recommendation is shown, even if broader Closet History could otherwise produce a numerical winner. Instead the member receives the compact notification state. When one or more Relevant Fit Reports exist but confidence is insufficient, the quick view uses the locked wording **“Not enough fit data to confidently recommend a size.”**, shows the exact count and offers the in-Outfit FITuition details layer. When confidence is sufficient, it uses **“Our FITuition suggests: [SIZE]”** with **“Confidence: [label]”** and that same FITuition details layer.
+For the **clicked Outfit tagged-garment quick view**, zero Relevant Fit Reports hard-gates the presentation: no size recommendation is shown, even if broader Closet History could otherwise produce a numerical winner. Instead it uses **“Not enough fit data to confidently recommend a size.”** and the compact Notify state. When one or more Relevant Fit Reports exist but confidence is insufficient, the quick view uses **“Not enough fit data to confidently recommend a size.”**, shows the exact count, and directly shows the closest exact report. When confidence is sufficient, it uses **“Our FITuition suggests: [SIZE]”** with **“Confidence: [label]”**, then shows the exact count and closest exact report. If qualifying Strong Fit Reports exist, their exact-variation aggregate appears underneath that closest individual report as count + Size + Fit Result rows; it never replaces the closest report.
 
-The intermediate FITuition details layer remains inside the Outfit modal/context and is evidence-only rather than a repeated summary of the quick view. In low-confidence state, another wearer's best exact report is labeled **Best Available Matching Fit Report**, followed by **[NN]% Body Match**, Size and Fit Result. If the viewer's own exact report is surfaced, identify it only as **Your Fit Report** with Size and Fit Result. A **View more Relevant Fit Reports →** control appears when additional exact reports exist. In recommendation state, the aggregated strong exact-report evidence uses the same eligible exact evidence units counted by `Relevant Fit Reports: X`, including the viewer's own eligible exact report, and renders compact count + Size + Fit Result rows. Related/similar tracked variations stay excluded from this Outfit aggregate. The separate **View Garment Detail →** navigation remains for the full page/broader evidence set.
+There is **no intermediate FITuition Details layer** in the tagged quick view. Another wearer's surfaced exact report is labeled **Best Available Matching Fit Report** with Body Match, Size and Fit Result. If the viewer's own exact report is surfaced, identify it only as **Your Fit Report** with Size and Fit Result. Related/similar tracked variations remain excluded from the compact Outfit aggregate and belong on the full Garment Detail page. The bottom deeper-navigation control is **See Full Details →**.
 
 On tagged Outfit quick view, when no Relevant Fit Reports are currently available, the member may opt into a compact bell + **Notify me** action. Its explanatory copy is **“FITuition will notify you when people close to your size post a Fit Report for this item.”** The notification control must not masquerade as a large primary CTA.
 
@@ -332,7 +332,7 @@ Raw/private body data, private Closet linkage, unresolved candidate/review state
 - Tagged Items compact cards remain compact Product identification; tracked-variation answers are exposed only after the user opens the tagged garment.
 - Tagged quick view is personalized only when the viewer is signed in and eligible for personalized evidence.
 - Where multiple legitimate entries share one base Product but differ by tracked fit variation, the Outfit garment-picker **list stays compact and does not display the tracked-variation answer dump**. Clicking a picker entry opens the garment quick view, and that clicked quick view exposes the answered variation-defining structured attributes needed to distinguish legitimate entries. Same Product does not imply duplicate entry.
-- The first clicked tagged-garment quick view keeps direct **View Garment Detail →** navigation at its bottom in every FITuition state. FITuition Details opens the in-Outfit evidence-only intermediate layer before any optional full-page navigation.
+- The first clicked tagged-garment quick view shows the useful closest/Strong exact evidence inline and keeps direct **See Full Details →** navigation at its bottom in every FITuition state. There is no intermediate FITuition Details layer.
 - **`+ Add a new garment` opens the embedded Fit Report intake in a fixed/current-viewport modal.** It must never render at the bottom of the Outfit composer merely because the dialog node is after the composer in the DOM.
 - Existing Outfit save keeps photo-hotspot relationships subordinate to the current Outfit selected-garment set; stale orphan relationships are healed rather than exposed as an internal consistency error.
 - Edit/New Outfit unsaved internal navigation uses Save Changes/Save Draft · Leave Without Saving · Keep Editing in a fixed/current-viewport dialog.
@@ -490,7 +490,7 @@ exposure           = 0.87
 photo_quality_score = 90.95
 ```
 
-Weights are the starting configuration, not a reason to hard-code the algorithm so rigidly that later calibration requires redesigning the system.
+Weights are the starting configuration, not a reason to hard-code the algorithm so rigidly that later calibration requires redesigning the selection system.
 
 ## Suggested persisted fields
 At minimum plan for:
@@ -867,15 +867,15 @@ This section is the authoritative current branch-status override for the post-Ro
 
 ## Production baseline and active work
 - Roadmap 14 Garment/Product Detail is **COMPLETE / DEPLOYED** through merged PR #127 at production/main merge `10b3777aacc6eca2f8145ab49855d54d01c448dc`.
-- The active owner-authorized Product Change is branch **`product/fituition-inline-evidence-body-match-qa`**, based exactly on that production merge. It is being prepared for owner review and is **not merged or production-authorized**.
+- The active owner-authorized Product Change is **draft PR #128**, branch **`product/fituition-inline-evidence-body-match-qa`**, based exactly on that production merge. It is being prepared for owner review and is **not merged or production-authorized**.
 - This batch adds **no database migration** and does not change recommendation math, exact-variation identity, evidence-unit deduplication, Body Match math or the existing Outfit-level batched summary boundary.
 - Unrelated gallery/garment-speed work remains outside this batch.
 
 ## Owner-locked behavior in this batch
 - The clicked Outfit tagged-garment quick view no longer hides useful evidence behind **See FITuition Details** or a second evidence modal. The compact evidence now lives directly in the first quick view; the bottom deeper-navigation control is **See Full Details →** to the full Garment Detail page.
-- The four tagged FITuition outcomes remain the existing canonical wording/logic: recommendation + Strong aggregate; recommendation + closest exact report; insufficient-confidence + closest exact report; zero exact evidence + Notify. This batch does not invent a second recommendation/confidence model.
-- A **Strong Fit Report** is aggregated exact evidence. When the Strong aggregate exists, the compact quick view shows the aggregate rows as **count + Size + Fit Result** and does **not** also show an individual closest reporter. Example owner review fixture: **7 Medium — Just Right; 4 Large — Too Big**.
-- When no Strong aggregate exists, the compact quick view falls back to the single **Best Available Matching Fit Report**. Both the recommendation-with-closest state and the insufficient-confidence-with-closest state show **Relevant Fit Reports: X** so the same evidence-count context is not arbitrarily hidden from one state.
+- The four tagged FITuition outcomes remain the existing canonical wording/logic: recommendation + closest exact report + Strong aggregate underneath; recommendation + closest exact report; insufficient-confidence + closest exact report; zero exact evidence + Notify. This batch does not invent a second recommendation/confidence model.
+- A **Strong Fit Report** is aggregated exact evidence. When the Strong aggregate exists, the compact quick view still shows the closest exact individual report first, then adds the aggregate underneath as **count + Size + Fit Result** rows. It never replaces the closest report. Example owner review fixture: **7 Medium — Just Right; 4 Large — Too Big**.
+- When no Strong aggregate exists, the compact quick view shows the single **Best Available Matching Fit Report**. Both the recommendation-with-closest state and the insufficient-confidence-with-closest state show **Relevant Fit Reports: X** so the same evidence-count context is not arbitrarily hidden from one state.
 - Zero Relevant Fit Reports remains **“Not enough fit data to confidently recommend a size.”** plus the existing compact **Notify me** flow/copy; no size or fabricated reporter is shown.
 - Match percentages use one shared visual tier everywhere this batch reaches a visible Match percentage: **85–100 green, 70–84 blue, 50–69 amber, under 50 neutral gray**. Low Match is not treated as an error/red state. Fit Twin/Tops Twin/Bottoms Twin remains a separate relationship designation.
 
@@ -885,8 +885,8 @@ This section is the authoritative current branch-status override for the post-Ro
 - The dedicated owner-review route uses the same canonical tagged FITuition component as the real Outfit garment quick view rather than a visual-only duplicate implementation.
 
 ## Exact next action — tagged FITuition review batch
-1. Finish focused safeguards and complete diff inspection on the branch only; keep the batch scoped to inline tagged FITuition evidence, universal Match-percent presentation and preview/dev-only QA fixtures.
-2. Open the Product Change PR with `Product truth changed: Yes` and `Owner authorization: Confirmed`, then let trusted/fast draft checks run on the exact head.
-3. Repair any failed gate on the branch without broadening scope. Once frozen and draft checks are green, run the complete exact-final Release Verification on the exact candidate.
-4. Make the preview/review surface available to the owner so all four FITuition states and Match tiers can be visually reviewed before any release decision.
+1. Keep PR #128 draft while focused safeguards, complete diff inspection, trusted governance and Fast CI run on the exact current head; repair any failed gate without broadening the owner-authorized scope.
+2. Confirm the final diff remains limited to inline tagged FITuition evidence, universal Match-percent presentation, preview/dev-only QA fixtures and directly affected canonical docs/safeguards; no gallery/garment-speed work, migration, Roadmap 15 Explore redesign, Search, Wish Locker or Admin work belongs in this batch.
+3. Once the branch is frozen and draft checks are green, mark PR #128 ready so the complete exact-final Release Verification runs. Any later commit invalidates that candidate and requires the full final verification again.
+4. Verify the exact-head preview/review surface so all four FITuition states and Match tiers can be visually reviewed by the owner before any release decision.
 5. No merge, production deployment or production fake-data insertion occurs without separate explicit owner production authorization for the exact verified candidate.

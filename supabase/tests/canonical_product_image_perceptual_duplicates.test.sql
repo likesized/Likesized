@@ -3,7 +3,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions,auth,private;
-select plan(8);
+select plan(9);
 
 select has_function(
   'public','record_fit_photo_perceptual_fingerprint',array['uuid','text'],

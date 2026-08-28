@@ -890,3 +890,32 @@ This section is the authoritative current branch-status override for the post-Ro
 3. Once the branch is frozen and draft checks are green, mark PR #128 ready so the complete exact-final Release Verification runs. Any later commit invalidates that candidate and requires the full final verification again.
 4. Verify the exact-head preview/review surface so all four FITuition states and Match tiers can be visually reviewed by the owner before any release decision.
 5. No merge, production deployment or production fake-data insertion occurs without separate explicit owner production authorization for the exact verified candidate.
+
+# CURRENT SCALABLE MATCH / FITUITION BRANCH RECONCILIATION — 2026-08-28
+This section is the authoritative current branch/status override for the LikeSized scalable Match/FITuition Product Change. Older current-status sections above remain historical snapshots where they conflict with this section.
+
+## Production baseline and active work
+- Canonical production/runtime `main` is merge `c07e578e235d3c65647996195f219885f51c6f42` from PR #128 **Inline tagged FITuition evidence and Match review QA**, after the narrow PR #129 trusted-integrity bridge merged as `04ad68847857a3f14e233f9f7592b0e188dc6bd2`.
+- The one active owner-authorized Product Change is **draft PR #130**, branch **`product/scalable-fit-evidence-repair`**, based on that production baseline. It is unmerged and undeployed; no production promotion is authorized by the implementation instruction.
+- PR #130 keeps the canonical Match formulas, thresholds, coverage/reliability semantics and Twin meaning unchanged. Product truth changes in when expensive derived answers are computed/reused: current-person Match becomes bounded/version-aware/demand-driven and full personalized garment FITuition becomes lazy/demand-driven with private evidence-versioned reuse.
+- LikeSized must not materialize every possible person × person or person × garment answer. Candidate discovery is bounded/indexable, exact canonical scoring remains authoritative, direct pair views compute only the requested pair when stale, and relevant version/evidence changes invalidate derived state without global recomputation storms.
+
+## Database/application architecture in this branch
+- `20260828100000_scalable_fit_evidence_reads.sql` retains the set-wise/bounded exact Match and evidence read foundation.
+- `20260828120000_versioned_match_and_fituition_cache.sql` adds private Match-input revisioning, bounded candidate fingerprints/discovery, private current-person Match caches, direct-pair reuse/recalculation, private evidence-scope versioning and personalized FITuition evidence caching.
+- `20260828121000_route_match_reads_to_versioned_cache.sql` routes current-person Match compatibility reads through the versioned bounded canonical owner.
+- `20260828122000_route_full_fituition_reads_to_cache.sql` routes full personalized garment evidence through demand-driven versioned reuse while preserving recommendation semantics.
+- Full garment detail is not eagerly warmed on page load. The garment shell and canonically required cheap summaries may render first; an uncached detailed calculation explicitly shows **Calculating your FITuition…** and must end in success or a controlled retry/error state.
+- Raw current/historical body measurements remain private. The cache/discovery layer stores only private/server-derived state and safe derived outputs; recommendation evidence hierarchy, historical snapshot Match math, tracked-variation/evidence deduplication and normal/shared evidence boundaries remain canonical.
+
+## Verification state
+- A database-sensitive Fast CI candidate has already passed canonical integrity/drift protection, exact dependency install and audit, TypeScript, every application safeguard, production build, complete fresh migration replay and canonical database behavior/privacy tests after repairing the cached Match requested-category aggregate and reconciling the garment-condition safeguard to the new private canonical evidence-core owner.
+- That green draft run verifies the repaired implementation state, but this canon reconciliation creates a new branch head. The new head must rerun trusted/fast draft checks before the candidate is frozen.
+- PR #130 remains Draft. Do not call the Product Change complete merely because Fast CI is green; the exact final candidate must still pass complete `Release Verification`.
+
+## Exact next action — scalable Match / FITuition
+1. Commit this Product Spec/schema/Master reconciliation atomically on PR #130 and inspect the complete final diff for scope/canonical drift.
+2. Let trusted/default draft checks and Fast CI run on the new head; repair any failure without broadening the owner-authorized scale architecture.
+3. Once source/tests/docs are frozen and draft checks are green, mark PR #130 ready so complete exact-candidate `Release Verification` runs: canonical integrity, exact dependencies/audit, TypeScript, every application safeguard, production build, complete fresh migration replay and database behavior/privacy tests.
+4. Any commit after green full verification invalidates that candidate and requires complete final verification again.
+5. Only after exact-final verification is green may the identified candidate be presented for the owner’s separate production authorization. No merge, production Supabase migration application or Vercel production release occurs before that authorization.

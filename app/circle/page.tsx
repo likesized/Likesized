@@ -16,7 +16,8 @@ import styles from "./circle.module.css";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 type FeedScope = "twins" | "all";
-type Match = { user_id: string; match_score: number };
+type MatchCategory = "tops" | "bottoms";
+type Match = { match_category: MatchCategory; user_id: string; match_score: number };
 type OutfitPost = {
   id: string;
   user_id: string;
@@ -49,8 +50,8 @@ function clean(value: string | undefined, max = 80) {
 function normalizeStyleTag(value: string | undefined) {
   return clean(value, 30).replace(/^#+/, "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 30);
 }
-function matchMap(data: unknown) {
-  return new Map(((data ?? []) as Match[]).map((row) => [row.user_id, row.match_score]));
+function matchMap(data: Match[], category: MatchCategory) {
+  return new Map(data.filter((row) => row.match_category === category).map((row) => [row.user_id, row.match_score]));
 }
 function feedHref(scope: FeedScope, occasion = "", styleTag = "", qa=false) {
   const params = new URLSearchParams();
@@ -83,27 +84,26 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
     { data: profile, error: profileError },
     { data: fitProfile, error: fitProfileError },
     { data: followData, error: followError },
-    topsResult,
-    bottomsResult,
+    matchResult,
     { data: twinSettings, error: twinSettingsError },
     { data: qaProfiles, error: qaProfilesError },
   ] = await Promise.all([
     supabase.from("profiles").select("username").eq("id", viewerId).maybeSingle(),
     supabase.from("fit_profiles").select("completed_at").eq("user_id", viewerId).maybeSingle(),
     supabase.from("follows").select("followed_id").eq("follower_id", viewerId),
-    supabase.rpc("get_fit_matches", { p_match_category: "tops", p_result_limit: 100 }),
-    supabase.rpc("get_fit_matches", { p_match_category: "bottoms", p_result_limit: 100 }),
+    supabase.rpc("get_fit_matches_batch", { p_match_categories: ["tops", "bottoms"], p_result_limit: 100 }),
     supabase.from("fit_twin_settings").select("threshold_percent").eq("singleton", true).maybeSingle(),
     qa?supabase.from("profiles").select("id").neq("id",viewerId).limit(20):Promise.resolve({data:[],error:null}),
   ]);
-  if (profileError || fitProfileError || followError || topsResult.error || bottomsResult.error || twinSettingsError || qaProfilesError) {
+  if (profileError || fitProfileError || followError || matchResult.error || twinSettingsError || qaProfilesError) {
     throw new Error("Could not load Style Feed.");
   }
   if (!profile?.username || !fitProfile?.completed_at) redirect("/onboarding");
 
   const followedIds = [...new Set((followData ?? []).map((row: { followed_id: string }) => row.followed_id))];
-  const tops = matchMap(topsResult.data);
-  const bottoms = matchMap(bottomsResult.data);
+  const matchRows=(matchResult.data??[]) as Match[];
+  const tops = matchMap(matchRows,"tops");
+  const bottoms = matchMap(matchRows,"bottoms");
   const threshold = twinSettings?.threshold_percent ?? 85;
   const designationFor = (userId: string) => fitTwinDesignation({ tops: tops.get(userId), bottoms: bottoms.get(userId) }, threshold);
   const qaIds=(qaProfiles??[]).map((row:{id:string})=>row.id);

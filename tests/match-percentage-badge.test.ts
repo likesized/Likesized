@@ -8,7 +8,7 @@ const matchCard=readFileSync(new URL("../components/MatchCard.tsx",import.meta.u
 const personCard=readFileSync(new URL("../components/CanonicalPersonQuickViewCard.tsx",import.meta.url),"utf8");
 const taggedCard=readFileSync(new URL("../components/TaggedFituitionCard.tsx",import.meta.url),"utf8");
 const expandedEvidence=readFileSync(new URL("../app/item/[slug]/ExpandedEvidenceClient.tsx",import.meta.url),"utf8");
-const itemPage=readFileSync(new URL("../app/item/[slug]/page.tsx",import.meta.url),"utf8");
+const fituitionSections=readFileSync(new URL("../app/item/[slug]/FituitionSections.tsx",import.meta.url),"utf8");
 const fixtures=readFileSync(new URL("../lib/fituition-review-fixtures.ts",import.meta.url),"utf8");
 const preview=readFileSync(new URL("../app/explore/preview/page.tsx",import.meta.url),"utf8");
 const exploreFixtures=readFileSync(new URL("../lib/explore-fixtures.ts",import.meta.url),"utf8");
@@ -30,8 +30,8 @@ test("universal member and garment Match surfaces use the shared badge",()=>{
   assert.match(personCard,/MatchPercentageBadge score=\{value\} compact/);
   assert.match(taggedCard,/MatchPercentageBadge score=\{report\.bodyMatch\} label="Body Match"/);
   assert.match(expandedEvidence,/MatchPercentageBadge score=\{row\.bodyMatch\} compact/);
-  assert.match(itemPage,/MatchPercentageBadge score=\{bestExact\.historical_match_score\} compact/);
-  assert.match(itemPage,/MatchPercentageBadge score=\{related\.historical_match_score\} compact/);
+  assert.match(fituitionSections,/MatchPercentageBadge score=\{bestExact\.historical_match_score\} compact/);
+  assert.match(fituitionSections,/MatchPercentageBadge score=\{related\.historical_match_score\} compact/);
 });
 
 test("owner review fixtures cover all four FITuition outcomes and all four Match colors",()=>{

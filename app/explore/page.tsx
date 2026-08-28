@@ -21,6 +21,7 @@ type Outfit = { id:string; user_id:string; headline:string|null; caption?:string
 type Profile = { id?:string; username:string; display_name:string|null; avatar_url?:string|null };
 type Match = { user_id:string; username:string; display_name:string|null; avatar_url:string|null; match_score:number };
 type Evidence = { user_id:string; original_size_label:string; fit:string; historical_match_score:number };
+type EvidenceSummary = { product_id:string; best_match_score:number; report_count:number; best_fit_report_id:string|null; best_user_id:string|null; best_original_size_label:string|null; best_fit:string|null };
 type Person = { id:string; username:string; display_name:string|null; avatar_url:string|null };
 
 function first(value:string|string[]|undefined){return Array.isArray(value)?value[0]:value;}
@@ -106,7 +107,16 @@ export default async function ExplorePage({searchParams}:{searchParams:SearchPar
     scores.set(product.id,product.score??0);reportCounts.set(product.id,product.report_count??0);
     if(product.wearer_id)bestEvidence.set(product.id,{user_id:product.wearer_id,original_size_label:product.size??"",fit:product.fit??"just_right",historical_match_score:product.score??0});
   }
-  await Promise.all(products.filter((item)=>!item.fixture).map(async(product)=>{const {data}=await supabase.rpc("get_product_evidence_candidates",{p_product_id:product.id,p_variant_id:null,p_result_limit:40});const candidates=(data??[]) as Evidence[];scores.set(product.id,Math.max(...candidates.map((row)=>row.historical_match_score),0));reportCounts.set(product.id,candidates.length);const strongest=candidates.reduce<Evidence|undefined>((current,row)=>!current||row.historical_match_score>current.historical_match_score?row:current,undefined);if(strongest)bestEvidence.set(product.id,strongest);}));
+  const realProductIds=products.filter((item)=>!item.fixture).map((item)=>item.id);
+  const evidenceSummaryResult=realProductIds.length
+    ?await supabase.rpc("get_product_evidence_summaries",{p_product_ids:realProductIds,p_result_limit:40})
+    :{data:[] as EvidenceSummary[],error:null};
+  if(evidenceSummaryResult.error)throw new Error("Could not load garment fit evidence.");
+  for(const row of (evidenceSummaryResult.data??[]) as EvidenceSummary[]){
+    scores.set(row.product_id,row.best_match_score??0);
+    reportCounts.set(row.product_id,row.report_count??0);
+    if(row.best_user_id)bestEvidence.set(row.product_id,{user_id:row.best_user_id,original_size_label:row.best_original_size_label??"",fit:row.best_fit??"just_right",historical_match_score:row.best_match_score??0});
+  }
   if(view==="garments"){
     if(scope==="matches")products=products.filter((product)=>(scores.get(product.id)??0)>=75);
     products.sort((a,b)=>scope==="all"?trustRank(a)-trustRank(b)||(scores.get(b.id)??0)-(scores.get(a.id)??0):(scores.get(b.id)??0)-(scores.get(a.id)??0)||trustRank(a)-trustRank(b));

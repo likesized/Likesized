@@ -108,11 +108,12 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
   const ownReportPool=((((ownReportResult.error?[]:ownReportResult.data)??[]) as unknown as OwnReport[]));
   if(targetReport.user_id===viewerId&&!ownReportPool.some((report)=>report.id===targetReport.id))ownReportPool.push(targetReport);
   const ownReports=newestUniqueVariationEvidence(ownReportPool,(report)=>({userId:report.user_id,productId:report.product_id,objectiveVariantKey:report.objective_variant_key,reportId:report.id,createdAt:report.created_at}));
-  const ownProductIds=[...new Set(ownReports.map((row)=>row.product_id))];
+  const ownProductIds=[...new Set(ownReports.map((row)=>row.product_id).filter((id)=>UUID.test(id)))];
+  const attributeProductIds=[...new Set([product.id,...ownProductIds].filter((id)=>UUID.test(id)))];
   const [candidateResult,snapshotResult,attributeResult]=await Promise.all([
     supabase.rpc("get_product_evidence_candidates",{p_product_id:product.id,p_variant_id:null,p_result_limit:300}),
     ownReports.length?supabase.rpc("get_fit_report_snapshot_matches",{p_fit_report_ids:ownReports.map((row)=>row.id)}):Promise.resolve({data:[] as SnapshotMatch[],error:null}),
-    supabase.from("product_attribute_values").select("product_id,attribute_key,option_key").in("product_id",[...new Set([product.id,...ownProductIds])]).neq("source_status","rejected").gte("confidence",0.75),
+    attributeProductIds.length?supabase.from("product_attribute_values").select("product_id,attribute_key,option_key").in("product_id",attributeProductIds).neq("source_status","rejected").gte("confidence",0.75):Promise.resolve({data:[] as AttributeRow[],error:null}),
   ]);
   logEvidenceError("community evidence",candidateResult.error);
   logEvidenceError("Closet historical matches",snapshotResult.error);

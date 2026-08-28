@@ -26,7 +26,7 @@ export function EntityQuickView({kind,title,subtitle,imageUrl,description,detail
       <div className={styles.identity}>{imageUrl?<img className={`${styles.image}${kind==="person"?` ${styles.personImage}`:""}`} src={imageUrl} alt=""/>:<div className={`${styles.fallback}${kind==="person"?` ${styles.personFallback}`:""}`}>{fallback}</div>}<div><span className={styles.kicker}>{kind}</span><h2 className={styles.title}>{title}</h2>{subtitle?<span className={styles.subtitle}>{subtitle}</span>:null}</div></div>
       {description?<p className={styles.description}>{description}</p>:null}
       {visibleDetails.length?<div className={styles.stats}>{visibleDetails.map((detail)=><div className={styles.stat} key={detail.label}><strong>{detail.value}</strong><span>{detail.label}</span></div>)}</div>:null}
-      <Link className={styles.full} href={href} data-full-navigation="true">{fullLabel}</Link>
+      <Link className={styles.full} href={href} prefetch={kind==="garment"?false:undefined} data-full-navigation="true">{fullLabel}</Link>
     </section></div>:null}
   </>;
 }

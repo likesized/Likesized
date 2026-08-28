@@ -4,10 +4,12 @@ import test from "node:test";
 
 const personCard=fs.readFileSync("components/CanonicalPersonQuickViewCard.tsx","utf8");
 const peopleActions=fs.readFileSync("app/people/actions.ts","utf8");
+const people=fs.readFileSync("app/people/page.tsx","utf8");
+const circle=fs.readFileSync("app/circle/page.tsx","utf8");
 const gallery=fs.readFileSync("app/outfits/[id]/OutfitGallery.tsx","utf8");
 const taggedPanel=fs.readFileSync("app/outfits/[id]/TaggedItemsPanel.tsx","utf8");
 const summaryRoute=fs.readFileSync("app/api/outfits/[id]/tagged-fit-summary/route.ts","utf8");
-const batchMigration=fs.readFileSync("supabase/migrations/20260827214500_batch_outfit_tagged_fit_counts.sql","utf8");
+const scalingMigration=fs.readFileSync("supabase/migrations/20260828100000_scalable_fit_evidence_reads.sql","utf8");
 
 test("universal person quick view toggles Follow in place without a navigation form",()=>{
   assert.match(personCard,/function toggleFollow\(\)/);
@@ -49,10 +51,27 @@ test("tagged garment cards use one cached Outfit summary and full FITuition only
   assert.match(summaryRoute,/STRONG_FIT_REPORT_MATCH_THRESHOLD/);
 });
 
-test("Outfit tagged-fit summary is a bounded authenticated batch database boundary",()=>{
-  assert.match(batchMigration,/create or replace function public\.get_outfit_tagged_fit_counts/);
-  assert.match(batchMigration,/limit 200/);
-  assert.match(batchMigration,/get_product_evidence_candidates\([\s\S]*300/);
-  assert.match(batchMigration,/revoke all on function public\.get_outfit_tagged_fit_counts\(uuid, integer\) from public, anon/);
-  assert.match(batchMigration,/grant execute on function public\.get_outfit_tagged_fit_counts\(uuid, integer\) to authenticated/);
+test("People and Style Feed share one set-wise match scan instead of recalculating categories independently",()=>{
+  assert.match(people,/get_fit_matches_batch/);
+  assert.match(people,/\["overall", "tops", "bottoms"\]/);
+  assert.doesNotMatch(people,/rpc\("get_fit_matches"/);
+  assert.doesNotMatch(people,/createSignedUrl/);
+  assert.match(circle,/get_fit_matches_batch/);
+  assert.match(circle,/\["tops", "bottoms"\]/);
+  assert.doesNotMatch(circle,/rpc\("get_fit_matches"/);
+  assert.match(scalingMigration,/create or replace function public\.get_fit_matches_batch/);
+  assert.match(scalingMigration,/cross join weights w/);
+});
+
+test("Outfit tagged-fit summary counts exact evidence directly instead of invoking the full FITuition hierarchy",()=>{
+  assert.match(scalingMigration,/create or replace function public\.get_outfit_tagged_fit_counts/);
+  assert.match(scalingMigration,/community_candidates/);
+  assert.match(scalingMigration,/calculate_snapshot_matches_for_product\(/);
+  assert.doesNotMatch(scalingMigration,/calculate_snapshot_match_for_product\(/);
+  const taggedStart=scalingMigration.indexOf("create or replace function public.get_outfit_tagged_fit_counts");
+  assert.ok(taggedStart>=0);
+  const taggedBody=scalingMigration.slice(taggedStart);
+  assert.doesNotMatch(taggedBody,/get_product_evidence_candidates\(/);
+  assert.match(scalingMigration,/revoke all on function public\.get_outfit_tagged_fit_counts\(uuid,integer\) from public,anon/);
+  assert.match(scalingMigration,/grant execute on function public\.get_outfit_tagged_fit_counts\(uuid,integer\) to authenticated/);
 });

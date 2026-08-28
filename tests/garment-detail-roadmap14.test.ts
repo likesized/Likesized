@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync("app/item/[slug]/page.tsx", "utf8");
+const fituition = readFileSync("app/item/[slug]/FituitionSections.tsx", "utf8");
 const actions = readFileSync("app/item/[slug]/ItemActionsClient.tsx", "utf8");
 const expanded = readFileSync("app/item/[slug]/ExpandedEvidenceClient.tsx", "utf8");
 const evidenceRoute = readFileSync("app/api/items/[slug]/evidence/route.ts", "utf8");
@@ -27,37 +28,39 @@ test("Roadmap 14 uses the shared canonical Product image resolver", () => {
 });
 
 test("Roadmap 14 keeps the compact exact, strong, related evidence hierarchy", () => {
-  const exactIndex = page.indexOf("BEST EXACT VARIATION");
-  const strongIndex = page.indexOf("Strong Fit Reports");
-  const relatedIndex = page.indexOf("CLOSEST RELATED VARIATION");
+  const exactIndex = fituition.indexOf("BEST EXACT VARIATION");
+  const strongIndex = fituition.indexOf("Strong Fit Reports");
+  const relatedIndex = fituition.indexOf("CLOSEST RELATED VARIATION");
   assert.ok(exactIndex >= 0 && strongIndex > exactIndex && relatedIndex > strongIndex);
-  assert.match(page, /STRONG_FIT_REPORT_MATCH_THRESHOLD/);
-  assert.match(page, /strongExact\.length>=2/);
-  assert.match(page, /b\.historical_match_score-a\.historical_match_score/);
-  assert.match(page, /This is the closest Fit Report we currently have for this exact variation\./);
-  assert.match(page, /Body Match shows how closely your measurements match the person who submitted this Fit Report/);
+  assert.match(fituition, /STRONG_FIT_REPORT_MATCH_THRESHOLD/);
+  assert.match(fituition, /strongExact\.length>=2/);
+  assert.match(fituition, /b\.historical_match_score-a\.historical_match_score/);
+  assert.match(fituition, /This is the closest Fit Report we currently have for this exact variation\./);
+  assert.match(fituition, /Body Match shows how closely your measurements match the person who submitted this Fit Report/);
 });
 
 test("related variation differences come from controlled variation-defining questions", () => {
-  assert.match(page, /trackedVariationDifferences/);
+  assert.match(fituition, /trackedVariationDifferences/);
   assert.match(variation, /instead of/);
   assert.ok(!variation.includes("Color"));
   assert.ok(!variation.includes("size_label"));
 });
 
 test("expanded evidence is lazy and bounded instead of eagerly dumping every report", () => {
-  assert.match(page, /<ExpandedEvidenceClient/);
+  assert.match(fituition, /<ExpandedEvidenceClient/);
   assert.match(expanded, /fetch\(`\/api\/items\/\$\{encodeURIComponent\(slug\)\}\/evidence/);
   assert.match(evidenceRoute, /p_result_limit:200/);
   assert.match(evidenceRoute, /Promise\.all/);
   assert.ok(!page.includes("ranked.slice(0,30)"));
+  assert.match(page, /<Suspense fallback=\{<FituitionEvidenceFallback\/>\}>/);
+  assert.match(page, /<FituitionEvidenceSections/);
 });
 
 test("Garment Detail reuses the one canonical FITuition recommendation engine", () => {
-  assert.match(page, /recommendSize\(\[\.\.\.communityEvidence,\.\.\.closetEvidence\]\)/);
-  assert.match(page, /closetEvidenceRelevance/);
+  assert.match(fituition, /recommendSize\(\[\.\.\.communityEvidence,\.\.\.closetEvidence\]\)/);
+  assert.match(fituition, /closetEvidenceRelevance/);
   assert.match(recommendation, /export function recommendSize/);
-  assert.ok(!page.includes("function recommendSize"));
+  assert.ok(!fituition.includes("function recommendSize"));
 });
 
 test("Garment Detail utility actions keep LikeLocker, Wishlist, Shop, Share and Report count-free", () => {

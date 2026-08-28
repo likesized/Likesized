@@ -29,21 +29,25 @@ test("Fit Twin designation requires regional qualification instead of overall av
 
 test("body Match UI never treats measurement coverage as confidence",()=>{
   const people=readFileSync(new URL("../app/people/page.tsx",import.meta.url),"utf8");
+  const memberProfile=readFileSync(new URL("../app/people/[username]/page.tsx",import.meta.url),"utf8");
   const card=readFileSync(new URL("../components/MatchCard.tsx",import.meta.url),"utf8");
   assert.match(people,/Match % shows how closely/);
   assert.match(people,/not a probability that a garment will fit/);
-  assert.match(people,/p_match_category: "tops"/);
-  assert.match(people,/p_match_category: "bottoms"/);
+  assert.match(people,/get_fit_matches_batch/);
+  assert.match(people,/p_match_categories: \["overall", "tops", "bottoms"\]/);
   assert.match(people,/Following · \$\{twinLabel\}/);
+  assert.doesNotMatch(people,/rpc\("get_fit_matches"/);
+  assert.match(memberProfile,/get_person_fit_match_cached/);
+  assert.doesNotMatch(memberProfile,/rpc\("get_fit_matches"/);
   assert.doesNotMatch(people,/matchConfidenceLabel|confidenceLabel=/);
   assert.doesNotMatch(card,/confidenceLabel/);
 });
 
 test("product recommendation keeps qualitative confidence and explains Body Match accurately",()=>{
-  const item=readFileSync(new URL("../app/item\/[slug]\/page.tsx",import.meta.url),"utf8");
-  assert.match(item,/recommendationConfidenceLabel\(recommendation\.confidence\)/);
-  assert.doesNotMatch(item,/\{recommendation\.confidence\}% confidence/);
-  assert.match(item,/Body Match shows how closely your measurements match the person who submitted this Fit Report/);
-  assert.match(item,/not how likely the garment is to fit you/);
-  assert.doesNotMatch(item,/matchConfidenceLabel/);
+  const fituition=readFileSync(new URL("../app/item/[slug]/FituitionSections.tsx",import.meta.url),"utf8");
+  assert.match(fituition,/recommendationConfidenceLabel\(recommendation\.confidence\)/);
+  assert.doesNotMatch(fituition,/\{recommendation\.confidence\}% confidence/);
+  assert.match(fituition,/Body Match shows how closely your measurements match the person who submitted this Fit Report/);
+  assert.match(fituition,/not how likely the garment is to fit you/);
+  assert.doesNotMatch(fituition,/matchConfidenceLabel/);
 });

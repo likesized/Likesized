@@ -1,14 +1,12 @@
 import { currentProfilePhotoUrl } from "@/lib/profile-photo";
 import { createClient } from "@/lib/supabase/server";
 
-type MatchRow = { user_id: string; match_score: number };
+type MatchRow = { match_category: "overall" | "tops" | "bottoms"; match_score: number | null };
 type ReportRow = { closet_item_id: string };
 type NotificationSubscription = { followed_id: string };
 
-async function scoreFor(supabase: Awaited<ReturnType<typeof createClient>>, targetUserId: string, category: "overall" | "tops" | "bottoms") {
-  const { data, error } = await supabase.rpc("get_fit_matches", { p_match_category: category, p_result_limit: 100 });
-  if (error) return null;
-  const value = ((data ?? []) as MatchRow[]).find((row) => row.user_id === targetUserId)?.match_score;
+function matchScore(rows: MatchRow[], category: MatchRow["match_category"]) {
+  const value = rows.find((row) => row.match_category === category)?.match_score;
   return typeof value === "number" ? value : null;
 }
 
@@ -35,20 +33,21 @@ export async function GET(_request: Request, { params }: { params: Promise<{ use
   let notificationsOn = false;
 
   if (viewerId) {
-    const [reportsResult, outfitsResult, overall, tops, bottoms, followResult, notificationResult] = await Promise.all([
+    const [reportsResult, outfitsResult, matchResult, followResult, notificationResult] = await Promise.all([
       supabase.from("fit_reports").select("closet_item_id").eq("user_id", profile.id).limit(1000),
       supabase.from("outfit_posts").select("id", { count: "exact", head: true }).eq("user_id", profile.id).eq("status", "published"),
-      owner ? Promise.resolve(null) : scoreFor(supabase, profile.id, "overall"),
-      owner ? Promise.resolve(null) : scoreFor(supabase, profile.id, "tops"),
-      owner ? Promise.resolve(null) : scoreFor(supabase, profile.id, "bottoms"),
+      owner ? Promise.resolve({ data: [] as MatchRow[], error: null }) : supabase.rpc("get_person_fit_match_cached", { p_target_user_id: profile.id }),
       owner ? Promise.resolve({ data: null, error: null }) : supabase.from("follows").select("followed_id").eq("follower_id", viewerId).eq("followed_id", profile.id).maybeSingle(),
       owner ? Promise.resolve({ data: [], error: null }) : supabase.rpc("get_following_notification_subscriptions"),
     ]);
     if (!reportsResult.error) totalGarments = new Set(((reportsResult.data ?? []) as ReportRow[]).map((row) => row.closet_item_id)).size;
     if (!outfitsResult.error) totalOutfits = outfitsResult.count ?? 0;
-    overallMatch = overall;
-    topsMatch = tops;
-    bottomsMatch = bottoms;
+    if (!matchResult.error) {
+      const rows = (matchResult.data ?? []) as MatchRow[];
+      overallMatch = matchScore(rows, "overall");
+      topsMatch = matchScore(rows, "tops");
+      bottomsMatch = matchScore(rows, "bottoms");
+    }
     following = Boolean(followResult.data);
     if (!notificationResult.error) notificationsOn = ((notificationResult.data ?? []) as NotificationSubscription[]).some((row) => row.followed_id === profile.id);
   }

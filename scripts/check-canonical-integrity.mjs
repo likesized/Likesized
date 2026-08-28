@@ -174,18 +174,26 @@ for (const base of sourceRoots) {
 }
 
 const taggedPanelPath = 'app/outfits/[id]/TaggedItemsPanel.tsx';
-mustContain(taggedPanelPath, 'Not enough fit data to confidently recommend a size.');
-mustContain(taggedPanelPath, 'Our FITuition suggests: {meta.recommendation.sizeLabel}');
-mustContain(taggedPanelPath, 'Confidence: {meta.recommendation.confidenceLabel}');
-mustContain(taggedPanelPath, 'View more Relevant Fit Reports →');
-mustContain(taggedPanelPath, 'Best Available Matching Fit Report');
-mustContain(taggedPanelPath, 'Your Fit Report');
-mustNotContain(taggedPanelPath, 'Your own exact report');
-mustNotContain(taggedPanelPath, 'I’m not confident enough to recommend a size yet.');
-mustNotContain(taggedPanelPath, 'FITuition DETAILS');
-mustNotContain(taggedPanelPath, 'Strong Fit Report summary');
-mustNotContain(taggedPanelPath, 'Best current match');
-mustNotContain(taggedPanelPath, 'FITuition still can’t recommend a size yet.');
+const taggedFituitionPath = 'components/TaggedFituitionCard.tsx';
+mustContain(taggedPanelPath, 'TaggedFituitionCard');
+mustContain(taggedPanelPath, 'See Full Details →');
+mustNotContain(taggedPanelPath, 'See FITuition Details →');
+mustNotContain(taggedPanelPath, 'View more Relevant Fit Reports →');
+mustNotContain(taggedPanelPath, 'previewBack');
+mustContain(taggedFituitionPath, 'Not enough fit data to confidently recommend a size.');
+mustContain(taggedFituitionPath, 'Our FITuition suggests: {meta.recommendation.sizeLabel}');
+mustContain(taggedFituitionPath, 'Confidence: {meta.recommendation.confidenceLabel}');
+mustContain(taggedFituitionPath, 'Best Available Matching Fit Report');
+mustContain(taggedFituitionPath, 'Your Fit Report');
+mustContain(taggedFituitionPath, 'Strong Fit Reports');
+mustContain(taggedFituitionPath, '<RelevantReport report={report}/>');
+mustContain(taggedFituitionPath, '<StrongReports groups={meta.strongFitReports}/>');
+mustNotContain(taggedFituitionPath, 'Your own exact report');
+mustNotContain(taggedFituitionPath, 'I’m not confident enough to recommend a size yet.');
+mustNotContain(taggedFituitionPath, 'FITuition DETAILS');
+mustNotContain(taggedFituitionPath, 'Strong Fit Report summary');
+mustNotContain(taggedFituitionPath, 'Best current match');
+mustNotContain(taggedFituitionPath, 'FITuition still can’t recommend a size yet.');
 
 const twinsPage = read('app/twins/page.tsx');
 if (/\.from\(["']follows["']\)/.test(twinsPage)) {

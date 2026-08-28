@@ -827,3 +827,37 @@ None of those migrations are production schema truth until PR #126 is exact-fina
 3. Once branch source/tests/docs are frozen and draft checks are green, mark PR #126 ready so the full exact-candidate **Release Verification** runs.
 4. Any commit after a green full verification invalidates that candidate and requires full final verification again.
 5. Only after exact-final verification is green may an identified candidate be presented for the owner’s separate production authorization. No merge, Supabase production migration application or Vercel production release occurs before that authorization.
+
+# CURRENT ROADMAP 14 BRANCH RECONCILIATION — 2026-08-28
+This section is the authoritative current branch-status override for Roadmap 14 and supersedes older current-status wording above where those historical snapshots conflict with the present branch. Immutable historical release facts remain historical facts.
+
+## Production baseline and active work
+- Roadmap 13A Automatic Canonical Product Image Scoring is **COMPLETE / DEPLOYED** through merged PR #126 at production merge `316063700a657f699d7e697f6ba1e17d04905fbf`.
+- The one active Product Change is **draft PR #127**, branch **`product/roadmap-14-garment-product-detail`**, based on that production merge.
+- Roadmap 14 implementation is owner-authorized. PR #127 remains branch-only and must not be merged or deployed until its exact final candidate passes complete Release Verification and the owner separately authorizes that identified candidate for production.
+- Roadmap 14 adds no database migration; it consumes existing canonical Product, tracked-variation, FITuition, retailer, LikeLocker/Wishlist and Roadmap 13A image boundaries.
+
+## Roadmap 14 implemented branch behavior
+- `/item/[slug]` now treats the selected fit context as the canonical **tracked fit variation**, never Size/Color/SKU variation identity. Variation labels and differences come from the one current variation-defining structured-question taxonomy.
+- The Product hero uses the shared Roadmap 13A canonical Product-image resolver for the selected tracked variation and its broader Product fallback rather than maintaining a page-specific image choice.
+- The full Product page continues to use the one canonical FITuition recommendation engine. Community Size Match evidence and relevant Closet History are combined through the existing recommendation hierarchy rather than a second Garment Detail sizing algorithm.
+- Visible fit evidence follows the owner-locked order: **closest exact tracked variation first → Strong Fit Reports aggregate for qualifying exact reports → one closest related tracked variation with the actual controlled variation difference → lazy See more evidence**.
+- Body Match remains historical wearer-body similarity, not probability the Product will fit. Exact variation, Body Match, Size worn, Fit Result and recommendation confidence remain separate meanings.
+- Same person + same Product + same tracked variation is deduped to one recommendation evidence unit. Related variations remain reduced fallback/support and never inflate the exact-variation Strong aggregate.
+- Expanded evidence is deliberately lazy and bounded through `/api/items/[slug]/evidence`; the initial Product page does not eagerly render/load the entire broader evidence set.
+- Supplemental profile/product/snapshot/attribute enrichment failures degrade to reduced evidence rather than turning an otherwise valid Product page into a generic server-error screen.
+- Product utility actions are **LikeLocker · Wishlist · Shop · Share · Report**, with no public garment-action counts. LikeLocker and Wishlist persist in place. Shop is hidden with zero valid retailer destinations, links directly with one, and uses a compact retailer picker with multiple destinations. Report remains on the page after successful submission.
+- This batch does **not** implement the deferred My Closet lifecycle, Explore redesign, Search/`/browse` redesign, Wish Locker page audit, broader Admin audit, or unrelated gallery/garment-speed changes.
+
+## Current verification state
+- The implementation candidate before canonical Master reconciliation was `8f04eb41cc8bd130e03cce219f9427567e5fee4a`.
+- Fast CI #80 / run `33137482656` passed trusted canonical integrity, TypeScript, the complete application safeguard suite, production build, complete fresh migration replay and database behavior/privacy tests on that implementation state.
+- `docs/V1_PRODUCT_SPEC.md` remains unchanged in the final branch tree because its existing owner-locked Product Detail evidence contract already describes the Roadmap 14 behavior being implemented; the earlier attempted doc rewrite was fully restored before this reconciliation and has no final diff authority.
+- This Master commit creates a new branch head, so the new head must rerun draft checks before the candidate is frozen.
+
+## Exact next action — Roadmap 14
+1. Keep PR #127 draft while trusted governance and Fast CI rerun on the Master-reconciled head.
+2. Inspect the complete final PR diff for scope/canonical drift and repair any remaining failure without broadening the owner-authorized Roadmap 14 batch.
+3. Once the branch is frozen and draft checks are green, mark PR #127 ready so the complete exact-candidate **Release Verification** runs.
+4. Any commit after green full verification invalidates that candidate and requires full Release Verification again.
+5. Only after exact-final verification is green may the identified Roadmap 14 candidate be presented for the owner’s separate production authorization. No merge or production deployment occurs before that authorization.

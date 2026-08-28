@@ -64,15 +64,13 @@ test("creator quick view uses a clean hierarchy instead of table-grid chrome",()
   assert.doesNotMatch(creatorQuickViewCss,/\.stats>div\{[^}]*border/);
 });
 
-test("Tagged garment quick view and FITuition evidence layer each keep their intended Garment Detail destination",()=>{
+test("Tagged garment quick view keeps one canonical Full Details destination",()=>{
   assert.doesNotMatch(tagged,/See fit evidence/);
-  assert.match(firstQuickView,/View Garment Detail →/);
+  assert.match(firstQuickView,/See Full Details →/);
   assert.match(firstQuickView,/href=\{selected\.href\}/);
-  assert.equal((tagged.match(/View Garment Detail →/g)??[]).length,2);
-  assert.match(tagged,/See FITuition Details →/);
-  assert.equal((tagged.match(/href=\{selected\.href\}/g)??[]).length,2);
-  assert.doesNotMatch(tagged,/View Garment Details →/);
-  assert.doesNotMatch(tagged,/View Detailed Garment Report/);
+  assert.equal((tagged.match(/See Full Details →/g)??[]).length,1);
+  assert.equal((tagged.match(/href=\{selected\.href\}/g)??[]).length,1);
+  assert.doesNotMatch(tagged,/See FITuition Details →|View more Relevant Fit Reports →|View Garment Detail →|View Garment Details →|View Detailed Garment Report/);
 });
 
 test("Closet Outfit cards use matched vector icon boxes for likes and comments",()=>{

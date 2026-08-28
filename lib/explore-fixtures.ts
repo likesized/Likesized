@@ -12,6 +12,10 @@ const PEOPLE: ExploreFixturePerson[] = [
   ["preview-alex", "alex_fits", "Alex"], ["preview-jordan", "jordan_wears", "Jordan"],
   ["preview-sam", "sam_in_denim", "Sam"], ["preview-riley", "riley_layers", "Riley"],
   ["preview-morgan", "morgan_moves", "Morgan"], ["preview-casey", "casey_styles", "Casey"],
+  ["preview-taylor", "taylor_tried_it", "Taylor"], ["preview-devon", "devon_daily", "Devon"],
+  ["preview-avery", "avery_finds", "Avery"], ["preview-quinn", "quinn_closet", "Quinn"],
+  ["preview-cameron", "cameron_casual", "Cameron"], ["preview-drew", "drew_dresses", "Drew"],
+  ["preview-parker", "parker_picks", "Parker"], ["preview-reese", "reese_repeats", "Reese"],
 ].map(([id, username, display_name]) => ({ id, username, display_name, avatar_url: null, fixture: true }));
 
 const PRODUCT_SEEDS: Array<[string,string,string,string,string,Record<string,string>]> = [
@@ -41,17 +45,25 @@ const PRODUCT_SEEDS: Array<[string,string,string,string,string,Record<string,str
   ["Lands' End","Chlorine Resistant Swimsuit","one_piece_swimsuit","blue","10",{swim_top:"straps",neckline_height:"high",leg_cut:"regular",coverage:"full"}],
   ["Spanx","OnCore Shapewear","shapewear","black","M",{shapewear_form:"bodysuit",target_area:"full_body",compression:"firm"}],
   ["Coach","Slingback Flat","flats","black","8",{flat_style:"slingback",toe_shape:"pointed"}],
+  ["Uniqlo","AIRism Cotton T-shirt","t_shirt","blue","M",{intended_fit:"oversized",cropped:"no",sleeve_length:"short",neckline:"crew"}],
+  ["American Eagle","Curvy Mom Jean","jeans","blue","10",{cut:"straight",rise:"high",length_profile:"regular"}],
+  ["Champion","Reverse Weave Hoodie","hoodie","gray","L",{intended_fit:"regular",cropped:"no",closure:"pullover"}],
+  ["Tommy Hilfiger","Classic Fit Polo","polo","blue","M",{intended_fit:"regular",sleeve_length:"short",opening:"button_placket"}],
+  ["New Balance","574 Sneaker","sneakers","gray","9",{shoe_height:"low",shoe_use:"casual",shoe_closure:"lace"}],
+  ["Mango","Pleated Midi Skirt","skirt","black","M",{shape:"a_line",rise:"high",length_profile:"midi",skort:"no"}],
+  ["Outdoor Voices","CloudKnit Jogger","joggers","blue","M",{intended_fit:"relaxed",rise:"mid",length_profile:"full"}],
+  ["Anthropologie","Somerset Maxi Dress","dress","green","M",{shape:"flowy",length_profile:"maxi",top_sleeve:"short",neckline_height:"low"}],
 ];
 
 export const EXPLORE_FIXTURE_PEOPLE = PEOPLE;
 export const EXPLORE_FIXTURE_PRODUCTS: ExploreFixtureProduct[] = PRODUCT_SEEDS.map(([brand,name,type,color,size,attributes], index) => ({
   id:`preview-product-${index+1}`, name, slug:`preview-${index+1}`, category:GARMENT_TYPE_BY_KEY.get(type)?.category ?? "tops", garment_type_key:type,
   image_url:null, brand_id:`preview-brand-${brand.toLowerCase().replace(/[^a-z0-9]+/g,"-")}`, brand:{name}, catalog_status:index%7===0?"provisional":index%4===0?"corroborated":"verified",
-  color_family_key:color, attributes, score:96-(index%19), report_count:2+(index%8), wearer_id:PEOPLE[index%PEOPLE.length].id, size, fit:index%5===0?"snug":"just_right", fixture:true,
+  color_family_key:color, attributes, score:96-(index%29), report_count:1+(index%11), wearer_id:PEOPLE[index%PEOPLE.length].id, size, fit:index%7===0?"too_big":index%5===0?"snug":"just_right", fixture:true,
 }));
-export const EXPLORE_FIXTURE_OUTFITS: ExploreFixtureOutfit[] = Array.from({length:9},(_,index)=>{
+export const EXPLORE_FIXTURE_OUTFITS: ExploreFixtureOutfit[] = Array.from({length:16},(_,index)=>{
   const person=PEOPLE[index%PEOPLE.length];
-  return {id:`preview-outfit-${index+1}`,user_id:person.id,caption:["Weekend layers","Denim that finally fits","Workday outfit","Easy travel look","Dinner outfit","Everyday basics"][index%6],photo_url:"",created_at:new Date(Date.UTC(2026,7,21-index)).toISOString(),profile:{username:person.username,display_name:person.display_name},fixture:true};
+  return {id:`preview-outfit-${index+1}`,user_id:person.id,caption:["Weekend layers","Denim that finally fits","Workday outfit","Easy travel look","Dinner outfit","Everyday basics","Rainy-day layers","Airport uniform","Coffee run","Date-night simple"][index%10],photo_url:"",created_at:new Date(Date.UTC(2026,7,27-index)).toISOString(),profile:{username:person.username,display_name:person.display_name},fixture:true};
 });
 
 export function allowExploreFixtures(requested: boolean) {

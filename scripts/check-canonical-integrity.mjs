@@ -173,53 +173,27 @@ for (const base of sourceRoots) {
   }
 }
 
-// Governance migration bridge for the owner-authorized tagged FITuition owner move.
-// This trusted-base checker accepts exactly the current legacy owner OR the approved inline shared owner.
-// A hybrid/orphan shared owner is rejected. The implementation Product Change replaces this bridge with
-// the strict inline-only checks once the migration lands, so this does not create two live implementations.
 const taggedPanelPath = 'app/outfits/[id]/TaggedItemsPanel.tsx';
 const taggedFituitionPath = 'components/TaggedFituitionCard.tsx';
-const taggedPanel = read(taggedPanelPath);
-const hasTaggedFituitionFile = fs.existsSync(path.join(root, taggedFituitionPath));
-const panelUsesTaggedFituition = taggedPanel.includes('TaggedFituitionCard');
-
-if (hasTaggedFituitionFile || panelUsesTaggedFituition) {
-  if (!hasTaggedFituitionFile || !panelUsesTaggedFituition) {
-    fail('Tagged FITuition canonical-owner migration must be atomic: shared owner file and panel consumption must appear together.');
-  }
-  mustContain(taggedPanelPath, 'TaggedFituitionCard');
-  mustContain(taggedPanelPath, 'See Full Details →');
-  mustNotContain(taggedPanelPath, 'See FITuition Details →');
-  mustNotContain(taggedPanelPath, 'View more Relevant Fit Reports →');
-  mustNotContain(taggedPanelPath, 'previewBack');
-  mustContain(taggedFituitionPath, 'Not enough fit data to confidently recommend a size.');
-  mustContain(taggedFituitionPath, 'Our FITuition suggests: {meta.recommendation.sizeLabel}');
-  mustContain(taggedFituitionPath, 'Confidence: {meta.recommendation.confidenceLabel}');
-  mustContain(taggedFituitionPath, 'Best Available Matching Fit Report');
-  mustContain(taggedFituitionPath, 'Your Fit Report');
-  mustContain(taggedFituitionPath, 'Strong Fit Reports');
-  mustContain(taggedFituitionPath, '<RelevantReport report={report}/>');
-  mustContain(taggedFituitionPath, '<StrongReports groups={meta.strongFitReports}/>');
-  mustNotContain(taggedFituitionPath, 'Your own exact report');
-  mustNotContain(taggedFituitionPath, 'I’m not confident enough to recommend a size yet.');
-  mustNotContain(taggedFituitionPath, 'FITuition DETAILS');
-  mustNotContain(taggedFituitionPath, 'Strong Fit Report summary');
-  mustNotContain(taggedFituitionPath, 'Best current match');
-  mustNotContain(taggedFituitionPath, 'FITuition still can’t recommend a size yet.');
-} else {
-  mustContain(taggedPanelPath, 'Not enough fit data to confidently recommend a size.');
-  mustContain(taggedPanelPath, 'Our FITuition suggests: {meta.recommendation.sizeLabel}');
-  mustContain(taggedPanelPath, 'Confidence: {meta.recommendation.confidenceLabel}');
-  mustContain(taggedPanelPath, 'View more Relevant Fit Reports →');
-  mustContain(taggedPanelPath, 'Best Available Matching Fit Report');
-  mustContain(taggedPanelPath, 'Your Fit Report');
-  mustNotContain(taggedPanelPath, 'Your own exact report');
-  mustNotContain(taggedPanelPath, 'I’m not confident enough to recommend a size yet.');
-  mustNotContain(taggedPanelPath, 'FITuition DETAILS');
-  mustNotContain(taggedPanelPath, 'Strong Fit Report summary');
-  mustNotContain(taggedPanelPath, 'Best current match');
-  mustNotContain(taggedPanelPath, 'FITuition still can’t recommend a size yet.');
-}
+mustContain(taggedPanelPath, 'TaggedFituitionCard');
+mustContain(taggedPanelPath, 'See Full Details →');
+mustNotContain(taggedPanelPath, 'See FITuition Details →');
+mustNotContain(taggedPanelPath, 'View more Relevant Fit Reports →');
+mustNotContain(taggedPanelPath, 'previewBack');
+mustContain(taggedFituitionPath, 'Not enough fit data to confidently recommend a size.');
+mustContain(taggedFituitionPath, 'Our FITuition suggests: {meta.recommendation.sizeLabel}');
+mustContain(taggedFituitionPath, 'Confidence: {meta.recommendation.confidenceLabel}');
+mustContain(taggedFituitionPath, 'Best Available Matching Fit Report');
+mustContain(taggedFituitionPath, 'Your Fit Report');
+mustContain(taggedFituitionPath, 'Strong Fit Reports');
+mustContain(taggedFituitionPath, '<RelevantReport report={report}/>');
+mustContain(taggedFituitionPath, '<StrongReports groups={meta.strongFitReports}/>');
+mustNotContain(taggedFituitionPath, 'Your own exact report');
+mustNotContain(taggedFituitionPath, 'I’m not confident enough to recommend a size yet.');
+mustNotContain(taggedFituitionPath, 'FITuition DETAILS');
+mustNotContain(taggedFituitionPath, 'Strong Fit Report summary');
+mustNotContain(taggedFituitionPath, 'Best current match');
+mustNotContain(taggedFituitionPath, 'FITuition still can’t recommend a size yet.');
 
 const twinsPage = read('app/twins/page.tsx');
 if (/\.from\(["']follows["']\)/.test(twinsPage)) {

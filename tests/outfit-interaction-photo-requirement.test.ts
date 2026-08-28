@@ -71,7 +71,8 @@ test("published Outfit hotspots remain public while personalized fit stays gated
   assert.doesNotMatch(outfitPage,/canViewTags=/);
   assert.doesNotMatch(gallery,/canViewTags/);
   assert.match(gallery,/current\.tags\.map/);
-  assert.match(tagged,/if\(signedIn\)\{setEvidenceOpen\(false\);setSelectedId\(item\.closetItemId\);\}else setGateItem\(item\)/);
+  assert.match(tagged,/if\(signedIn\)setSelectedId\(item\.closetItemId\);else setGateItem\(item\)/);
+  assert.doesNotMatch(tagged,/setEvidenceOpen/);
 });
 
 test("Outfit photos use the one smooth full-size viewer without stealing tag or Caption clicks",()=>{

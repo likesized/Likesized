@@ -91,7 +91,7 @@ export default async function StyleFeedPage({ searchParams }: { searchParams: Se
     supabase.from("profiles").select("username").eq("id", viewerId).maybeSingle(),
     supabase.from("fit_profiles").select("completed_at").eq("user_id", viewerId).maybeSingle(),
     supabase.from("follows").select("followed_id").eq("follower_id", viewerId),
-    supabase.rpc("get_fit_matches_batch", { p_match_categories: ["tops", "bottoms"], p_result_limit: 100, p_fit_community: null }),
+    supabase.rpc("get_fit_matches_batch", { p_match_categories: ["tops", "bottoms"], p_result_limit: 100 }),
     supabase.from("fit_twin_settings").select("threshold_percent").eq("singleton", true).maybeSingle(),
     qa?supabase.from("profiles").select("id").neq("id",viewerId).limit(20):Promise.resolve({data:[],error:null}),
   ]);

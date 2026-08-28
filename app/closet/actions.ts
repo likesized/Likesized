@@ -118,7 +118,8 @@ function parseFitPhotoQuality(formData: FormData, name: "photo_front_quality" | 
   }
   const imageWidth = Number(record.image_width);
   const imageHeight = Number(record.image_height);
-  if (!Number.isInteger(imageWidth) || !Number.isInteger(imageHeight) || imageWidth < 1 || imageHeight < 1 || imageWidth > 30000 || imageHeight > 30000 || record.quality_source !== "automatic") throw new Error("Invalid Fit Photo quality dimensions");
+  const perceptualHash = typeof record.perceptual_hash === "string" ? record.perceptual_hash : "";
+  if (!Number.isInteger(imageWidth) || !Number.isInteger(imageHeight) || imageWidth < 1 || imageHeight < 1 || imageWidth > 30000 || imageHeight > 30000 || !/^[01]{64}$/.test(perceptualHash) || record.quality_source !== "automatic") throw new Error("Invalid Fit Photo quality dimensions");
   return {
     garment_visibility_score: Number(record.garment_visibility_score),
     sharpness_score: Number(record.sharpness_score),
@@ -127,6 +128,7 @@ function parseFitPhotoQuality(formData: FormData, name: "photo_front_quality" | 
     exposure_score: Number(record.exposure_score),
     image_width: imageWidth,
     image_height: imageHeight,
+    perceptual_hash: perceptualHash,
     quality_source: "automatic",
   };
 }
@@ -255,15 +257,34 @@ async function saveFitPhoto(supabase: SupabaseClient, userId: string, closetItem
   if (lookupError) throw lookupError;
   const { error: uploadError } = await supabase.storage.from("fit-reference-photos").upload(storagePath, await photo.arrayBuffer(), { contentType: photo.type, upsert: false });
   if (uploadError) throw uploadError;
-  const qualityRow = quality ? { ...quality, quality_scored_at: new Date().toISOString() } : {};
+  const qualityRow = quality ? {
+    garment_visibility_score: quality.garment_visibility_score,
+    sharpness_score: quality.sharpness_score,
+    resolution_score: quality.resolution_score,
+    framing_score: quality.framing_score,
+    exposure_score: quality.exposure_score,
+    image_width: quality.image_width,
+    image_height: quality.image_height,
+    quality_source: quality.quality_source,
+    quality_scored_at: new Date().toISOString(),
+  } : {};
+  let photoId = existing?.id ?? null;
   if (existing) {
     const { error: updateError } = await supabase.from("fit_reference_photos").update({ storage_path: storagePath, ...qualityRow }).eq("id", existing.id).eq("user_id", userId);
     if (updateError) { await supabase.storage.from("fit-reference-photos").remove([storagePath]); throw updateError; }
-    await supabase.storage.from("fit-reference-photos").remove([existing.storage_path]);
   } else {
-    const { error: metadataError } = await supabase.from("fit_reference_photos").insert({ user_id: userId, closet_item_id: closetItemId, storage_path: storagePath, photo_role: role, ...qualityRow });
-    if (metadataError) { await supabase.storage.from("fit-reference-photos").remove([storagePath]); throw metadataError; }
+    const { data: inserted, error: metadataError } = await supabase.from("fit_reference_photos").insert({ user_id: userId, closet_item_id: closetItemId, storage_path: storagePath, photo_role: role, ...qualityRow }).select("id").single();
+    if (metadataError || !inserted) { await supabase.storage.from("fit-reference-photos").remove([storagePath]); throw metadataError ?? new Error("Could not save Fit Photo metadata"); }
+    photoId = inserted.id as string;
   }
+  if (photoId && quality?.perceptual_hash) {
+    const { error: fingerprintError } = await supabase.rpc("record_fit_photo_perceptual_fingerprint", {
+      p_photo_id: photoId,
+      p_perceptual_hash: quality.perceptual_hash,
+    });
+    if (fingerprintError) throw fingerprintError;
+  }
+  if (existing) await supabase.storage.from("fit-reference-photos").remove([existing.storage_path]);
   return storagePath;
 }
 

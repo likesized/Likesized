@@ -363,3 +363,23 @@ The production schema/function is verified present. Owner live QA confirmed tagg
 - Historical counted-report fingerprint reconciliation for retired questions remains separate from tracked-variation image selection.
 - Proposed sex/body-specific public measurement FAQ wording remains pending owner copy approval.
 - Complete all-Products admin priority/filter/merge/split UX, purchase-context aggregate/admin analytics, Product merge/split, richer alias UX, spam moderation, broader Product-photo review, external barcode-provider feasibility and SerpAPI admin UX remain open where separately scoped.
+
+## Versioned Match / FITuition scale architecture — PR #130 BRANCH ONLY
+PR #130 adds a private demand-driven scale layer on top of the existing canonical Match and recommendation math. It is **not production schema** until the exact final candidate is verified, separately owner-authorized for production, merged and its migrations are applied/verified.
+
+Branch migrations are:
+- `20260828100000_scalable_fit_evidence_reads.sql` — set-wise/bounded Match and Product-evidence read foundations retained as the exact fallback/scoring layer;
+- `20260828120000_versioned_match_and_fituition_cache.sql` — private Match-input versioning, bounded candidate fingerprints/discovery, current-person Match caches, direct-pair resolver, FITuition evidence scope versioning and private personalized evidence cache;
+- `20260828121000_route_match_reads_to_versioned_cache.sql` — routes existing current-person Match compatibility reads through the versioned cached/bounded canonical resolver;
+- `20260828122000_route_full_fituition_reads_to_cache.sql` — routes full personalized garment evidence through the demand-driven FITuition cache while preserving the existing recommendation owner.
+
+The branch database contract is:
+- `fit_profiles.match_input_version` is the monotonic private revision for current Match-relevant input state. Current Match cache validity is keyed to viewer/target input revisions plus the private Match algorithm version rather than global recomputation.
+- `private.fit_match_candidate_fingerprints` stores only derived/indexable candidate buckets used for bounded discovery; raw measurements remain in their existing private stores and are not exposed through this cache layer.
+- `private.current_person_match_cache` is pair/category-scoped. `public.get_person_fit_match_cached(uuid)` reuses a valid exact result or recalculates only the requested pair when its version tuple is stale.
+- `private.fit_match_neighborhood_cache` is viewer/category/community-scoped bounded discovery state. `public.get_fit_matches_cached_batch(...)` builds from bounded candidate neighborhoods and then applies the exact canonical Match calculation; the candidate layer is not itself the displayed score.
+- Full FITuition uses `private.fit_evidence_scope_versions`, a private evidence token and `private.fituition_evidence_cache` keyed to viewer/product/variant plus viewer Match-input version, FITuition algorithm version and relevant evidence state. Broad fallback also has a bounded TTL rather than a permanent stale result.
+- Fit Report, Product-attribute and Closet-visibility evidence changes bump narrow evidence scopes so personalized results become stale without synchronously recalculating every affected person × garment answer.
+- The private evidence core preserves `garment_condition='normal'`, the authenticated/shared Closet evidence boundary, `objective_variant_key` tracked-evidence deduplication, exact historical snapshot scoring and the established evidence hierarchy.
+- Public compatibility functions expose only the same safe derived Match/recommendation outputs; the new private tables/functions do not grant ordinary members or anonymous callers raw Match inputs, fingerprints, cache internals or another member's private body state.
+- The architecture deliberately does not materialize all person × person or person × garment combinations. Derived records are demand-driven, bounded and version-invalidated.

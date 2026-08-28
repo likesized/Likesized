@@ -647,3 +647,14 @@ The implemented Product contract is:
 - one bounded batch resolver handles up to 200 requested Products and batches private Fit Photo URL signing so consuming surfaces can later reuse the same canonical read boundary without N+1 selection/signing work.
 
 Roadmaps 14–17 may consume this shared canonical resolver when their own audits are authorized; PR #126 does not opportunistically redesign Garment Detail, Explore, Search or Wish Locker.
+
+## Demand-driven Match and FITuition scale architecture — PR #130 BRANCH ONLY
+PR #130 changes the computation/reuse architecture without changing the canonical Match formulas, thresholds, coverage/reliability semantics, Body Match meaning or Fit Twin/Tops Twin/Bottoms Twin meaning. It remains branch-only until exact-final verification, separate owner production authorization, merge and release verification are complete.
+
+- Current-person Match results are demand-driven and version-aware. A derived pair/category result is reusable only while both members' current Match-input revisions and the Match algorithm version remain current; a direct person view recalculates only the requested pair when needed.
+- People discovery must not scan or materialize every possible person × person relationship. Discovery uses bounded/indexable candidate neighborhoods and then applies the exact canonical Match calculation to those candidates.
+- LikeSized does not globally materialize every person × person or person × garment answer. Persistent derived caches are private/server-owned, bounded and invalidated by versions or relevant evidence changes.
+- Full personalized garment FITuition is lazy/on-demand. Product and garment shells plus canonically required cheap summaries/report counts may load first. When current detailed personalization is not cached, the UI explicitly shows **Calculating your FITuition…** while the bounded calculation runs, and failures resolve to a controlled retry/error state instead of spinning indefinitely.
+- Valid FITuition results may be reused only while the viewer's current Match inputs, the FITuition algorithm version and relevant garment evidence remain current. Evidence invalidation must avoid synchronous global recomputation storms.
+- Cache/discovery optimization never changes the recommendation evidence hierarchy, historical snapshot Match math, exact tracked-variation identity/deduplication, the normal-condition and authenticated/shared evidence boundaries, or raw-measurement privacy.
+- The performance budget for normal uncached personalized garment detail is approximately one second and under about two seconds at p95 as scale/load testing matures; this is a performance target, never permission to weaken correctness or privacy.

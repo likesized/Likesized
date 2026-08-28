@@ -861,3 +861,32 @@ This section is the authoritative current branch-status override for Roadmap 14 
 3. Once the branch is frozen and draft checks are green, mark PR #127 ready so the complete exact-candidate **Release Verification** runs.
 4. Any commit after green full verification invalidates that candidate and requires full Release Verification again.
 5. Only after exact-final verification is green may the identified Roadmap 14 candidate be presented for the owner’s separate production authorization. No merge or production deployment occurs before that authorization.
+
+# CURRENT TAGGED FITUITION INLINE-EVIDENCE BRANCH RECONCILIATION — 2026-08-28
+This section is the authoritative current branch-status override for the post-Roadmap-14 owner-review batch. Older current-status sections above remain historical snapshots where they conflict with this section.
+
+## Production baseline and active work
+- Roadmap 14 Garment/Product Detail is **COMPLETE / DEPLOYED** through merged PR #127 at production/main merge `10b3777aacc6eca2f8145ab49855d54d01c448dc`.
+- The active owner-authorized Product Change is branch **`product/fituition-inline-evidence-body-match-qa`**, based exactly on that production merge. It is being prepared for owner review and is **not merged or production-authorized**.
+- This batch adds **no database migration** and does not change recommendation math, exact-variation identity, evidence-unit deduplication, Body Match math or the existing Outfit-level batched summary boundary.
+- Unrelated gallery/garment-speed work remains outside this batch.
+
+## Owner-locked behavior in this batch
+- The clicked Outfit tagged-garment quick view no longer hides useful evidence behind **See FITuition Details** or a second evidence modal. The compact evidence now lives directly in the first quick view; the bottom deeper-navigation control is **See Full Details →** to the full Garment Detail page.
+- The four tagged FITuition outcomes remain the existing canonical wording/logic: recommendation + Strong aggregate; recommendation + closest exact report; insufficient-confidence + closest exact report; zero exact evidence + Notify. This batch does not invent a second recommendation/confidence model.
+- A **Strong Fit Report** is aggregated exact evidence. When the Strong aggregate exists, the compact quick view shows the aggregate rows as **count + Size + Fit Result** and does **not** also show an individual closest reporter. Example owner review fixture: **7 Medium — Just Right; 4 Large — Too Big**.
+- When no Strong aggregate exists, the compact quick view falls back to the single **Best Available Matching Fit Report**. Both the recommendation-with-closest state and the insufficient-confidence-with-closest state show **Relevant Fit Reports: X** so the same evidence-count context is not arbitrarily hidden from one state.
+- Zero Relevant Fit Reports remains **“Not enough fit data to confidently recommend a size.”** plus the existing compact **Notify me** flow/copy; no size or fabricated reporter is shown.
+- Match percentages use one shared visual tier everywhere this batch reaches a visible Match percentage: **85–100 green, 70–84 blue, 50–69 amber, under 50 neutral gray**. Low Match is not treated as an error/red state. Fit Twin/Tops Twin/Bottoms Twin remains a separate relationship designation.
+
+## Owner-review QA data boundary
+- The existing preview/dev-only Explore fixtures are expanded with more fake people, garments and Outfits, and a dedicated four-state FITuition fixture set covers all four compact outcomes plus representative Match-color scores.
+- Those fixtures remain behind the existing preview/development gate. They do **not** write fake community users, Fit Reports, Products or public content into Supabase/production.
+- The dedicated owner-review route uses the same canonical tagged FITuition component as the real Outfit garment quick view rather than a visual-only duplicate implementation.
+
+## Exact next action — tagged FITuition review batch
+1. Finish focused safeguards and complete diff inspection on the branch only; keep the batch scoped to inline tagged FITuition evidence, universal Match-percent presentation and preview/dev-only QA fixtures.
+2. Open the Product Change PR with `Product truth changed: Yes` and `Owner authorization: Confirmed`, then let trusted/fast draft checks run on the exact head.
+3. Repair any failed gate on the branch without broadening scope. Once frozen and draft checks are green, run the complete exact-final Release Verification on the exact candidate.
+4. Make the preview/review surface available to the owner so all four FITuition states and Match tiers can be visually reviewed before any release decision.
+5. No merge, production deployment or production fake-data insertion occurs without separate explicit owner production authorization for the exact verified candidate.

@@ -6,6 +6,7 @@ const itemPage=fs.readFileSync("app/item/[slug]/page.tsx","utf8");
 const fituitionSections=fs.readFileSync("app/item/[slug]/FituitionSections.tsx","utf8");
 const scaleMigration=fs.readFileSync("supabase/migrations/20260828120000_versioned_match_and_fituition_cache.sql","utf8");
 const historicalMigration=fs.readFileSync("supabase/migrations/20260828123000_historical_snapshot_candidate_scaling.sql","utf8");
+const latestEvidenceMigration=fs.readFileSync("supabase/migrations/20260828124000_preserve_latest_historical_evidence_units.sql","utf8");
 
 test("garment shell streams before uncached full personalized FITuition",()=>{
   assert.match(itemPage,/Suspense fallback={<FituitionRecommendationFallback\/>}/);
@@ -21,11 +22,15 @@ test("garment shell streams before uncached full personalized FITuition",()=>{
 test("historical garment evidence shortlists immutable body snapshots rather than current-person neighborhoods",()=>{
   assert.match(historicalMigration,/fit_profile_version_candidate_buckets/);
   assert.match(historicalMigration,/discover_historical_product_snapshot_candidates/);
-  const coreStart=historicalMigration.indexOf("create or replace function private.resolve_product_evidence_core");
-  assert.ok(coreStart>=0);
-  const core=historicalMigration.slice(coreStart);
-  assert.match(core,/discover_historical_product_snapshot_candidates\(p_product_id,1400\)/);
-  assert.doesNotMatch(core,/discover_fit_match_candidates\(/);
+  assert.match(latestEvidenceMigration,/discover_historical_product_snapshot_candidates\(p_product_id,1400\)/);
+  assert.doesNotMatch(latestEvidenceMigration,/discover_fit_match_candidates\(/);
+});
+
+test("historical shortlist never makes an old report outrank the latest canonical evidence unit",()=>{
+  assert.match(latestEvidenceMigration,/candidate_users as materialized/);
+  assert.match(latestEvidenceMigration,/join public\.fit_reports fr on fr\.user_id=cu\.user_id/);
+  assert.match(latestEvidenceMigration,/partition by r\.user_id,r\.evidence_product_id,coalesce\(r\.objective_variant_key,''\)/);
+  assert.match(latestEvidenceMigration,/order by r\.observed_at desc,r\.fit_report_id desc/);
 });
 
 test("versioned Match caches remain demand-driven and invalidate displayed targets by input revision",()=>{

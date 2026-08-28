@@ -51,20 +51,20 @@ test("visible Relevant Fit Reports and strong aggregate use the same eligible ex
   assert.match(taggedFit,/recommendSize\(\[\.\.\.otherEvidence,\.\.\.ownHistory\]\)/);
 });
 
-test("FITuition detail labels distinguish the best other-person report from the viewer's own report",()=>{
+test("inline FITuition evidence distinguishes the best other-person report from the viewer's own report",()=>{
   assert.match(taggedPanel,/Best Available Matching Fit Report/);
-  assert.match(taggedPanel,/\{report\.bodyMatch\}% Body Match/);
+  assert.match(taggedPanel,/MatchPercentageBadge score=\{report\.bodyMatch\} label="Body Match"/);
   assert.match(taggedPanel,/Your Fit Report/);
   assert.doesNotMatch(taggedPanel,/Your own exact report/);
-  assert.match(taggedPanel,/renderRelevantReport\(bestRelevantReport,true\)/);
-  assert.match(taggedPanel,/additionalRelevantReports\.map\(\(report\)=>renderRelevantReport\(report\)\)/);
+  assert.match(taggedPanel,/renderRelevantReport\(bestRelevantReport\)/);
 });
 
-test("approved tagged FITuition wording is locked for insufficient and recommended states",()=>{
+test("approved tagged FITuition wording is locked for all recommendation states",()=>{
   assert.match(taggedPanel,/Not enough fit data to confidently recommend a size\./);
   assert.match(taggedPanel,/Our FITuition suggests: \{meta\.recommendation\.sizeLabel\}/);
   assert.match(taggedPanel,/Confidence: \{meta\.recommendation\.confidenceLabel\}/);
   assert.match(taggedPanel,/Relevant Fit Reports: \{meta\.matchingFitReports\}/);
+  assert.match(taggedPanel,/Strong Fit Reports/);
   assert.doesNotMatch(taggedPanel,/I’m not confident enough to recommend a size yet\./);
   assert.doesNotMatch(taggedPanel,/current exact-variation evidence does not point clearly enough to one size/);
 });
@@ -103,22 +103,21 @@ test("tagged cards stay compact while clicked garments carry tracked-variation d
 test("first tagged-garment quick view always keeps direct full Garment Detail navigation, including zero-report Notify",()=>{
   assert.ok(firstQuickViewStart>=0&&firstQuickViewEnd>firstQuickViewStart);
   assert.match(firstQuickViewMarkup,/renderWatchPrompt\(selected\)/);
-  assert.match(firstQuickViewMarkup,/href=\{selected\.href\} data-full-navigation="true">View Garment Detail →<\/Link>/);
+  assert.match(firstQuickViewMarkup,/href=\{selected\.href\} data-full-navigation="true">See Full Details →<\/Link>/);
 });
 
-test("FITuition details show only the requested evidence instead of repeating the quick-view summary",()=>{
-  assert.match(taggedPanel,/additionalRelevantReports/);
-  assert.match(taggedPanel,/View more Relevant Fit Reports →/);
-  assert.match(taggedPanel,/meta\.strongFitReports\.flatMap/);
+test("closest and strong FITuition evidence live directly in the first quick view with no intermediate evidence click",()=>{
+  assert.doesNotMatch(taggedPanel,/evidenceOpen/);
+  assert.doesNotMatch(taggedPanel,/See FITuition Details →/);
+  assert.doesNotMatch(taggedPanel,/View more Relevant Fit Reports →/);
+  assert.doesNotMatch(taggedPanel,/previewBack/);
+  assert.match(taggedPanel,/renderStrongReports\(meta\.strongFitReports\)/);
+  assert.match(taggedPanel,/groups\.flatMap/);
   assert.match(taggedPanel,/fit\.count/);
   assert.match(taggedPanel,/group\.sizeLabel/);
   assert.match(taggedPanel,/fit\.fitLabel/);
-  assert.match(taggedPanel,/View Garment Detail →/);
-  assert.doesNotMatch(taggedPanel,/FITuition DETAILS/);
-  assert.doesNotMatch(taggedPanel,/Strong Fit Report summary/);
-  assert.doesNotMatch(taggedPanel,/Best current match/);
-  assert.doesNotMatch(taggedPanel,/FITuition still can’t recommend a size yet/);
-  assert.doesNotMatch(taggedPanel,/Recommended size/);
+  assert.match(taggedPanel,/renderRelevantReport\(bestRelevantReport\)/);
+  assert.match(taggedPanel,/See Full Details →/);
 });
 
 test("full Garment Detail does not crash when supplemental FITuition enrichment is unavailable",()=>{

@@ -69,6 +69,6 @@ test("Garment Detail utility actions keep LikeLocker, Wishlist, Shop, Share and 
   assert.match(actions, /retailers\.length === 1/);
   assert.match(actions, /retailers\.length > 1/);
   assert.ok(!actions.includes("count="), "Product utility actions must not show public counts");
-  assert.match(likeActions, /\\/item\\\//);
+  assert.ok(likeActions.includes("/item\\/"), "LikeLocker server actions must allow Garment Detail as a safe return path");
   assert.match(actions, /stay_open/);
 });

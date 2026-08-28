@@ -5,6 +5,8 @@ import test from "node:test";
 const migration = readFileSync("supabase/migrations/20260828001000_canonical_product_image_scoring.sql", "utf8");
 const resolver = readFileSync("lib/canonical-product-images.ts", "utf8");
 const admin = readFileSync("app/moderation/CanonicalProductImageAdmin.tsx", "utf8");
+const adminLayout = readFileSync("app/moderation/layout.tsx", "utf8");
+const adminRoute = readFileSync("app/moderation/product-images/page.tsx", "utf8");
 
 test("13A keeps tracked variation separate from counted-report objective identity", () => {
   assert.match(migration, /add column tracked_variation_key text/);
@@ -12,6 +14,14 @@ test("13A keeps tracked variation separate from counted-report objective identit
   assert.match(migration, /e\.key not in \('intended_fit','shoe_use'\)/);
   const selectionRegion = migration.slice(migration.indexOf("create or replace function private.fit_photo_variation_key"));
   assert.ok(!selectionRegion.includes("fr.objective_variant_key"), "canonical Product imagery must not reuse counted-report objective_variant_key");
+});
+
+test("13A uses the owner-locked deterministic image score weights", () => {
+  assert.match(migration, /garment_visibility_score \* 35/);
+  assert.match(migration, /sharpness_score \* 20/);
+  assert.match(migration, /resolution_score \* 15/);
+  assert.match(migration, /framing_score \* 20/);
+  assert.match(migration, /exposure_score \* 10/);
 });
 
 test("13A automatic eligibility excludes flagged and extremely low-resolution scored Fit Photos", () => {
@@ -37,4 +47,11 @@ test("admin Product-image controls expose set, lock, unlock and eligibility revi
   assert.match(admin, /Set for Exact Variation/);
   assert.match(admin, /createSignedUrls/);
   assert.ok(!admin.includes("createSignedUrl("), "13A admin candidate signing must stay batched");
+});
+
+test("Product-image review is an explicit lazy admin destination rather than eager moderation work", () => {
+  assert.match(adminLayout, /href="\/moderation\/product-images"/);
+  assert.ok(!adminLayout.includes("CanonicalProductImageAdmin"));
+  assert.match(adminRoute, /<CanonicalProductImageAdmin \/>/);
+  assert.match(adminRoute, /is_current_user_admin/);
 });

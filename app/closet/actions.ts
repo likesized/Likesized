@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { COLOR_FAMILIES, GARMENT_TYPE_BY_KEY, isAllowedGarmentAnswer, questionsForGarmentType } from "@/lib/garment-taxonomy";
 import { createClient } from "@/lib/supabase/server";
 import type { GarmentMarketSegment, GarmentSizeKind } from "@/lib/domain";
-import type { FitPhotoQualityMetrics } from "@/lib/fit-photo-quality";
+import { analyzeFitPhotoQuality } from "@/lib/fit-photo-quality-server";
 
 const FIT_RESULTS = new Set(["too_small", "snug", "just_right", "relaxed", "too_big"]);
 const REPORTED_CONDITIONS = new Set(["new", "used", "altered"]);
@@ -102,34 +102,6 @@ function parsePurchaseContext(formData: FormData): PurchaseContext {
     purchaseMethod,
     purchaseMonth,
     purchaseYear,
-  };
-}
-function parseFitPhotoQuality(formData: FormData, name: "photo_front_quality" | "photo_back_quality"): FitPhotoQualityMetrics | null {
-  const raw = text(formData, name);
-  if (!raw) return null;
-  if (raw.length > 1000) throw new Error("Invalid Fit Photo quality payload");
-  const value = JSON.parse(raw) as unknown;
-  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid Fit Photo quality payload");
-  const record = value as Record<string, unknown>;
-  const scoreKeys = ["garment_visibility_score", "sharpness_score", "resolution_score", "framing_score", "exposure_score"] as const;
-  for (const key of scoreKeys) {
-    const score = Number(record[key]);
-    if (!Number.isInteger(score) || score < 0 || score > 100) throw new Error("Invalid Fit Photo quality score");
-  }
-  const imageWidth = Number(record.image_width);
-  const imageHeight = Number(record.image_height);
-  const perceptualHash = typeof record.perceptual_hash === "string" ? record.perceptual_hash : "";
-  if (!Number.isInteger(imageWidth) || !Number.isInteger(imageHeight) || imageWidth < 1 || imageHeight < 1 || imageWidth > 30000 || imageHeight > 30000 || !/^[01]{64}$/.test(perceptualHash) || record.quality_source !== "automatic") throw new Error("Invalid Fit Photo quality dimensions");
-  return {
-    garment_visibility_score: Number(record.garment_visibility_score),
-    sharpness_score: Number(record.sharpness_score),
-    resolution_score: Number(record.resolution_score),
-    framing_score: Number(record.framing_score),
-    exposure_score: Number(record.exposure_score),
-    image_width: imageWidth,
-    image_height: imageHeight,
-    perceptual_hash: perceptualHash,
-    quality_source: "automatic",
   };
 }
 function garmentAnswerSnapshot(entries: AttributeRow[]) {
@@ -250,14 +222,15 @@ async function savePurchaseContext(supabase: SupabaseClient, userId: string, fit
   if (error) throw error;
 }
 
-async function saveFitPhoto(supabase: SupabaseClient, userId: string, closetItemId: string, photo: File, role: FitPhotoRole, quality: FitPhotoQualityMetrics | null) {
+async function saveFitPhoto(supabase: SupabaseClient, userId: string, closetItemId: string, photo: File, role: FitPhotoRole) {
+  const quality = await analyzeFitPhotoQuality(photo);
   const extension = PHOTO_TYPES[photo.type];
   const storagePath = `${userId}/${closetItemId}/${role}-${randomUUID()}.${extension}`;
   const { data: existing, error: lookupError } = await supabase.from("fit_reference_photos").select("id,storage_path").eq("closet_item_id", closetItemId).eq("user_id", userId).eq("photo_role", role).maybeSingle();
   if (lookupError) throw lookupError;
   const { error: uploadError } = await supabase.storage.from("fit-reference-photos").upload(storagePath, await photo.arrayBuffer(), { contentType: photo.type, upsert: false });
   if (uploadError) throw uploadError;
-  const qualityRow = quality ? {
+  const qualityRow = {
     garment_visibility_score: quality.garment_visibility_score,
     sharpness_score: quality.sharpness_score,
     resolution_score: quality.resolution_score,
@@ -267,7 +240,7 @@ async function saveFitPhoto(supabase: SupabaseClient, userId: string, closetItem
     image_height: quality.image_height,
     quality_source: quality.quality_source,
     quality_scored_at: new Date().toISOString(),
-  } : {};
+  };
   let photoId = existing?.id ?? null;
   if (existing) {
     const { error: updateError } = await supabase.from("fit_reference_photos").update({ storage_path: storagePath, ...qualityRow }).eq("id", existing.id).eq("user_id", userId);
@@ -277,7 +250,7 @@ async function saveFitPhoto(supabase: SupabaseClient, userId: string, closetItem
     if (metadataError || !inserted) { await supabase.storage.from("fit-reference-photos").remove([storagePath]); throw metadataError ?? new Error("Could not save Fit Photo metadata"); }
     photoId = inserted.id as string;
   }
-  if (photoId && quality?.perceptual_hash) {
+  if (photoId) {
     const { error: fingerprintError } = await supabase.rpc("record_fit_photo_perceptual_fingerprint", {
       p_photo_id: photoId,
       p_perceptual_hash: quality.perceptual_hash,
@@ -357,13 +330,9 @@ export async function addGarment(formData: FormData) {
   const fitNotes = text(formData, "fit_notes") || null;
   let materialClaims: MaterialClaim[] = [];
   let purchaseContext: PurchaseContext;
-  let frontPhotoQuality: FitPhotoQualityMetrics | null = null;
-  let backPhotoQuality: FitPhotoQualityMetrics | null = null;
   try {
     materialClaims = parseMaterials(text(formData, "materials_json"));
     purchaseContext = parsePurchaseContext(formData);
-    frontPhotoQuality = parseFitPhotoQuality(formData, "photo_front_quality");
-    backPhotoQuality = parseFitPhotoQuality(formData, "photo_back_quality");
   } catch { fail("invalid_fields"); }
 
   if (!brandName || brandName.length > 120 || !productName || productName.length > 180 || (existingProductId && !UUID.test(existingProductId)) || !GARMENT_TYPE_BY_KEY.has(garmentType) || !SIZE_KINDS.has(sizeKind) || !structuredSizeLabel || structuredSizeLabel.length > 60 || (sizingSystem && sizingSystem.length > 20) || !COLOR_FAMILY_KEYS.has(colorFamily) || !FIT_RESULTS.has(fit) || !REPORTED_CONDITIONS.has(reportedCondition) || (fitNotes && fitNotes.length > 2000) || (productUrl && productUrl.length > 1000) || identifier.length > 120 || (styleNumber && styleNumber.length > 100) || (styleIssue && styleIssue.length > 180) || (barcodeIssue && barcodeIssue.length > 120)) fail("invalid_fields");
@@ -459,8 +428,8 @@ export async function addGarment(formData: FormData) {
         if (reportError || !report) throw reportError ?? new Error("Could not save disputed Fit Report");
 
         await savePurchaseContext(supabase, userId, report.id, purchaseContext);
-        if (photoFront) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, newClosetItemId, photoFront, "front", frontPhotoQuality));
-        if (photoBack) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, newClosetItemId, photoBack, "back", backPhotoQuality));
+        if (photoFront) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, newClosetItemId, photoFront, "front"));
+        if (photoBack) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, newClosetItemId, photoBack, "back"));
 
         let productPhotoPath: string | null = null;
         let productLabelPhotoPath: string | null = null;
@@ -572,8 +541,8 @@ export async function addGarment(formData: FormData) {
           if (error) throw error;
         }
 
-        if (photoFront) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, savedClosetItemId, photoFront, "front", frontPhotoQuality));
-        if (photoBack) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, savedClosetItemId, photoBack, "back", backPhotoQuality));
+        if (photoFront) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, savedClosetItemId, photoFront, "front"));
+        if (photoBack) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, savedClosetItemId, photoBack, "back"));
 
         if (productPhoto) {
           const extension = PHOTO_TYPES[productPhoto.type];
@@ -615,8 +584,8 @@ export async function addGarment(formData: FormData) {
       if (reportError || !report) throw reportError ?? new Error("Could not save pending fit report");
 
       await savePurchaseContext(supabase, userId, report.id, purchaseContext);
-      if (photoFront) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, newClosetItemId, photoFront, "front", frontPhotoQuality));
-      if (photoBack) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, newClosetItemId, photoBack, "back", backPhotoQuality));
+      if (photoFront) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, newClosetItemId, photoFront, "front"));
+      if (photoBack) fitPhotoPaths.push(await saveFitPhoto(supabase, userId, newClosetItemId, photoBack, "back"));
 
       let productPhotoPath: string | null = null;
       let productLabelPhotoPath: string | null = null;

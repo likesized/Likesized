@@ -66,7 +66,8 @@ test("People and Style Feed share one set-wise match scan instead of recalculati
 test("Outfit tagged-fit summary counts exact evidence directly instead of invoking the full FITuition hierarchy",()=>{
   assert.match(scalingMigration,/create or replace function public\.get_outfit_tagged_fit_counts/);
   assert.match(scalingMigration,/community_candidates/);
-  assert.match(scalingMigration,/calculate_snapshot_match_for_product/);
+  assert.match(scalingMigration,/calculate_snapshot_matches_for_product\(/);
+  assert.doesNotMatch(scalingMigration,/calculate_snapshot_match_for_product\(/);
   const taggedStart=scalingMigration.indexOf("create or replace function public.get_outfit_tagged_fit_counts");
   assert.ok(taggedStart>=0);
   const taggedBody=scalingMigration.slice(taggedStart);

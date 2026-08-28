@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { EntityQuickView } from "@/components/EntityQuickView";
+import { MatchPercentageBadge } from "@/components/MatchPercentageBadge";
 import { PersonQuickView } from "@/components/PersonQuickView";
 
 type MatchCardProps = {
@@ -51,7 +52,7 @@ export function MatchCard({
             <strong>{name}</strong>
             <span className="muted">{handle}</span>
           </div>
-          {typeof match === "number" ? <div className="matchBadge">{match}% match</div> : null}
+          {typeof match === "number" ? <MatchPercentageBadge score={match} label="match" /> : null}
         </div>
         {secondary ? <div className="tiny">{secondary}</div> : null}
         {item ? (

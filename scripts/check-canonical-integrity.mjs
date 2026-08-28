@@ -218,7 +218,16 @@ for (const full of allFiles) {
   emailPattern.lastIndex = 0;
   for (const match of content.matchAll(emailPattern)) {
     const domain = match[1].toLowerCase();
-    if (safeEmailDomains.has(domain) || domain.endsWith('.example.com') || domain.endsWith('.example.org') || domain.endsWith('.example.net')) continue;
+    if (
+      safeEmailDomains.has(domain)
+      || domain.endsWith('.example.com')
+      || domain.endsWith('.example.org')
+      || domain.endsWith('.example.net')
+      || domain.endsWith('.test')
+      || domain.endsWith('.invalid')
+      || domain.endsWith('.localhost')
+      || domain.endsWith('.example')
+    ) continue;
     sensitiveFailure(rel, content, match.index ?? 0, 'a hard-coded non-placeholder email address');
   }
 

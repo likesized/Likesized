@@ -6,7 +6,7 @@ const tabs=readFileSync(new URL("../app/outfits/[id]/OutfitTabs.tsx",import.meta
 const taggedFit=readFileSync(new URL("../app/api/outfits/[id]/tagged-fit/route.ts",import.meta.url),"utf8");
 const taggedPanel=readFileSync(new URL("../app/outfits/[id]/TaggedItemsPanel.tsx",import.meta.url),"utf8");
 const fitCard=readFileSync(new URL("../components/TaggedFituitionCard.tsx",import.meta.url),"utf8");
-const itemPage=readFileSync(new URL("../app/item/[slug]/page.tsx",import.meta.url),"utf8");
+const fituitionSections=readFileSync(new URL("../app/item/[slug]/FituitionSections.tsx",import.meta.url),"utf8");
 const css=readFileSync(new URL("../app/outfits/[id]/outfitDetail.module.css",import.meta.url),"utf8");
 const pickerCss=readFileSync(new URL("../app/outfits/new/outfitPicker.module.css",import.meta.url),"utf8");
 
@@ -125,11 +125,11 @@ test("closest and strong FITuition evidence live directly in the first quick vie
 });
 
 test("full Garment Detail does not crash when supplemental FITuition enrichment is unavailable",()=>{
-  assert.doesNotMatch(itemPage,/throw new Error\("Could not assemble FITuition evidence\."\)/);
-  assert.match(itemPage,/profilesResult\.error\?\[\]:\(profilesResult\.data\?\?\[\]\)/);
-  assert.match(itemPage,/productsResult\.error\?\[\]:\(productsResult\.data\?\?\[\]\)/);
-  assert.match(itemPage,/snapshotResult\.error\?\[\]:snapshotResult\.data/);
-  assert.match(itemPage,/attributeResult\.error\?\[\]:attributeResult\.data/);
+  assert.doesNotMatch(fituitionSections,/throw new Error\("Could not assemble FITuition evidence\."\)/);
+  assert.match(fituitionSections,/profilesResult\.error\?\[\]:\(profilesResult\.data\?\?\[\]\)/);
+  assert.match(fituitionSections,/productsResult\.error\?\[\]:\(productsResult\.data\?\?\[\]\)/);
+  assert.match(fituitionSections,/snapshotResult\.error\?\[\]:snapshotResult\.data/);
+  assert.match(fituitionSections,/attributeResult\.error\?\[\]:attributeResult\.data/);
 });
 
 test("unsaved Outfit navigation confirmation is fixed in the current viewport",()=>{

@@ -37,7 +37,7 @@
 .fitBreakdown{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px}
 .relatedDifference{margin-top:7px;color:var(--accent);font-size:12px;font-weight:800}
 .moreEvidence{margin-top:16px;padding:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.moreEvidence>summary{padding:15px 0;color:var(--accent);font-weight:850}
+.moreButton{appearance:none;width:100%;padding:15px 0;border:0;background:transparent;color:var(--accent);text-align:left;font-weight:850;cursor:pointer}
 .moreList{display:grid;gap:8px;padding-bottom:16px}
 .moreRow{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(80px,.7fr));gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);font-size:12px}
 .moreRow span{color:var(--muted);display:block}

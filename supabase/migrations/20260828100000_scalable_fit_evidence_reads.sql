@@ -205,6 +205,7 @@ returns table(
   coverage_percent integer
 )
 language sql
+security definer
 set search_path=''
 as $$
   select *
@@ -221,15 +222,225 @@ grant execute on function public.get_fit_matches_batch(public.fit_match_category
 comment on function public.get_fit_matches_batch(public.fit_match_category[],integer,public.fit_community) is
   'Bounded set-wise current Fit Match resolver. Requested Overall/Tops/Bottoms categories share one candidate scan and preserve the canonical match scoring rules.';
 
--- Preserve the canonical evidence hierarchy, but eliminate work on superseded reports.
--- The previous implementation calculated snapshot, proportion and directional scores for
--- every historical candidate before discarding all but the newest report per tracked
--- variation. Deduplication is now performed before those expensive calculations, and
--- directional support is calculated only for rows that survive the final bounded result.
-create or replace function public.get_product_evidence_candidates(
+-- Score many historical Fit Profile snapshots against one target Product while resolving
+-- Product-specific weights and the viewer measurement rows once instead of once per report.
+create or replace function private.calculate_snapshot_matches_for_product(
+  p_fit_profile_version_ids uuid[],
+  p_product_id uuid
+)
+returns table(
+  fit_profile_version_id uuid,
+  match_score integer,
+  coverage_percent integer
+)
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare
+  v_user_id uuid:=auth.uid();
+begin
+  if v_user_id is null then
+    raise exception 'Authentication required' using errcode='28000';
+  end if;
+
+  return query
+  with requested as (
+    select distinct requested_id as fit_profile_version_id
+    from unnest(coalesce(p_fit_profile_version_ids,'{}'::uuid[])) requested_version(requested_id)
+    where requested_id is not null
+    limit 500
+  ),
+  snapshots as (
+    select fpv.id as fit_profile_version_id,fpv.created_at
+    from requested r
+    join public.fit_profile_versions fpv on fpv.id=r.fit_profile_version_id
+  ),
+  weights as materialized (
+    select * from private.product_match_measurements(p_product_id)
+  ),
+  meta as (
+    select
+      sum(w.coverage_weight) as total_coverage,
+      count(*)::integer as measurement_count,
+      max(w.minimum_shared_measurements) as minimum_shared_measurements,
+      max(w.minimum_coverage) as minimum_coverage
+    from weights w
+  ),
+  viewer_measurements as materialized (
+    select
+      w.measurement_type_key,
+      w.weight,
+      w.coverage_weight,
+      w.tolerance,
+      me.value_canonical,
+      me.source,
+      me.method,
+      me.confirmed_at
+    from weights w
+    left join public.body_measurements me
+      on me.user_id=v_user_id and me.measurement_type_key=w.measurement_type_key
+  ),
+  aggregated as (
+    select
+      snapshot.fit_profile_version_id,
+      sum(case
+        when viewer.value_canonical is not null and hist.value_canonical is not null
+          then private.fit_measurement_similarity(viewer.value_canonical,hist.value_canonical,viewer.tolerance)
+            *viewer.weight
+            *sqrt(private.fit_measurement_reliability(viewer.source,viewer.method)*private.fit_measurement_reliability(hist.source,hist.method))
+        else 0 end) as weighted_similarity,
+      sum(case
+        when viewer.value_canonical is not null and hist.value_canonical is not null
+          then viewer.weight
+            *sqrt(private.fit_measurement_reliability(viewer.source,viewer.method)*private.fit_measurement_reliability(hist.source,hist.method))
+        else 0 end) as similarity_weight,
+      sum(case
+        when viewer.value_canonical is not null and hist.value_canonical is not null
+          then viewer.coverage_weight
+        else 0 end) as shared_coverage,
+      sum(case
+        when viewer.value_canonical is not null and hist.value_canonical is not null
+          then viewer.coverage_weight
+            *sqrt(
+              private.fit_measurement_confidence_reliability(viewer.source,viewer.method,viewer.measurement_type_key,viewer.confirmed_at,now())
+              *private.fit_measurement_confidence_reliability(hist.source,hist.method,viewer.measurement_type_key,hist.confirmed_at,snapshot.created_at)
+            )
+        else 0 end) as reliable_coverage,
+      count(*) filter(where viewer.value_canonical is not null and hist.value_canonical is not null)::integer as shared_count,
+      max(meta.total_coverage) as total_coverage,
+      max(meta.measurement_count) as measurement_count,
+      max(meta.minimum_shared_measurements) as minimum_shared_measurements,
+      max(meta.minimum_coverage) as minimum_coverage
+    from snapshots snapshot
+    cross join viewer_measurements viewer
+    cross join meta
+    left join public.fit_profile_version_measurements hist
+      on hist.fit_profile_version_id=snapshot.fit_profile_version_id
+     and hist.measurement_type_key=viewer.measurement_type_key
+    group by snapshot.fit_profile_version_id
+  ),
+  base as (
+    select
+      a.fit_profile_version_id,
+      case
+        when a.similarity_weight>0
+         and a.shared_count>=a.minimum_shared_measurements
+         and a.shared_coverage/nullif(a.total_coverage,0)>=a.minimum_coverage
+          then private.confidence_adjusted_match(
+            a.weighted_similarity,
+            a.similarity_weight,
+            a.shared_coverage,
+            a.reliable_coverage,
+            a.total_coverage,
+            a.shared_count,
+            a.measurement_count
+          )
+        else 0
+      end as base_match,
+      case
+        when a.total_coverage>0
+          then round(100*least(1::numeric,greatest(0::numeric,a.shared_coverage/nullif(a.total_coverage,0))))::integer
+        else 0
+      end as resolved_coverage_percent
+    from aggregated a
+  )
+  select
+    b.fit_profile_version_id,
+    private.refine_snapshot_product_match_with_proportions(
+      b.fit_profile_version_id,
+      p_product_id,
+      b.base_match
+    ) as resolved_match_score,
+    b.resolved_coverage_percent
+  from base b;
+end;
+$$;
+
+revoke all on function private.calculate_snapshot_matches_for_product(uuid[],uuid) from public,anon,authenticated;
+
+-- Resolve the directional pressure for many historical snapshots with the Product matching
+-- weights materialized once. The final fit-result interpretation stays canonical.
+create or replace function private.calculate_directional_pressures_for_product(
+  p_fit_profile_version_ids uuid[],
+  p_product_id uuid
+)
+returns table(
+  fit_profile_version_id uuid,
+  pressure numeric
+)
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare
+  v_user_id uuid:=auth.uid();
+begin
+  if v_user_id is null then
+    raise exception 'Authentication required' using errcode='28000';
+  end if;
+
+  return query
+  with requested as (
+    select distinct requested_id as fit_profile_version_id
+    from unnest(coalesce(p_fit_profile_version_ids,'{}'::uuid[])) requested_version(requested_id)
+    where requested_id is not null
+    limit 500
+  ),
+  weights as materialized (
+    select *
+    from private.product_match_measurements(p_product_id)
+    where measurement_type_key<>'weight' and weight>0
+  ),
+  viewer_measurements as materialized (
+    select
+      w.measurement_type_key,
+      w.weight,
+      w.tolerance,
+      me.value_canonical,
+      me.source,
+      me.method
+    from weights w
+    join public.body_measurements me
+      on me.user_id=v_user_id and me.measurement_type_key=w.measurement_type_key
+  ),
+  aggregated as (
+    select
+      r.fit_profile_version_id,
+      sum(
+        greatest(-1::numeric,least(1::numeric,(viewer.value_canonical-hist.value_canonical)/nullif(viewer.tolerance,0)))
+        *viewer.weight
+        *sqrt(private.fit_measurement_reliability(viewer.source,viewer.method)*private.fit_measurement_reliability(hist.source,hist.method))
+      ) as signed_weight,
+      sum(
+        viewer.weight
+        *sqrt(private.fit_measurement_reliability(viewer.source,viewer.method)*private.fit_measurement_reliability(hist.source,hist.method))
+      ) as total_weight
+    from requested r
+    cross join viewer_measurements viewer
+    join public.fit_profile_version_measurements hist
+      on hist.fit_profile_version_id=r.fit_profile_version_id
+     and hist.measurement_type_key=viewer.measurement_type_key
+    where viewer.value_canonical is not null and hist.value_canonical is not null
+    group by r.fit_profile_version_id
+  )
+  select
+    r.fit_profile_version_id,
+    coalesce(a.signed_weight/nullif(a.total_weight,0),0) as resolved_pressure
+  from requested r
+  left join aggregated a using (fit_profile_version_id);
+end;
+$$;
+
+revoke all on function private.calculate_directional_pressures_for_product(uuid[],uuid) from public,anon,authenticated;
+
+-- One canonical evidence core. It preserves the existing hierarchy and ordering while
+-- discarding superseded reports before snapshot scoring. Summary readers can reuse this
+-- core without paying for directional support that they never display.
+create or replace function private.resolve_product_evidence_core(
   p_product_id uuid,
-  p_variant_id uuid default null::uuid,
-  p_result_limit integer default 200
+  p_variant_id uuid,
+  p_result_limit integer
 )
 returns table(
   fit_report_id uuid,
@@ -246,8 +457,7 @@ returns table(
   historical_coverage_percent integer,
   evidence_level public.evidence_level,
   evidence_rank integer,
-  attribute_overlap integer,
-  directional_fit_support numeric
+  attribute_overlap integer
 )
 language sql
 security definer
@@ -307,7 +517,7 @@ raw_candidates as (
       or ep.category=t.category
     )
 ),
-latest_candidates as (
+latest_candidates as materialized (
   select *
   from (
     select
@@ -320,7 +530,7 @@ latest_candidates as (
   ) ranked
   where ranked.evidence_unit_rank=1
 ),
-with_overlap as (
+with_overlap as materialized (
   select
     c.*,
     coalesce(overlap.attribute_overlap,0) as attribute_overlap
@@ -337,6 +547,17 @@ with_overlap as (
       and ta.confidence>=.75
       and ea.confidence>=.75
   ) overlap on true
+),
+snapshot_scores as materialized (
+  select *
+  from private.calculate_snapshot_matches_for_product(
+    array(
+      select distinct c.fit_profile_version_id
+      from with_overlap c
+      where c.fit_profile_version_id is not null
+    ),
+    p_product_id
+  )
 ),
 scored as (
   select
@@ -360,9 +581,9 @@ scored as (
       else 6
     end as resolved_evidence_rank
   from with_overlap c
-  cross join lateral private.calculate_snapshot_match_for_product(c.fit_profile_version_id,p_product_id) hm
+  join snapshot_scores hm using (fit_profile_version_id)
 ),
-limited as (
+limited as materialized (
   select s.*
   from scored s
   where s.snapshot_match_score>0
@@ -389,22 +610,85 @@ select
   l.snapshot_coverage_percent,
   l.resolved_evidence_level,
   l.resolved_evidence_rank,
-  l.attribute_overlap,
-  directional.resolved_directional_fit_support
+  l.attribute_overlap
 from limited l
-cross join lateral (
-  select private.calculate_directional_fit_support_for_product(
-    l.fit_profile_version_id,
-    p_product_id,
-    l.fit
-  ) as resolved_directional_fit_support
-) directional
 order by
   l.resolved_evidence_rank,
   l.snapshot_match_score desc,
   l.snapshot_coverage_percent desc,
   l.attribute_overlap desc,
   l.fit_report_id;
+$$;
+
+revoke all on function private.resolve_product_evidence_core(uuid,uuid,integer) from public,anon,authenticated;
+
+create or replace function public.get_product_evidence_candidates(
+  p_product_id uuid,
+  p_variant_id uuid default null::uuid,
+  p_result_limit integer default 200
+)
+returns table(
+  fit_report_id uuid,
+  user_id uuid,
+  closet_item_id uuid,
+  evidence_product_id uuid,
+  evidence_variant_id uuid,
+  fit_profile_version_id uuid,
+  original_size_label text,
+  normalized_size_id uuid,
+  fit public.fit_rating,
+  would_buy_again boolean,
+  historical_match_score integer,
+  historical_coverage_percent integer,
+  evidence_level public.evidence_level,
+  evidence_rank integer,
+  attribute_overlap integer,
+  directional_fit_support numeric
+)
+language sql
+security definer
+set search_path=''
+as $$
+with core as materialized (
+  select *
+  from private.resolve_product_evidence_core(p_product_id,p_variant_id,p_result_limit)
+),
+pressures as materialized (
+  select *
+  from private.calculate_directional_pressures_for_product(
+    array(
+      select distinct c.fit_profile_version_id
+      from core c
+      where c.fit_profile_version_id is not null
+    ),
+    p_product_id
+  )
+)
+select
+  c.fit_report_id,
+  c.user_id,
+  c.closet_item_id,
+  c.evidence_product_id,
+  c.evidence_variant_id,
+  c.fit_profile_version_id,
+  c.original_size_label,
+  c.normalized_size_id,
+  c.fit,
+  c.would_buy_again,
+  c.historical_match_score,
+  c.historical_coverage_percent,
+  c.evidence_level,
+  c.evidence_rank,
+  c.attribute_overlap,
+  private.directional_fit_support_from_pressure(c.fit,coalesce(p.pressure,0))
+from core c
+left join pressures p using (fit_profile_version_id)
+order by
+  c.evidence_rank,
+  c.historical_match_score desc,
+  c.historical_coverage_percent desc,
+  c.attribute_overlap desc,
+  c.fit_report_id;
 $$;
 
 create or replace function public.get_product_evidence_summaries(
@@ -441,7 +725,7 @@ candidates as (
     c.historical_coverage_percent,
     c.evidence_rank
   from requested r
-  left join lateral public.get_product_evidence_candidates(
+  left join lateral private.resolve_product_evidence_core(
     r.product_id,
     null::uuid,
     least(greatest(coalesce(p_result_limit,40),1),100)
@@ -463,7 +747,7 @@ select
   max(r.fit_report_id) filter(where r.evidence_position=1) as best_fit_report_id,
   max(r.user_id) filter(where r.evidence_position=1) as best_user_id,
   max(r.original_size_label) filter(where r.evidence_position=1) as best_original_size_label,
-  max(r.fit) filter(where r.evidence_position=1) as best_fit
+  (max(r.fit::text) filter(where r.evidence_position=1))::public.fit_rating as best_fit
 from ranked r
 group by r.product_id
 order by r.product_id;
@@ -473,7 +757,7 @@ revoke all on function public.get_product_evidence_summaries(uuid[],integer) fro
 grant execute on function public.get_product_evidence_summaries(uuid[],integer) to authenticated;
 
 comment on function public.get_product_evidence_summaries(uuid[],integer) is
-  'Bounded batch projection used by Explore cards. It reuses canonical Product evidence and prevents one HTTP/RPC fan-out per Product.';
+  'Bounded batch projection used by Explore cards. It reuses the canonical Product evidence core without calculating directional support that cards do not display.';
 
 -- Tagged Outfit cards need only the exact Product + tracked-variation count. Do not invoke
 -- the full six-level FITuition hierarchy merely to calculate this lightweight badge.
@@ -486,13 +770,19 @@ returns table(
   matching_fit_reports integer
 )
 language sql
-security invoker
+security definer
 set search_path=''
 as $$
 with tags as (
   select distinct opi.closet_item_id
   from public.outfit_post_items opi
   where opi.post_id=p_post_id
+    and exists(
+      select 1
+      from public.outfit_posts op
+      where op.id=p_post_id
+        and (op.status='published' or op.user_id=auth.uid())
+    )
 ),
 targets as (
   select
@@ -508,9 +798,10 @@ targets as (
     limit 1
   ) target_report on true
 ),
-community_candidates as (
+community_candidates as materialized (
   select
     target.closet_item_id,
+    target.product_id,
     fr.id as fit_report_id,
     fr.user_id,
     fr.fit_profile_version_id,
@@ -529,19 +820,40 @@ community_candidates as (
   where target.product_id is not null
     and fr.user_id<>auth.uid()
 ),
+community_latest as materialized (
+  select *
+  from community_candidates c
+  where c.evidence_unit_rank=1
+),
+community_scored as (
+  select
+    target.closet_item_id,
+    score.fit_profile_version_id,
+    score.match_score
+  from (
+    select distinct closet_item_id,product_id
+    from community_latest
+  ) target
+  cross join lateral private.calculate_snapshot_matches_for_product(
+    array(
+      select distinct c.fit_profile_version_id
+      from community_latest c
+      where c.closet_item_id=target.closet_item_id
+        and c.fit_profile_version_id is not null
+    ),
+    target.product_id
+  ) score
+),
 community_counts as (
   select
-    c.closet_item_id,
+    latest.closet_item_id,
     count(*)::integer as report_count
-  from community_candidates c
-  join targets target using (closet_item_id)
-  cross join lateral private.calculate_snapshot_match_for_product(
-    c.fit_profile_version_id,
-    target.product_id
-  ) hm
-  where c.evidence_unit_rank=1
-    and hm.match_score>=least(greatest(p_match_threshold,0),100)
-  group by c.closet_item_id
+  from community_latest latest
+  join community_scored score
+    on score.closet_item_id=latest.closet_item_id
+   and score.fit_profile_version_id=latest.fit_profile_version_id
+  where score.match_score>=least(greatest(p_match_threshold,0),100)
+  group by latest.closet_item_id
 ),
 viewer_recent as (
   select

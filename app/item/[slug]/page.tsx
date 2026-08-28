@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { MatchPercentageBadge } from "@/components/MatchPercentageBadge";
 import { resolveCanonicalProductImages, canonicalProductImageKey } from "@/lib/canonical-product-images";
 import { EVIDENCE_LABELS, type EvidenceLevel } from "@/lib/domain";
 import { STRONG_FIT_REPORT_MATCH_THRESHOLD, FIT_RESULT_LABELS } from "@/lib/quick-fit-evidence";
@@ -196,7 +197,7 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
       {bestExact?<>
         <div className={styles.evidenceCard}>
           <div><span className="eyebrow">BEST EXACT VARIATION</span><strong>{selectedVariation?.label??"Exact variation"}</strong><span>{profileById.get(bestExact.user_id)?.display_name||`@${profileById.get(bestExact.user_id)?.username??"member"}`}</span></div>
-          <div><strong className={styles.match}>{bestExact.historical_match_score}%</strong><span>Body Match</span></div>
+          <div><MatchPercentageBadge score={bestExact.historical_match_score} compact/><span>Body Match</span></div>
           <div><strong>{sizeFor(bestExact)}</strong><span>Wore · {FIT_RESULT_LABELS[bestExact.fit]??bestExact.fit}</span></div>
         </div>
         {bestExact.historical_match_score<STRONG_FIT_REPORT_MATCH_THRESHOLD?<p className={styles.explanation}>This is the closest Fit Report we currently have for this exact variation. A lower Body Match does not mean this item will not fit you — it means we do not yet have a report from someone closer to your measurements.</p>:null}
@@ -206,7 +207,7 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
 
       {related?<div className={`${styles.evidenceCard} ${styles.section}`}>
         <div><span className="eyebrow">CLOSEST RELATED VARIATION</span><strong>{relatedDetail||"Related tracked variation"}</strong><span>{profileById.get(related.user_id)?.display_name||`@${profileById.get(related.user_id)?.username??"member"}`}</span>{relatedDifferences.length?<div className={styles.relatedDifference}>{relatedDifferences.join(" · ")}</div>:null}</div>
-        <div><strong className={styles.match}>{related.historical_match_score}%</strong><span>Body Match</span></div>
+        <div><MatchPercentageBadge score={related.historical_match_score} compact/><span>Body Match</span></div>
         <div><strong>{sizeFor(related)}</strong><span>Wore · {FIT_RESULT_LABELS[related.fit]??related.fit}</span></div>
       </div>:null}
       <ExpandedEvidenceClient slug={slug} variationKey={selectedVariationKey}/>

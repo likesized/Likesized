@@ -744,10 +744,10 @@ select
   r.product_id,
   coalesce(max(r.historical_match_score),0)::integer as best_match_score,
   count(r.fit_report_id)::integer as report_count,
-  max(r.fit_report_id) filter(where r.evidence_position=1) as best_fit_report_id,
-  max(r.user_id) filter(where r.evidence_position=1) as best_user_id,
-  max(r.original_size_label) filter(where r.evidence_position=1) as best_original_size_label,
-  (max(r.fit::text) filter(where r.evidence_position=1))::public.fit_rating as best_fit
+  (array_agg(r.fit_report_id) filter(where r.evidence_position=1))[1] as best_fit_report_id,
+  (array_agg(r.user_id) filter(where r.evidence_position=1))[1] as best_user_id,
+  (array_agg(r.original_size_label) filter(where r.evidence_position=1))[1] as best_original_size_label,
+  (array_agg(r.fit) filter(where r.evidence_position=1))[1] as best_fit
 from ranked r
 group by r.product_id
 order by r.product_id;

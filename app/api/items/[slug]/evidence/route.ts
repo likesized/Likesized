@@ -22,7 +22,7 @@ export async function GET(request:Request,{params}:{params:Promise<{slug:string}
   const {data:productData,error:productError}=await supabase.from("products").select("id,name,garment_type_key").eq("slug",slug).maybeSingle();
   if(productError||!productData)return Response.json({error:"Garment not found."},{status:404});
   const product=productData as {id:string;name:string;garment_type_key:string|null};
-  const {data:candidateData,error:candidateError}=await supabase.rpc("get_product_evidence_candidates",{p_product_id:product.id,p_variant_id:null,p_result_limit:200});
+  const {data:candidateData,error:candidateError}=await supabase.rpc("get_cached_product_evidence_candidates",{p_product_id:product.id,p_variant_id:null,p_result_limit:200});
   if(candidateError)return Response.json({error:"Evidence could not load."},{status:500});
   const raw=((candidateData??[]) as Candidate[]).filter((row)=>row.user_id!==viewerId);
   const reportIds=[...new Set(raw.map((row)=>row.fit_report_id))];

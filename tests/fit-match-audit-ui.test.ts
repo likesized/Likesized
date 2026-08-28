@@ -32,9 +32,10 @@ test("body Match UI never treats measurement coverage as confidence",()=>{
   const card=readFileSync(new URL("../components/MatchCard.tsx",import.meta.url),"utf8");
   assert.match(people,/Match % shows how closely/);
   assert.match(people,/not a probability that a garment will fit/);
-  assert.match(people,/p_match_category: "tops"/);
-  assert.match(people,/p_match_category: "bottoms"/);
+  assert.match(people,/get_fit_matches_batch/);
+  assert.match(people,/p_match_categories: \["overall", "tops", "bottoms"\]/);
   assert.match(people,/Following · \$\{twinLabel\}/);
+  assert.doesNotMatch(people,/rpc\("get_fit_matches"/);
   assert.doesNotMatch(people,/matchConfidenceLabel|confidenceLabel=/);
   assert.doesNotMatch(card,/confidenceLabel/);
 });

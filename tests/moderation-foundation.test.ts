@@ -17,6 +17,7 @@ const closetEdit=readFileSync("app/closet/[id]/edit/page.tsx","utf8");
 const closetEditActions=readFileSync("app/closet/edit-actions.ts","utf8");
 const report=readFileSync("components/ReportContentForm.tsx","utf8");
 const itemPage=readFileSync("app/item/[slug]/page.tsx","utf8");
+const itemActionClient=readFileSync("app/item/[slug]/ItemActionsClient.tsx","utf8");
 const itemActions=readFileSync("app/item/[slug]/actions.ts","utf8");
 const catalogSearch=readFileSync("app/api/catalog/search/route.ts","utf8");
 const catalogFields=readFileSync("app/closet/add/CatalogGarmentFields.tsx","utf8");
@@ -128,11 +129,12 @@ test("Product and label photos stay distinct while front/back Fit photos coexist
 });
 
 test("every Product has one multi-purpose report action and trust-aware review priority",()=>{
- assert.match(itemPage,/Report this item/);
- assert.match(itemPage,/Inappropriate content/);
- assert.match(itemPage,/Image doesn’t match this product/);
- assert.match(itemPage,/Incorrect product information/);
- assert.match(itemPage,/action=\{reportProductItem\}/);
+ assert.match(itemPage,/ItemActionsClient/);
+ assert.match(itemActionClient,/action="report"/);
+ assert.match(itemActionClient,/Inappropriate content/);
+ assert.match(itemActionClient,/Image doesn’t match this product/);
+ assert.match(itemActionClient,/Incorrect product information/);
+ assert.match(itemActionClient,/reportProductItem\(data\)/);
  assert.match(itemActions,/report_product_item/);
  assert.match(exceptionReviewMigration,/member_report/);
  assert.match(exceptionReviewMigration,/priority_score/);

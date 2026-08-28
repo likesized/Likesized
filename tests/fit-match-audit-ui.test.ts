@@ -29,6 +29,7 @@ test("Fit Twin designation requires regional qualification instead of overall av
 
 test("body Match UI never treats measurement coverage as confidence",()=>{
   const people=readFileSync(new URL("../app/people/page.tsx",import.meta.url),"utf8");
+  const memberProfile=readFileSync(new URL("../app/people/[username]/page.tsx",import.meta.url),"utf8");
   const card=readFileSync(new URL("../components/MatchCard.tsx",import.meta.url),"utf8");
   assert.match(people,/Match % shows how closely/);
   assert.match(people,/not a probability that a garment will fit/);
@@ -36,6 +37,8 @@ test("body Match UI never treats measurement coverage as confidence",()=>{
   assert.match(people,/p_match_categories: \["overall", "tops", "bottoms"\]/);
   assert.match(people,/Following · \$\{twinLabel\}/);
   assert.doesNotMatch(people,/rpc\("get_fit_matches"/);
+  assert.match(memberProfile,/get_person_fit_match_cached/);
+  assert.doesNotMatch(memberProfile,/rpc\("get_fit_matches"/);
   assert.doesNotMatch(people,/matchConfidenceLabel|confidenceLabel=/);
   assert.doesNotMatch(card,/confidenceLabel/);
 });

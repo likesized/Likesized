@@ -201,7 +201,8 @@ Barcode confidence is separate from Product confidence.
 Roadmap 13A is implemented on draft Product Change PR #126 but is **not production schema** until the exact candidate is verified, owner-authorized, merged and its migrations are applied/verified. The branch uses ordered migrations rather than ad-hoc hosted schema changes:
 - `20260828001000_canonical_product_image_scoring.sql` — quality fields, tracked-variation key, persisted winners/config, automatic recompute, safe batch resolver and audited admin controls;
 - `20260828001100_canonical_product_image_privacy_boundary.sql` — admin-only direct canonical-selection metadata and generic member-visible ineligibility reason boundary;
-- `20260828001200_fit_photo_perceptual_duplicates.sql` — private 64-bit dHash fingerprints and product-scoped perceptual duplicate grouping.
+- `20260828001200_fit_photo_perceptual_duplicates.sql` — private 64-bit dHash fingerprints and product-scoped perceptual duplicate grouping;
+- `20260828001300_canonical_product_image_legacy_score_transition.sql` — synthetic legacy-neutral bootstrap transition so first measured evidence is not blocked by an artificial migration score.
 
 The branch database contract is:
 - `fit_reference_photos` carries normalized technical component scores, dimensions, `duplicate_of`, canonical eligibility and generated `photo_quality_score`; the Product-image selector never rewrites the original Fit Photo/storage object attached to the member's report;
@@ -211,7 +212,7 @@ The branch database contract is:
 - perceptual duplicate matching starts at Hamming distance **≤5** and is configurable in `canonical_product_image_config`; among near duplicates the stronger deterministic candidate remains the representative and weaker copies receive `duplicate_of`, preventing duplicate photos from competing independently;
 - `fit_reports.tracked_variation_key` is a separate current tracked-variation identity derived from current controlled variation-defining garment answers. It deliberately does not reuse counted-report `objective_variant_key`, and Size/Color never enter it;
 - `canonical_product_images` is the persisted winning pointer for Product-level and exact tracked-variation image selection. Reads do not re-rank all candidates on every request;
-- automatic Fit Photo-to-Fit Photo replacement uses the configurable five-point margin. Admin locks always win until explicitly unlocked;
+- automatic Fit Photo-to-Fit Photo replacement uses the configurable five-point margin **between measured candidates**. A pre-13A `legacy_neutral` incumbent is only a synthetic bootstrap winner and yields to the first eligible measured winner without requiring that measured photo to clear an artificial five-point gap; once a measured incumbent exists, the normal +5 anti-churn rule resumes. Admin locks always win until explicitly unlocked;
 - automatic eligibility excludes deleted/duplicate/ineligible photos, currently open moderation reports and newly scored extremely low-resolution photos; dismissed reports may return to eligibility through the same recompute path;
 - `public.get_canonical_product_images(uuid[],text[])` is the single bounded authenticated resolver, capped at 200 requested Products. It returns only the chosen source/path metadata needed by the application; private Fit Photo URLs are signed in one batched storage operation rather than one request per Product;
 - ordinary members do not directly read `canonical_product_images`, lock reasons or private fingerprints. Admin direct selection/audit reads remain behind `private.is_admin()`;
@@ -356,7 +357,7 @@ The production schema/function is verified present. Owner live QA confirmed tagg
 - `profile_locations` is production-applied at hosted migration **`20260825192738 private_profile_location_metadata`**; current application setup/settings require both City and State while the table retains pair-null compatibility for historical/compatibility rows.
 - Production also includes `20260826001512 username_change_cooldown`, `20260826001531 exact_variation_evidence_watches`, `20260826020651 atomic_outfit_cover_switch`, `20260826020710 preserve_tracked_variation_recommendation_evidence`, **`20260826193527 outfit_tag_consistency`**, and **`20260827214500 batch_outfit_tagged_fit_counts`**.
 - The local canonical Outfit tag-consistency migration is **`20260826190000_outfit_tag_consistency.sql`**; Supabase assigned hosted version `20260826193527`. Do not rename the local immutable file to chase the hosted timestamp.
-- Roadmap 13A canonical Product-image scoring is active only on draft PR #126 until exact-final verification/release. Its three new ordered migrations are not production truth yet.
+- Roadmap 13A canonical Product-image scoring is active only on draft PR #126 until exact-final verification/release. Its four new ordered migrations are not production truth yet.
 - The current catalog does not yet carry a separate authoritative exact-tracked-variation official/imported image source. Roadmap 13A therefore resolves an exact Fit Photo when available and otherwise falls back to the Product-level canonical image; it does not invent parallel variation imagery.
 - The legacy physical `closet_items.visibility` column remains intentionally in immutable replay history and locked to compatibility `shared`; broader Closet lifecycle/mutation rules remain future audit work.
 - Historical counted-report fingerprint reconciliation for retired questions remains separate from tracked-variation image selection.

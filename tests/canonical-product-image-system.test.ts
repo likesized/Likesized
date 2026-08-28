@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const migration = readFileSync("supabase/migrations/20260828001000_canonical_product_image_scoring.sql", "utf8");
+const duplicateMigration = readFileSync("supabase/migrations/20260828001200_fit_photo_perceptual_duplicates.sql", "utf8");
 const resolver = readFileSync("lib/canonical-product-images.ts", "utf8");
+const quality = readFileSync("lib/fit-photo-quality.ts", "utf8");
+const closetActions = readFileSync("app/closet/actions.ts", "utf8");
 const admin = readFileSync("app/moderation/CanonicalProductImageAdmin.tsx", "utf8");
 const adminLayout = readFileSync("app/moderation/layout.tsx", "utf8");
 const adminRoute = readFileSync("app/moderation/product-images/page.tsx", "utf8");
@@ -29,6 +32,19 @@ test("13A automatic eligibility excludes flagged and extremely low-resolution sc
   assert.match(migration, /cr\.target_type='fit_reference_photo'/);
   assert.match(migration, /cr\.status='open'/);
   assert.match(migration, /refresh_canonical_product_image_after_content_report/);
+});
+
+test("13A records private perceptual fingerprints and removes near-duplicates from competition", () => {
+  assert.match(quality, /HASH_WIDTH = 9/);
+  assert.match(quality, /HASH_HEIGHT = 8/);
+  assert.match(quality, /perceptual_hash: perceptualHash\(image\)/);
+  assert.match(closetActions, /record_fit_photo_perceptual_fingerprint/);
+  assert.match(duplicateMigration, /create table private\.fit_photo_perceptual_fingerprints/);
+  assert.match(duplicateMigration, /fingerprint bit\(64\)/);
+  assert.match(duplicateMigration, /bit_count\(f\.fingerprint # v_fingerprint\)<=v_threshold/);
+  assert.match(duplicateMigration, /perceptual_duplicate_hamming_distance smallint not null default 5/);
+  assert.match(duplicateMigration, /set duplicate_of=/);
+  assert.ok(!duplicateMigration.includes("public.fit_photo_perceptual_fingerprints"), "perceptual fingerprints must never become member-readable Product metadata");
 });
 
 test("canonical Product image reads stay bounded and batch private URL signing", () => {

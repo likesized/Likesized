@@ -77,7 +77,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Searc
   const savedCommunity = fitProfile.fit_community === "men" || fitProfile.fit_community === "women" ? fitProfile.fit_community : "both";
   const community = fitCommunity(requestedCommunity, savedCommunity);
   const [matchResult, { data: followData, error: followLoadError }, { data: twinSettings, error: twinSettingsError }] = await Promise.all([
-    supabase.rpc("get_fit_matches_cached_batch", { p_match_categories: ["overall", "tops", "bottoms"], p_result_limit: 100, p_fit_community: community }),
+    supabase.rpc("get_fit_matches_batch", { p_match_categories: ["overall", "tops", "bottoms"], p_result_limit: 100, p_fit_community: community }),
     supabase.from("follows").select("followed_id").eq("follower_id", userId),
     supabase.from("fit_twin_settings").select("threshold_percent").eq("singleton", true).maybeSingle(),
   ]);

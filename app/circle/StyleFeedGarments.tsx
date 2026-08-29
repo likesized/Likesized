@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { StyleFeedGarmentsButton, type StyleFeedGarmentItem } from "./StyleFeedGarmentsButton";
 
@@ -43,7 +44,11 @@ export default function StyleFeedGarments({postId}:{postId:string}){
   },[postId]);
 
   function warm(){if(items===null)void loadItems(postId).then(setItems);}
-  return <div ref={hostRef} onPointerEnter={warm} onPointerDown={warm} onFocusCapture={warm} style={{minHeight:items===null||items.length?34:0}}>
-    {items?.length?<StyleFeedGarmentsButton items={items} postId={postId}/>:null}
+
+  return <div ref={hostRef} onPointerEnter={warm} onPointerDown={warm} onFocusCapture={warm}>
+    <div style={{display:"flex",alignItems:"center",gap:18,flexWrap:"wrap"}}>
+      <Link href={`/outfits/${postId}`} style={{color:"var(--accent)",fontWeight:800,fontSize:14,textDecoration:"none"}}>View Full Outfit</Link>
+      {items?.length?<StyleFeedGarmentsButton items={items} postId={postId}/>:null}
+    </div>
   </div>;
 }

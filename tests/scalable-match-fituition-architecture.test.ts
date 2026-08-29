@@ -8,14 +8,15 @@ const scaleMigration=fs.readFileSync("supabase/migrations/20260828120000_version
 const historicalMigration=fs.readFileSync("supabase/migrations/20260828123000_historical_snapshot_candidate_scaling.sql","utf8");
 const latestEvidenceMigration=fs.readFileSync("supabase/migrations/20260828124000_preserve_latest_historical_evidence_units.sql","utf8");
 
-test("garment shell streams before uncached full personalized FITuition",()=>{
-  assert.match(itemPage,/Suspense fallback={<FituitionRecommendationFallback\/>}/);
+test("garment shell streams before the one deferred personalized FITuition block",()=>{
+  assert.doesNotMatch(itemPage,/FituitionRecommendationFallback/);
   assert.match(itemPage,/Suspense fallback={<FituitionEvidenceFallback\/>}/);
   assert.match(itemPage,/ItemActionsClient/);
+  assert.ok(itemPage.indexOf("ItemActionsClient")<itemPage.indexOf("FituitionEvidenceSections"));
   assert.doesNotMatch(itemPage,/get_product_evidence_candidates/);
   assert.match(fituitionSections,/const loadFituitionData=cache\(async/);
   assert.match(fituitionSections,/get_product_evidence_candidates/);
-  assert.match(fituitionSections,/Calculating your FITuition…/);
+  assert.match(fituitionSections,/Calculating your fit evidence…/);
   assert.match(fituitionSections,/Retry FITuition →/);
 });
 

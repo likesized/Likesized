@@ -43,11 +43,11 @@ test("body Match UI never treats measurement coverage as confidence",()=>{
   assert.doesNotMatch(card,/confidenceLabel/);
 });
 
-test("product recommendation keeps qualitative confidence and explains Body Match accurately",()=>{
+test("product recommendation keeps qualitative confidence and treats weaker Body Matches as evidence, not certainty",()=>{
   const fituition=readFileSync(new URL("../app/item/[slug]/FituitionSections.tsx",import.meta.url),"utf8");
   assert.match(fituition,/recommendationConfidenceLabel\(recommendation\.confidence\)/);
   assert.doesNotMatch(fituition,/\{recommendation\.confidence\}% confidence/);
-  assert.match(fituition,/Body Match shows how closely your measurements match the person who submitted this Fit Report/);
-  assert.match(fituition,/not how likely the garment is to fit you/);
+  assert.match(fituition,/Lower Body Matches may be less predictive/);
+  assert.match(fituition,/Fit Result:/);
   assert.doesNotMatch(fituition,/matchConfidenceLabel/);
 });

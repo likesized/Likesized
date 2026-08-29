@@ -1,7 +1,7 @@
 import { STRONG_FIT_REPORT_MATCH_THRESHOLD } from "@/lib/quick-fit-evidence";
 import { createClient } from "@/lib/supabase/server";
 
-const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type SummaryRow={closet_item_id:string;matching_fit_reports:number};
 
 export async function GET(_request:Request,{params}:{params:Promise<{id:string}>}){

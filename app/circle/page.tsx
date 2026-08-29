@@ -18,7 +18,6 @@ type Profile={id:string;username:string;display_name:string|null;avatar_url:stri
 type FeedPhoto={id:string;post_id:string;bucket:string;feed_path:string|null;display_path:string;sort_order:number;caption:string|null};
 type OccasionRow={post_id:string;occasion:string;sort_order:number};
 type StyleTagRow={post_id:string;normalized_tag:string;display_tag:string;sort_order:number};
-
 type BoardPhoto={id:string;url:string;previewUrl?:string;caption:string|null;tags:[]};
 
 function first(value:string|string[]|undefined){return Array.isArray(value)?value[0]:value;}
@@ -31,114 +30,18 @@ function date(value:string|null,fallback:string){return new Intl.DateTimeFormat(
 function occasionLabel(value:string){return OUTFIT_OCCASIONS.find((item)=>item.value===value)?.label??value;}
 
 export default async function StyleFeedPage({searchParams}:{searchParams:SearchParams}){
-  const params=await searchParams;
-  const scope=feedScope(first(params.scope));
-  const occasion=clean(first(params.occasion));
-  const styleTag=normalizeStyleTag(first(params.style));
-  const qa=first(params.qa)==="1";
-  const supabase=await createClient();
-  const {data:claims,error:claimsError}=await supabase.auth.getClaims();
-  const viewerId=claims?.claims?.sub;
-  if(claimsError||!viewerId)redirect("/login?next=/circle");
-
-  const [
-    {data:profile,error:profileError},
-    {data:fitProfile,error:fitProfileError},
-    {data:followData,error:followError},
-    matchResult,
-    {data:twinSettings,error:twinSettingsError},
-    {data:qaProfiles,error:qaProfilesError},
-  ]=await Promise.all([
-    supabase.from("profiles").select("username").eq("id",viewerId).maybeSingle(),
-    supabase.from("fit_profiles").select("completed_at").eq("user_id",viewerId).maybeSingle(),
-    supabase.from("follows").select("followed_id").eq("follower_id",viewerId),
-    supabase.rpc("get_fit_matches_batch",{p_match_categories:["tops","bottoms"],p_result_limit:100}),
-    supabase.from("fit_twin_settings").select("threshold_percent").eq("singleton",true).maybeSingle(),
-    qa?supabase.from("profiles").select("id").neq("id",viewerId).limit(20):Promise.resolve({data:[],error:null}),
-  ]);
-  if(profileError||fitProfileError||followError||matchResult.error||twinSettingsError||qaProfilesError)throw new Error("Could not load Style Feed.");
-  if(!profile?.username||!fitProfile?.completed_at)redirect("/onboarding");
-
-  const followedIds=[...new Set((followData??[]).map((row:{followed_id:string})=>row.followed_id))];
-  const matchRows=(matchResult.data??[]) as Match[];
-  const tops=matchMap(matchRows,"tops");
-  const bottoms=matchMap(matchRows,"bottoms");
-  const threshold=twinSettings?.threshold_percent??85;
-  const designationFor=(userId:string)=>fitTwinDesignation({tops:tops.get(userId),bottoms:bottoms.get(userId)},threshold);
-  const qaIds=(qaProfiles??[]).map((row:{id:string})=>row.id);
-  const feedSourceIds=qa?qaIds:scope==="twins"?followedIds.filter((userId)=>Boolean(designationFor(userId))):followedIds;
-
-  let posts:OutfitPost[]=[];
-  if(feedSourceIds.length){
-    const result=await supabase.from("outfit_posts").select("id,user_id,headline,story,caption,photo_url,published_at,created_at,like_count,comment_count,comments_enabled").eq("status","published").in("user_id",feedSourceIds).order("published_at",{ascending:false,nullsFirst:false}).order("created_at",{ascending:false}).limit(120);
-    if(result.error)throw new Error("Could not load followed Outfits.");
-    posts=(result.data??[]) as OutfitPost[];
-  }
-
-  const postIds=posts.map((post)=>post.id);
-  const authorIds=[...new Set(posts.map((post)=>post.user_id))];
-  const [profileResult,photoResult,occasionResult,styleTagResult,likeResult]=postIds.length?await Promise.all([
-    authorIds.length?supabase.from("profiles").select("id,username,display_name,avatar_url").in("id",authorIds):Promise.resolve({data:[],error:null}),
-    supabase.from("outfit_photos").select("id,post_id,bucket,feed_path,display_path,sort_order,caption").in("post_id",postIds).eq("bucket","outfit-photos").order("sort_order"),
-    supabase.from("outfit_occasions").select("post_id,occasion,sort_order").in("post_id",postIds).order("sort_order"),
-    supabase.from("outfit_style_tags").select("post_id,normalized_tag,display_tag,sort_order").in("post_id",postIds).order("sort_order"),
-    supabase.from("outfit_likes").select("post_id").eq("user_id",viewerId).in("post_id",postIds),
-  ]):[{data:[],error:null},{data:[],error:null},{data:[],error:null},{data:[],error:null},{data:[],error:null}];
-  if(profileResult.error||photoResult.error||occasionResult.error||styleTagResult.error||likeResult.error)throw new Error("Could not finish loading Style Feed.");
-
-  const profiles=new Map(((profileResult.data??[]) as Profile[]).map((person)=>[person.id,person]));
-  const photoRowsByPost=new Map<string,FeedPhoto[]>();
-  for(const photo of(photoResult.data??[]) as FeedPhoto[]){const current=photoRowsByPost.get(photo.post_id)??[];current.push(photo);photoRowsByPost.set(photo.post_id,current);}
-  const occasionsByPost=new Map<string,OccasionRow[]>();
-  for(const row of(occasionResult.data??[]) as OccasionRow[]){const current=occasionsByPost.get(row.post_id)??[];current.push(row);occasionsByPost.set(row.post_id,current);}
-  const styleTagsByPost=new Map<string,StyleTagRow[]>();
-  const styleTagOptions=new Map<string,string>();
-  for(const row of(styleTagResult.data??[]) as StyleTagRow[]){const current=styleTagsByPost.get(row.post_id)??[];current.push(row);styleTagsByPost.set(row.post_id,current);if(!styleTagOptions.has(row.normalized_tag))styleTagOptions.set(row.normalized_tag,row.display_tag);}
-  const likedPostIds=new Set((likeResult.data??[]).map((row:{post_id:string})=>row.post_id));
-
-  const feed=posts.filter((post)=>{
-    if(!qa&&scope==="twins"&&!designationFor(post.user_id))return false;
-    if(occasion&&!(occasionsByPost.get(post.id)??[]).some((row)=>row.occasion===occasion))return false;
-    if(styleTag&&!(styleTagsByPost.get(post.id)??[]).some((row)=>row.normalized_tag===styleTag))return false;
-    return true;
-  });
-
-  const boardItems:StyleFeedBoardItem[]=feed.flatMap((post)=>{
-    const person=profiles.get(post.user_id);if(!person)return[];
-    const name=person.display_name?.trim()||person.username;
-    const rows=photoRowsByPost.get(post.id)??[];
-    const photos:BoardPhoto[]=rows.length?rows.map((row)=>{const url=supabase.storage.from("outfit-photos").getPublicUrl(row.display_path).data.publicUrl;const previewPath=row.feed_path||outfitFeedPhotoPath(row.display_path);const previewUrl=previewPath?supabase.storage.from("outfit-photos").getPublicUrl(previewPath).data.publicUrl:url;return{id:row.id,url,previewUrl,caption:row.caption,tags:[]};}):post.photo_url?[{id:`${post.id}-main`,url:supabase.storage.from("outfit-photos").getPublicUrl(post.photo_url).data.publicUrl,previewUrl:supabase.storage.from("outfit-photos").getPublicUrl(outfitFeedPhotoPath(post.photo_url)).data.publicUrl,caption:post.caption,tags:[]}]:[];
-    if(!photos.length)return[];
-    const postOccasions=occasionsByPost.get(post.id)??[];
-    const postStyleTags=styleTagsByPost.get(post.id)??[];
-    return [{
-      id:post.id,
-      headline:post.headline?.trim()||"Outfit",
-      note:(post.story??post.caption)?.trim()||null,
-      photos,
-      creator:{username:person.username,displayName:name,avatarUrl:currentProfilePhotoUrl(supabase,person.avatar_url)},
-      twinLabel:fitTwinLabel(designationFor(post.user_id)),
-      dateLabel:date(post.published_at,post.created_at),
-      occasionLinks:postOccasions.map((row)=>({label:occasionLabel(row.occasion),href:feedHref(scope,row.occasion,styleTag,qa)})),
-      styleLinks:postStyleTags.map((row)=>({label:row.display_tag,href:feedHref(scope,occasion,row.normalized_tag,qa)})),
-      liked:likedPostIds.has(post.id),
-      likeCount:post.like_count,
-      commentCount:post.comment_count,
-      commentsEnabled:post.comments_enabled,
-    }];
-  });
-
-  const hasFilters=Boolean(occasion||styleTag);
-  const selectedStyleDisplay=styleTagOptions.get(styleTag)??first(params.style)??"";
-  const styleOptions=[...styleTagOptions.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([key,label])=>({key,label}));
-
-  return <main className="pageShell">
-    {qa?<div className={styles.qaBanner}><strong>STYLE FEED QA</strong><span>Production-only test scenarios. No fake member records are added to discovery or metrics.</span></div>:null}
-    <header className={styles.pageHeader}><span className="eyebrow">STYLE FEED</span><h1>Style Feed</h1><p>Outfit inspiration from people you follow.</p></header>
-    <nav className={styles.scopeTabs} aria-label="Style Feed people filter"><Link className={scope==="twins"?styles.activeTab:styles.tab} href={feedHref("twins",occasion,styleTag,qa)}>Fit Twins</Link><Link className={scope==="all"?styles.activeTab:styles.tab} href={feedHref("all",occasion,styleTag,qa)}>All Following</Link></nav>
-    <StyleFeedFilters scope={scope} occasion={occasion} styleDisplay={String(selectedStyleDisplay)} styleOptions={styleOptions} qa={qa}/>
-    {hasFilters?<div className={styles.filterActions}><Link className="textLink" href={feedHref(scope,"","",qa)}>Clear filters</Link></div>:null}
-    {boardItems.length?<StyleFeedBoard items={boardItems}/>:<section className={styles.emptyState}><h2>{scope==="twins"?"No Fit Twin Outfits here yet.":"No Outfits here yet."}</h2><p>{hasFilters?"No followed Outfits match these filters.":scope==="twins"?"When your Fit Twins post Outfits, they’ll appear here.":"Follow people to bring their Outfit posts into your Style Feed."}</p>{hasFilters?<Link className="textLink" href={feedHref(scope,"","",qa)}>Clear filters</Link>:null}</section>}
-    {scope==="twins"?<footer className={styles.feedFooter}><p>You’re all caught up with your Fit Twins.</p><Link className="textLink" href={feedHref("all",occasion,styleTag,qa)}>See All Following →</Link><Link className="textLink" href="/people">Find More Fit Twins →</Link></footer>:<footer className={styles.feedFooter}><p>You’re all caught up.</p><Link className="textLink" href="/explore?view=outfits&scope=all">Discover More Outfits →</Link></footer>}
-  </main>;
+  const params=await searchParams;const scope=feedScope(first(params.scope));const occasion=clean(first(params.occasion));const styleTag=normalizeStyleTag(first(params.style));const qa=first(params.qa)==="1";const supabase=await createClient();const {data:claims,error:claimsError}=await supabase.auth.getClaims();const viewerId=claims?.claims?.sub;if(claimsError||!viewerId)redirect("/login?next=/circle");
+  const [{data:profile,error:profileError},{data:fitProfile,error:fitProfileError},{data:followData,error:followError},matchResult,{data:twinSettings,error:twinSettingsError},{data:qaProfiles,error:qaProfilesError}]=await Promise.all([
+    supabase.from("profiles").select("username").eq("id",viewerId).maybeSingle(),supabase.from("fit_profiles").select("completed_at").eq("user_id",viewerId).maybeSingle(),supabase.from("follows").select("followed_id").eq("follower_id",viewerId),supabase.rpc("get_fit_matches_batch",{p_match_categories:["tops","bottoms"],p_result_limit:100}),supabase.from("fit_twin_settings").select("threshold_percent").eq("singleton",true).maybeSingle(),qa?supabase.from("profiles").select("id").neq("id",viewerId).limit(20):Promise.resolve({data:[],error:null}),
+  ]);if(profileError||fitProfileError||followError||matchResult.error||twinSettingsError||qaProfilesError)throw new Error("Could not load Style Feed.");if(!profile?.username||!fitProfile?.completed_at)redirect("/onboarding");
+  const followedIds=[...new Set((followData??[]).map((row:{followed_id:string})=>row.followed_id))];const matchRows=(matchResult.data??[]) as Match[];const tops=matchMap(matchRows,"tops");const bottoms=matchMap(matchRows,"bottoms");const threshold=twinSettings?.threshold_percent??85;const designationFor=(userId:string)=>fitTwinDesignation({tops:tops.get(userId),bottoms:bottoms.get(userId)},threshold);const qaIds=(qaProfiles??[]).map((row:{id:string})=>row.id);const feedSourceIds=qa?qaIds:scope==="twins"?followedIds.filter((userId)=>Boolean(designationFor(userId))):followedIds;
+  let posts:OutfitPost[]=[];if(feedSourceIds.length){const result=await supabase.from("outfit_posts").select("id,user_id,headline,story,caption,photo_url,published_at,created_at,like_count,comment_count,comments_enabled").eq("status","published").in("user_id",feedSourceIds).order("published_at",{ascending:false,nullsFirst:false}).order("created_at",{ascending:false}).limit(120);if(result.error)throw new Error("Could not load followed Outfits.");posts=(result.data??[]) as OutfitPost[];}
+  const postIds=posts.map((post)=>post.id);const authorIds=[...new Set(posts.map((post)=>post.user_id))];const [profileResult,photoResult,occasionResult,styleTagResult,likeResult]=postIds.length?await Promise.all([
+    authorIds.length?supabase.from("profiles").select("id,username,display_name,avatar_url").in("id",authorIds):Promise.resolve({data:[],error:null}),supabase.from("outfit_photos").select("id,post_id,bucket,feed_path,display_path,sort_order,caption").in("post_id",postIds).eq("bucket","outfit-photos").order("sort_order"),supabase.from("outfit_occasions").select("post_id,occasion,sort_order").in("post_id",postIds).order("sort_order"),supabase.from("outfit_style_tags").select("post_id,normalized_tag,display_tag,sort_order").in("post_id",postIds).order("sort_order"),supabase.from("outfit_likes").select("post_id").eq("user_id",viewerId).in("post_id",postIds),
+  ]):[{data:[],error:null},{data:[],error:null},{data:[],error:null},{data:[],error:null},{data:[],error:null}];if(profileResult.error||photoResult.error||occasionResult.error||styleTagResult.error||likeResult.error)throw new Error("Could not finish loading Style Feed.");
+  const profiles=new Map(((profileResult.data??[]) as Profile[]).map((person)=>[person.id,person]));const photoRowsByPost=new Map<string,FeedPhoto[]>();for(const photo of(photoResult.data??[]) as FeedPhoto[]){const current=photoRowsByPost.get(photo.post_id)??[];current.push(photo);photoRowsByPost.set(photo.post_id,current);}const occasionsByPost=new Map<string,OccasionRow[]>();for(const row of(occasionResult.data??[]) as OccasionRow[]){const current=occasionsByPost.get(row.post_id)??[];current.push(row);occasionsByPost.set(row.post_id,current);}const styleTagsByPost=new Map<string,StyleTagRow[]>();const styleTagOptions=new Map<string,string>();for(const row of(styleTagResult.data??[]) as StyleTagRow[]){const current=styleTagsByPost.get(row.post_id)??[];current.push(row);styleTagsByPost.set(row.post_id,current);if(!styleTagOptions.has(row.normalized_tag))styleTagOptions.set(row.normalized_tag,row.display_tag);}const likedPostIds=new Set((likeResult.data??[]).map((row:{post_id:string})=>row.post_id));
+  const feed=posts.filter((post)=>{if(!qa&&scope==="twins"&&!designationFor(post.user_id))return false;if(occasion&&!(occasionsByPost.get(post.id)??[]).some((row)=>row.occasion===occasion))return false;if(styleTag&&!(styleTagsByPost.get(post.id)??[]).some((row)=>row.normalized_tag===styleTag))return false;return true;});
+  const boardItems:StyleFeedBoardItem[]=feed.flatMap((post)=>{const person=profiles.get(post.user_id);if(!person)return[];const name=person.display_name?.trim()||person.username;const rows=photoRowsByPost.get(post.id)??[];const photos:BoardPhoto[]=rows.length?rows.map((row)=>{const url=supabase.storage.from("outfit-photos").getPublicUrl(row.display_path).data.publicUrl;const previewPath=row.feed_path||outfitFeedPhotoPath(row.display_path);const previewUrl=previewPath?supabase.storage.from("outfit-photos").getPublicUrl(previewPath).data.publicUrl:url;return{id:row.id,url,previewUrl,caption:row.caption,tags:[]};}):post.photo_url?[{id:`${post.id}-main`,url:supabase.storage.from("outfit-photos").getPublicUrl(post.photo_url).data.publicUrl,previewUrl:supabase.storage.from("outfit-photos").getPublicUrl(outfitFeedPhotoPath(post.photo_url)).data.publicUrl,caption:post.caption,tags:[]}]:[];if(!photos.length)return[];const postOccasions=occasionsByPost.get(post.id)??[];const postStyleTags=styleTagsByPost.get(post.id)??[];const topsMatch=tops.get(post.user_id);const bottomsMatch=bottoms.get(post.user_id);return[{id:post.id,headline:post.headline?.trim()||"Outfit",note:(post.story??post.caption)?.trim()||null,photos,creator:{username:person.username,displayName:name,avatarUrl:currentProfilePhotoUrl(supabase,person.avatar_url)},twinLabel:fitTwinLabel(designationFor(post.user_id)),topsMatch:typeof topsMatch==="number"?topsMatch:null,bottomsMatch:typeof bottomsMatch==="number"?bottomsMatch:null,dateLabel:date(post.published_at,post.created_at),occasionLinks:postOccasions.map((row)=>({label:occasionLabel(row.occasion),href:feedHref(scope,row.occasion,styleTag,qa)})),styleLinks:postStyleTags.map((row)=>({label:row.display_tag,href:feedHref(scope,occasion,row.normalized_tag,qa)})),liked:likedPostIds.has(post.id),likeCount:post.like_count,commentCount:post.comment_count,commentsEnabled:post.comments_enabled}];});
+  const hasFilters=Boolean(occasion||styleTag);const selectedStyleDisplay=styleTagOptions.get(styleTag)??first(params.style)??"";const styleOptions=[...styleTagOptions.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([key,label])=>({key,label}));
+  return <main className="pageShell">{qa?<div className={styles.qaBanner}><strong>STYLE FEED QA</strong><span>Production-only test scenarios. No fake member records are added to discovery or metrics.</span></div>:null}<header className={styles.pageHeader}><span className="eyebrow">STYLE FEED</span><h1>Style Feed</h1><p>Outfit inspiration from people you follow.</p></header><nav className={styles.scopeTabs} aria-label="Style Feed people filter"><Link className={scope==="twins"?styles.activeTab:styles.tab} href={feedHref("twins",occasion,styleTag,qa)}>Fit Twins</Link><Link className={scope==="all"?styles.activeTab:styles.tab} href={feedHref("all",occasion,styleTag,qa)}>All Following</Link></nav><StyleFeedFilters scope={scope} occasion={occasion} styleDisplay={String(selectedStyleDisplay)} styleOptions={styleOptions} qa={qa}/>{hasFilters?<div className={styles.filterActions}><Link className="textLink" href={feedHref(scope,"","",qa)}>Clear filters</Link></div>:null}{boardItems.length?<StyleFeedBoard items={boardItems}/>:<section className={styles.emptyState}><h2>{scope==="twins"?"No Fit Twin Outfits here yet.":"No Outfits here yet."}</h2><p>{hasFilters?"No followed Outfits match these filters.":scope==="twins"?"When your Fit Twins post Outfits, they’ll appear here.":"Follow people to bring their Outfit posts into your Style Feed."}</p>{hasFilters?<Link className="textLink" href={feedHref(scope,"","",qa)}>Clear filters</Link>:null}</section>}{scope==="twins"?<footer className={styles.feedFooter}><p>You’re all caught up with your Fit Twins.</p><Link className="textLink" href={feedHref("all",occasion,styleTag,qa)}>See All Following →</Link><Link className="textLink" href="/people">Find More Fit Twins →</Link></footer>:<footer className={styles.feedFooter}><p>You’re all caught up.</p><Link className="textLink" href="/explore?view=outfits&scope=all">Discover More Outfits →</Link></footer>}</main>;
 }

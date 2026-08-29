@@ -1,10 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { MatchPercentageBadge } from "@/components/MatchPercentageBadge";
 import styles from "./itemDetail.module.css";
 
-type EvidenceRow={fitReportId:string;member:string;bodyMatch:number;sizeLabel:string;fitLabel:string;evidenceLabel:string;garment:string;variationDetail:string};
+type EvidenceRow={fitReportId:string;username:string|null;bodyMatch:number;sizeLabel:string;fitLabel:string;evidenceLabel:string;garment:string};
 
 export default function ExpandedEvidenceClient({slug,variationKey}:{slug:string;variationKey:string|null}){
   const [open,setOpen]=useState(false);
@@ -27,6 +28,6 @@ export default function ExpandedEvidenceClient({slug,variationKey}:{slug:string;
 
   return <div className={styles.moreEvidence}>
     <button className={styles.moreButton} type="button" aria-expanded={open} onClick={()=>void toggle()}>{open?"Hide more evidence":"See more evidence"}</button>
-    {open?<div className={styles.moreList}>{loading?<div className={styles.empty}>Loading evidence…</div>:error?<div className="authMessage error">{error}</div>:rows?.length?rows.map((row)=><div className={styles.moreRow} key={row.fitReportId}><div><strong>{row.member}</strong><span>{row.garment}{row.variationDetail?` · ${row.variationDetail}`:""}</span></div><div><MatchPercentageBadge score={row.bodyMatch} compact/><span>Body Match</span></div><div><strong>{row.sizeLabel}</strong><span>Size worn</span></div><div><strong>{row.fitLabel}</strong><span>{row.evidenceLabel}</span></div></div>):<div className={styles.empty}>No additional evidence is available yet.</div>}</div>:null}
+    {open?<div className={styles.moreList}>{loading?<div className={styles.empty}>Loading evidence…</div>:error?<div className="authMessage error">{error}</div>:rows?.length?rows.map((row)=><div className={styles.moreRow} key={row.fitReportId}><div>{row.username?<Link className={styles.personLink} href={`/people/${encodeURIComponent(row.username)}`}>@{row.username}</Link>:<strong>Member</strong>}<span>{row.garment}</span></div><div><MatchPercentageBadge score={row.bodyMatch} compact/><span>Body Match</span></div><div><strong>{row.sizeLabel}</strong><span>Size worn</span></div><div><strong>{row.fitLabel}</strong><span>{row.evidenceLabel}</span></div></div>):<div className={styles.empty}>No additional evidence is available yet.</div>}</div>:null}
   </div>;
 }

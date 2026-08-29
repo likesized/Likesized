@@ -1,4 +1,4 @@
-import { QUICK_VIEW_STRONG_MATCH_THRESHOLD } from "@/lib/quick-fit-evidence";
+import { enableProductEvidenceWatch, readProductEvidenceWatch } from "@/lib/product-evidence-watch";
 import { createClient } from "@/lib/supabase/server";
 
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -22,10 +22,9 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
   const closetItemId=new URL(request.url).searchParams.get("closet_item_id")?.trim()??"";
   const context=await resolveWatchContext(postId,closetItemId);
   if("error" in context)return context.error;
-  const {supabase,userId,report}=context;
-  const {data,error}=await supabase.from("product_evidence_notifications").select("active").eq("user_id",userId).eq("product_id",report.product_id).eq("objective_variant_key",report.objective_variant_key??"").eq("active",true).maybeSingle();
+  const {watching,error}=await readProductEvidenceWatch(context.supabase,context.userId,context.report.product_id,context.report.objective_variant_key??"");
   if(error)return Response.json({error:"Could not load notification status."},{status:500});
-  return Response.json({watching:Boolean(data?.active)});
+  return Response.json({watching},{headers:{"cache-control":"private, no-store"}});
 }
 
 export async function POST(request:Request,{params}:{params:Promise<{id:string}>}){
@@ -34,8 +33,7 @@ export async function POST(request:Request,{params}:{params:Promise<{id:string}>
   const closetItemId=body?.closetItemId?.trim()??"";
   const context=await resolveWatchContext(postId,closetItemId);
   if("error" in context)return context.error;
-  const {supabase,userId,report}=context;
-  const {error}=await supabase.from("product_evidence_notifications").upsert({user_id:userId,product_id:report.product_id,objective_variant_key:report.objective_variant_key??"",minimum_match_score:QUICK_VIEW_STRONG_MATCH_THRESHOLD,requested_at:new Date().toISOString(),last_notified_at:null,read_at:null,active:true,matched_fit_report_id:null},{onConflict:"user_id,product_id,objective_variant_key"});
+  const {error}=await enableProductEvidenceWatch(context.supabase,context.userId,context.report.product_id,context.report.objective_variant_key??"");
   if(error)return Response.json({error:"Could not save notification request."},{status:500});
-  return Response.json({watching:true});
+  return Response.json({watching:true},{headers:{"cache-control":"private, no-store"}});
 }

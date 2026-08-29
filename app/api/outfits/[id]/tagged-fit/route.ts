@@ -12,7 +12,7 @@ import {
 } from "@/lib/recommendation";
 import { createClient } from "@/lib/supabase/server";
 
-const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type Candidate={fit_report_id:string;user_id:string;evidence_product_id:string;normalized_size_id:string|null;original_size_label:string;fit:RecommendationEvidence["fit"];historical_match_score:number;historical_coverage_percent:number;evidence_level:RecommendationEvidence["evidenceLevel"];attribute_overlap:number;directional_fit_support:number|null};
 type ProductRow={id:string;brand_id:string;product_family_id:string|null;garment_type_key:string|null;category:string};
 type ProductRelation=ProductRow|ProductRow[]|null;

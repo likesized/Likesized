@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import TaggedItemsPanel, { type TaggedItem } from "@/app/outfits/[id]/TaggedItemsPanel";
 import styles from "./StyleFeedGarmentsButton.module.css";
@@ -20,7 +21,8 @@ export function StyleFeedGarmentsButton({items,postId}:{items:StyleFeedGarmentIt
 
   if(!items.length)return null;
 
-  return <>
+  return <div className={styles.actions}>
+    <Link className={styles.viewOutfit} href={`/outfits/${postId}`}>View Outfit →</Link>
     <button className={styles.trigger} type="button" onClick={()=>setOpen(true)}>View Garments →</button>
     {open?<div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Garments in this Outfit" onClick={()=>setOpen(false)}>
       <section className={styles.card} onClick={(event)=>event.stopPropagation()}>
@@ -28,5 +30,5 @@ export function StyleFeedGarmentsButton({items,postId}:{items:StyleFeedGarmentIt
         <TaggedItemsPanel items={items} postId={postId} signedIn showCards returnTo="/circle"/>
       </section>
     </div>:null}
-  </>;
+  </div>;
 }

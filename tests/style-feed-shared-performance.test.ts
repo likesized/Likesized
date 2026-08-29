@@ -32,13 +32,13 @@ test("stay-open Follow persistence preserves the void action contract and bypass
   assert.doesNotMatch(peopleActions,/return \{ ok: true \}/);
 });
 
-test("shared gallery keeps one stable viewport across mixed-aspect swipes",()=>{
-  assert.match(gallery,/const stableStageHeight="clamp\(260px,62dvh,620px\)"/);
-  assert.match(gallery,/style=\{\{height:stableStageHeight,[\s\S]*overflow:"hidden"\}\}/);
-  assert.match(gallery,/className=\{styles\.galleryMedia\} style=\{\{position:"relative",width:"100%",height:"100%"\}\}/);
+test("shared gallery uses natural media height without reintroducing per-photo height bookkeeping",()=>{
+  assert.match(gallery,/src=\{current\.url\}/);
+  assert.doesNotMatch(gallery,/stableStageHeight|62dvh|height:stableStageHeight/);
   assert.doesNotMatch(gallery,/stageHeights=useRef/);
   assert.doesNotMatch(gallery,/syncStageHeight/);
   assert.doesNotMatch(gallery,/transition:"min-height/);
+  assert.match(gallery,/overflow:"auto"/);
 });
 
 test("tagged garment cards use one cached Outfit summary and full FITuition only for the selected garment",()=>{
@@ -57,7 +57,7 @@ test("People and Style Feed share one set-wise match scan instead of recalculati
   assert.doesNotMatch(people,/rpc\("get_fit_matches"/);
   assert.doesNotMatch(people,/createSignedUrl/);
   assert.match(circle,/get_fit_matches_batch/);
-  assert.match(circle,/\["tops", "bottoms"\]/);
+  assert.match(circle,/\["tops","bottoms"\]/);
   assert.doesNotMatch(circle,/rpc\("get_fit_matches"/);
   assert.match(scalingMigration,/create or replace function public\.get_fit_matches_batch/);
   assert.match(scalingMigration,/cross join weights w/);

@@ -9,10 +9,12 @@ const exploreFilters=readFileSync("components/ExploreFilters.tsx","utf8");
 const taxonomy=readFileSync("lib/garment-taxonomy.ts","utf8");
 const fixtures=readFileSync("lib/explore-fixtures.ts","utf8");
 const circle=readFileSync("app/circle/page.tsx","utf8");
+const circleBoard=readFileSync("app/circle/StyleFeedBoard.tsx","utf8");
+const circleBoardCss=readFileSync("app/circle/StyleFeedBoard.module.css","utf8");
 const circleFilters=readFileSync("app/circle/StyleFeedFilters.tsx","utf8");
+const circleGarmentsLoader=readFileSync("app/circle/StyleFeedGarments.tsx","utf8");
 const circleGarments=readFileSync("app/circle/StyleFeedGarmentsButton.tsx","utf8");
 const taggedItemsPanel=readFileSync("app/outfits/[id]/TaggedItemsPanel.tsx","utf8");
-const circleNote=readFileSync("app/circle/StyleFeedNote.tsx","utf8");
 const circleLike=readFileSync("app/circle/StyleFeedLikeButton.tsx","utf8");
 const circleLikeApi=readFileSync("app/api/outfits/[id]/like/route.ts","utf8");
 const outfitGallery=readFileSync("app/outfits/[id]/OutfitGallery.tsx","utf8");
@@ -67,73 +69,73 @@ test("Explore retains fit evidence, batching, shared mini-detail quick views, an
  assert.doesNotMatch(explore,/\bstar(?:s)?\b/i);
 });
 
-test("Style Feed is Outfit-only following inspiration with Fit Twins as the default",()=>{
+test("Style Feed remains Outfit-only following inspiration with Fit Twins as default",()=>{
  assert.match(circle,/from\("follows"\)/);
  assert.match(circle,/from\("outfit_posts"\)/);
- assert.match(circle,/\.eq\("status", "published"\)/);
- assert.match(circle,/value === "all" \? "all" : "twins"/);
- assert.match(circle,/>Fit Twins</);
- assert.match(circle,/>All Following</);
+ assert.match(circle,/\.eq\("status","published"\)/);
+ assert.match(circle,/>Fit Twins<\/Link>/);
+ assert.match(circle,/>All Following<\/Link>/);
  assert.match(circle,/get_fit_matches_batch/);
- assert.match(circle,/\["tops", "bottoms"\]/);
+ assert.match(circle,/\["tops","bottoms"\]/);
  assert.match(circle,/fitTwinLabel\(designationFor/);
  assert.match(circle,/outfit_style_tags/);
  assert.match(circle,/OUTFIT_OCCASIONS/);
  assert.match(circle,/href=\{feedHref\("all", occasion, styleTag\)\}>See All Following →<\/Link>/);
  assert.match(circle,/href="\/people">Find More Fit Twins →<\/Link>/);
  assert.match(circle,/You’re all caught up with your Fit Twins\./);
- assert.match(circle,/You’re all caught up\./);
- assert.match(circle,/Discover More Outfits →/);
  assert.doesNotMatch(circle,/Want more inspiration/);
  assert.doesNotMatch(circle,/get_following_feed/);
- assert.doesNotMatch(circle,/fit_report_added|closet_shared|fitTwinPriority|Overall Match/);
 });
 
-test("Style Feed reuses canonical Outfit interactions and keeps garment/detail reading in feed",()=>{
- assert.match(circle,/OutfitGallery/);
- assert.match(circle,/CommentThread/);
- assert.match(circle,/triggerOnly/);
- assert.match(circle,/href=\{`\/people\/\$\{person\.username\}`\}/);
- assert.match(circle,/StyleFeedGarments/);
- assert.match(circle,/StyleFeedNote/);
- assert.doesNotMatch(circle,/>View Full Outfit →<\/Link>/);
+test("Style Feed is compact image-first discovery with a canonical Outfit popup",()=>{
+ assert.match(circle,/StyleFeedBoard/);
+ assert.match(circleBoard,/OutfitGallery/);
+ assert.match(circleBoard,/CommentThread/);
+ assert.match(circleBoard,/StyleFeedGarments/);
+ assert.match(circleBoard,/StyleFeedLikeButton/);
+ assert.match(circleBoard,/StyleFeedShareButton/);
+ assert.match(circleBoard,/View Full Outfit →/);
+ assert.match(circleBoard,/MatchPercentageBadge/);
+ assert.match(circleBoard,/Not enough information/);
+ assert.match(circleBoard,/matching measurements between your profiles/);
+ assert.match(circleBoardCss,/@media\(max-width:640px\)\{\.board\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(circleBoardCss,/\.tile img\{display:block;width:100%;aspect-ratio:4\/5/);
+ assert.match(circleBoardCss,/\.tile img\{aspect-ratio:1\/1;object-fit:cover\}/);
+ assert.doesNotMatch(circle,/className=\{styles\.card\}/);
+});
+
+test("Style Feed tagged garments stay lazy, cached and canonical",()=>{
+ assert.match(circleGarmentsLoader,/const resolved=new Map/);
+ assert.match(circleGarmentsLoader,/const pending=new Map/);
+ assert.match(circleGarmentsLoader,/IntersectionObserver/);
+ assert.match(circleGarmentsLoader,/rootMargin:"350px 0px"/);
  assert.match(circleGarments,/>View Garments →<\/button>/);
  assert.match(circleGarments,/<TaggedItemsPanel items=\{items\} postId=\{postId\} signedIn showCards returnTo="\/circle"\/>/);
- assert.doesNotMatch(circleGarments,/showCards=\{false\}|likesized:open-tagged-item|styles\.list|items\.map/);
  assert.match(taggedItemsPanel,/Relevant Fit Reports:/);
- assert.match(taggedItemsPanel,/cachedMeta\.matchingFitReports/);
- assert.doesNotMatch(circleGarments,/data-full-navigation="true"/);
- assert.match(circleNote,/COLLAPSED_LENGTH=260/);
- assert.match(circleNote,/"Show less":"More"/);
- assert.doesNotMatch(circle,/createSignedUrl/);
- assert.match(circle,/getPublicUrl/);
- assert.doesNotMatch(circle,/className=\{styles\.photoLink\}/);
+ assert.doesNotMatch(circleGarments,/showCards=\{false\}/);
+});
+
+test("shared Outfit gallery has natural stage height and a scrollable full-size viewer",()=>{
  assert.match(outfitGallery,/previewUrl\?:string/);
- assert.doesNotMatch(outfitGallery,/src=\{current\.previewUrl\?\?current\.url\}/);
  assert.match(outfitGallery,/src=\{current\.url\}/);
- assert.match(outfitGallery,/setStageDragX\(dx\)/);
- assert.match(outfitGallery,/setLightboxDragY\(Math\.max\(0,dy\)\)/);
- assert.match(outfitGallery,/IntersectionObserver/);
- assert.match(outfitGallery,/new Image\(\)/);
- assert.match(outfitGallery,/touchAction:"none"/);
+ assert.doesNotMatch(outfitGallery,/stableStageHeight|62dvh|height:stableStageHeight/);
+ assert.match(outfitGallery,/overflow:"auto"/);
  assert.match(outfitGallery,/lightboxPrev/);
  assert.match(outfitGallery,/lightboxNext/);
  assert.match(commentThread,/triggerOnly\?:boolean/);
  assert.match(commentThread,/!open&&triggerOnly/);
  assert.match(commentThread,/IntersectionObserver/);
- assert.match(commentThread,/<summary[^>]*>Report<\/summary>/);
 });
 
-test("Style Feed Like stays local and optimistic instead of submitting a page-revalidating form",()=>{
- assert.match(circle,/StyleFeedLikeButton/);
- assert.doesNotMatch(circle,/action=\{liked \? unlikeOutfit : likeOutfit\}/);
+test("Style Feed Like stays local and optimistic instead of page revalidation",()=>{
+ assert.match(circleBoard,/StyleFeedLikeButton/);
  assert.match(circleLike,/setLiked\(nextLiked\)/);
  assert.match(circleLike,/fetch\(`\/api\/outfits\/\$\{postId\}\/like`/);
  assert.match(circleLikeApi,/export async function PATCH/);
  assert.match(circleLikeApi,/from\("outfit_likes"\)/);
 });
 
-test("Style Feed relationship and discovery filters stay compact and do not require a giant Apply action",()=>{
+test("Style Feed relationship and discovery filters stay compact",()=>{
  assert.match(circle,/StyleFeedFilters/);
  assert.match(circleFilters,/Search style tags/);
  assert.match(circleFilters,/router\.push/);

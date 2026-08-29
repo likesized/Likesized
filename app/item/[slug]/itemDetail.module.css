@@ -1,5 +1,6 @@
 .heroImage{width:100%;height:100%;object-fit:contain;display:block;background:var(--surface)}
 .heroFallback{font-size:90px;font-weight:900;color:rgba(18,18,18,.1)}
+.optionArea{margin-top:18px}.optionLabel{display:block;margin-bottom:8px;font-size:12px;font-weight:850;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.variationPicker{display:flex;flex-wrap:wrap;gap:8px}.variationLink{display:inline-flex;align-items:center;min-height:36px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:12px;font-weight:800}.variationLinkActive{border-color:var(--ink);background:var(--ink);color:white}
 .actionArea{margin-top:18px}
 .actionBar{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap}
 .actionButton{appearance:none;min-height:42px;padding:8px 11px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:800;cursor:pointer}

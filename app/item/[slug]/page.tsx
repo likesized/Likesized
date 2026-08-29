@@ -65,6 +65,6 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
       </div>
     </section>
     <Suspense fallback={<FituitionEvidenceFallback/>}><FituitionEvidenceSections productId={product.id} viewerId={viewerId} slug={slug} selectedVariationKey={selectedVariationKey} retryHref={canonicalReturnTo}/></Suspense>
-    <Suspense fallback={<StyleInspirationFallback/>}><StyleInspiration productId={product.id} variationKey={selectedVariationKey}/></Suspense>
+    <Suspense fallback={<StyleInspirationFallback/>}><StyleInspiration productId={product.id} productName={product.name} variationKey={selectedVariationKey}/></Suspense>
   </main>;
 }

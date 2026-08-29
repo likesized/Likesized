@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { resolveCanonicalProductImages, canonicalProductImageKey } from "@/lib/canonical-product-images";
 import { createClient } from "@/lib/supabase/server";
-import { trackedVariationDetail, trackedVariationShortLabel } from "@/lib/tracked-variation";
+import { trackedVariationShortLabel } from "@/lib/tracked-variation";
 import {
   FituitionEvidenceFallback,
   FituitionEvidenceSections,
@@ -11,6 +11,7 @@ import {
   FituitionRecommendationFallback,
 } from "./FituitionSections";
 import ItemActionsClient, { type RetailerListing } from "./ItemActionsClient";
+import StyleInspiration, { StyleInspirationFallback } from "./StyleInspiration";
 import styles from "./itemDetail.module.css";
 
 type Params=Promise<{slug:string}>;
@@ -20,14 +21,14 @@ type BrandRecord={name:string};
 type TargetVariationRow={id:string;user_id:string;tracked_variation_key:string|null;garment_answers:Record<string,string>|null;created_at:string};
 type RetailerRelation={name:string};
 type RetailerRow={id:string;product_url:string;retailer:unknown};
-type VariationOption={key:string;label:string;detail:string;answers:Record<string,string>|null;wearerCount:number;latestAt:string};
+type VariationOption={key:string;label:string;answers:Record<string,string>|null;wearerCount:number;latestAt:string};
 
 function one<T>(value:unknown):T|null{return Array.isArray(value)?((value[0] as T|undefined)??null):((value as T|null)??null);}
 function first(value:string|string[]|undefined){return Array.isArray(value)?value[0]:value;}
 function variationOptions(rows:TargetVariationRow[],garmentTypeKey:string|null):VariationOption[]{
   const groups=new Map<string,{answers:Record<string,string>|null;users:Set<string>;latestAt:string}>();
   for(const row of rows){if(!row.tracked_variation_key)continue;const current=groups.get(row.tracked_variation_key);if(!current){groups.set(row.tracked_variation_key,{answers:row.garment_answers,users:new Set([row.user_id]),latestAt:row.created_at});continue;}current.users.add(row.user_id);if(row.created_at>current.latestAt){current.latestAt=row.created_at;current.answers=row.garment_answers;}}
-  return [...groups.entries()].map(([key,value])=>({key,label:trackedVariationShortLabel(garmentTypeKey,value.answers),detail:trackedVariationDetail(garmentTypeKey,value.answers),answers:value.answers,wearerCount:value.users.size,latestAt:value.latestAt})).sort((a,b)=>b.wearerCount-a.wearerCount||b.latestAt.localeCompare(a.latestAt)||a.label.localeCompare(b.label));
+  return [...groups.entries()].map(([key,value])=>({key,label:trackedVariationShortLabel(garmentTypeKey,value.answers),answers:value.answers,wearerCount:value.users.size,latestAt:value.latestAt})).sort((a,b)=>b.wearerCount-a.wearerCount||b.latestAt.localeCompare(a.latestAt)||a.label.localeCompare(b.label));
 }
 
 export default async function ItemPage({params,searchParams}:{params:Params;searchParams:SearchParams}){
@@ -57,7 +58,7 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
     supabase.from("product_likes").select("product_id").eq("user_id",viewerId).eq("product_id",product.id).maybeSingle(),
     supabase.from("wish_locker_items").select("product_id").eq("user_id",viewerId).eq("product_id",product.id).maybeSingle(),
   ]);
-  if(targetVariationsResult.error)throw new Error("Could not load garment variations.");
+  if(targetVariationsResult.error)throw new Error("Could not load garment options.");
 
   const variations=variationOptions((targetVariationsResult.data??[]) as TargetVariationRow[],product.garment_type_key);
   const selectedVariation=variations.find((variation)=>variation.key===requestedVariation)??variations[0]??null;
@@ -74,11 +75,11 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
       <div className="itemDetails">
         <span className="eyebrow">{brand?.name?.toUpperCase()||"BRAND"}{product.garment_type_key?` · ${product.garment_type_key.replaceAll("_"," ").toUpperCase()}`:""}</span>
         <h1>{product.name}</h1>
-        {variations.length?<><div className={styles.variationPicker}>{variations.map((variation)=><Link key={variation.key} prefetch={false} className={`${styles.variationLink} ${variation.key===selectedVariationKey?styles.variationLinkActive:""}`} href={`/item/${slug}?variation=${encodeURIComponent(variation.key)}`}>{variation.label}</Link>)}</div>{selectedVariation?.detail?<div className={styles.variationDetail}>{selectedVariation.detail}</div>:null}</>:null}
+        {variations.length>1?<div className={styles.optionArea}><span className={styles.optionLabel}>Style / Cut</span><div className={styles.variationPicker}>{variations.map((variation)=><Link key={variation.key} prefetch={false} className={`${styles.variationLink} ${variation.key===selectedVariationKey?styles.variationLinkActive:""}`} href={`/item/${slug}?variation=${encodeURIComponent(variation.key)}`}>{variation.label}</Link>)}</div></div>:null}
+        <ItemActionsClient productId={product.id} productName={`${brand?.name?`${brand.name} `:""}${product.name}`} returnTo={canonicalReturnTo} initialLiked={Boolean(likeResult.error?null:likeResult.data)} initialWished={Boolean(wishResult.error?null:wishResult.data)} retailers={retailers}/>
         <Suspense fallback={<FituitionRecommendationFallback/>}>
           <FituitionRecommendation productId={product.id} viewerId={viewerId} selectedVariationKey={selectedVariationKey} retryHref={canonicalReturnTo}/>
         </Suspense>
-        <ItemActionsClient productId={product.id} productName={`${brand?.name?`${brand.name} `:""}${product.name}`} returnTo={canonicalReturnTo} initialLiked={Boolean(likeResult.error?null:likeResult.data)} initialWished={Boolean(wishResult.error?null:wishResult.data)} retailers={retailers}/>
       </div>
     </section>
 
@@ -92,6 +93,10 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
         selectedVariationAnswers={selectedVariation?.answers??null}
         retryHref={canonicalReturnTo}
       />
+    </Suspense>
+
+    <Suspense fallback={<StyleInspirationFallback/>}>
+      <StyleInspiration productId={product.id} variationKey={selectedVariationKey}/>
     </Suspense>
   </main>;
 }

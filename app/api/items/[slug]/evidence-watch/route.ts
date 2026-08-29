@@ -1,4 +1,4 @@
-import { QUICK_VIEW_STRONG_MATCH_THRESHOLD } from "@/lib/quick-fit-evidence";
+import { enableProductEvidenceWatch, readProductEvidenceWatch } from "@/lib/product-evidence-watch";
 import { createClient } from "@/lib/supabase/server";
 
 async function context(slug:string,variation:string){
@@ -16,10 +16,9 @@ export async function GET(request:Request,{params}:{params:Promise<{slug:string}
   const variation=new URL(request.url).searchParams.get("variation")?.trim()??"";
   const resolved=await context(slug,variation);
   if("error" in resolved)return resolved.error;
-  const {supabase,userId,productId}=resolved;
-  const {data,error}=await supabase.from("product_evidence_notifications").select("active").eq("user_id",userId).eq("product_id",productId).eq("objective_variant_key",variation).eq("active",true).maybeSingle();
+  const {watching,error}=await readProductEvidenceWatch(resolved.supabase,resolved.userId,resolved.productId,variation);
   if(error)return Response.json({error:"Could not load notification status."},{status:500});
-  return Response.json({watching:Boolean(data?.active)});
+  return Response.json({watching},{headers:{"cache-control":"private, no-store"}});
 }
 
 export async function POST(request:Request,{params}:{params:Promise<{slug:string}>}){
@@ -28,8 +27,7 @@ export async function POST(request:Request,{params}:{params:Promise<{slug:string
   const variation=body?.variationKey?.trim()??"";
   const resolved=await context(slug,variation);
   if("error" in resolved)return resolved.error;
-  const {supabase,userId,productId}=resolved;
-  const {error}=await supabase.from("product_evidence_notifications").upsert({user_id:userId,product_id:productId,objective_variant_key:variation,minimum_match_score:QUICK_VIEW_STRONG_MATCH_THRESHOLD,requested_at:new Date().toISOString(),last_notified_at:null,read_at:null,active:true,matched_fit_report_id:null},{onConflict:"user_id,product_id,objective_variant_key"});
+  const {error}=await enableProductEvidenceWatch(resolved.supabase,resolved.userId,resolved.productId,variation);
   if(error)return Response.json({error:"Could not save notification request."},{status:500});
-  return Response.json({watching:true});
+  return Response.json({watching:true},{headers:{"cache-control":"private, no-store"}});
 }

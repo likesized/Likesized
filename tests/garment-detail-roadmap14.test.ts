@@ -2,76 +2,83 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const page = readFileSync("app/item/[slug]/page.tsx", "utf8");
-const fituition = readFileSync("app/item/[slug]/FituitionSections.tsx", "utf8");
-const actions = readFileSync("app/item/[slug]/ItemActionsClient.tsx", "utf8");
-const expanded = readFileSync("app/item/[slug]/ExpandedEvidenceClient.tsx", "utf8");
-const evidenceRoute = readFileSync("app/api/items/[slug]/evidence/route.ts", "utf8");
-const variation = readFileSync("lib/tracked-variation.ts", "utf8");
-const likeActions = readFileSync("app/likelocker/actions.ts", "utf8");
-const recommendation = readFileSync("lib/recommendation.ts", "utf8");
+const page=readFileSync("app/item/[slug]/page.tsx","utf8");
+const fituition=readFileSync("app/item/[slug]/FituitionSections.tsx","utf8");
+const actions=readFileSync("app/item/[slug]/ItemActionsClient.tsx","utf8");
+const variation=readFileSync("lib/tracked-variation.ts","utf8");
+const likeActions=readFileSync("app/likelocker/actions.ts","utf8");
+const recommendation=readFileSync("lib/recommendation.ts","utf8");
+const notify=readFileSync("app/item/[slug]/GarmentNotifyButton.tsx","utf8");
+const inspiration=readFileSync("app/item/[slug]/StyleInspiration.tsx","utf8");
 
-test("Roadmap 14 consumes tracked variation identity rather than size/color Product variants", () => {
-  assert.match(page, /tracked_variation_key/);
-  assert.match(page, /requestedVariation=first\(query\.variation\)/);
-  assert.ok(!page.includes("product_variants"), "Garment Detail must not treat size/color/SKU rows as tracked fit variations");
-  assert.ok(!page.includes("color_label"), "Color must not define the Garment Detail fit variation");
-  assert.match(variation, /classification === "variation-defining"/);
-  assert.match(variation, /value === "not_sure"/);
+test("Garment Detail exposes independent shopper-facing attribute filter rows",()=>{
+  assert.match(page,/trackedVariationParts/);
+  assert.match(page,/opt_/);
+  assert.match(page,/optionGroups/);
+  assert.match(page,/optionGroup/);
+  assert.match(page,/matchesSelection/);
+  assert.match(page,/filterHref/);
+  assert.ok(!page.includes("trackedVariationShortLabel"));
+  assert.ok(!page.includes("trackedVariationDetail"));
+  assert.ok(!page.includes("product_variants"));
+  assert.ok(!page.includes("color_label"));
+  assert.match(variation,/classification === "variation-defining"/);
 });
 
-test("Roadmap 14 uses the shared canonical Product image resolver", () => {
-  assert.match(page, /resolveCanonicalProductImages/);
-  assert.match(page, /canonicalProductImageKey/);
-  assert.match(page, /variationKey:selectedVariationKey/);
-  assert.ok(!page.includes("product.image_url||"), "Garment Detail must not invent its own image fallback order");
+test("Garment Detail keeps one owner-approved FITuition hierarchy",()=>{
+  assert.match(fituition,/FITuition recommends: Size/);
+  assert.match(fituition,/Confidence:/);
+  assert.match(fituition,/Aggregate Fit Report evidence/);
+  assert.match(fituition,/YOUR CLOSEST MATCH/);
+  assert.match(fituition,/Not enough evidence yet to confidently recommend a size\./);
+  assert.match(fituition,/BEST AVAILABLE MATCH/);
+  assert.match(fituition,/Lower Body Matches may be less predictive/);
+  assert.match(fituition,/GarmentNotifyButton/);
+  assert.doesNotMatch(fituition,/SIZE MATCH EVIDENCE|YOUR CLOSET HISTORY|BEST EXACT VARIATION|CLOSEST RELATED VARIATION/);
+  assert.doesNotMatch(page,/FituitionRecommendation/);
 });
 
-test("Roadmap 14 keeps the compact exact, strong, related evidence hierarchy", () => {
-  const exactIndex = fituition.indexOf("BEST EXACT VARIATION");
-  const strongIndex = fituition.indexOf("Strong Fit Reports");
-  const relatedIndex = fituition.indexOf("CLOSEST RELATED VARIATION");
-  assert.ok(exactIndex >= 0 && strongIndex > exactIndex && relatedIndex > strongIndex);
-  assert.match(fituition, /STRONG_FIT_REPORT_MATCH_THRESHOLD/);
-  assert.match(fituition, /strongExact\.length>=2/);
-  assert.match(fituition, /b\.historical_match_score-a\.historical_match_score/);
-  assert.match(fituition, /This is the closest Fit Report we currently have for this exact variation\./);
-  assert.match(fituition, /Body Match shows how closely your measurements match the person who submitted this Fit Report/);
+test("individual FITuition evidence links Body Match users to canonical profiles",()=>{
+  assert.match(fituition,/MatchPercentageBadge/);
+  assert.match(fituition,/href=\{`\/people\/\$\{encodeURIComponent\(username\)\}`\}/);
+  assert.match(fituition,/Fit Result:/);
+  assert.match(fituition,/STRONG_FIT_REPORT_MATCH_THRESHOLD/);
 });
 
-test("related variation differences come from controlled variation-defining questions", () => {
-  assert.match(fituition, /trackedVariationDifferences/);
-  assert.match(variation, /instead of/);
-  assert.ok(!variation.includes("Color"));
-  assert.ok(!variation.includes("size_label"));
-});
-
-test("expanded evidence is lazy and bounded instead of eagerly dumping every report", () => {
-  assert.match(fituition, /<ExpandedEvidenceClient/);
-  assert.match(expanded, /fetch\(`\/api\/items\/\$\{encodeURIComponent\(slug\)\}\/evidence/);
-  assert.match(evidenceRoute, /p_result_limit:200/);
-  assert.match(evidenceRoute, /Promise\.all/);
-  assert.ok(!page.includes("ranked.slice(0,30)"));
-  assert.match(page, /<Suspense fallback=\{<FituitionEvidenceFallback\/>\}>/);
-  assert.match(page, /<FituitionEvidenceSections/);
-});
-
-test("Garment Detail reuses the one canonical FITuition recommendation engine", () => {
-  assert.match(fituition, /recommendSize\(\[\.\.\.communityEvidence,\.\.\.closetEvidence\]\)/);
-  assert.match(fituition, /closetEvidenceRelevance/);
-  assert.match(recommendation, /export function recommendSize/);
+test("Garment Detail reuses canonical recommendation math and bounded candidate discovery",()=>{
+  assert.match(fituition,/recommendSize\(\[\.\.\.communityEvidence,\.\.\.closetEvidence\]\)/);
+  assert.match(fituition,/closetEvidenceRelevance/);
+  assert.match(fituition,/p_result_limit:300/);
+  assert.match(fituition,/limit\(200\)/);
+  assert.match(recommendation,/export function recommendSize/);
   assert.ok(!fituition.includes("function recommendSize"));
 });
 
-test("Garment Detail utility actions keep LikeLocker, Wishlist, Shop, Share and Report count-free", () => {
-  assert.match(actions, /action="likeLocker"/);
-  assert.match(actions, /action="wishLocker"/);
-  assert.match(actions, /action="shop"/);
-  assert.match(actions, /action="share"/);
-  assert.match(actions, /action="report"/);
-  assert.match(actions, /retailers\.length === 1/);
-  assert.match(actions, /retailers\.length > 1/);
-  assert.ok(!actions.includes("count="), "Product utility actions must not show public counts");
-  assert.ok(likeActions.includes("/item\\/"), "LikeLocker server actions must allow Garment Detail as a safe return path");
-  assert.match(actions, /stay_open/);
+test("Garment Detail uses shared canonical Product imagery and deferred evidence",()=>{
+  assert.match(page,/resolveCanonicalProductImages/);
+  assert.match(page,/canonicalProductImageKey/);
+  assert.match(page,/variationKey:selectedVariationKey/);
+  assert.match(page,/<Suspense fallback=\{<FituitionEvidenceFallback\/>\}>/);
+  assert.match(page,/<FituitionEvidenceSections/);
+  assert.ok(!page.includes("product.image_url||"));
+});
+
+test("Garment Detail utility actions remain canonical",()=>{
+  assert.match(actions,/action="likeLocker"/);
+  assert.match(actions,/action="wishLocker"/);
+  assert.match(actions,/action="shop"/);
+  assert.match(actions,/action="share"/);
+  assert.match(actions,/action="report"/);
+  assert.ok(!actions.includes("count="));
+  assert.ok(likeActions.includes("/item\\/"));
+});
+
+test("insufficient evidence uses canonical Notify and Style Inspiration stays bounded",()=>{
+  assert.match(notify,/evidence-watch/);
+  assert.match(inspiration,/MAX_REPORTS=120/);
+  assert.match(inspiration,/MAX_POSTS=24/);
+  assert.match(inspiration,/DISPLAY_COUNT=3/);
+  assert.match(inspiration,/LOOKBACK_DAYS=90/);
+  assert.match(inspiration,/hasMore\?<Link/);
+  assert.match(page,/StyleInspirationFallback/);
 });

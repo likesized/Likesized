@@ -75,18 +75,14 @@ test("published Outfit hotspots remain public while personalized fit stays gated
   assert.doesNotMatch(tagged,/setEvidenceOpen/);
 });
 
-test("Outfit photos use the one smooth full-size viewer without stealing tag or Caption clicks",()=>{
+test("Outfit photos use one natural-height full-size viewer without stealing tag or Caption clicks",()=>{
   assert.match(gallery,/setLightboxOpen\(true\)/);
   assert.match(gallery,/role="dialog"/);
   assert.match(gallery,/Close full-size photo/);
   assert.match(gallery,/Previous photo/);
   assert.match(gallery,/Next photo/);
-  assert.match(gallery,/onPointerMove=\{lightboxPointerMove\}/);
-  assert.match(gallery,/setStageDragX\(dx\)/);
-  assert.match(gallery,/translate3d\(calc\(\$\{position\*100\}vw \+ \$\{lightboxDragX\}px\),\$\{lightboxDragY\}px,0\)/);
-  assert.match(gallery,/setLightboxDragY\(Math\.max\(0,dy\)\)/);
-  assert.match(gallery,/setLightboxAnimating\(true\)/);
-  assert.match(gallery,/touchAction:"none"/);
+  assert.match(gallery,/overflow:"auto"/);
+  assert.doesNotMatch(gallery,/stableStageHeight|62dvh|height:stableStageHeight/);
   assert.match(gallery,/openTaggedItem\(tag\.closetItemId\)/);
   assert.match(gallery,/event\.stopPropagation\(\);setShowCaption/);
 });

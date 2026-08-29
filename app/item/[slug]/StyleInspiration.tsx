@@ -13,7 +13,7 @@ const MAX_REPORTS=120;
 const MAX_POSTS=24;
 const DISPLAY_COUNT=3;
 
-export function StyleInspirationFallback(){return <section className={styles.inspirationSection} aria-busy="true"><div className={styles.inspirationHeader}><div><span className="eyebrow">STYLE INSPIRATION</span><h2>See how people are styling it</h2></div></div><div className={styles.inspirationLoading}>Loading recent tagged Outfits…</div></section>;}
+export function StyleInspirationFallback(){return <section className={styles.inspirationSection} aria-busy="true"><div className={styles.inspirationHeader}><div><span className="eyebrow">STYLE INSPIRATION</span><h2>See how people are styling this garment.</h2></div></div><div className={styles.inspirationLoading}>Loading recent tagged Outfits…</div></section>;}
 
 export default async function StyleInspiration({productId,variationKey}:{productId:string;variationKey:string|null}){
   const supabase=await createClient();
@@ -35,17 +35,19 @@ export default async function StyleInspiration({productId,variationKey}:{product
   const ranked=((postResult.data??[]) as PostRow[]).sort((a,b)=>{
     const score=(row:PostRow)=>row.like_count+row.comment_count*2+row.share_count*3;
     return score(b)-score(a)||(b.published_at??b.created_at).localeCompare(a.published_at??a.created_at);
-  }).slice(0,DISPLAY_COUNT);
+  });
   if(!ranked.length)return null;
+  const hasMore=ranked.length>DISPLAY_COUNT;
+  const displayed=ranked.slice(0,DISPLAY_COUNT);
 
-  const rankedIds=ranked.map((post)=>post.id);
-  const photoResult=await supabase.from("outfit_photos").select("post_id,feed_path,display_path,sort_order").in("post_id",rankedIds).eq("bucket","outfit-photos").order("sort_order");
+  const displayedIds=displayed.map((post)=>post.id);
+  const photoResult=await supabase.from("outfit_photos").select("post_id,feed_path,display_path,sort_order").in("post_id",displayedIds).eq("bucket","outfit-photos").order("sort_order");
   const firstPhoto=new Map<string,PhotoRow>();
   if(!photoResult.error)for(const row of (photoResult.data??[]) as PhotoRow[])if(!firstPhoto.has(row.post_id))firstPhoto.set(row.post_id,row);
 
   return <section className={styles.inspirationSection}>
-    <div className={styles.inspirationHeader}><div><span className="eyebrow">STYLE INSPIRATION</span><h2>See how people are styling it</h2></div><Link prefetch={false} href={`/explore?product=${encodeURIComponent(productId)}${variationKey?`&variation=${encodeURIComponent(variationKey)}`:""}`}>View More in Explore →</Link></div>
-    <div className={styles.inspirationGrid}>{ranked.map((post)=>{
+    <div className={styles.inspirationHeader}><div><span className="eyebrow">STYLE INSPIRATION</span><h2>See how people are styling this garment.</h2></div>{hasMore?<Link prefetch={false} href={`/explore?product=${encodeURIComponent(productId)}`}>View More in Explore →</Link>:null}</div>
+    <div className={styles.inspirationGrid}>{displayed.map((post)=>{
       const photo=firstPhoto.get(post.id);
       const path=photo?.feed_path||outfitFeedPhotoPath(photo?.display_path||post.photo_url)||photo?.display_path||post.photo_url;
       const url=path?supabase.storage.from("outfit-photos").getPublicUrl(path).data.publicUrl:"";

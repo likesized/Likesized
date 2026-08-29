@@ -30,8 +30,8 @@ test("universal member and garment Match surfaces use the shared badge",()=>{
   assert.match(personCard,/MatchPercentageBadge score=\{value\} compact/);
   assert.match(taggedCard,/MatchPercentageBadge score=\{report\.bodyMatch\} label="Body Match"/);
   assert.match(expandedEvidence,/MatchPercentageBadge score=\{row\.bodyMatch\} compact/);
-  assert.match(fituitionSections,/MatchPercentageBadge score=\{bestExact\.historical_match_score\} compact/);
-  assert.match(fituitionSections,/MatchPercentageBadge score=\{related\.historical_match_score\} compact/);
+  assert.match(fituitionSections,/MatchPercentageBadge score=\{row\.historical_match_score\} compact/);
+  assert.match(fituitionSections,/function BodyMatchCard/);
 });
 
 test("owner review fixtures cover all four FITuition outcomes and all four Match colors",()=>{

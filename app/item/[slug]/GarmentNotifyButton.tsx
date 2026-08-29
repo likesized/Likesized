@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import styles from "./itemDetail.module.css";
 
-export default function GarmentNotifyButton({productId,variationKey}:{productId:string;variationKey:string|null}){
+export default function GarmentNotifyButton({slug,variationKey}:{slug:string;variationKey:string|null}){
   const [watching,setWatching]=useState(false);
   const [pending,setPending]=useState(false);
   const [error,setError]=useState("");
@@ -11,18 +11,18 @@ export default function GarmentNotifyButton({productId,variationKey}:{productId:
   useEffect(()=>{
     const controller=new AbortController();
     const query=variationKey?`?variation=${encodeURIComponent(variationKey)}`:"";
-    void fetch(`/api/items/${productId}/evidence-watch${query}`,{cache:"no-store",signal:controller.signal})
+    void fetch(`/api/items/${encodeURIComponent(slug)}/evidence-watch${query}`,{cache:"no-store",signal:controller.signal})
       .then(async(response)=>response.ok?response.json() as Promise<{watching?:boolean}>:null)
       .then((payload)=>{if(payload&&!controller.signal.aborted)setWatching(Boolean(payload.watching));})
       .catch(()=>{});
     return()=>controller.abort();
-  },[productId,variationKey]);
+  },[slug,variationKey]);
 
   async function enable(){
     if(watching||pending)return;
     setPending(true);setError("");
     try{
-      const response=await fetch(`/api/items/${productId}/evidence-watch`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({variationKey})});
+      const response=await fetch(`/api/items/${encodeURIComponent(slug)}/evidence-watch`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({variationKey})});
       if(!response.ok)throw new Error();
       setWatching(true);
     }catch{setError("Notification request could not be saved. Try again.");}

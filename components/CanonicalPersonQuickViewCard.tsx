@@ -29,8 +29,11 @@ type Props = {
   outfitPostId?: string | null;
 };
 
-function matchStat(value: number | null | undefined, owner: boolean) {
-  if (owner || typeof value !== "number") return "—";
+function matchStat(value: number | null | undefined, owner: boolean, onExplain: () => void) {
+  if (owner) return "—";
+  if (typeof value !== "number") {
+    return <span className={styles.matchUnavailable}><span>Not enough information</span><button type="button" className={styles.matchInfo} aria-label="Why is there not enough information for this match?" onClick={onExplain}>?</button></span>;
+  }
   return <MatchPercentageBadge score={value} compact />;
 }
 
@@ -41,6 +44,7 @@ export function CanonicalPersonQuickViewCard({ displayName, username, avatarUrl,
   const [notifyActive,setNotifyActive]=useState(notificationsOn);
   const [notifyPending,setNotifyPending]=useState(false);
   const [notifyError,setNotifyError]=useState("");
+  const [matchExplanation,setMatchExplanation]=useState(false);
 
   useEffect(()=>{
     setFollowActive(following);
@@ -100,12 +104,13 @@ export function CanonicalPersonQuickViewCard({ displayName, username, avatarUrl,
         <div><strong>{displayName}</strong>{username ? <small>@{username}</small> : null}</div>
       </div>
       {loading ? <p className={styles.helper}>Loading profile details…</p> : <div className={styles.stats}>
-        <div className={styles.overallStat}><strong>{matchStat(overallMatch,owner)}</strong><span>Overall Match</span></div>
-        <div><strong>{matchStat(topsMatch,owner)}</strong><span>Tops Match</span></div>
-        <div><strong>{matchStat(bottomsMatch,owner)}</strong><span>Bottoms Match</span></div>
+        <div className={styles.overallStat}><strong>{matchStat(overallMatch,owner,()=>setMatchExplanation(true))}</strong><span>Overall Match</span></div>
+        <div><strong>{matchStat(topsMatch,owner,()=>setMatchExplanation(true))}</strong><span>Tops Match</span></div>
+        <div><strong>{matchStat(bottomsMatch,owner,()=>setMatchExplanation(true))}</strong><span>Bottoms Match</span></div>
         <div><strong>{garmentCount ?? "—"}</strong><span>Total Garments</span></div>
         <div><strong>{outfitCount ?? "—"}</strong><span>Total Outfits</span></div>
       </div>}
+      {matchExplanation ? <div className={styles.matchExplanation} role="status"><strong>Not enough information</strong><span>We need more shared measurements to calculate a reliable match.</span><button type="button" onClick={()=>setMatchExplanation(false)}>Close</button></div> : null}
       {!signedIn && !owner ? <p className={styles.helper}>Sign in to see how closely your measurements match.</p> : null}
       {!owner && userId ? <UniversalActionBar className={styles.actions} ariaLabel="Profile actions">
         {signedIn ? <UniversalActionButton action="follow" active={followActive} type="button" disabled={followPending} onClick={()=>void toggleFollow()} showLabel/> : <UniversalActionLink action="follow" href={`/login?next=${encodeURIComponent(returnTo)}`} showLabel/>}

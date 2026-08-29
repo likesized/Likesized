@@ -1,7 +1,7 @@
 import { currentProfilePhotoUrl } from "@/lib/profile-photo";
 import { createClient } from "@/lib/supabase/server";
 
-const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const LINK_PATTERN=/(https?:\/\/|www\.)/i;
 type SortMode="top"|"newest";
 type CommentRow={comment_id:string;body:string;created_at:string;username:string;display_name:string|null;avatar_url:string|null;like_count:number|string;liked_by_viewer:boolean;can_delete:boolean};

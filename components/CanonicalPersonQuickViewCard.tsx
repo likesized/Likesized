@@ -110,7 +110,7 @@ export function CanonicalPersonQuickViewCard({ displayName, username, avatarUrl,
         <div><strong>{garmentCount ?? "—"}</strong><span>Total Garments</span></div>
         <div><strong>{outfitCount ?? "—"}</strong><span>Total Outfits</span></div>
       </div>}
-      {matchExplanation ? <div className={styles.matchExplanation} role="status"><strong>Not enough information</strong><span>We need more shared measurements to calculate a reliable match.</span><button type="button" onClick={()=>setMatchExplanation(false)}>Close</button></div> : null}
+      {matchExplanation ? <div className={styles.matchExplanation} role="status"><strong>Not enough information</strong><span>There aren't enough matching measurements between your profiles to calculate a reliable match. Additional measurements from either person may be needed.</span><button type="button" onClick={()=>setMatchExplanation(false)}>Close</button></div> : null}
       {!signedIn && !owner ? <p className={styles.helper}>Sign in to see how closely your measurements match.</p> : null}
       {!owner && userId ? <UniversalActionBar className={styles.actions} ariaLabel="Profile actions">
         {signedIn ? <UniversalActionButton action="follow" active={followActive} type="button" disabled={followPending} onClick={()=>void toggleFollow()} showLabel/> : <UniversalActionLink action="follow" href={`/login?next=${encodeURIComponent(returnTo)}`} showLabel/>}

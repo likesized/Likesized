@@ -1,7 +1,7 @@
 import { GARMENT_TYPES } from "@/lib/garment-taxonomy";
 import { createClient } from "@/lib/supabase/server";
 
-const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TYPE_LABELS=new Map(GARMENT_TYPES.map((item)=>[item.key,item.label]));
 type PublicTaggedItem={closet_item_id:string;product_id:string;product_slug:string;brand_name:string;product_name:string;image_url:string|null;garment_type_key:string|null};
 

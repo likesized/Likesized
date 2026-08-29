@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { StyleFeedGarmentsButton, type StyleFeedGarmentItem } from "./StyleFeedGarmentsButton";
 
 const resolved=new Map<string,StyleFeedGarmentItem[]>();
@@ -26,24 +27,17 @@ function loadItems(postId:string){
 }
 
 export default function StyleFeedGarments({postId}:{postId:string}){
-  const hostRef=useRef<HTMLDivElement>(null);
   const [items,setItems]=useState<StyleFeedGarmentItem[]|null>(()=>resolved.get(postId)??null);
 
   useEffect(()=>{
     setItems(resolved.get(postId)??null);
-    const node=hostRef.current;
-    if(!node)return;
-    const observer=new IntersectionObserver((entries)=>{
-      if(!entries.some((entry)=>entry.isIntersecting))return;
-      observer.disconnect();
-      void loadItems(postId).then(setItems);
-    },{rootMargin:"350px 0px"});
-    observer.observe(node);
-    return()=>observer.disconnect();
+    void loadItems(postId).then(setItems);
   },[postId]);
 
-  function warm(){if(items===null)void loadItems(postId).then(setItems);}
-  return <div ref={hostRef} onPointerEnter={warm} onPointerDown={warm} onFocusCapture={warm} style={{minHeight:items===null||items.length?34:0}}>
-    {items?.length?<StyleFeedGarmentsButton items={items} postId={postId}/>:null}
+  return <div>
+    <div style={{display:"flex",alignItems:"center",gap:18,flexWrap:"wrap"}}>
+      <Link href={`/outfits/${postId}`} style={{color:"var(--accent)",fontWeight:800,fontSize:14,textDecoration:"none"}}>View Outfit →</Link>
+      {items?.length?<StyleFeedGarmentsButton items={items} postId={postId}/>:null}
+    </div>
   </div>;
 }

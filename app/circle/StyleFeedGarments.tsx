@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { StyleFeedGarmentsButton, type StyleFeedGarmentItem } from "./StyleFeedGarmentsButton";
 
 const resolved=new Map<string,StyleFeedGarmentItem[]>();
@@ -33,7 +34,10 @@ export default function StyleFeedGarments({postId}:{postId:string}){
     void loadItems(postId).then(setItems);
   },[postId]);
 
-  return <div style={{minHeight:items===null||items.length?34:0}}>
-    {items?.length?<StyleFeedGarmentsButton items={items} postId={postId}/>:null}
+  return <div>
+    <div style={{display:"flex",alignItems:"center",gap:18,flexWrap:"wrap"}}>
+      <Link href={`/outfits/${postId}`} style={{color:"var(--accent)",fontWeight:800,fontSize:14,textDecoration:"none"}}>View Outfit →</Link>
+      {items?.length?<StyleFeedGarmentsButton items={items} postId={postId}/>:null}
+    </div>
   </div>;
 }

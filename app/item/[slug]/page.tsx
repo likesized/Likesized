@@ -17,8 +17,8 @@ type TargetVariationRow={user_id:string;tracked_variation_key:string|null;garmen
 type RetailerRelation={name:string};
 type RetailerRow={id:string;product_url:string;retailer:unknown};
 type Variation={key:string;parts:TrackedVariationPart[];answers:Record<string,string>|null;wearerCount:number;latestAt:string};
-
 type FilterRow={key:string;label:string;options:{value:string;label:string;href:string;active:boolean}[]};
+
 function one<T>(value:unknown):T|null{return Array.isArray(value)?((value[0] as T|undefined)??null):((value as T|null)??null);}
 function first(value:string|string[]|undefined){return Array.isArray(value)?value[0]:value;}
 function buildVariations(rows:TargetVariationRow[],garmentTypeKey:string|null):Variation[]{
@@ -27,7 +27,8 @@ function buildVariations(rows:TargetVariationRow[],garmentTypeKey:string|null):V
   return [...groups.entries()].map(([key,value])=>({key,parts:trackedVariationParts(garmentTypeKey,value.answers),answers:value.answers,wearerCount:value.users.size,latestAt:value.latestAt})).filter((variation)=>variation.parts.length).sort((a,b)=>b.wearerCount-a.wearerCount||b.latestAt.localeCompare(a.latestAt));
 }
 function matchesSelection(variation:Variation,selection:Map<string,string>,ignoreKey?:string){const values=new Map(variation.parts.map((part)=>[part.key,part.value]));for(const [key,value] of selection){if(key===ignoreKey)continue;if(values.get(key)!==value)return false;}return true;}
-function filterHref(slug:string,selection:Map<string,string>,key:string,value:string){const params=new URLSearchParams();for(const [currentKey,currentValue] of selection)params.set(`opt_${currentKey}`,currentKey===key?value:currentValue);if(!selection.has(key))params.set(`opt_${key}`,value);const query=params.toString();return `/item/${slug}${query?`?${query}`:""}`;}
+function selectionHref(slug:string,selection:Map<string,string>){const params=new URLSearchParams();for(const [key,value] of selection)params.set(`opt_${key}`,value);const query=params.toString();return `/item/${slug}${query?`?${query}`:""}`;}
+function filterHref(slug:string,selection:Map<string,string>,key:string,value:string){const next=new Map(selection);next.set(key,value);return selectionHref(slug,next);}
 
 export default async function ItemPage({params,searchParams}:{params:Params;searchParams:SearchParams}){
   const {slug}=await params;const query=await searchParams;const supabase=await createClient();const {data:claimsData,error:claimsError}=await supabase.auth.getClaims();const viewerId=claimsData?.claims?.sub;if(claimsError||!viewerId)redirect(`/login?next=${encodeURIComponent(`/item/${slug}`)}`);
@@ -51,7 +52,7 @@ export default async function ItemPage({params,searchParams}:{params:Params;sear
   const dimensions=new Map<string,{label:string;values:Map<string,string>}>();for(const variation of variations)for(const part of variation.parts){const dimension=dimensions.get(part.key)??{label:part.label,values:new Map<string,string>()};dimension.values.set(part.value,part.valueLabel);dimensions.set(part.key,dimension);}
   const filterRows:FilterRow[]=[...dimensions.entries()].flatMap(([key,dimension])=>{const compatible=variations.filter((variation)=>matchesSelection(variation,selection,key));const values=new Map<string,string>();for(const variation of compatible){const part=variation.parts.find((candidate)=>candidate.key===key);if(part)values.set(part.value,part.valueLabel);}if(values.size<2)return[];return[{key,label:dimension.label,options:[...values.entries()].map(([value,label])=>({value,label,href:filterHref(slug,selection,key,value),active:selection.get(key)===value}))}];});
 
-  const canonicalReturnTo=filterRows.length?filterHref(slug,selection,"__none__","").replace(/(?:\?|&)opt___none__=[^&]*/,"").replace(/[?&]$/,""):`/item/${slug}`;
+  const canonicalReturnTo=selectionHref(slug,selection);
   const canonicalImages=await resolveCanonicalProductImages(supabase,[{productId:product.id,variationKey:selectedVariationKey}]);const image=canonicalImages.get(canonicalProductImageKey(product.id,selectedVariationKey));const placeholder=product.name.replace(/[^A-Za-z0-9]/g,"").slice(0,3).toUpperCase()||"FIT";
   const retailers:RetailerListing[]=((retailerResult.error?[]:(retailerResult.data??[])) as RetailerRow[]).flatMap((row)=>{const retailer=one<RetailerRelation>(row.retailer);return row.product_url?[{id:row.id,name:retailer?.name?.trim()||"Retailer",url:row.product_url}]:[];});
 

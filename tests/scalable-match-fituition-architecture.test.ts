@@ -11,8 +11,8 @@ const latestEvidenceMigration=fs.readFileSync("supabase/migrations/2026082812400
 test("garment shell streams before the one deferred personalized FITuition block",()=>{
   assert.doesNotMatch(itemPage,/FituitionRecommendationFallback/);
   assert.match(itemPage,/Suspense fallback={<FituitionEvidenceFallback\/>}/);
-  assert.match(itemPage,/ItemActionsClient/);
-  assert.ok(itemPage.indexOf("ItemActionsClient")<itemPage.indexOf("FituitionEvidenceSections"));
+  assert.match(itemPage,/<ItemActionsClient/);
+  assert.ok(itemPage.indexOf("<ItemActionsClient")<itemPage.indexOf("<FituitionEvidenceSections"));
   assert.doesNotMatch(itemPage,/get_product_evidence_candidates/);
   assert.match(fituitionSections,/const loadFituitionData=cache\(async/);
   assert.match(fituitionSections,/get_product_evidence_candidates/);

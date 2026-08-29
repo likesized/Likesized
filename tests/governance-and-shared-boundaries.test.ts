@@ -40,11 +40,12 @@ test("CI keeps fast draft iteration and full exact-candidate verification separa
 
 test("Style Feed consumes canonical shared Outfit and garment systems",()=>{
   const feed=read("app/circle/page.tsx");
+  const board=read("app/circle/StyleFeedBoard.tsx");
   const garments=read("app/circle/StyleFeedGarmentsButton.tsx");
   const layout=read("app/layout.tsx");
-  assert.match(feed,/from "@\/app\/outfits\/\[id\]\/OutfitGallery"/);
-  assert.match(feed,/from "@\/app\/outfits\/\[id\]\/CommentThread"/);
   assert.match(feed,/from "@\/lib\/outfit-photo-paths"/);
+  assert.match(board,/from "@\/app\/outfits\/\[id\]\/OutfitGallery"/);
+  assert.match(board,/from "@\/app\/outfits\/\[id\]\/CommentThread"/);
   assert.match(garments,/from "@\/app\/outfits\/\[id\]\/TaggedItemsPanel"/);
   assert.match(garments,/<TaggedItemsPanel items=\{items\}/);
   assert.doesNotMatch(garments,/Relevant Fit Reports:|Our FITuition suggests:|Not enough fit data to confidently recommend a size/);

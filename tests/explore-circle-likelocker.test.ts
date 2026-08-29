@@ -99,8 +99,8 @@ test("Style Feed is compact image-first discovery with a canonical Outfit popup"
  assert.match(circleBoard,/Not enough information/);
  assert.match(circleBoard,/matching measurements between your profiles/);
  assert.match(circleBoardCss,/@media\(max-width:640px\)\{\.board\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
- assert.match(circleBoardCss,/\.tile img\{display:block;width:100%;aspect-ratio:4\/5/);
- assert.match(circleBoardCss,/\.tile img\{aspect-ratio:1\/1;object-fit:cover\}/);
+ assert.match(circleBoardCss,/\.tile img\{display:block;width:100%;aspect-ratio:3\/4;object-fit:contain/);
+ assert.doesNotMatch(circleBoardCss,/\.tile img\{aspect-ratio:1\/1;object-fit:cover\}/);
  assert.doesNotMatch(circle,/className=\{styles\.card\}/);
 });
 
